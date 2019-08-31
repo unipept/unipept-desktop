@@ -1,4 +1,4 @@
-# unipept-desktop
+# vue-cli-include-test
 
 ## Project setup
 ```
