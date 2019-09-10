@@ -13,12 +13,16 @@
   },
   "main": "background.js",
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
     "core-js": "^2.6.5",
     "unipept-heatmap": "^1.0.26",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
+    "vue-fullscreen": "^2.1.5",
     "vue-property-decorator": "^8.1.0",
-    "vuetify": "^2.0.0"
+    "vuetify": "^2.0.0",
+    "vuex": "^3.1.1",
+    "whatwg-fetch": "^3.0.0"
   },
   "devDependencies": {
     "@mdi/font": "^4.1.95",

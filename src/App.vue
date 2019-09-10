@@ -1,22 +1,36 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-    <SearchSettingsForm/>
-    <DatasetForm/>
+    <v-app>
+      <v-container>
+        <v-row>
+          <v-col>
+            <select-datasets-card style="min-height: 100%;" :selected-datasets="selectedDatasets"></select-datasets-card>
+          </v-col>
+          <v-col>
+            <load-datasets-card style="min-height: 100%;" :stored-datasets="storedDatasets"></load-datasets-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-app>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import Vue from "vue";
+import { Component } from 'vue-property-decorator';
 import HelloWorld from './components/HelloWorld.vue';
+import PeptideContainer from 'unipept-web-components/logic/data-management/PeptideContainer';
 
 @Component({
   components: {
     HelloWorld,
-  },
+  }
 })
-export default class App extends Vue {}
+export default class App extends Vue {
+  private selectedDatasets: PeptideContainer[] = [];
+  private storedDatasets: PeptideContainer[] = [];
+
+}
 </script>
 
 <style lang="scss">
