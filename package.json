@@ -16,6 +16,7 @@
     "babel-polyfill": "^6.26.0",
     "core-js": "^2.6.5",
     "unipept-heatmap": "^1.0.26",
+    "unipept-web-components": "file:unipept-web-components-0.1.0.tgz",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
     "vue-fullscreen": "^2.1.5",

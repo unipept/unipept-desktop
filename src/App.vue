@@ -1,13 +1,22 @@
 <template>
-  <div id="app">
-    <v-app>
-      <v-container>
-        <v-row>
-          <v-col>
-            <select-datasets-card style="min-height: 100%;" :selected-datasets="selectedDatasets"></select-datasets-card>
+  <div id="app" style="min-height: 100vh;">
+    <v-app style="min-height: 100%;">
+      <v-container style="min-height: 100%;">
+        <v-row style="min-height: 100%;">
+          <v-col style="min-height: 100%;">
+            <select-datasets-card 
+              style="min-height: 100%;" 
+              :selected-datasets="this.$store.getters.selectedDatasets"
+              v-on:deselect-dataset="deselectDataset">
+            </select-datasets-card>
           </v-col>
           <v-col>
-            <load-datasets-card style="min-height: 100%;" :stored-datasets="storedDatasets"></load-datasets-card>
+            <load-datasets-card 
+              style="min-height: 100%;" 
+              :selected-datasets="this.$store.getters.selectedDatasets"
+              v-on:select-dataset="selectDataset"
+              v-on:deselect-dataset="deselectDataset">
+            </load-datasets-card>
           </v-col>
         </v-row>
       </v-container>
@@ -17,7 +26,8 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { Component } from 'vue-property-decorator';
+import Component from 'vue-class-component';
+import { Prop, Watch } from 'vue-property-decorator';
 import HelloWorld from './components/HelloWorld.vue';
 import PeptideContainer from 'unipept-web-components/logic/data-management/PeptideContainer';
 
@@ -27,9 +37,16 @@ import PeptideContainer from 'unipept-web-components/logic/data-management/Pepti
   }
 })
 export default class App extends Vue {
-  private selectedDatasets: PeptideContainer[] = [];
-  private storedDatasets: PeptideContainer[] = [];
+  private selectDataset(value: PeptideContainer) {
+    console.log("Dataset selected!");
+    // @ts-ignore
+    this.$store.dispatch("selectDataset", value);
+  }
 
+  private deselectDataset(value: PeptideContainer) {
+    // @ts-ignore
+    this.$store.dispatch("deselectDataset", value);
+  }
 }
 </script>
 
@@ -40,6 +57,5 @@ export default class App extends Vue {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
 }
 </style>
