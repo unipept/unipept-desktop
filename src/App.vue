@@ -28,17 +28,13 @@
 import Vue from "vue";
 import Component from 'vue-class-component';
 import { Prop, Watch } from 'vue-property-decorator';
-import HelloWorld from './components/HelloWorld.vue';
 import PeptideContainer from 'unipept-web-components/logic/data-management/PeptideContainer';
 
 @Component({
-  components: {
-    HelloWorld,
-  }
+  components: {}
 })
 export default class App extends Vue {
   private selectDataset(value: PeptideContainer) {
-    console.log("Dataset selected!");
     // @ts-ignore
     this.$store.dispatch("selectDataset", value);
   }
