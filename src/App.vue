@@ -1,25 +1,7 @@
 <template>
   <div id="app" style="min-height: 100vh;">
     <v-app style="min-height: 100%;">
-      <v-container style="min-height: 100%;">
-        <v-row style="min-height: 100%;">
-          <v-col style="min-height: 100%;">
-            <select-datasets-card 
-              style="min-height: 100%;" 
-              :selected-datasets="this.$store.getters.selectedDatasets"
-              v-on:deselect-dataset="deselectDataset">
-            </select-datasets-card>
-          </v-col>
-          <v-col>
-            <load-datasets-card 
-              style="min-height: 100%;" 
-              :selected-datasets="this.$store.getters.selectedDatasets"
-              v-on:select-dataset="selectDataset"
-              v-on:deselect-dataset="deselectDataset">
-            </load-datasets-card>
-          </v-col>
-        </v-row>
-      </v-container>
+      <router-view></router-view>
     </v-app>
   </div>
 </template>
