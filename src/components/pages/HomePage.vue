@@ -12,6 +12,7 @@
             <v-col>
             <load-datasets-card 
                 style="min-height: 100%;" 
+                :stored-datasets="this.$store.getters.storedDatasets"
                 :selected-datasets="this.$store.getters.selectedDatasets"
                 v-on:select-dataset="selectDataset"
                 v-on:deselect-dataset="deselectDataset">

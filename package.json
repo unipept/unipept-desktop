@@ -16,6 +16,7 @@
     "@babel/preset-env": "^7.6.0",
     "babel-polyfill": "^6.26.0",
     "core-js": "^2.6.5",
+    "jquery": "^3.4.1",
     "unipept-heatmap": "^1.0.26",
     "vue": "^2.6.10",
     "vue-class-component": "^7.0.2",
