@@ -9,6 +9,7 @@ import vueFullscreen from 'vue-fullscreen';
 import VueRouter from 'vue-router';
 import HomePage from './components/pages/HomePage.vue';
 import AnalysisPage from './components/pages/AnalysisPage.vue';
+import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 
 Vue.use(VueRouter);
 
