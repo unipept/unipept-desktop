@@ -5,8 +5,13 @@
 <script lang="ts">
 import Vue from 'vue';
 import Component from 'vue-class-component';
+import AnalysisComponent from 'unipept-web-components/src/components/analysis/AnalysisComponent.vue';
 
-@Component
+@Component({
+    components: {
+        AnalysisComponent
+    }
+})
 export default class AnalysisPage extends Vue {
 }
 </script>

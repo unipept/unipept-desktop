@@ -39,7 +39,7 @@
 import Vue from "vue";
 import Component from 'vue-class-component';
 import { Prop, Watch } from 'vue-property-decorator';
-import PeptideContainer from 'unipept-web-components/logic/data-management/PeptideContainer';
+import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 
 @Component({
   components: {}

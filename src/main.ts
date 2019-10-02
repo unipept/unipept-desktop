@@ -1,9 +1,8 @@
 import Vue from 'vue'
 import App from './App.vue'
 import vuetify from './plugins/vuetify';
-import {install} from 'unipept-web-components';
-import {GlobalStore} from 'unipept-web-components';
-import {AnalysisStore} from 'unipept-web-components';
+import {GlobalStore} from 'unipept-web-components/src/state/GlobalStore';
+import {AnalysisStore} from 'unipept-web-components/src/state/AnalysisStore';
 import Vuex from 'vuex';
 import vueFullscreen from 'vue-fullscreen';
 import VueRouter from 'vue-router';
@@ -12,11 +11,8 @@ import AnalysisPage from './components/pages/AnalysisPage.vue';
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 
 Vue.use(VueRouter);
-
-Vue.use(install, {
-  "fullscreen": vueFullscreen
-});
 Vue.use(Vuex);
+Vue.use(vueFullscreen);
 
 const store = new Vuex.Store({
   modules: {

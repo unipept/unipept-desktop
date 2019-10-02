@@ -8,5 +8,5 @@
 # live in the same parent folder.
 
 mkdir node_modules/unipept-web-components
-ln -s ../../../unipept-web-components/dist ./node_modules/unipept-web-components/dist
+ln -s ../../../unipept-web-components/src ./node_modules/unipept-web-components/src
 ln -s ../../../unipept-web-components/package.json ./node_modules/unipept-web-components/package.json
