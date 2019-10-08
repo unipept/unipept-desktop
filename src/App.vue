@@ -1,15 +1,12 @@
 <template>
   <div id="app" style="min-height: 100vh;">
     <v-app style="min-height: 100%;">
-      <v-navigation-drawer app :mini-variant.sync="miniNavDrawer" v-model="navDrawer" class="nav-drawer">
+      <v-navigation-drawer app v-model="navDrawer" class="nav-drawer">
         <v-list-item>
           <v-list-item-avatar>
             <v-img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/Unipept_logo.png"></v-img>
           </v-list-item-avatar>
           <v-list-item-title>Unipept Desktop</v-list-item-title>
-          <v-btn icon @click.stop="miniNavDrawer = !miniNavDrawer">
-            <v-icon>mdi-chevron-left</v-icon>
-          </v-btn>
         </v-list-item>
         <v-divider></v-divider>
         <v-list dense>
@@ -56,7 +53,6 @@ import PeptideContainer from 'unipept-web-components/src/logic/data-management/P
 })
 export default class App extends Vue {
   private navDrawer: boolean = false;
-  private miniNavDrawer: boolean = true;
 
   private selectDataset(value: PeptideContainer) {
     // @ts-ignore
