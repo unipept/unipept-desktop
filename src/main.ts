@@ -8,6 +8,7 @@ import vueFullscreen from 'vue-fullscreen';
 import VueRouter from 'vue-router';
 import HomePage from './components/pages/HomePage.vue';
 import AnalysisPage from './components/pages/AnalysisPage.vue';
+import SettingsPage from './components/pages/SettingsPage.vue';
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 
 Vue.use(VueRouter);
@@ -22,8 +23,27 @@ const store = new Vuex.Store({
 });
 
 const routes = [
-  { path: '/', component: HomePage },
-  { path: '/analysis', component: AnalysisPage }
+  { 
+    path: '/',
+    component: HomePage,
+    meta: {
+      title: 'Home'
+    }
+  },
+  { 
+    path: '/analysis', 
+    component: AnalysisPage, 
+    meta: {
+      title: 'Analyse' 
+    }
+  },
+  { 
+    path: '/settings', 
+    component: SettingsPage, 
+    meta: {
+      title: 'Settings'
+    }
+  }
 ]
 
 const router = new VueRouter({

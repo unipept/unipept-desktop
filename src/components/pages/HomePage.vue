@@ -1,5 +1,5 @@
 <template>
-    <v-container style="min-height: 100%;">
+    <v-container fluid style="min-height: 100%;">
         <v-row style="min-height: 100%;">
             <v-col style="min-height: 100%;">
             <select-datasets-card 
