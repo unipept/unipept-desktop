@@ -1,7 +1,7 @@
 <template>
   <div id="app" style="min-height: 100vh;">
     <v-app style="min-height: 100%;">
-      <v-navigation-drawer :mini-variant="true" permanent>
+      <v-navigation-drawer  :mini-variant="true" permanent>
         <v-list-item>
           <v-list-item-avatar>
             <v-img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/Unipept_logo.png"></v-img>
@@ -28,7 +28,7 @@
           </v-list-item>
         </v-list>
       </v-navigation-drawer>
-      <v-content style="min-height: 100%;">
+      <v-content style="min-height: 100%; max-width: calc(100% - 80px);">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
     </v-app>
