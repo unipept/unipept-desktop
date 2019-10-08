@@ -1,12 +1,15 @@
 <template>
   <div id="app" style="min-height: 100vh;">
     <v-app style="min-height: 100%;">
-      <v-navigation-drawer app :mini-variant="true" v-model="navDrawer">
+      <v-navigation-drawer app :mini-variant.sync="miniNavDrawer" v-model="navDrawer" class="nav-drawer">
         <v-list-item>
           <v-list-item-avatar>
             <v-img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/Unipept_logo.png"></v-img>
           </v-list-item-avatar>
-          <v-list-item-title>Unipept</v-list-item-title>
+          <v-list-item-title>Unipept Desktop</v-list-item-title>
+          <v-btn icon @click.stop="miniNavDrawer = !miniNavDrawer">
+            <v-icon>mdi-chevron-left</v-icon>
+          </v-btn>
         </v-list-item>
         <v-divider></v-divider>
         <v-list dense>
@@ -30,10 +33,12 @@
       </v-navigation-drawer>
 
       <v-app-bar app dark color="primary">
-        <v-app-bar-nav-icon @click.stop="navDrawer = !navDrawer"></v-app-bar-nav-icon>
-        <v-toolbar-title>Title</v-toolbar-title>
+        <v-btn icon @click.stop="navDrawer = !navDrawer">
+          <v-icon>mdi-menu</v-icon>
+        </v-btn>
+        <v-toolbar-title>{{ $route.meta.title }}</v-toolbar-title>
       </v-app-bar>
-      <v-content style="min-height: 100%; max-width: calc(100% - 80px);">
+      <v-content style="min-height: 100%;">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
     </v-app>
@@ -51,6 +56,7 @@ import PeptideContainer from 'unipept-web-components/src/logic/data-management/P
 })
 export default class App extends Vue {
   private navDrawer: boolean = false;
+  private miniNavDrawer: boolean = true;
 
   private selectDataset(value: PeptideContainer) {
     // @ts-ignore
@@ -64,7 +70,7 @@ export default class App extends Vue {
 }
 </script>
 
-<style lang="scss">
+<style lang="less">
   #app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -75,5 +81,9 @@ export default class App extends Vue {
 
   .v-application--wrap {
     flex-direction: row !important;
+  }
+
+  .nav-drawer .v-divider {
+    margin-top: 7px !important;
   }
 </style>

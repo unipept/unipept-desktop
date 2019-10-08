@@ -23,9 +23,27 @@ const store = new Vuex.Store({
 });
 
 const routes = [
-  { path: '/', component: HomePage },
-  { path: '/analysis', component: AnalysisPage },
-  { path: '/settings', component: SettingsPage }
+  { 
+    path: '/',
+    component: HomePage,
+    meta: {
+      title: 'Home'
+    }
+  },
+  { 
+    path: '/analysis', 
+    component: AnalysisPage, 
+    meta: {
+      title: 'Analyse' 
+    }
+  },
+  { 
+    path: '/settings', 
+    component: SettingsPage, 
+    meta: {
+      title: 'Settings'
+    }
+  }
 ]
 
 const router = new VueRouter({
