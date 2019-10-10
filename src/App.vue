@@ -40,73 +40,7 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <v-navigation-drawer v-model="rightNavDrawer" :mini-variant.sync="rightNavMini" fixed right>
-        <v-list style="position: relative; top: 64px;">
-          <v-list-group prepend-icon="mdi-format-list-bulleted">
-            <template v-slot:activator>
-              <v-list-item-content>
-                <v-list-item-title>Samples</v-list-item-title>
-              </v-list-item-content>
-            </template>
-            <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
-              <v-list-item-title>
-                {{ dataset.getName() }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
-                {{ dataset.getAmountOfPeptides() }} peptides
-              </v-list-item-subtitle>
-              <v-list-item-action v-if="dataset.progress !== 1">
-                  <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list-group>
-
-          <v-list-group prepend-icon="mdi-tune">
-            <template v-slot:activator>
-              <v-list-item-content>
-                <v-list-item-title>Search settings</v-list-item-title>
-              </v-list-item-content>
-            </template>
-
-            <v-list-item>
-              <template v-slot:default="{active, toggle}">
-                <v-list-item-action>
-                  <v-checkbox></v-checkbox>
-                </v-list-item-action>
-
-                <v-list-item-content>
-                  <v-list-item-title>Equate I and L</v-list-item-title>
-                </v-list-item-content>
-              </template>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:default="{active, toggle}">
-                <v-list-item-action>
-                  <v-checkbox></v-checkbox>
-                </v-list-item-action>
-
-                <v-list-item-content>
-                  <v-list-item-title>Filter duplicate peptides</v-list-item-title>
-                </v-list-item-content>
-              </template>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:default="{active, toggle}">
-                <v-list-item-action>
-                  <v-checkbox></v-checkbox>
-                </v-list-item-action>
-
-                <v-list-item-content>
-                  <v-list-item-title>Advanced missing cleavage handling</v-list-item-title>
-                </v-list-item-content>
-              </template>
-            </v-list-item>
-          </v-list-group>
-        </v-list>
-        <v-btn icon @click="rightNavMini = !rightNavMini" class="drawer-chevron">
-          <v-icon>{{ rightNavMini ? 'mdi-chevron-left' : 'mdi-chevron-right' }}</v-icon>
-        </v-btn>
-      </v-navigation-drawer>
+      <Toolbar :open.sync="rightNavDrawer" :mini.sync="rightNavMini"></Toolbar>
 
       <v-content style="min-height: 100%; max-width: calc(100% - 80px);" :class="{'open-right-nav-drawer': !rightNavMini}">
         <router-view style="min-height: 100%;"></router-view>
@@ -120,9 +54,12 @@ import Vue from "vue";
 import Component from 'vue-class-component';
 import { Prop, Watch } from 'vue-property-decorator';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
+import Toolbar from './components/navigation-drawers/Toolbar.vue';
 
 @Component({
-  components: {}
+  components: {
+    Toolbar
+  }
 })
 export default class App extends Vue {
   private navDrawer: boolean = false;
@@ -164,11 +101,5 @@ export default class App extends Vue {
 
   .open-right-nav-drawer {
     max-width: calc(100% - 256px) !important;
-  }
-
-  .drawer-chevron {
-    position: absolute !important;
-    top: 50%;
-    transform: translateY(-50%);
   }
 </style>
