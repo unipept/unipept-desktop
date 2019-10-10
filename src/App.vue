@@ -49,49 +49,21 @@
               </v-list-item-content>
             </template>
             <v-list-item v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
-              <v-list-item-action>
-                  <v-radio-group v-if="dataset.progress === 1" v-model="activeDatasetModel">
-                    <v-radio :value="dataset"></v-radio>
-                  </v-radio-group>
-                  <v-progress-circular v-else :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-              </v-list-item-action> 
               <v-list-item-title>
                 {{ dataset.getName() }}
               </v-list-item-title>
               <v-list-item-subtitle>
                 {{ dataset.getAmountOfPeptides() }} peptides
               </v-list-item-subtitle>
+              <v-list-item-action v-if="dataset.progress !== 1">
+                  <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+              </v-list-item-action>
             </v-list-item>
-
-            <!-- <v-list-item v-for="dataset of this.$store.getters.selectDatasets" :key="dataset.id"> -->
-              <!-- <v-list-item-action>
-                  <v-radio-group v-if="dataset.progress === 1" v-model="activeDatasetModel">
-                    <v-radio :value="dataset"></v-radio>
-                  </v-radio-group>
-                  <v-progress-circular v-else :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-              </v-list-item-action> -->
-              <!-- <v-list-item-content>
-                <v-list-item-title>
-                </v-list-item-title>
-              </v-list-item-content> -->
-              <!-- <v-list-item-subtitle>
-                  {{ dataset.getAmountOfPeptides() }} peptides
-              </v-list-item-subtitle> -->
-
-              <!-- <v-list-item-action>
-                  <v-list-item-action-text>
-                      {{ dataset.getDateFormatted() }}
-                  </v-list-item-action-text>
-                  <tooltip message="Remove dataset from analysis.">
-                      <v-icon @click="deselectDataset(dataset)" v-on:click.stop>mdi-delete-outline</v-icon>
-                  </tooltip>
-              </v-list-item-action> -->
-            <!-- </v-list-item> -->
           </v-list-group>
         </v-list>
       </v-navigation-drawer>
 
-      <v-content style="min-height: 100%; max-width: calc(100% - 80px);">
+      <v-content style="min-height: 100%; max-width: calc(100% - 80px);" :class="{'open-right-nav-drawer': !rightNavMini}">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
     </v-app>
@@ -139,5 +111,9 @@ export default class App extends Vue {
 
   .nav-drawer .v-divider {
     margin-top: 7px !important;
+  }
+
+  .open-right-nav-drawer {
+    max-width: calc(100% - 256px) !important;
   }
 </style>
