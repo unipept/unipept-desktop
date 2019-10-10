@@ -1,6 +1,8 @@
 <template>
   <div id="app" style="min-height: 100vh;">
     <v-app style="min-height: 100%;">
+      <!-- Navigation drawer for switching between different pages (analyse, settings, etc). Is positioned on the left
+           side -->
       <v-navigation-drawer app v-model="navDrawer" class="nav-drawer">
         <v-list-item>
           <v-list-item-avatar>
@@ -29,13 +31,24 @@
         </v-list>
       </v-navigation-drawer>
 
-      <v-app-bar app dark color="primary">
+      <v-app-bar app dark color="primary" style="z-index: 10;" :elevation="0">
         <v-btn icon @click.stop="navDrawer = !navDrawer">
           <v-icon>mdi-menu</v-icon>
         </v-btn>
         <v-toolbar-title>{{ $route.meta.title }}</v-toolbar-title>
       </v-app-bar>
-      <v-content style="min-height: 100%;">
+
+      <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
+           right side -->
+      <v-navigation-drawer v-model="rightNavDrawer" :mini-variant="true" fixed right style="">
+        <v-list style="position: relative; top: 64px;">
+          <v-list-item>
+            <v-icon large>mdi-format-list-bulleted</v-icon>
+          </v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+
+      <v-content style="min-height: 100%; max-width: calc(100% - 80px);">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
     </v-app>
@@ -53,6 +66,7 @@ import PeptideContainer from 'unipept-web-components/src/logic/data-management/P
 })
 export default class App extends Vue {
   private navDrawer: boolean = false;
+  private rightNavDrawer: boolean = true;
 
   private selectDataset(value: PeptideContainer) {
     // @ts-ignore
