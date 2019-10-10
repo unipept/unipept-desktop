@@ -14,10 +14,10 @@
         <v-list dense>
           <v-list-item link to='/'>
             <v-list-item-icon>
-              <v-icon>mdi-home</v-icon>
+              <v-icon>mdi-bacteria</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
-              <v-list-item-title>Home</v-list-item-title>
+              <v-list-item-title>Analyse</v-list-item-title>
             </v-list-item-content>
           </v-list-item>
           <v-list-item link to='/settings'>
@@ -48,7 +48,7 @@
                 <v-list-item-title>Samples</v-list-item-title>
               </v-list-item-content>
             </template>
-            <v-list-item v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
+            <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
               <v-list-item-title>
                 {{ dataset.getName() }}
               </v-list-item-title>
@@ -60,7 +60,52 @@
               </v-list-item-action>
             </v-list-item>
           </v-list-group>
+
+          <v-list-group prepend-icon="mdi-tune">
+            <template v-slot:activator>
+              <v-list-item-content>
+                <v-list-item-title>Search settings</v-list-item-title>
+              </v-list-item-content>
+            </template>
+
+            <v-list-item>
+              <template v-slot:default="{active, toggle}">
+                <v-list-item-action>
+                  <v-checkbox></v-checkbox>
+                </v-list-item-action>
+
+                <v-list-item-content>
+                  <v-list-item-title>Equate I and L</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:default="{active, toggle}">
+                <v-list-item-action>
+                  <v-checkbox></v-checkbox>
+                </v-list-item-action>
+
+                <v-list-item-content>
+                  <v-list-item-title>Filter duplicate peptides</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:default="{active, toggle}">
+                <v-list-item-action>
+                  <v-checkbox></v-checkbox>
+                </v-list-item-action>
+
+                <v-list-item-content>
+                  <v-list-item-title>Advanced missing cleavage handling</v-list-item-title>
+                </v-list-item-content>
+              </template>
+            </v-list-item>
+          </v-list-group>
         </v-list>
+        <v-btn icon @click="rightNavMini = !rightNavMini" class="drawer-chevron">
+          <v-icon>{{ rightNavMini ? 'mdi-chevron-left' : 'mdi-chevron-right' }}</v-icon>
+        </v-btn>
       </v-navigation-drawer>
 
       <v-content style="min-height: 100%; max-width: calc(100% - 80px);" :class="{'open-right-nav-drawer': !rightNavMini}">
@@ -93,6 +138,10 @@ export default class App extends Vue {
     // @ts-ignore
     this.$store.dispatch("deselectDataset", value);
   }
+
+  private activateDataset(value: PeptideContainer) {
+    this.$store.dispatch("setActiveDataset", value);
+  }
 }
 </script>
 
@@ -115,5 +164,11 @@ export default class App extends Vue {
 
   .open-right-nav-drawer {
     max-width: calc(100% - 256px) !important;
+  }
+
+  .drawer-chevron {
+    position: absolute !important;
+    top: 50%;
+    transform: translateY(-50%);
   }
 </style>
