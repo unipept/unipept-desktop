@@ -40,11 +40,54 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <v-navigation-drawer v-model="rightNavDrawer" :mini-variant="true" fixed right style="">
+      <v-navigation-drawer v-model="rightNavDrawer" :mini-variant.sync="rightNavMini" fixed right>
         <v-list style="position: relative; top: 64px;">
-          <v-list-item>
-            <v-icon large>mdi-format-list-bulleted</v-icon>
-          </v-list-item>
+          <v-list-group prepend-icon="mdi-format-list-bulleted">
+            <template v-slot:activator>
+              <v-list-item-content>
+                <v-list-item-title>Samples</v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <v-list-item v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
+              <v-list-item-action>
+                  <v-radio-group v-if="dataset.progress === 1" v-model="activeDatasetModel">
+                    <v-radio :value="dataset"></v-radio>
+                  </v-radio-group>
+                  <v-progress-circular v-else :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+              </v-list-item-action> 
+              <v-list-item-title>
+                {{ dataset.getName() }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                {{ dataset.getAmountOfPeptides() }} peptides
+              </v-list-item-subtitle>
+            </v-list-item>
+
+            <!-- <v-list-item v-for="dataset of this.$store.getters.selectDatasets" :key="dataset.id"> -->
+              <!-- <v-list-item-action>
+                  <v-radio-group v-if="dataset.progress === 1" v-model="activeDatasetModel">
+                    <v-radio :value="dataset"></v-radio>
+                  </v-radio-group>
+                  <v-progress-circular v-else :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+              </v-list-item-action> -->
+              <!-- <v-list-item-content>
+                <v-list-item-title>
+                </v-list-item-title>
+              </v-list-item-content> -->
+              <!-- <v-list-item-subtitle>
+                  {{ dataset.getAmountOfPeptides() }} peptides
+              </v-list-item-subtitle> -->
+
+              <!-- <v-list-item-action>
+                  <v-list-item-action-text>
+                      {{ dataset.getDateFormatted() }}
+                  </v-list-item-action-text>
+                  <tooltip message="Remove dataset from analysis.">
+                      <v-icon @click="deselectDataset(dataset)" v-on:click.stop>mdi-delete-outline</v-icon>
+                  </tooltip>
+              </v-list-item-action> -->
+            <!-- </v-list-item> -->
+          </v-list-group>
         </v-list>
       </v-navigation-drawer>
 
@@ -67,6 +110,7 @@ import PeptideContainer from 'unipept-web-components/src/logic/data-management/P
 export default class App extends Vue {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
+  private rightNavMini: boolean = true;
 
   private selectDataset(value: PeptideContainer) {
     // @ts-ignore
