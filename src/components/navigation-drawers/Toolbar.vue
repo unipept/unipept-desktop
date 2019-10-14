@@ -1,7 +1,7 @@
 <template>
     <div class="toolbar">
         <v-navigation-drawer v-model="isOpen" :mini-variant="true" fixed :class="{'toolbar-navigation-drawer': !isMini}">
-            <div style="position: relative; top: 64px;">
+            <div class="navigation-toolbar" style="position: relative; top: 64px;">
                 <v-list>
                     <v-list-item :class="{'v-list-item--active': $route.path === '/'}" link @click="navigateAndToggleExpand('/')">
                         <v-list-item-icon>
@@ -89,10 +89,10 @@
             </div>
         </v-navigation-drawer>
         <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'">
-            <div style="position: relative; top: 64px;">
-                <span>Assays</span>
-                <v-list>
-                    <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
+            <div style="position: relative; top: 56px;">
+                <!-- <div class="samples-title">Samples</div> -->
+                <v-list dense>
+                    <v-list-item :class="{'v-list-item--active': $store.getters.activeDataset === dataset}" @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
                         <v-list-item-title>
                             {{ dataset.getName() }}
                         </v-list-item-title>
@@ -100,10 +100,14 @@
                             {{ dataset.getAmountOfPeptides() }} peptides
                         </v-list-item-subtitle>
                         <v-list-item-action v-if="dataset.progress !== 1">
-                            <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+                            <v-progress-circular :rotate="-90" :size="18" :value="dataset.progress * 100" color="primary"></v-progress-circular>
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
+
+                <div>
+                    <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
+                </div>
             </div>
         </div>
     </div>
@@ -167,18 +171,6 @@ export default class Toolbar extends Vue {
 </script>
 
 <style lang="less">
-    .drawer-chevron {
-        position: absolute !important;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 10;
-        left: 42px;
-    }
-
-    .drawer-chevron-open {
-        left: 218px !important;
-    }
-
     .select-sample-button {
         margin: 0 auto;
         display: block !important;
@@ -188,26 +180,38 @@ export default class Toolbar extends Vue {
         height: 100%;
         position: fixed; 
         left: 80px; 
-        width: 176px; 
+        width: 210px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
     }
 
     .toolbar-navigation-drawer > .v-navigation-drawer__border {
-        display: none;
+        // display: none;
+    }
+
+    .samples-title {
+        text-align: left;
+        // background-color: #2196F3;
+        height: 24px;
+        padding-left: 8px;
+        // color: white;
     }
 
     // Change default styling of selected navigation drawer item.
-    .toolbar .v-list-item--active .v-icon {
+    .navigation-toolbar .v-list-item--active .v-icon {
         // TODO extract this color to constants.less and import it.
         color: #1976D2 !important; 
     }
 
-    .toolbar .v-list-item--active {
+    .navigation-toolbar .v-list-item--active {
         color: white !important;
     }
 
-    .toolbar .v-list-item:hover {
+    .navigation-toolbar .v-list-item:hover {
         color: white !important;
+    }
+
+    .navigation-toolbar .v-list-item .v-icon:hover {
+        color: #2196F3;
     }
 </style>

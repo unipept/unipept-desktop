@@ -1,36 +1,6 @@
 <template>
   <div id="app" style="min-height: 100vh;">
     <v-app style="min-height: 100%;">
-      <!-- Navigation drawer for switching between different pages (analyse, settings, etc). Is positioned on the left
-           side -->
-      <v-navigation-drawer app v-model="navDrawer" class="nav-drawer">
-        <v-list-item>
-          <v-list-item-avatar>
-            <v-img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/Unipept_logo.png"></v-img>
-          </v-list-item-avatar>
-          <v-list-item-title>Unipept Desktop</v-list-item-title>
-        </v-list-item>
-        <v-divider></v-divider>
-        <v-list dense>
-          <v-list-item link to='/'>
-            <v-list-item-icon>
-              <v-icon>mdi-bacteria</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>Analyse</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item link to='/settings'>
-            <v-list-item-icon>
-              <v-icon>mdi-settings</v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>Settings</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-navigation-drawer>
-
       <v-app-bar app dark color="primary" style="z-index: 10;" :elevation="0">
         <v-btn icon @click.stop="navDrawer = !navDrawer">
           <v-icon>mdi-menu</v-icon>
@@ -102,8 +72,8 @@ export default class App extends Vue {
   }
 
   .open-right-nav-drawer {
-    max-width: calc(100% - 256px) !important;
+    max-width: calc(100% - 290px) !important;
     position: relative;
-    left: 256px !important;
+    left: 290px !important;
   }
 </style>
