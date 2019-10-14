@@ -11,71 +11,6 @@
                             <v-list-item-title>Analyse</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
-                    <!-- <v-list-group prepend-icon="mdi-bacteria" >
-                        <template v-slot:activator>
-                            <v-list-item-content to="/">
-                                <v-list-item-title>Analyse</v-list-item-title>
-                            </v-list-item-content>
-                        </template>
-                        
-                        <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
-                            <v-list-item-title>
-                            {{ dataset.getName() }}
-                            </v-list-item-title>
-                            <v-list-item-subtitle>
-                            {{ dataset.getAmountOfPeptides() }} peptides
-                            </v-list-item-subtitle>
-                            <v-list-item-action v-if="dataset.progress !== 1">
-                                <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-                            </v-list-item-action>
-                        </v-list-item>
-
-                        <div>
-                            <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
-                        </div>
-                    </v-list-group>
-
-                    <v-list-group prepend-icon="mdi-tune">
-                        <template v-slot:activator>
-                            <v-list-item-content>
-                            <v-list-item-title>Search settings</v-list-item-title>
-                            </v-list-item-content>
-                        </template>
-
-                        <v-list-item>
-                            <template v-slot:default="{active, toggle}">
-                            <v-list-item-action>
-                                <v-checkbox></v-checkbox>
-                            </v-list-item-action>
-
-                            <v-list-item-content>
-                                <v-list-item-title>Equate I and L</v-list-item-title>
-                            </v-list-item-content>
-                            </template>
-                        </v-list-item>
-                        <v-list-item>
-                            <template v-slot:default="{active, toggle}">
-                            <v-list-item-action>
-                                <v-checkbox></v-checkbox>
-                            </v-list-item-action>
-
-                            <v-list-item-content>
-                                <v-list-item-title>Filter duplicate peptides</v-list-item-title>
-                            </v-list-item-content>
-                            </template>
-                        </v-list-item>
-                        <v-list-item>
-                            <template v-slot:default="{active, toggle}">
-                            <v-list-item-action>
-                                <v-checkbox></v-checkbox>
-                            </v-list-item-action>
-
-                            <v-list-item-content>
-                                <v-list-item-title>Advanced missing cleavage handling</v-list-item-title>
-                            </v-list-item-content>
-                            </template>
-                        </v-list-item>
-                    </v-list-group> -->
 
                     <v-list-item link to='/settings'>
                         <v-list-item-icon>
@@ -93,7 +28,6 @@
                 <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
                     No samples selected.
                 </div>
-                <!-- <div class="samples-title">Samples</div> -->
                 <v-list dense>
                     <v-list-item :class="{'v-list-item--active': $store.getters.activeDataset === dataset}" @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
                         <v-list-item-title>
@@ -102,8 +36,11 @@
                         <v-list-item-subtitle>
                             {{ dataset.getAmountOfPeptides() }} peptides
                         </v-list-item-subtitle>
-                        <v-list-item-action v-if="dataset.progress !== 1">
-                            <v-progress-circular :rotate="-90" :size="18" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+                        <v-list-item-action>
+                            <v-progress-circular v-if="dataset.progress !== 1" :rotate="-90" :size="18" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+                            <tooltip v-else message="Remove dataset from analysis." position="bottom">
+                                <v-icon @click="deselectDataset(dataset)" v-on:click.stop small>mdi-close</v-icon>
+                            </tooltip>
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
@@ -117,9 +54,14 @@
 import Vue from 'vue';
 import Component from 'vue-class-component';
 import {Prop, Watch} from 'vue-property-decorator';
+import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 
-@Component
+@Component({
+    components: {
+        Tooltip
+    }
+})
 export default class Toolbar extends Vue {
     @Prop({required: false, default: false})
     private open: boolean;

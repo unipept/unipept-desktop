@@ -1,8 +1,13 @@
 <template>
     <div>
         <Toolbar :open.sync="open" :mini.sync="mini" v-on:click-select-sample="onClickSelectSample" v-on:activate-dataset="onActivateDataset"></Toolbar>
-        <v-dialog v-model="selectSampleDialog">
-            <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets" v-on:select-dataset="onSelectDataset"></load-datasets-card>
+        <v-dialog v-model="selectSampleDialog" max-width="800">
+            <v-card>
+                <v-card-title>
+                    Sample selection
+                </v-card-title>
+                <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets" v-on:select-dataset="onSelectDataset"></load-datasets-card>
+            </v-card>
         </v-dialog>
     </div>
 </template>
