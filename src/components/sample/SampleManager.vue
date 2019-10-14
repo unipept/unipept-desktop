@@ -1,8 +1,8 @@
 <template>
     <div>
-        <Toolbar v-on:click-select-sample="onClickSelectSample"></Toolbar>
+        <Toolbar :open.sync="open" :mini.sync="mini" v-on:click-select-sample="onClickSelectSample"></Toolbar>
         <v-dialog v-model="selectSampleDialog">
-            <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets"></load-datasets-card>
+            <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets" v-on:select-dataset="onSelectDataset"></load-datasets-card>
         </v-dialog>
     </div>
 </template>
@@ -11,17 +11,35 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import Toolbar from "./../navigation-drawers/Toolbar.vue";
+import LoadDatasetsCard from "unipept-web-components/src/components/dataset/LoadDatasetsCard.vue";
+import {Prop, Watch} from "vue-property-decorator";
 
 @Component({
     components: {
-        Toolbar
+        Toolbar,
+        LoadDatasetsCard
     }
 })
-export default class SampleManager extends Vue{
+export default class SampleManager extends Vue {
+    @Prop({required: false, default: false})
+    private open: boolean;
+    @Prop({required: false, default: true})
+    private mini: boolean;
+
     private selectSampleDialog: boolean = false;
+
+    @Watch('mini')
+    private onMiniChanged(newMini: boolean) {
+        this.$emit('update:mini', newMini);
+    }
 
     private onClickSelectSample() {
         this.selectSampleDialog = true;
+    }
+
+    private onSelectDataset(dataset: PeptideContainer): void {
+        this.$store.dispatch('selectDataset', dataset);
+        this.selectSampleDialog = false;
     }
 }
 </script>

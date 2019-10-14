@@ -14,7 +14,6 @@
                 </functional-summary-card>
             </v-col>
         </v-row>
-        <analysis-component :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets" v-on:select-dataset="onSelectDataset"></analysis-component>
     </v-container>
 </template>
 

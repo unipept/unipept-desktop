@@ -185,10 +185,6 @@ export default class Toolbar extends Vue {
         border-right: 1px solid rgba(0, 0, 0, 0.12);
     }
 
-    .toolbar-navigation-drawer > .v-navigation-drawer__border {
-        // display: none;
-    }
-
     .samples-title {
         text-align: left;
         // background-color: #2196F3;
