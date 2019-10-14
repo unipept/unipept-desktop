@@ -40,7 +40,7 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <Toolbar :open.sync="rightNavDrawer" v-on:activate-dataset="onActivateDataset"></Toolbar>
+      <Toolbar :open.sync="rightNavDrawer" :mini.sync="rightNavMini" v-on:activate-dataset="onActivateDataset"></Toolbar>
 
       <v-content style="min-height: 100%; max-width: calc(100% - 80px); position: relative; left: 80px;" :class="{'open-right-nav-drawer': !rightNavMini}">
         <router-view style="min-height: 100%;"></router-view>
@@ -66,6 +66,7 @@ import SampleManager from './components/sample/SampleManager.vue';
 export default class App extends Vue {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
+  private rightNavMini: boolean = true;
 
   private selectDataset(value: PeptideContainer) {
     // @ts-ignore
@@ -98,5 +99,11 @@ export default class App extends Vue {
 
   .nav-drawer .v-divider {
     margin-top: 7px !important;
+  }
+
+  .open-right-nav-drawer {
+    max-width: calc(100% - 256px) !important;
+    position: relative;
+    left: 256px !important;
   }
 </style>

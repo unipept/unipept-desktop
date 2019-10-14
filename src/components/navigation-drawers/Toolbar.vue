@@ -1,9 +1,9 @@
 <template>
-    <div>
+    <div class="toolbar">
         <v-navigation-drawer v-model="isOpen" :mini-variant="true" fixed :class="{'toolbar-navigation-drawer': !isMini}">
             <div style="position: relative; top: 64px;">
                 <v-list>
-                    <v-list-item link to='/'>
+                    <v-list-item :class="{'v-list-item--active': $route.path === '/'}" link @click="navigateAndToggleExpand('/')">
                         <v-list-item-icon>
                             <v-icon>mdi-bacteria</v-icon>
                         </v-list-item-icon>
@@ -11,7 +11,7 @@
                             <v-list-item-title>Analyse</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
-                    <v-list-group prepend-icon="mdi-bacteria" >
+                    <!-- <v-list-group prepend-icon="mdi-bacteria" >
                         <template v-slot:activator>
                             <v-list-item-content to="/">
                                 <v-list-item-title>Analyse</v-list-item-title>
@@ -75,9 +75,9 @@
                             </v-list-item-content>
                             </template>
                         </v-list-item>
-                    </v-list-group>
+                    </v-list-group> -->
 
-                        <v-list-item link to='/settings'>
+                    <v-list-item link to='/settings'>
                         <v-list-item-icon>
                             <v-icon>mdi-settings</v-icon>
                         </v-list-item-icon>
@@ -89,6 +89,22 @@
             </div>
         </v-navigation-drawer>
         <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'">
+            <div style="position: relative; top: 64px;">
+                <span>Assays</span>
+                <v-list>
+                    <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
+                        <v-list-item-title>
+                            {{ dataset.getName() }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle>
+                            {{ dataset.getAmountOfPeptides() }} peptides
+                        </v-list-item-subtitle>
+                        <v-list-item-action v-if="dataset.progress !== 1">
+                            <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+                        </v-list-item-action>
+                    </v-list-item>
+                </v-list>
+            </div>
         </div>
         <v-btn icon @click="isMini = !isMini" class="drawer-chevron" isMini :class="{'drawer-chevron-open': !isMini}">
             <v-icon>{{ isMini ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
@@ -135,6 +151,21 @@ export default class Toolbar extends Vue {
     private activateDataset(dataset: PeptideContainer) {
         this.$emit('activate-dataset', dataset);
     }
+
+    /**
+     * The visibility of the sidebar should only toggle when the current route is the same as the route that a 
+     * component click should lead to.
+     */
+    private navigateAndToggleExpand(routeToGo: string) {
+        if (this.$route.path === routeToGo) {
+            // The toolbar content is only expanded when the current page is already activated. (The toolbar does
+            // not expand when navigation takes place).
+            this.isMini = !this.isMini;
+        } else {
+            // If the user does wan't to navigate, we change the current path.
+            this.$router.replace(routeToGo);
+        }
+    }
 }
 </script>
 
@@ -158,7 +189,7 @@ export default class Toolbar extends Vue {
 
     .toolbar-content {
         height: 100%;
-        position: relative; 
+        position: fixed; 
         left: 80px; 
         width: 176px; 
         background-color: white;
@@ -167,5 +198,19 @@ export default class Toolbar extends Vue {
 
     .toolbar-navigation-drawer > .v-navigation-drawer__border {
         display: none;
+    }
+
+    // Change default styling of selected navigation drawer item.
+    .toolbar .v-list-item--active .v-icon {
+        // TODO extract this color to constants.less and import it.
+        color: #1976D2 !important; 
+    }
+
+    .toolbar .v-list-item--active {
+        color: white !important;
+    }
+
+    .toolbar .v-list-item:hover {
+        color: white !important;
     }
 </style>
