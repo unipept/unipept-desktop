@@ -56,7 +56,8 @@
     "vue-cli-plugin-vuetify": "^0.6.3",
     "vue-template-compiler": "^2.6.10",
     "vuetify-loader": "^1.2.2",
-    "workerize-loader": "^1.1.0"
+    "workerize-loader": "^1.1.0",
+    "worker-loader": "^1.0.0"
   },
   "eslintConfig": {
     "root": true,
