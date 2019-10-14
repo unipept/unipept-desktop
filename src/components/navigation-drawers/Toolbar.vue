@@ -12,12 +12,12 @@
                         </v-list-item-content>
                     </v-list-item>
 
-                    <v-list-item link to='/settings'>
+                    <v-list-item :class="{'v-list-item--active': $route.path === '/compare'}" link @click="navigateAndToggleExpand('/compare')">
                         <v-list-item-icon>
-                            <v-icon>mdi-settings</v-icon>
+                            <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
-                            <v-list-item-title>Settings</v-list-item-title>
+                            <v-list-item-title>Comparison</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
                 </v-list>

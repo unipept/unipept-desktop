@@ -23,13 +23,6 @@ const store = new Vuex.Store({
 });
 
 const routes = [
-  // { 
-  //   path: '/',
-  //   component: HomePage,
-  //   meta: {
-  //     title: 'Home'
-  //   }
-  // },
   { 
     path: '/', 
     component: AnalysisPage, 
