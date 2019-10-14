@@ -89,7 +89,10 @@
             </div>
         </v-navigation-drawer>
         <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'">
-            <div style="position: relative; top: 56px;">
+            <div style="position: relative; top: 56px; height: 100%;">
+                <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
+                    No samples selected.
+                </div>
                 <!-- <div class="samples-title">Samples</div> -->
                 <v-list dense>
                     <v-list-item :class="{'v-list-item--active': $store.getters.activeDataset === dataset}" @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
@@ -104,10 +107,7 @@
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
-
-                <div>
-                    <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
-                </div>
+                <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
             </div>
         </div>
     </div>
@@ -174,6 +174,10 @@ export default class Toolbar extends Vue {
     .select-sample-button {
         margin: 0 auto;
         display: block !important;
+        position: absolute !important;
+        bottom: 72px;
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .toolbar-content {
@@ -185,12 +189,12 @@ export default class Toolbar extends Vue {
         border-right: 1px solid rgba(0, 0, 0, 0.12);
     }
 
-    .samples-title {
-        text-align: left;
-        // background-color: #2196F3;
-        height: 24px;
-        padding-left: 8px;
-        // color: white;
+    .sample-list-placeholder {
+        margin-left: 8px; 
+        margin-right: 8px;
+        position: relative;
+        top: 16px;
+        text-align: center;
     }
 
     // Change default styling of selected navigation drawer item.
