@@ -106,9 +106,6 @@
                 </v-list>
             </div>
         </div>
-        <v-btn icon @click="isMini = !isMini" class="drawer-chevron" isMini :class="{'drawer-chevron-open': !isMini}">
-            <v-icon>{{ isMini ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
-        </v-btn>
     </div>
 </template>
 
