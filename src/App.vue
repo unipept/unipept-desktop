@@ -40,7 +40,7 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <Toolbar :open.sync="rightNavDrawer" :mini.sync="rightNavMini"></Toolbar>
+      <Toolbar :open.sync="rightNavDrawer" :mini.sync="rightNavMini" v-on:activate-dataset="onActivateDataset"></Toolbar>
 
       <v-content style="min-height: 100%; max-width: calc(100% - 80px);" :class="{'open-right-nav-drawer': !rightNavMini}">
         <router-view style="min-height: 100%;"></router-view>
@@ -76,7 +76,7 @@ export default class App extends Vue {
     this.$store.dispatch("deselectDataset", value);
   }
 
-  private activateDataset(value: PeptideContainer) {
+  private onActivateDataset(value: PeptideContainer) {
     this.$store.dispatch("setActiveDataset", value);
   }
 }

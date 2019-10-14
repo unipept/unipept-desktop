@@ -2,22 +2,27 @@
   <v-navigation-drawer v-model="isOpen" :mini-variant.sync="isMini" fixed right>
     <v-list style="position: relative; top: 64px;">
         <v-list-group prepend-icon="mdi-format-list-bulleted">
-        <template v-slot:activator>
-            <v-list-item-content>
-            <v-list-item-title>Samples</v-list-item-title>
-            </v-list-item-content>
-        </template>
-        <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
-            <v-list-item-title>
-            {{ dataset.getName() }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
-            {{ dataset.getAmountOfPeptides() }} peptides
-            </v-list-item-subtitle>
-            <v-list-item-action v-if="dataset.progress !== 1">
-                <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-            </v-list-item-action>
-        </v-list-item>
+            <template v-slot:activator>
+                <v-list-item-content>
+                <v-list-item-title>Samples</v-list-item-title>
+                </v-list-item-content>
+            </template>
+            
+            <v-list-item @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
+                <v-list-item-title>
+                {{ dataset.getName() }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                {{ dataset.getAmountOfPeptides() }} peptides
+                </v-list-item-subtitle>
+                <v-list-item-action v-if="dataset.progress !== 1">
+                    <v-progress-circular :rotate="-90" :size="24" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+                </v-list-item-action>
+            </v-list-item>
+
+            <div>
+                <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
+            </div>
         </v-list-group>
 
         <v-list-group prepend-icon="mdi-tune">
@@ -72,6 +77,7 @@
 import Vue from 'vue';
 import Component from 'vue-class-component';
 import {Prop, Watch} from 'vue-property-decorator';
+import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 
 @Component
 export default class Toolbar extends Vue {
@@ -98,6 +104,14 @@ export default class Toolbar extends Vue {
     private onIsMiniChanged() {
         this.$emit('update:mini', this.isMini);
     }
+
+    private selectSample() {
+        this.$emit('click-select-sample');
+    }
+
+    private activateDataset(dataset: PeptideContainer) {
+        this.$emit('activate-dataset', dataset);
+    }
 }
 </script>
 
@@ -106,5 +120,10 @@ export default class Toolbar extends Vue {
         position: absolute !important;
         top: 50%;
         transform: translateY(-50%);
+    }
+
+    .select-sample-button {
+        margin: 0 auto;
+        display: block !important;
     }
 </style>

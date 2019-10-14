@@ -3,14 +3,14 @@
         <v-row>
             <v-col>
                 <!-- TODO fix analysis in progress! -->
-                <single-dataset-visualizations-card :sample="this.$store.getters.activeDataset ? this.activeDataset.getDataset() : null" :analysisInProgress="false">
+                <single-dataset-visualizations-card :sample="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.getDataset() : null" :analysisInProgress="false">
                 </single-dataset-visualizations-card>
             </v-col>
         </v-row>
         <v-row>
             <v-col>
                 <!-- TODO fix analysis in progress! -->
-                <functional-summary-card :sample="this.$store.getters.activeDataset ? this.activeDataset.getDataset() : null" :analysisInProgress="false">
+                <functional-summary-card :sample="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.getDataset() : null" :analysisInProgress="false">
                 </functional-summary-card>
             </v-col>
         </v-row>
