@@ -1,6 +1,6 @@
 <template>
     <div>
-        <Toolbar :open.sync="open" :mini.sync="mini" v-on:click-select-sample="onClickSelectSample" v-on:activate-dataset="onActivateDataset"></Toolbar>
+        <Toolbar :open.sync="isOpen" :mini.sync="isMini" v-on:click-select-sample="onClickSelectSample" v-on:activate-dataset="onActivateDataset"></Toolbar>
         <v-dialog v-model="selectSampleDialog" max-width="800">
             <v-card>
                 <v-card-title>
@@ -32,11 +32,24 @@ export default class SampleManager extends Vue {
     @Prop({required: false, default: true})
     private mini: boolean;
 
+    private isMini: boolean = false;
+    private isOpen: boolean = true;
+
     private selectSampleDialog: boolean = false;
 
-    @Watch('mini')
-    private onMiniChanged(newMini: boolean) {
+    mounted() {
+        this.isMini = this.mini;
+        this.isOpen = this.open;
+    }
+
+    @Watch('isMini')
+    private onIsMiniChanged(newMini: boolean) {
         this.$emit('update:mini', newMini);
+    }
+
+    @Watch('isOpen')
+    private onIsOpenChanged(newOpen: boolean) {
+        this.$emit('update:open', newOpen);
     }
 
     private onClickSelectSample() {
