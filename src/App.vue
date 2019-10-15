@@ -27,6 +27,9 @@ import PeptideContainer from 'unipept-web-components/src/logic/data-management/P
 import Toolbar from './components/navigation-drawers/Toolbar.vue';
 import SampleManager from './components/sample/SampleManager.vue';
 
+const electron = window.require('electron');
+const ipcRenderer  = electron.ipcRenderer;
+
 @Component({
   components: {
     Toolbar,
@@ -37,6 +40,16 @@ export default class App extends Vue {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
+
+  mounted() {
+    // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
+    // pass through the Vue app.
+    ipcRenderer.on('navigate', (sender, location) => {
+      if (location !== this.$route.path) {
+        this.$router.push(location);
+      }
+    })
+  }
 
   private selectDataset(value: PeptideContainer) {
     // @ts-ignore

@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, Menu, shell } from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -18,7 +18,11 @@ function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
     nodeIntegration: true
-  } })
+  }})
+
+  // Set the toolbar menu for this window
+  const menu = createMenu(win);
+  Menu.setApplicationMenu(menu);
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -33,6 +37,78 @@ function createWindow () {
   win.on('closed', () => {
     win = null
   })
+}
+
+// Fill the native OS menu with all required menu items.
+function createMenu(win: BrowserWindow) {
+  const template = [
+    ...(isMac ? [{
+      label: app.getName(),
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { 
+          label: 'Settings',
+          click: async () => {
+            if (process.env.WEBPACK_DEV_SERVER_URL) {
+              // Load the url of the dev server if in development mode
+              //await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "index.html/settings");
+              win.webContents.send('navigate', '/settings');
+            } else {
+              await win.loadURL('app://./settings')
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideothers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startspeaking' },
+              { role: 'stopspeaking' }
+            ]
+          }
+        ] : [
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' }
+        ])
+      ]
+    }
+  ]
+
+  // @ts-ignore
+  return Menu.buildFromTemplate(template);
+}
+
+function isMac() {
+  return process.platform === 'darwin';
 }
 
 // Quit when all windows are closed.
