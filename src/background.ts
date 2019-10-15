@@ -42,18 +42,18 @@ function createWindow () {
 // Fill the native OS menu with all required menu items.
 function createMenu(win: BrowserWindow) {
   const template = [
-    ...(process.platform === 'darwin' ? [{
+    ...(isMac ? [{
       label: app.getName(),
       submenu: [
         { role: 'about' },
         { type: 'separator' },
         { 
-          label: 'preferences',
+          label: 'Settings',
           click: async () => {
             if (process.env.WEBPACK_DEV_SERVER_URL) {
-              console.log((process.env.WEBPACK_DEV_SERVER_URL as string) + "settings");
               // Load the url of the dev server if in development mode
-              await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "settings");
+              //await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "index.html/settings");
+              win.webContents.send('navigate', '/settings');
             } else {
               await win.loadURL('app://./settings')
             }
@@ -66,11 +66,49 @@ function createMenu(win: BrowserWindow) {
         { type: 'separator' },
         { role: 'quit' }
       ]
-    }] : [])
+    }] : []),
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startspeaking' },
+              { role: 'stopspeaking' }
+            ]
+          }
+        ] : [
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' }
+        ])
+      ]
+    }
   ]
 
   // @ts-ignore
   return Menu.buildFromTemplate(template);
+}
+
+function isMac() {
+  return process.platform === 'darwin';
 }
 
 // Quit when all windows are closed.
