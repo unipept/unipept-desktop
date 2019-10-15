@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, Menu, shell } from 'electron'
 import {
   createProtocol,
   installVueDevtools
@@ -18,7 +18,11 @@ function createWindow () {
   // Create the browser window.
   win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
     nodeIntegration: true
-  } })
+  }})
+
+  // Set the toolbar menu for this window
+  const menu = createMenu(win);
+  Menu.setApplicationMenu(menu);
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -33,6 +37,40 @@ function createWindow () {
   win.on('closed', () => {
     win = null
   })
+}
+
+// Fill the native OS menu with all required menu items.
+function createMenu(win: BrowserWindow) {
+  const template = [
+    ...(process.platform === 'darwin' ? [{
+      label: app.getName(),
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { 
+          label: 'preferences',
+          click: async () => {
+            if (process.env.WEBPACK_DEV_SERVER_URL) {
+              console.log((process.env.WEBPACK_DEV_SERVER_URL as string) + "settings");
+              // Load the url of the dev server if in development mode
+              await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "settings");
+            } else {
+              await win.loadURL('app://./settings')
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideothers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : [])
+  ]
+
+  // @ts-ignore
+  return Menu.buildFromTemplate(template);
 }
 
 // Quit when all windows are closed.

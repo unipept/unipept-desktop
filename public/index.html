@@ -13,7 +13,9 @@
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <!-- Hack to get jQuery to work in an node.js-environment (Electron). See:
          https://stackoverflow.com/questions/35962868/why-cant-i-reference-jquery-using-a-script-tag-in-electron -->
-    <script type="text/javascript"> jQuery = $ = module.exports </script>
+    <script type="text/javascript"> 
+        jQuery = $ = module.exports 
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.min.js"></script>
     <!-- Globally include Unipept-visualizations. This should get removed once this does no longer depent on jQuery
          anymore. -->
