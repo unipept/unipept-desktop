@@ -3,14 +3,14 @@
         <v-row>
             <v-col>
                 <!-- TODO fix analysis in progress! -->
-                <single-dataset-visualizations-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="false">
+                <single-dataset-visualizations-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="$store.getters.datasetsInProgress > 0">
                 </single-dataset-visualizations-card>
             </v-col>
         </v-row>
         <v-row>
             <v-col>
                 <!-- TODO fix analysis in progress! -->
-                <functional-summary-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="false">
+                <functional-summary-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="$store.getters.datasetsInProgress > 0">
                 </functional-summary-card>
             </v-col>
         </v-row>
@@ -32,9 +32,6 @@ import FunctionalSummaryCard from 'unipept-web-components/src/components/analysi
     }
 })
 export default class AnalysisPage extends Vue {
-    private onSelectDataset(dataset: PeptideContainer): void {
-        this.$store.dispatch('selectDataset', dataset);
-    }
 }
 </script>
 
