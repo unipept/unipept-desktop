@@ -21,18 +21,39 @@ export default class ConfigurationManager {
      * Reads the currently used configuration from the user data folder for this application. This method guarantees
      * that no invalid configuration settings are set in the resulting object. If an invalid setting is found or not
      * configuration file could be read, the default value will be used instead.
+     * 
+     * @return A valid Configuration object with the most recent settings found on disk.
+     * @throws IOException when something goes wrong while reading the configuration file from disk.
      */
     public async readConfiguration(): Promise<Configuration> {
-        let data = await fs.readFile(this.getConfigurationFilePath());
-    
-        console.log(data);
+        try {
+            let data = await fs.readFile(this.getConfigurationFilePath());
+            console.log(data);
+        } catch (err) {
+            throw "IOException";
+        }
 
         return ConfigurationManager.DEFAULT_CONFIG;
     }
 
+    /**
+     * Write a valid Configuration object to disk. This function also checks the given object for validity. A
+     * static, predefined location will be used to store this Configuration.
+     * 
+     * @param config The Configuration object that should be stored to disk.
+     * @throws InvalidConfigurationException when the given config is invalid.
+     * @throws IOException when something went wrong during write of this file to disk.
+     */
     public async writeConfiguration(config: Configuration): Promise<void> {
-        
+        if (!this.isValidConfiguration(config)) {
+            throw "InvalidConfigurationException";
+        }
 
+        try {
+            await fs.writeFile(this.getConfigurationFilePath(), JSON.stringify(config));
+        } catch (err) {
+            throw "IOException";
+        }
     }
 
     /**
