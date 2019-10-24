@@ -1,3 +1,3 @@
-export default class Configuration {
-
+export default interface Configuration {
+    apiSource: string;
 }
