@@ -2,6 +2,7 @@ import Configuration from "./Configuration";
 // We must use Node's FileSystem API to read files, as HTML5 file reader cannot be used to read files
 // from a specified path.
 import { promises as fs } from 'fs';
+// import { remote } from "electron";
 
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
@@ -27,6 +28,7 @@ export default class ConfigurationManager {
     public async readConfiguration(): Promise<Configuration> {
         try {
             let data = JSON.parse(await fs.readFile(this.getConfigurationFilePath(), { encoding: "utf-8" }));
+            console.log(data);
             if (!this.isValidConfiguration(data)) {
                 return ConfigurationManager.DEFAULT_CONFIG;
             }
@@ -90,8 +92,7 @@ export default class ConfigurationManager {
     }
 
     private getConfigurationFilePath(): string {
-        const remote = require('remote');
-        const app = remote.require('app');
+        const { app } = require('electron').remote;
         // Get a reference to the user data folder in which configuration data will be stored.
         const configurationFolder = app.getPath('userData');
         return configurationFolder + ConfigurationManager.CONFIG_FILE_NAME;
