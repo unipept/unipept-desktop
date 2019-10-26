@@ -2,7 +2,7 @@
   <v-container fluid v-if="this.configuration">
     <v-form ref="form">
       <v-alert v-if="errorVisible" type="error">
-        {{ errorMessage }}
+        An error occurred: {{ errorMessage }}
       </v-alert>
       <v-row>
         <v-col>
@@ -67,6 +67,7 @@ export default class SettingsPage extends Vue {
 
     @Watch('configuration.apiSource')
     private async saveChanges(): Promise<void> {
+        this.errorVisible = false;
         if (this.configuration != null && this.$refs.form && this.$refs.form.validate()) {
             let manager: ConfigurationManager = new ConfigurationManager();
             try {
@@ -84,7 +85,7 @@ export default class SettingsPage extends Vue {
     }
 
     private showError(message: string): void {
-        this.errorVisible = false;
+        this.errorVisible = true;
         this.errorMessage = message;
     }
 }

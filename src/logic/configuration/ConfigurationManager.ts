@@ -28,7 +28,6 @@ export default class ConfigurationManager {
     public async readConfiguration(): Promise<Configuration> {
         try {
             let data = JSON.parse(await fs.readFile(this.getConfigurationFilePath(), { encoding: "utf-8" }));
-            console.log(data);
             if (!this.isValidConfiguration(data)) {
                 return ConfigurationManager.DEFAULT_CONFIG;
             }
