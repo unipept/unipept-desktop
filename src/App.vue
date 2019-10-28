@@ -1,6 +1,6 @@
 <template>
   <div id="app" style="min-height: 100vh;">
-    <v-app style="min-height: 100%;">
+    <v-app style="min-height: 100%;" v-if="!loading">
       <v-app-bar app dark color="primary" style="z-index: 10;" :elevation="0">
         <v-btn icon @click.stop="navDrawer = !navDrawer">
           <v-icon>mdi-menu</v-icon>
@@ -26,6 +26,8 @@ import { Prop, Watch } from 'vue-property-decorator';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 import Toolbar from './components/navigation-drawers/Toolbar.vue';
 import SampleManager from './components/sample/SampleManager.vue';
+import ConfigurationManager from './logic/configuration/ConfigurationManager';
+import Configuration from './logic/configuration/Configuration';
 
 const electron = window.require('electron');
 const ipcRenderer  = electron.ipcRenderer;
@@ -34,21 +36,40 @@ const ipcRenderer  = electron.ipcRenderer;
   components: {
     Toolbar,
     SampleManager
+  },
+  computed: {
+    baseUrl: {
+      get(): string {
+        return this.$store.getters.baseUrl;
+      }
+    }
   }
 })
 export default class App extends Vue {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
+  private loading: boolean = true;
 
-  mounted() {
+  async mounted() {
     // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
     // pass through the Vue app.
     ipcRenderer.on('navigate', (sender, location) => {
       if (location !== this.$route.path) {
         this.$router.push(location);
       }
-    })
+    });
+
+    this.loading = true;
+    let configurationManager = new ConfigurationManager();
+    let config: Configuration = await configurationManager.readConfiguration();
+    this.$store.dispatch('setBaseUrl', config.apiSource);
+    this.loading = false;
+  }
+
+  @Watch("baseUrl")
+  private async onBaseUrlChanged(newUrl: string) {
+    this.$store.dispatch('setBaseUrl', newUrl);
   }
 
   private selectDataset(value: PeptideContainer) {

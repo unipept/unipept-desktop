@@ -72,6 +72,7 @@ export default class SettingsPage extends Vue {
             let manager: ConfigurationManager = new ConfigurationManager();
             try {
                 await manager.writeConfiguration(this.configuration);
+                this.$store.dispatch("setBaseUrl", this.configuration.apiSource);
             } catch (err) {
                 if (err == "InvalidConfigurationException") {
                   this.showError("You've provided an invalid configuration. Please correct any errors and try again.");

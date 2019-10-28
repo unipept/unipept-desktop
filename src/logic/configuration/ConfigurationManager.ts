@@ -2,7 +2,6 @@ import Configuration from "./Configuration";
 // We must use Node's FileSystem API to read files, as HTML5 file reader cannot be used to read files
 // from a specified path.
 import { promises as fs } from 'fs';
-// import { remote } from "electron";
 
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
