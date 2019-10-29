@@ -1,5 +1,5 @@
 # Unipept Desktop
-This is the Unipept Desktop project. This application is a part of the Unipept ecosystem and aims at large-throughput metaproteomics data analysis.
+This is the Unipept Desktop project. This application is a part of the [Unipept ecosystem](https://unipept.ugent.be) and aims at large-throughput metaproteomics data analysis.
 
 ## Run the application
 1. Clone this repository.
