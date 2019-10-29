@@ -77,6 +77,17 @@ export default class Toolbar extends Vue {
         this.isMini = this.mini;
     }
 
+    @Watch("open")
+    private onOpenChanged() {
+        this.isOpen = this.open;
+    }
+
+    @Watch("mini")
+    private onMiniChanged() {
+        console.log("IN TOOLBAR CHANGED: --> " + this.mini);
+        this.isMini = this.mini;
+    }
+
     @Watch('isOpen')
     private onIsOpenChanged() {
         this.$emit('update:open', this.isOpen);

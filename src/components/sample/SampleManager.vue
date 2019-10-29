@@ -42,6 +42,17 @@ export default class SampleManager extends Vue {
         this.isOpen = this.open;
     }
 
+    @Watch("mini")
+    private onMiniChanged() {
+        console.log("MINI CHANGED TO --> " + this.mini);
+        this.isMini = this.mini;
+    }
+
+    @Watch("open") 
+    private onOpenChanged() {
+        this.isOpen = this.open;
+    }
+
     @Watch('isMini')
     private onIsMiniChanged(newMini: boolean) {
         this.$emit('update:mini', newMini);

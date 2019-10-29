@@ -46,7 +46,9 @@ export default class App extends Vue {
     // pass through the Vue app.
     ipcRenderer.on('navigate', (sender, location) => {
       if (location !== this.$route.path) {
-        this.$router.push(location);
+          this.rightNavMini = true;
+          console.log("Set right nav: " + this.rightNavMini);
+          this.$router.push(location);
       }
     })
   }
