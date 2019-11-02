@@ -112,4 +112,10 @@ export default class App extends Vue {
   .container-after-titlebar .v-navigation-drawer {
     top: 30px !important;
   }
+
+  .container-after-titlebar {
+    top: 0 !important;
+    position: static !important;
+    margin-top: 30px !important;
+  }
 </style>
