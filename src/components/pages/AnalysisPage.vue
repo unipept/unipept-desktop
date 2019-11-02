@@ -36,5 +36,9 @@ export default class AnalysisPage extends Vue {
 </script>
 
 <style>
-
+    .container-after-titlebar .container {
+        height: calc(100vh - 94px);
+        min-height: calc(100vh - 94px) !important;
+        overflow-y: auto;
+    }
 </style>

@@ -102,6 +102,10 @@ export default class App extends Vue {
     left: 290px !important;
   }
 
+  .titlebar {
+    position: fixed !important;
+  }
+
   .titlebar, .titlebar > * {
     font-family: Roboto, sans-serif;
   }
