@@ -41,24 +41,26 @@ function createWindow () {
 
 // Fill the native OS menu with all required menu items.
 function createMenu(win: BrowserWindow) {
+  const settingsItem = { 
+    label: 'Settings',
+    click: async () => {
+      if (process.env.WEBPACK_DEV_SERVER_URL) {
+        // Load the url of the dev server if in development mode
+        //await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "index.html/settings");
+        win.webContents.send('navigate', '/settings');
+      } else {
+        await win.loadURL('app://./settings')
+      }
+    }
+  };
+
   const template = [
-    ...(isMac ? [{
+    ...(isMac() ? [{
       label: app.getName(),
       submenu: [
         { role: 'about' },
         { type: 'separator' },
-        { 
-          label: 'Settings',
-          click: async () => {
-            if (process.env.WEBPACK_DEV_SERVER_URL) {
-              // Load the url of the dev server if in development mode
-              //await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "index.html/settings");
-              win.webContents.send('navigate', '/settings');
-            } else {
-              await win.loadURL('app://./settings')
-            }
-          }
-        },
+        settingsItem,
         { type: 'separator' },
         { role: 'hide' },
         { role: 'hideothers' },
@@ -70,7 +72,8 @@ function createMenu(win: BrowserWindow) {
     {
       label: 'File',
       submenu: [
-        isMac ? { role: 'close' } : { role: 'quit' }
+        ...(isMac() ? [] : [settingsItem, { type: 'separator'} ]),
+        isMac() ? { role: 'close' } : { role: 'quit' }
       ]
     },
     {
