@@ -57,6 +57,7 @@ export default class App extends Vue {
 
     if (Utils.isWindows() && this.titleBar == null) {
       this.titleBar = new Titlebar({
+        icon: require("./assets/icon.svg"),
         backgroundColor: Color.fromHex('#004ba0')
       });
     }
