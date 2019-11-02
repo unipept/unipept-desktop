@@ -1,10 +1,9 @@
 'use strict'
 
 import { app, protocol, BrowserWindow, Menu, shell } from 'electron'
-import {
-  createProtocol,
-  installVueDevtools
-} from 'vue-cli-plugin-electron-builder/lib'
+import { Titlebar, Color } from 'custom-electron-titlebar'
+import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib'
+import Utils from "./logic/Utils";
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -16,9 +15,17 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 
 function createWindow () {
   // Create the browser window.
-  win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
-    nodeIntegration: true
-  }})
+  let options: Electron.BrowserWindowConstructorOptions = { 
+    width: 800, 
+    height: 600, 
+    webPreferences: { nodeIntegration: true } 
+  };
+
+  if (Utils.isWindows()) {
+    options["frame"] = false;
+  }
+
+  win = new BrowserWindow(options)
 
   // Set the toolbar menu for this window
   const menu = createMenu(win);
@@ -55,7 +62,7 @@ function createMenu(win: BrowserWindow) {
   };
 
   const template = [
-    ...(isMac() ? [{
+    ...(Utils.isMacOS() ? [{
       label: app.getName(),
       submenu: [
         { role: 'about' },
@@ -72,8 +79,8 @@ function createMenu(win: BrowserWindow) {
     {
       label: 'File',
       submenu: [
-        ...(isMac() ? [] : [settingsItem, { type: 'separator'} ]),
-        isMac() ? { role: 'close' } : { role: 'quit' }
+        ...(Utils.isMacOS() ? [] : [settingsItem, { type: 'separator'} ]),
+        Utils.isMacOS() ? { role: 'close' } : { role: 'quit' }
       ]
     },
     {
@@ -85,7 +92,7 @@ function createMenu(win: BrowserWindow) {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        ...(isMac ? [
+        ...(Utils.isMacOS() ? [
           { role: 'pasteAndMatchStyle' },
           { role: 'delete' },
           { role: 'selectAll' },
@@ -122,10 +129,6 @@ function createMenu(win: BrowserWindow) {
 
   // @ts-ignore
   return Menu.buildFromTemplate(template);
-}
-
-function isMac() {
-  return process.platform === 'darwin';
 }
 
 // Quit when all windows are closed.

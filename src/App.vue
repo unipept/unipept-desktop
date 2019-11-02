@@ -26,6 +26,8 @@ import { Prop, Watch } from 'vue-property-decorator';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 import Toolbar from './components/navigation-drawers/Toolbar.vue';
 import SampleManager from './components/sample/SampleManager.vue';
+import { Titlebar, Color } from 'custom-electron-titlebar'
+import Utils from "./logic/Utils";
 
 const electron = window.require('electron');
 const ipcRenderer  = electron.ipcRenderer;
@@ -40,6 +42,7 @@ export default class App extends Vue {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
+  private titleBar: Titlebar = null;
 
   mounted() {
     // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
@@ -51,6 +54,12 @@ export default class App extends Vue {
           this.$router.push(location);
       }
     })
+
+    if (Utils.isWindows() && this.titleBar == null) {
+      this.titleBar = new Titlebar({
+        backgroundColor: Color.fromHex('#004ba0')
+      });
+    }
   }
 
   private selectDataset(value: PeptideContainer) {
@@ -90,5 +99,17 @@ export default class App extends Vue {
     max-width: calc(100% - 290px) !important;
     position: relative;
     left: 290px !important;
+  }
+
+  .titlebar, .titlebar > * {
+    font-family: Roboto, sans-serif;
+  }
+
+  .container-after-titlebar .v-app-bar {
+    margin-top: 30px !important;
+  }
+
+  .container-after-titlebar .v-navigation-drawer {
+    top: 30px !important;
   }
 </style>
