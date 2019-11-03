@@ -9,14 +9,15 @@ export default class ConfigurationManager {
     // This is the default configuration object that's used as a fallback for inconsistent/inavailable configuration
     // values.
     private static readonly DEFAULT_CONFIG: Configuration = {
-        apiSource: 'http://localhost:3000'
+        apiSource: 'http://localhost:3000',
+        useNativeTitlebar: false
     };
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
     // configuration and write the changes to disk (without having to read it again).
     private static currentConfiguration: Configuration = null;
 
     // Contains a function for every field of a Configuration object that checks whether it's valid or not.
-    private configurationRequirements: ((x: Configuration) => boolean)[] = [
+    private configurationRequirements: ((x: Configuration) => boolean)[] = [ 
         (config: Configuration) => this.isUrl(config.apiSource)
     ]
 

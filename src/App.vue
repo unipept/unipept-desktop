@@ -64,14 +64,14 @@ export default class App extends Vue {
       }
     })
 
+    await this.initConfiguration();
+
     if (Utils.isWindows() && this.titleBar == null) {
       this.titleBar = new Titlebar({
         icon: require("./assets/icon.svg"),
         backgroundColor: Color.fromHex('#004ba0')
       });
     }
-
-    await this.initConfiguration();
   }
 
   /** 

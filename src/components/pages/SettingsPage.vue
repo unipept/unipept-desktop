@@ -33,7 +33,7 @@
                       <span class="settings-text">Forces the application to use the native titlebar on Windows.</span>
                     </v-col>
                     <v-col cols="1">
-                      <v-switch v-model="switch1"></v-switch>
+                      <v-switch v-model="configuration.useNativeTitlebar"></v-switch>
                     </v-col>
                   </v-row>
                 </v-container>
@@ -76,29 +76,27 @@ export default class SettingsPage extends Vue {
         Rules.url
     ];
 
-    private async mounted() {
-        let manager: ConfigurationManager = new ConfigurationManager();
-        this.configuration = await manager.readConfiguration();
-    }
-
     @Watch('configuration.apiSource')
     private async saveChanges(): Promise<void> {
-        this.errorVisible = false;
-        if (this.configuration != null && this.$refs.form && this.$refs.form.validate()) {
-            let manager: ConfigurationManager = new ConfigurationManager();
-            try {
-                await manager.writeConfiguration(this.configuration);
-                this.$store.dispatch("setBaseUrl", this.configuration.apiSource);
-            } catch (err) {
-                if (err == "InvalidConfigurationException") {
-                  this.showError("You've provided an invalid configuration. Please correct any errors and try again.");
-                } else if (err == "IOException") {
-                  this.showError(
-                    "An error occurred while writing changes to the configuration. Check your disk and try again."
-                  );
-                }
-            }
-        }
+        this.updateStore("setBaseUrl", this.configuration.apiSource);
+        
+    }
+
+    private async updateStore(method, value) {
+      this.errorVisible = false;
+      if (this.configuration != null && this.$refs.form && this.$refs.form.validate()) {
+          try {
+              this.$store.dispatch(method, value);
+          } catch (err) {
+              if (err == "InvalidConfigurationException") {
+                this.showError("You've provided an invalid configuration. Please correct any errors and try again.");
+              } else if (err == "IOException") {
+                this.showError(
+                  "An error occurred while writing changes to the configuration. Check your disk and try again."
+                );
+              }
+          }
+      }
     }
 
     private showError(message: string): void {
