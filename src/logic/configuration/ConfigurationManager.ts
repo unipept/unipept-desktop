@@ -11,6 +11,9 @@ export default class ConfigurationManager {
     private static readonly DEFAULT_CONFIG: Configuration = {
         apiSource: 'http://localhost:3000'
     };
+    // Reference to the last configuration that was returned by this manager. Can be used to update the current
+    // configuration and write the changes to disk (without having to read it again).
+    private static currentConfiguration: Configuration = null;
 
     // Contains a function for every field of a Configuration object that checks whether it's valid or not.
     private configurationRequirements: ((x: Configuration) => boolean)[] = [
@@ -25,13 +28,20 @@ export default class ConfigurationManager {
      * @return A valid Configuration object with the most recent settings found on disk.
      */
     public async readConfiguration(): Promise<Configuration> {
+        if (ConfigurationManager.currentConfiguration) {
+            return ConfigurationManager.currentConfiguration;
+        }
+
         try {
             let data = JSON.parse(await fs.readFile(this.getConfigurationFilePath(), { encoding: "utf-8" }));
             if (!this.isValidConfiguration(data)) {
+                ConfigurationManager.currentConfiguration = ConfigurationManager.DEFAULT_CONFIG;
                 return ConfigurationManager.DEFAULT_CONFIG;
             }
+            ConfigurationManager.currentConfiguration = data;
             return data;
         } catch (err) {
+            ConfigurationManager.currentConfiguration = ConfigurationManager.DEFAULT_CONFIG;
             return ConfigurationManager.DEFAULT_CONFIG;
         }
     }
@@ -51,6 +61,7 @@ export default class ConfigurationManager {
 
         try {
             await fs.writeFile(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "UTF-8" });
+            ConfigurationManager.currentConfiguration = config;
         } catch (err) {
             throw "IOException";
         }

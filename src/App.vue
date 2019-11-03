@@ -60,6 +60,14 @@ export default class App extends Vue {
       }
     });
 
+    await this.initConfiguration();
+  }
+
+  /** 
+   * Read the current application configuration from disk and set up all corresponding values in the configuration
+   * store.
+   */
+  private async initConfiguration() {
     this.loading = true;
     let configurationManager = new ConfigurationManager();
     let config: Configuration = await configurationManager.readConfiguration();
@@ -69,7 +77,13 @@ export default class App extends Vue {
 
   @Watch("baseUrl")
   private async onBaseUrlChanged(newUrl: string) {
-    this.$store.dispatch('setBaseUrl', newUrl);
+    let configurationManager = new ConfigurationManager();
+    // Read the previous configuration.
+    let currentConfig = await configurationManager.readConfiguration();
+    // Make requested changes to the previous configuration.
+    currentConfig.apiSource = newUrl;
+    // Write changes to disk.
+    await configurationManager.writeConfiguration(currentConfig);
   }
 
   private selectDataset(value: PeptideContainer) {
