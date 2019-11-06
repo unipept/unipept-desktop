@@ -2,14 +2,12 @@
     <v-container fluid>
         <v-row>
             <v-col>
-                <!-- TODO fix analysis in progress! -->
                 <single-dataset-visualizations-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="$store.getters.datasetsInProgress > 0">
                 </single-dataset-visualizations-card>
             </v-col>
         </v-row>
         <v-row>
             <v-col>
-                <!-- TODO fix analysis in progress! -->
                 <functional-summary-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="$store.getters.datasetsInProgress > 0">
                 </functional-summary-card>
             </v-col>
