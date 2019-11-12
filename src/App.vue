@@ -30,6 +30,7 @@ import { Titlebar, Color } from 'custom-electron-titlebar'
 import Utils from "./logic/Utils";
 import ConfigurationManager from './logic/configuration/ConfigurationManager';
 import Configuration from './logic/configuration/Configuration';
+import { BrowserWindow } from 'electron';
 
 const electron = window.require('electron');
 const ipcRenderer  = electron.ipcRenderer;
@@ -43,6 +44,11 @@ const ipcRenderer  = electron.ipcRenderer;
     baseUrl: {
       get(): string {
         return this.$store.getters.baseUrl;
+      }
+    },
+    useNativeTitlebar: {
+      get(): boolean {
+        return this.$store.getters.useNativeTitlebar;
       }
     }
   }
@@ -65,8 +71,12 @@ export default class App extends Vue {
     })
 
     await this.initConfiguration();
+    this.setUpTitlebar();
+  }
 
-    if (Utils.isWindows() && this.titleBar == null) {
+  @Watch("useNativeTitlebar")
+  private setUpTitlebar() {
+    if (Utils.isWindows() && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
       this.titleBar = new Titlebar({
         icon: require("./assets/icon.svg"),
         backgroundColor: Color.fromHex('#004ba0')
@@ -83,6 +93,7 @@ export default class App extends Vue {
     let configurationManager = new ConfigurationManager();
     let config: Configuration = await configurationManager.readConfiguration();
     this.$store.dispatch('setBaseUrl', config.apiSource);
+    this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
     this.loading = false;
   }
 
@@ -93,6 +104,17 @@ export default class App extends Vue {
     let currentConfig = await configurationManager.readConfiguration();
     // Make requested changes to the previous configuration.
     currentConfig.apiSource = newUrl;
+    // Write changes to disk.
+    await configurationManager.writeConfiguration(currentConfig);
+  }
+
+  @Watch("useNativeTitlebar")
+  private async onUseNativeTitlebarChanged(newValue: boolean) {
+    let configurationManager = new ConfigurationManager();
+    // Read the previous configuration.
+    let currentConfig = await configurationManager.readConfiguration();
+    // Make requested changes to the previous configuration.
+    currentConfig.useNativeTitlebar = newValue;
     // Write changes to disk.
     await configurationManager.writeConfiguration(currentConfig);
   }

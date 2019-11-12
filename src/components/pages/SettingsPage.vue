@@ -31,6 +31,7 @@
                     <v-col cols="11">
                       <div class="settings-title">Use native titlebar</div>
                       <span class="settings-text">Forces the application to use the native titlebar on Windows.</span>
+                      <span>This option only comes to effect after restarting the application.</span>
                     </v-col>
                     <v-col cols="1">
                       <v-switch v-model="configuration.useNativeTitlebar"></v-switch>
@@ -77,9 +78,10 @@ export default class SettingsPage extends Vue {
     ];
 
     @Watch('configuration.apiSource')
+    @Watch('configuration.useNativeTitlebar')
     private async saveChanges(): Promise<void> {
         this.updateStore("setBaseUrl", this.configuration.apiSource);
-        
+        // this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
     }
 
     private async updateStore(method, value) {
@@ -112,14 +114,13 @@ export default class SettingsPage extends Vue {
     font-size: 18px;
   }
 
-<<<<<<< HEAD
   .settings-category-title:not(:first-child) {
     margin-top: 32px;
-=======
+  }
+
   .v-progress-circular--indeterminate {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
->>>>>>> master
   }
 </style>
