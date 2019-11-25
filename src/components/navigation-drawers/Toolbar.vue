@@ -84,7 +84,6 @@ export default class Toolbar extends Vue {
 
     @Watch("mini")
     private onMiniChanged() {
-        console.log("IN TOOLBAR CHANGED: --> " + this.mini);
         this.isMini = this.mini;
     }
 
