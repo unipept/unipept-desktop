@@ -31,10 +31,10 @@
                     <v-col cols="11">
                       <div class="settings-title">Use native titlebar</div>
                       <span class="settings-text">Forces the application to use the native titlebar on Windows.</span>
-                      <span>This option only comes to effect after restarting the application.</span>
+                      <span class="settings-text settings-important-text">Changing this option requires you to restart the application.</span>
                     </v-col>
                     <v-col cols="1">
-                      <v-switch v-model="configuration.useNativeTitlebar"></v-switch>
+                      <v-switch :disabled="!isWindows" v-model="configuration.useNativeTitlebar"></v-switch>
                     </v-col>
                   </v-row>
                 </v-container>
@@ -58,6 +58,7 @@ import ConfigurationManager from './../../logic/configuration/ConfigurationManag
 import { Prop, Watch } from 'vue-property-decorator';
 import Rules from "./../validation/Rules";
 import VForm from "vuetify";
+import Utils from '@/logic/Utils';
 
 @Component
 export default class SettingsPage extends Vue {
@@ -71,17 +72,23 @@ export default class SettingsPage extends Vue {
     private errorMessage: string = "";
 
     private validInputs: boolean = true;
+    private isWindows: boolean = Utils.isWindows();
 
     private apiSourceRules: ((x: string) => boolean | string)[] = [
         Rules.required,
         Rules.url
     ];
 
+    private mounted() {
+        let configManager: ConfigurationManager = new ConfigurationManager();
+        configManager.readConfiguration().then((result) => this.configuration = result);
+    }
+
     @Watch('configuration.apiSource')
     @Watch('configuration.useNativeTitlebar')
     private async saveChanges(): Promise<void> {
         this.updateStore("setBaseUrl", this.configuration.apiSource);
-        // this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
+        this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
     }
 
     private async updateStore(method, value) {
@@ -112,6 +119,11 @@ export default class SettingsPage extends Vue {
   .settings-title {
     color: black;
     font-size: 18px;
+  }
+
+  .settings-important-text {
+    font-style: italic;
+    font-weight: bold;
   }
 
   .settings-category-title:not(:first-child) {

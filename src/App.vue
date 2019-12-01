@@ -70,8 +70,10 @@ export default class App extends Vue {
       }
     })
 
+    console.log("Mounted");
     await this.initConfiguration();
-    this.setUpTitlebar();
+    await this.setUpTitlebar();
+    console.log("Mounted...");
   }
 
   @Watch("useNativeTitlebar")
@@ -91,9 +93,14 @@ export default class App extends Vue {
   private async initConfiguration() {
     this.loading = true;
     let configurationManager = new ConfigurationManager();
-    let config: Configuration = await configurationManager.readConfiguration();
-    this.$store.dispatch('setBaseUrl', config.apiSource);
-    this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
+    try {
+      let config: Configuration = await configurationManager.readConfiguration();
+      this.$store.dispatch('setBaseUrl', config.apiSource);
+      this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
+    } catch (err) {
+      console.error(err)
+    }
+   
     this.loading = false;
   }
 

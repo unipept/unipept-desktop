@@ -4,6 +4,7 @@ import { app, protocol, BrowserWindow, Menu, shell } from 'electron'
 import { Titlebar, Color } from 'custom-electron-titlebar'
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib'
 import Utils from "./logic/Utils";
+import ConfigurationManager from './logic/configuration/ConfigurationManager';
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -13,7 +14,12 @@ let win: BrowserWindow | null
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
-function createWindow () {
+async function createWindow () {
+  let configManager = new ConfigurationManager(app);
+  console.log("Reading configuration...");
+  let config = await configManager.readConfiguration();
+  console.log("Read configuration");
+  // console.log(config);
   // Create the browser window.
   let options: Electron.BrowserWindowConstructorOptions = { 
     width: 800, 
@@ -21,11 +27,14 @@ function createWindow () {
     webPreferences: { nodeIntegration: true } 
   };
 
-  if (Utils.isWindows()) {
+  console.log("Options set...");
+
+  if (Utils.isWindows() && !config.useNativeTitlebar) {
     options["frame"] = false;
   }
 
   win = new BrowserWindow(options)
+  console.log("Create new browserwindow...");
 
   // Set the toolbar menu for this window
   const menu = createMenu(win);
@@ -166,7 +175,7 @@ app.on('ready', async () => {
     }
 
   }
-  createWindow()
+  await createWindow()
 })
 
 // Exit cleanly on request from parent process in development mode.
