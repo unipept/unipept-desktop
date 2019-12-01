@@ -19,7 +19,6 @@ Vue.use(vueFullscreen);
 const store = new Vuex.Store({
   modules: {
       global: GlobalStore,
-      analysis: AnalysisStore,
       configuration: ConfigurationStore,
       desktopConfiguration: DesktopConfigurationStore
   }
