@@ -2,8 +2,8 @@ import Vue from 'vue'
 import App from './App.vue'
 import vuetify from './plugins/vuetify';
 import {GlobalStore} from 'unipept-web-components/src/state/GlobalStore';
-import {AnalysisStore} from 'unipept-web-components/src/state/AnalysisStore';
 import {ConfigurationStore} from 'unipept-web-components/src/state/ConfigurationStore';
+import {DesktopConfigurationStore} from './state/DesktopConfigurationStore';
 import Vuex from 'vuex';
 import vueFullscreen from 'vue-fullscreen';
 import VueRouter from 'vue-router';
@@ -20,7 +20,8 @@ const store = new Vuex.Store({
   modules: {
       global: GlobalStore,
       analysis: AnalysisStore,
-      configuration: ConfigurationStore
+      configuration: ConfigurationStore,
+      desktopConfiguration: DesktopConfigurationStore
   }
 });
 

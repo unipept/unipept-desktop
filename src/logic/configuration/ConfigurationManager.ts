@@ -1,7 +1,9 @@
 import Configuration from "./Configuration";
 // We must use Node's FileSystem API to read files, as HTML5 file reader cannot be used to read files
 // from a specified path.
-import { promises as fs } from 'fs';
+import fs from "fs";
+// import { promises as fs } from 'fs';
+import { App } from 'electron';
 
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
@@ -9,16 +11,23 @@ export default class ConfigurationManager {
     // This is the default configuration object that's used as a fallback for inconsistent/inavailable configuration
     // values.
     private static readonly DEFAULT_CONFIG: Configuration = {
-        apiSource: 'http://localhost:3000'
+        apiSource: 'http://localhost:3000',
+        useNativeTitlebar: false
     };
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
     // configuration and write the changes to disk (without having to read it again).
     private static currentConfiguration: Configuration = null;
 
     // Contains a function for every field of a Configuration object that checks whether it's valid or not.
-    private configurationRequirements: ((x: Configuration) => boolean)[] = [
+    private configurationRequirements: ((x: Configuration) => boolean)[] = [ 
         (config: Configuration) => this.isUrl(config.apiSource)
     ]
+
+    private app: App;
+
+    public constructor(app: App = null) {
+        this.app = app;
+    }
 
     /**
      * Reads the currently used configuration from the user data folder for this application. This method guarantees
@@ -33,7 +42,8 @@ export default class ConfigurationManager {
         }
 
         try {
-            let data = JSON.parse(await fs.readFile(this.getConfigurationFilePath(), { encoding: "utf-8" }));
+            let rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
+            let data = JSON.parse(rawConfig);
             if (!this.isValidConfiguration(data)) {
                 ConfigurationManager.currentConfiguration = ConfigurationManager.DEFAULT_CONFIG;
                 return ConfigurationManager.DEFAULT_CONFIG;
@@ -41,7 +51,6 @@ export default class ConfigurationManager {
             ConfigurationManager.currentConfiguration = data;
             return data;
         } catch (err) {
-            ConfigurationManager.currentConfiguration = ConfigurationManager.DEFAULT_CONFIG;
             return ConfigurationManager.DEFAULT_CONFIG;
         }
     }
@@ -60,7 +69,7 @@ export default class ConfigurationManager {
         }
 
         try {
-            await fs.writeFile(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "UTF-8" });
+            fs.writeFileSync(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "UTF-8" });
             ConfigurationManager.currentConfiguration = config;
         } catch (err) {
             throw "IOException";
@@ -101,9 +110,13 @@ export default class ConfigurationManager {
     }
 
     private getConfigurationFilePath(): string {
-        const { app } = require('electron').remote;
+        if (!this.app) {
+            const { app } = require('electron').remote;
+            this.app = app;
+        }
+
         // Get a reference to the user data folder in which configuration data will be stored.
-        const configurationFolder = app.getPath('userData');
-        return configurationFolder + ConfigurationManager.CONFIG_FILE_NAME;
+        const configurationFolder = this.app.getPath('userData');
+        return configurationFolder + "/" + ConfigurationManager.CONFIG_FILE_NAME;
     } 
 }
