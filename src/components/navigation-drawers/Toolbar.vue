@@ -38,15 +38,21 @@
                         </v-list-item-subtitle>
                         <v-list-item-action>
                             <v-progress-circular v-if="dataset.progress !== 1" :rotate="-90" :size="18" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-                            <tooltip v-else message="Remove dataset from analysis." position="bottom">
-                                <v-icon @click="deselectDataset(dataset)" v-on:click.stop small>mdi-close</v-icon>
-                            </tooltip>
+                            <div v-else style="display: flex; flex-direction: row;">
+                                <tooltip message="Display experiment summary." position="bottom">
+                                    <v-icon @click="showExperimentSummary(dataset)" v-on:click.stop small>mdi-information-outline</v-icon>
+                                </tooltip>
+                                <tooltip message="Remove dataset from analysis." position="bottom">
+                                    <v-icon @click="deselectDataset(dataset)" v-on:click.stop small>mdi-close</v-icon>
+                                </tooltip>
+                            </div>
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
                 <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
             </div>
         </div>
+        <experiment-summary-dialog :dataset="summaryDataset" :active.sync="summaryActive"></experiment-summary-dialog>
     </div>
 </template>
 
@@ -56,10 +62,13 @@ import Component from 'vue-class-component';
 import {Prop, Watch} from 'vue-property-decorator';
 import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
+import ExperimentSummaryDialog from './../analysis/ExperimentSummaryDialog.vue';
+import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
 
 @Component({
     components: {
-        Tooltip
+        Tooltip,
+        ExperimentSummaryDialog
     }
 })
 export default class Toolbar extends Vue {
@@ -67,6 +76,9 @@ export default class Toolbar extends Vue {
     private open: boolean;
     @Prop({required: false, default: true})
     private mini: boolean;
+
+    private summaryActive: boolean = false;
+    private summaryDataset: Assay = null;
 
     // These are the models that will be used internally by this component to sync the current state.
     private isOpen: boolean = false;
@@ -95,6 +107,11 @@ export default class Toolbar extends Vue {
     @Watch('isMini')
     private onIsMiniChanged() {
         this.$emit('update:mini', this.isMini);
+    }
+
+    private showExperimentSummary(dataset) {
+        this.summaryDataset = dataset;
+        this.summaryActive = true;
     }
 
     private selectSample() {
@@ -139,6 +156,14 @@ export default class Toolbar extends Vue {
         width: 210px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .toolbar-content .v-list-item__action {
+        min-width: 48px;
+    }
+
+    .toolbar-content .v-list-item__action span:first-child {
+        margin-right: 8px;
     }
 
     .sample-list-placeholder {
