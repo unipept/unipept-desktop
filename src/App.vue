@@ -30,10 +30,11 @@ import { Titlebar, Color } from 'custom-electron-titlebar'
 import Utils from "./logic/Utils";
 import ConfigurationManager from './logic/configuration/ConfigurationManager';
 import Configuration from './logic/configuration/Configuration';
-import { BrowserWindow } from 'electron';
+import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
 
 const electron = window.require('electron');
 const ipcRenderer  = electron.ipcRenderer;
+const BrowserWindow = electron.BrowserWindow;
 
 @Component({
   components: {
@@ -49,6 +50,11 @@ const ipcRenderer  = electron.ipcRenderer;
     useNativeTitlebar: {
       get(): boolean {
         return this.$store.getters.useNativeTitlebar;
+      }
+    },
+    assaysInProgress: {
+      get(): Assay[] {
+        return this.$store.getters.selectedDatasets.filter((assay: Assay) => assay.progress < 1);
       }
     }
   }
@@ -71,10 +77,20 @@ export default class App extends Vue {
           this.rightNavMini = true;
           this.$router.push(location);
       }
-    })
+    });    
 
     await this.initConfiguration();
     await this.setUpTitlebar();
+  }
+
+  @Watch("assaysInProgress")
+  private assaysInProgressChanged(assays: Assay[]) {
+    if (!assays || assays.length === 0) {
+      electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(0);
+    } else {
+      const average: number = assays.reduce((prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0) / assays.length;
+      electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
+    }
   }
 
   @Watch("useNativeTitlebar")

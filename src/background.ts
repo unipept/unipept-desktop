@@ -1,7 +1,6 @@
 'use strict'
 
 import { app, protocol, BrowserWindow, Menu, shell } from 'electron'
-import { Titlebar, Color } from 'custom-electron-titlebar'
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib'
 import Utils from "./logic/Utils";
 import ConfigurationManager from './logic/configuration/ConfigurationManager';
@@ -47,7 +46,7 @@ async function createWindow () {
 
   win.on('closed', () => {
     win = null
-  })
+  });
 }
 
 // Fill the native OS menu with all required menu items.
