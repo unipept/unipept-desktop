@@ -1,12 +1,12 @@
 <template>
     <div>
-        <Toolbar :open.sync="isOpen" :mini.sync="isMini" v-on:click-select-sample="onClickSelectSample" v-on:activate-dataset="onActivateDataset"></Toolbar>
+        <Toolbar :open.sync="isOpen" :mini.sync="isMini" v-on:click-select-sample="onClickSelectSample"></Toolbar>
         <v-dialog v-model="selectSampleDialog" max-width="800">
             <v-card>
                 <v-card-title>
                     Sample selection
                 </v-card-title>
-                <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets" v-on:select-dataset="onSelectDataset"></load-datasets-card>
+                <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets"></load-datasets-card>
             </v-card>
         </v-dialog>
     </div>
@@ -19,6 +19,7 @@ import Toolbar from "./../navigation-drawers/Toolbar.vue";
 import LoadDatasetsCard from "unipept-web-components/src/components/dataset/LoadDatasetsCard.vue";
 import {Prop, Watch} from "vue-property-decorator";
 import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
+import { EventBus } from "unipept-web-components/src/components/EventBus";
 
 @Component({
     components: {
@@ -40,6 +41,8 @@ export default class SampleManager extends Vue {
     mounted() {
         this.isMini = this.mini;
         this.isOpen = this.open;
+
+        this.initializeEventListeners();
     }
 
     @Watch("mini")
@@ -62,18 +65,20 @@ export default class SampleManager extends Vue {
         this.$emit('update:open', newOpen);
     }
 
+    private initializeEventListeners() {
+        EventBus.$on("select-dataset", (dataset: PeptideContainer) => {
+            this.$store.dispatch('selectDataset', dataset);
+            this.$store.dispatch('processDataset', dataset);
+            this.selectSampleDialog = false;
+        })
+        
+        EventBus.$on("activate-dataset", (dataset: PeptideContainer) => {
+            this.$store.dispatch("setActiveDataset", dataset);
+        })
+    }
+
     private onClickSelectSample() {
         this.selectSampleDialog = true;
-    }
-
-    private onSelectDataset(dataset: PeptideContainer): void {
-        this.$store.dispatch('selectDataset', dataset);
-        this.$store.dispatch('processDataset', dataset);
-        this.selectSampleDialog = false;
-    }
-
-    private onActivateDataset(dataset: PeptideContainer): void {
-        this.$store.dispatch('setActiveDataset', dataset);
     }
 }
 </script>
