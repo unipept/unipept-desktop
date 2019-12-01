@@ -16,10 +16,7 @@ protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true
 
 async function createWindow () {
   let configManager = new ConfigurationManager(app);
-  console.log("Reading configuration...");
   let config = await configManager.readConfiguration();
-  console.log("Read configuration");
-  // console.log(config);
   // Create the browser window.
   let options: Electron.BrowserWindowConstructorOptions = { 
     width: 800, 
@@ -27,14 +24,12 @@ async function createWindow () {
     webPreferences: { nodeIntegration: true } 
   };
 
-  console.log("Options set...");
 
   if (Utils.isWindows() && !config.useNativeTitlebar) {
     options["frame"] = false;
   }
 
   win = new BrowserWindow(options)
-  console.log("Create new browserwindow...");
 
   // Set the toolbar menu for this window
   const menu = createMenu(win);

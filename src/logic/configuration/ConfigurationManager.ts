@@ -117,7 +117,6 @@ export default class ConfigurationManager {
 
         // Get a reference to the user data folder in which configuration data will be stored.
         const configurationFolder = this.app.getPath('userData');
-        console.log("Config folder is: " + configurationFolder);
         return configurationFolder + "/" + ConfigurationManager.CONFIG_FILE_NAME;
     } 
 }

@@ -44,7 +44,6 @@ export default class SampleManager extends Vue {
 
     @Watch("mini")
     private onMiniChanged() {
-        console.log("MINI CHANGED TO --> " + this.mini);
         this.isMini = this.mini;
     }
 

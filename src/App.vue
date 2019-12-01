@@ -60,6 +60,9 @@ export default class App extends Vue {
   private titleBar: Titlebar = null;
   private loading: boolean = true;
 
+  // Has this component been initialized before?
+  private static previouslyInitialized: boolean = false;
+
   async mounted() {
     // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
     // pass through the Vue app.
@@ -70,20 +73,19 @@ export default class App extends Vue {
       }
     })
 
-    console.log("Mounted");
     await this.initConfiguration();
     await this.setUpTitlebar();
-    console.log("Mounted...");
   }
 
   @Watch("useNativeTitlebar")
   private setUpTitlebar() {
-    if (Utils.isWindows() && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
+    if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
       this.titleBar = new Titlebar({
         icon: require("./assets/icon.svg"),
         backgroundColor: Color.fromHex('#004ba0')
       });
     }
+    App.previouslyInitialized = true;
   }
 
   /** 
