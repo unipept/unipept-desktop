@@ -26,8 +26,11 @@ import { Prop, Watch } from 'vue-property-decorator';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 import Toolbar from './components/navigation-drawers/Toolbar.vue';
 import SampleManager from './components/sample/SampleManager.vue';
+import { Titlebar, Color } from 'custom-electron-titlebar'
+import Utils from "./logic/Utils";
 import ConfigurationManager from './logic/configuration/ConfigurationManager';
 import Configuration from './logic/configuration/Configuration';
+import { BrowserWindow } from 'electron';
 
 const electron = window.require('electron');
 const ipcRenderer  = electron.ipcRenderer;
@@ -42,6 +45,11 @@ const ipcRenderer  = electron.ipcRenderer;
       get(): string {
         return this.$store.getters.baseUrl;
       }
+    },
+    useNativeTitlebar: {
+      get(): boolean {
+        return this.$store.getters.useNativeTitlebar;
+      }
     }
   }
 })
@@ -49,7 +57,11 @@ export default class App extends Vue {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
+  private titleBar: Titlebar = null;
   private loading: boolean = true;
+
+  // Has this component been initialized before?
+  private static previouslyInitialized: boolean = false;
 
   async mounted() {
     // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
@@ -59,9 +71,21 @@ export default class App extends Vue {
           this.rightNavMini = true;
           this.$router.push(location);
       }
-    });
+    })
 
     await this.initConfiguration();
+    await this.setUpTitlebar();
+  }
+
+  @Watch("useNativeTitlebar")
+  private setUpTitlebar() {
+    if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
+      this.titleBar = new Titlebar({
+        icon: require("./assets/icon.svg"),
+        backgroundColor: Color.fromHex('#004ba0')
+      });
+    }
+    App.previouslyInitialized = true;
   }
 
   /** 
@@ -71,8 +95,14 @@ export default class App extends Vue {
   private async initConfiguration() {
     this.loading = true;
     let configurationManager = new ConfigurationManager();
-    let config: Configuration = await configurationManager.readConfiguration();
-    this.$store.dispatch('setBaseUrl', config.apiSource);
+    try {
+      let config: Configuration = await configurationManager.readConfiguration();
+      this.$store.dispatch('setBaseUrl', config.apiSource);
+      this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
+    } catch (err) {
+      console.error(err)
+    }
+   
     this.loading = false;
   }
 
@@ -83,6 +113,17 @@ export default class App extends Vue {
     let currentConfig = await configurationManager.readConfiguration();
     // Make requested changes to the previous configuration.
     currentConfig.apiSource = newUrl;
+    // Write changes to disk.
+    await configurationManager.writeConfiguration(currentConfig);
+  }
+
+  @Watch("useNativeTitlebar")
+  private async onUseNativeTitlebarChanged(newValue: boolean) {
+    let configurationManager = new ConfigurationManager();
+    // Read the previous configuration.
+    let currentConfig = await configurationManager.readConfiguration();
+    // Make requested changes to the previous configuration.
+    currentConfig.useNativeTitlebar = newValue;
     // Write changes to disk.
     await configurationManager.writeConfiguration(currentConfig);
   }
@@ -124,5 +165,27 @@ export default class App extends Vue {
     max-width: calc(100% - 290px) !important;
     position: relative;
     left: 290px !important;
+  }
+
+  .titlebar {
+    position: fixed !important;
+  }
+
+  .titlebar, .titlebar > * {
+    font-family: Roboto, sans-serif;
+  }
+
+  .container-after-titlebar .v-app-bar {
+    margin-top: 30px !important;
+  }
+
+  .container-after-titlebar .v-navigation-drawer {
+    top: 30px !important;
+  }
+
+  .container-after-titlebar {
+    top: 0 !important;
+    position: static !important;
+    margin-top: 30px !important;
   }
 </style>

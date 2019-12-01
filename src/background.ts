@@ -1,10 +1,10 @@
 'use strict'
 
 import { app, protocol, BrowserWindow, Menu, shell } from 'electron'
-import {
-  createProtocol,
-  installVueDevtools
-} from 'vue-cli-plugin-electron-builder/lib'
+import { Titlebar, Color } from 'custom-electron-titlebar'
+import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib'
+import Utils from "./logic/Utils";
+import ConfigurationManager from './logic/configuration/ConfigurationManager';
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -14,11 +14,22 @@ let win: BrowserWindow | null
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
-function createWindow () {
+async function createWindow () {
+  let configManager = new ConfigurationManager(app);
+  let config = await configManager.readConfiguration();
   // Create the browser window.
-  win = new BrowserWindow({ width: 800, height: 600, webPreferences: {
-    nodeIntegration: true
-  }})
+  let options: Electron.BrowserWindowConstructorOptions = { 
+    width: 800, 
+    height: 600, 
+    webPreferences: { nodeIntegration: true } 
+  };
+
+
+  if (Utils.isWindows() && !config.useNativeTitlebar) {
+    options["frame"] = false;
+  }
+
+  win = new BrowserWindow(options)
 
   // Set the toolbar menu for this window
   const menu = createMenu(win);
@@ -41,24 +52,26 @@ function createWindow () {
 
 // Fill the native OS menu with all required menu items.
 function createMenu(win: BrowserWindow) {
+  const settingsItem = { 
+    label: 'Settings',
+    click: async () => {
+      if (process.env.WEBPACK_DEV_SERVER_URL) {
+        // Load the url of the dev server if in development mode
+        //await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "index.html/settings");
+        win.webContents.send('navigate', '/settings');
+      } else {
+        await win.loadURL('app://./settings')
+      }
+    }
+  };
+
   const template = [
-    ...(isMac ? [{
+    ...(Utils.isMacOS() ? [{
       label: app.getName(),
       submenu: [
         { role: 'about' },
         { type: 'separator' },
-        { 
-          label: 'Settings',
-          click: async () => {
-            if (process.env.WEBPACK_DEV_SERVER_URL) {
-              // Load the url of the dev server if in development mode
-              //await win.loadURL((process.env.WEBPACK_DEV_SERVER_URL as string) + "index.html/settings");
-              win.webContents.send('navigate', '/settings');
-            } else {
-              await win.loadURL('app://./settings')
-            }
-          }
-        },
+        settingsItem,
         { type: 'separator' },
         { role: 'hide' },
         { role: 'hideothers' },
@@ -70,7 +83,8 @@ function createMenu(win: BrowserWindow) {
     {
       label: 'File',
       submenu: [
-        isMac ? { role: 'close' } : { role: 'quit' }
+        ...(Utils.isMacOS() ? [] : [settingsItem, { type: 'separator'} ]),
+        Utils.isMacOS() ? { role: 'close' } : { role: 'quit' }
       ]
     },
     {
@@ -82,7 +96,7 @@ function createMenu(win: BrowserWindow) {
         { role: 'cut' },
         { role: 'copy' },
         { role: 'paste' },
-        ...(isMac ? [
+        ...(Utils.isMacOS() ? [
           { role: 'pasteAndMatchStyle' },
           { role: 'delete' },
           { role: 'selectAll' },
@@ -121,10 +135,6 @@ function createMenu(win: BrowserWindow) {
   return Menu.buildFromTemplate(template);
 }
 
-function isMac() {
-  return process.platform === 'darwin';
-}
-
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -160,7 +170,7 @@ app.on('ready', async () => {
     }
 
   }
-  createWindow()
+  await createWindow()
 })
 
 // Exit cleanly on request from parent process in development mode.

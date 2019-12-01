@@ -22,6 +22,7 @@
     "clipboard-polyfill": "^2.8.6",
     "core-js": "^2.6.9",
     "crypto-js": "^3.1.9-1",
+    "custom-electron-titlebar": "^3.1.0",
     "html2canvas": "^1.0.0-rc.5",
     "jquery": "^3.4.1",
     "regenerator-runtime": "^0.13.3",

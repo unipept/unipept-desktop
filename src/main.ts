@@ -3,6 +3,7 @@ import App from './App.vue'
 import vuetify from './plugins/vuetify';
 import {GlobalStore} from 'unipept-web-components/src/state/GlobalStore';
 import {ConfigurationStore} from 'unipept-web-components/src/state/ConfigurationStore';
+import {DesktopConfigurationStore} from './state/DesktopConfigurationStore';
 import Vuex from 'vuex';
 import vueFullscreen from 'vue-fullscreen';
 import VueRouter from 'vue-router';
@@ -18,7 +19,9 @@ Vue.use(vueFullscreen);
 const store = new Vuex.Store({
   modules: {
       global: GlobalStore,
-      configuration: ConfigurationStore
+      analysis: AnalysisStore,
+      configuration: ConfigurationStore,
+      desktopConfiguration: DesktopConfigurationStore
   }
 });
 
