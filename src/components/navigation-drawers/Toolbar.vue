@@ -23,7 +23,7 @@
                 </v-list>
             </div>
         </v-navigation-drawer>
-        <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'">
+        <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'" ref="toolbar">
             <div style="position: relative; top: 56px; height: 100%;">
                 <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
                     No samples selected.
@@ -51,6 +51,7 @@
                 </v-list>
                 <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
             </div>
+            <div class="v-navigation-drawer__border" style="width: 10px;"></div>
         </div>
         <experiment-summary-dialog :dataset="summaryDataset" :active.sync="summaryActive"></experiment-summary-dialog>
     </div>
@@ -87,6 +88,7 @@ export default class Toolbar extends Vue {
     mounted() {
         this.isOpen = this.open;
         this.isMini = this.mini;
+        this.setupDraggableToolbar();
     }
 
     @Watch("open")
@@ -135,6 +137,23 @@ export default class Toolbar extends Vue {
             // If the user does wan't to navigate, we change the current path.
             this.$router.replace(routeToGo);
         }
+    }
+
+    private setupDraggableToolbar() {
+        const toolbar = this.$refs.toolbar as Element;
+        const drawerBorder = toolbar.querySelector(".v-navigation-drawer__border");
+
+        const mouseMoveListener = (moveE) => {
+            console.log(moveE);
+        };
+
+        drawerBorder.addEventListener("mousedown", (e) => {
+            document.addEventListener("mousemove", mouseMoveListener);
+        });
+
+        document.addEventListener("mouseup", (e) => {
+            document.removeEventListener("mousemove", mouseMoveListener);
+        });
     }
 }
 </script>
