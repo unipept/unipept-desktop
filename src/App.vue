@@ -86,7 +86,7 @@ export default class App extends Vue {
   @Watch("assaysInProgress")
   private assaysInProgressChanged(assays: Assay[]) {
     if (!assays || assays.length === 0) {
-      electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(0);
+      electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
     } else {
       const average: number = assays.reduce((prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0) / assays.length;
       electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
