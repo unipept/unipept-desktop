@@ -23,7 +23,7 @@
                 </v-list>
             </div>
         </v-navigation-drawer>
-        <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'">
+        <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
                 <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
                     No samples selected.
@@ -38,15 +38,30 @@
                         </v-list-item-subtitle>
                         <v-list-item-action>
                             <v-progress-circular v-if="dataset.progress !== 1" :rotate="-90" :size="18" :value="dataset.progress * 100" color="primary"></v-progress-circular>
-                            <tooltip v-else message="Remove dataset from analysis." position="bottom">
-                                <v-icon @click="deselectDataset(dataset)" v-on:click.stop small>mdi-close</v-icon>
-                            </tooltip>
+                            <div v-else style="display: flex; flex-direction: row;">
+                                <tooltip message="Display experiment summary." position="bottom">
+                                    <v-icon @click="showExperimentSummary(dataset)" v-on:click.stop small>mdi-information-outline</v-icon>
+                                </tooltip>
+                                <tooltip message="Remove dataset from analysis." position="bottom">
+                                    <v-icon @click="deselectDataset(dataset)" v-on:click.stop small>mdi-close</v-icon>
+                                </tooltip>
+                            </div>
                         </v-list-item-action>
                     </v-list-item>
                 </v-list>
                 <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
             </div>
+            <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
+        <experiment-summary-dialog :dataset="summaryDataset" :active.sync="summaryActive"></experiment-summary-dialog>
+        <v-dialog v-model="selectSampleDialog" max-width="800">
+            <v-card>
+                <v-card-title>
+                    Sample selection
+                </v-card-title>
+                <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets"></load-datasets-card>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
@@ -56,10 +71,16 @@ import Component from 'vue-class-component';
 import {Prop, Watch} from 'vue-property-decorator';
 import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
+import ExperimentSummaryDialog from './../analysis/ExperimentSummaryDialog.vue';
+import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
+import { EventBus } from "unipept-web-components/src/components/EventBus";
+import LoadDatasetsCard from "unipept-web-components/src/components/dataset/LoadDatasetsCard.vue";
 
 @Component({
     components: {
-        Tooltip
+        Tooltip,
+        ExperimentSummaryDialog,
+        LoadDatasetsCard
     }
 })
 export default class Toolbar extends Vue {
@@ -68,13 +89,24 @@ export default class Toolbar extends Vue {
     @Prop({required: false, default: true})
     private mini: boolean;
 
+    private selectSampleDialog: boolean = false;
+
+    private summaryActive: boolean = false;
+    private summaryDataset: Assay = null;
+
     // These are the models that will be used internally by this component to sync the current state.
     private isOpen: boolean = false;
     private isMini: boolean = true;
 
+    private minToolbarWidth: number = 169;
+    private originalToolbarWidth: number = 210;
+    private toolbarWidth: number = this.originalToolbarWidth;
+
     mounted() {
         this.isOpen = this.open;
         this.isMini = this.mini;
+        this.setupDraggableToolbar();
+        this.initializeEventListeners();
     }
 
     @Watch("open")
@@ -97,12 +129,25 @@ export default class Toolbar extends Vue {
         this.$emit('update:mini', this.isMini);
     }
 
+    private initializeEventListeners() {
+        EventBus.$on("select-dataset", (dataset: PeptideContainer) => {
+            this.$store.dispatch('selectDataset', dataset);
+            this.$store.dispatch('processDataset', dataset);
+            this.selectSampleDialog = false;
+        })
+    }
+
+    private showExperimentSummary(dataset) {
+        this.summaryDataset = dataset;
+        this.summaryActive = true;
+    }
+
     private selectSample() {
-        this.$emit('click-select-sample');
+        this.selectSampleDialog = true;
     }
 
     private activateDataset(dataset: PeptideContainer) {
-        this.$emit('activate-dataset', dataset);
+        this.$store.dispatch("setActiveDataset, dataset");
     }
 
     /**
@@ -118,6 +163,37 @@ export default class Toolbar extends Vue {
             // If the user does wan't to navigate, we change the current path.
             this.$router.replace(routeToGo);
         }
+    }
+
+    private setupDraggableToolbar() {
+        const toolbar = this.$refs.toolbar as Element;
+        const drawerBorder = toolbar.querySelector(".v-navigation-drawer__border");
+
+        let initialMousePos: number = 0;
+
+        const mouseMoveListener = (moveE: MouseEvent) => {
+            const xDifference = initialMousePos - moveE.x;
+            const computedWidth = this.originalToolbarWidth -1 * xDifference;
+            if (computedWidth >= this.minToolbarWidth) {
+                this.toolbarWidth = computedWidth;
+            }
+        };
+
+        drawerBorder.addEventListener("mousedown", (e: MouseEvent) => {
+            initialMousePos = e.x;
+            document.addEventListener("mousemove", mouseMoveListener);
+        });
+
+        document.addEventListener("mouseup", (e: MouseEvent) => {
+            // Reset start position for next mousedown-event
+            this.originalToolbarWidth = this.toolbarWidth;
+            document.removeEventListener("mousemove", mouseMoveListener);
+        });
+    }
+
+    @Watch("toolbarWidth")
+    private onToolbarWidthChanged(newWidth: number) {
+        this.$emit("update:toolbar-width", newWidth);
     }
 }
 </script>
@@ -136,9 +212,21 @@ export default class Toolbar extends Vue {
         height: 100%;
         position: fixed; 
         left: 80px; 
-        width: 210px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
+        display: none;
+    }
+
+    .toolbar-content.open {
+        display: block;
+    }
+
+    .toolbar-content .v-list-item__action {
+        min-width: 48px;
+    }
+
+    .toolbar-content .v-list-item__action span:first-child {
+        margin-right: 8px;
     }
 
     .toolbar-container {

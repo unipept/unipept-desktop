@@ -10,9 +10,20 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <SampleManager :open.sync="rightNavDrawer" :mini.sync="rightNavMini" v-on:activate-dataset="onActivateDataset"></SampleManager>
+      <Toolbar 
+        :open.sync="rightNavDrawer" 
+        :mini.sync="rightNavMini" 
+        v-on:activate-dataset="onActivateDataset" 
+        v-on:update:toolbar-width="onToolbarWidthUpdated">
+      </Toolbar>
 
-      <v-content style="min-height: 100%; max-width: calc(100% - 80px); position: relative; left: 80px;" :class="{'open-right-nav-drawer': !rightNavMini}">
+      <v-content 
+        :style="{
+          'min-height': '100%',
+          'max-width': rightNavMini ? 'calc(100% - 80px)' : 'calc(100% - ' + (toolbarWidth + 80) + 'px)',
+          'position': 'relative',
+          'left': rightNavMini ? '80px' : (toolbarWidth + 80) + 'px'
+        }">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
     </v-app>
@@ -25,7 +36,6 @@ import Component from 'vue-class-component';
 import { Prop, Watch } from 'vue-property-decorator';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 import Toolbar from './components/navigation-drawers/Toolbar.vue';
-import SampleManager from './components/sample/SampleManager.vue';
 import { Titlebar, Color } from 'custom-electron-titlebar'
 import Utils from "./logic/Utils";
 import ConfigurationManager from './logic/configuration/ConfigurationManager';
@@ -38,8 +48,7 @@ const BrowserWindow = electron.BrowserWindow;
 
 @Component({
   components: {
-    Toolbar,
-    SampleManager
+    Toolbar
   },
   computed: {
     baseUrl: {
@@ -66,6 +75,7 @@ export default class App extends Vue {
   private titleBar: Titlebar = null;
   private loading: boolean = true;
 
+  private toolbarWidth: number = 210;
   // Has this component been initialized before?
   private static previouslyInitialized: boolean = false;
 
@@ -122,6 +132,10 @@ export default class App extends Vue {
     this.loading = false;
   }
 
+  private onToolbarWidthUpdated(newValue: number) {
+    this.toolbarWidth = newValue;
+  }
+
   @Watch("baseUrl")
   private async onBaseUrlChanged(newUrl: string) {
     let configurationManager = new ConfigurationManager();
@@ -176,11 +190,10 @@ export default class App extends Vue {
   .nav-drawer .v-divider {
     margin-top: 7px !important;
   }
-
-  .open-right-nav-drawer {
-    max-width: calc(100% - 290px) !important;
-    position: relative;
-    left: 290px !important;
+  
+  .v-content {
+    // Force right part of the application to resize immediately
+    transition: initial;
   }
 
   .titlebar {
