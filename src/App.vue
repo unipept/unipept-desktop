@@ -193,7 +193,7 @@ export default class App extends Vue {
   
   .v-content {
     // Force right part of the application to resize immediately
-    transition: initial;
+    transition: initial !important;
   }
 
   .titlebar {
