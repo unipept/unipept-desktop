@@ -24,7 +24,7 @@
             </div>
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
-            <div style="position: relative; top: 56px; height: 100%;">
+            <div class="toolbar-container">
                 <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
                     No samples selected.
                 </div>
@@ -227,6 +227,16 @@ export default class Toolbar extends Vue {
 
     .toolbar-content .v-list-item__action span:first-child {
         margin-right: 8px;
+    }
+
+    .toolbar-container {
+        position: relative; 
+        top: 56px; 
+        height: 100%;
+    }
+
+    .container-after-titlebar .toolbar-container {
+        height: calc(100% - 30px);
     }
 
     .sample-list-placeholder {
