@@ -110,6 +110,8 @@ export default class App extends Vue {
         icon: require("./assets/icon.svg"),
         backgroundColor: Color.fromHex('#004ba0')
       });
+
+      document.getElementsByName("html")[0].style.overflowY = "hidden";
     }
     App.previouslyInitialized = true;
   }
