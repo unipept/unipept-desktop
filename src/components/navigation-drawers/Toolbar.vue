@@ -23,7 +23,7 @@
                 </v-list>
             </div>
         </v-navigation-drawer>
-        <div class="toolbar-content" :style="isMini ? 'display: none' : 'display: block;'" ref="toolbar">
+        <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div style="position: relative; top: 56px; height: 100%;">
                 <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
                     No samples selected.
@@ -51,7 +51,7 @@
                 </v-list>
                 <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
             </div>
-            <div class="v-navigation-drawer__border" style="width: 10px;"></div>
+            <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
         <experiment-summary-dialog :dataset="summaryDataset" :active.sync="summaryActive"></experiment-summary-dialog>
     </div>
@@ -84,6 +84,10 @@ export default class Toolbar extends Vue {
     // These are the models that will be used internally by this component to sync the current state.
     private isOpen: boolean = false;
     private isMini: boolean = true;
+
+    private minToolbarWidth: number = 169;
+    private originalToolbarWidth: number = 210;
+    private toolbarWidth: number = this.originalToolbarWidth;
 
     mounted() {
         this.isOpen = this.open;
@@ -143,15 +147,22 @@ export default class Toolbar extends Vue {
         const toolbar = this.$refs.toolbar as Element;
         const drawerBorder = toolbar.querySelector(".v-navigation-drawer__border");
 
-        const mouseMoveListener = (moveE) => {
-            console.log(moveE);
+        let initialMousePos: number = 0;
+
+        const mouseMoveListener = (moveE: MouseEvent) => {
+            const xDifference = initialMousePos - moveE.x;
+            const computedWidth = this.originalToolbarWidth -1 * xDifference;
+            if (computedWidth >= this.minToolbarWidth) {
+                this.toolbarWidth = computedWidth;
+            }
         };
 
-        drawerBorder.addEventListener("mousedown", (e) => {
+        drawerBorder.addEventListener("mousedown", (e: MouseEvent) => {
+            initialMousePos = e.x;
             document.addEventListener("mousemove", mouseMoveListener);
         });
 
-        document.addEventListener("mouseup", (e) => {
+        document.addEventListener("mouseup", (e: MouseEvent) => {
             document.removeEventListener("mousemove", mouseMoveListener);
         });
     }
@@ -172,9 +183,13 @@ export default class Toolbar extends Vue {
         height: 100%;
         position: fixed; 
         left: 80px; 
-        width: 210px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
+        display: none;
+    }
+
+    .toolbar-content.open {
+        display: block;
     }
 
     .toolbar-content .v-list-item__action {
