@@ -54,6 +54,14 @@
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
         <experiment-summary-dialog :dataset="summaryDataset" :active.sync="summaryActive"></experiment-summary-dialog>
+        <v-dialog v-model="selectSampleDialog" max-width="800">
+            <v-card>
+                <v-card-title>
+                    Sample selection
+                </v-card-title>
+                <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets"></load-datasets-card>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
@@ -65,11 +73,14 @@ import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 import ExperimentSummaryDialog from './../analysis/ExperimentSummaryDialog.vue';
 import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
+import { EventBus } from "unipept-web-components/src/components/EventBus";
+import LoadDatasetsCard from "unipept-web-components/src/components/dataset/LoadDatasetsCard.vue";
 
 @Component({
     components: {
         Tooltip,
-        ExperimentSummaryDialog
+        ExperimentSummaryDialog,
+        LoadDatasetsCard
     }
 })
 export default class Toolbar extends Vue {
@@ -77,6 +88,8 @@ export default class Toolbar extends Vue {
     private open: boolean;
     @Prop({required: false, default: true})
     private mini: boolean;
+
+    private selectSampleDialog: boolean = false;
 
     private summaryActive: boolean = false;
     private summaryDataset: Assay = null;
@@ -115,17 +128,25 @@ export default class Toolbar extends Vue {
         this.$emit('update:mini', this.isMini);
     }
 
+    private initializeEventListeners() {
+        EventBus.$on("select-dataset", (dataset: PeptideContainer) => {
+            this.$store.dispatch('selectDataset', dataset);
+            this.$store.dispatch('processDataset', dataset);
+            this.selectSampleDialog = false;
+        })
+    }
+
     private showExperimentSummary(dataset) {
         this.summaryDataset = dataset;
         this.summaryActive = true;
     }
 
     private selectSample() {
-        this.$emit('click-select-sample');
+        this.selectSampleDialog = true;
     }
 
     private activateDataset(dataset: PeptideContainer) {
-        this.$emit('activate-dataset', dataset);
+        this.$store.dispatch("setActiveDataset, dataset");
     }
 
     /**
@@ -163,8 +184,15 @@ export default class Toolbar extends Vue {
         });
 
         document.addEventListener("mouseup", (e: MouseEvent) => {
+            // Reset start position for next mousedown-event
+            this.originalToolbarWidth = this.toolbarWidth;
             document.removeEventListener("mousemove", mouseMoveListener);
         });
+    }
+
+    @Watch("toolbarWidth")
+    private onToolbarWidthChanged(newWidth: number) {
+        this.$emit("update:toolbar-width", newWidth);
     }
 }
 </script>

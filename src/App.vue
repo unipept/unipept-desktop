@@ -10,9 +10,20 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <SampleManager :open.sync="rightNavDrawer" :mini.sync="rightNavMini" v-on:activate-dataset="onActivateDataset"></SampleManager>
+      <Toolbar 
+        :open.sync="rightNavDrawer" 
+        :mini.sync="rightNavMini" 
+        v-on:activate-dataset="onActivateDataset" 
+        v-on:update:toolbar-width="onToolbarWidthUpdated">
+      </Toolbar>
 
-      <v-content style="min-height: 100%; max-width: calc(100% - 80px); position: relative; left: 80px;" :class="{'open-right-nav-drawer': !rightNavMini}">
+      <v-content 
+        :style="{
+          'min-height': '100%',
+          'max-width': rightNavMini ? 'calc(100% - 80px)' : 'calc(100% - ' + (toolbarWidth + 80) + 'px)',
+          'position': 'relative',
+          'left': rightNavMini ? '80px' : (toolbarWidth + 80) + 'px'
+        }">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
     </v-app>
@@ -25,7 +36,6 @@ import Component from 'vue-class-component';
 import { Prop, Watch } from 'vue-property-decorator';
 import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
 import Toolbar from './components/navigation-drawers/Toolbar.vue';
-import SampleManager from './components/sample/SampleManager.vue';
 import ConfigurationManager from './logic/configuration/ConfigurationManager';
 import Configuration from './logic/configuration/Configuration';
 
@@ -34,8 +44,7 @@ const ipcRenderer  = electron.ipcRenderer;
 
 @Component({
   components: {
-    Toolbar,
-    SampleManager
+    Toolbar
   },
   computed: {
     baseUrl: {
@@ -50,6 +59,8 @@ export default class App extends Vue {
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
   private loading: boolean = true;
+
+  private toolbarWidth: number = 210;
 
   async mounted() {
     // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
@@ -74,6 +85,10 @@ export default class App extends Vue {
     let config: Configuration = await configurationManager.readConfiguration();
     this.$store.dispatch('setBaseUrl', config.apiSource);
     this.loading = false;
+  }
+
+  private onToolbarWidthUpdated(newValue: number) {
+    this.toolbarWidth = newValue;
   }
 
   @Watch("baseUrl")
@@ -119,10 +134,9 @@ export default class App extends Vue {
   .nav-drawer .v-divider {
     margin-top: 7px !important;
   }
-
-  .open-right-nav-drawer {
-    max-width: calc(100% - 290px) !important;
-    position: relative;
-    left: 290px !important;
+  
+  .v-content {
+    // Force right part of the application to resize immediately
+    transition: initial;
   }
 </style>
