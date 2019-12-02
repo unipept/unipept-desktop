@@ -106,6 +106,7 @@ export default class Toolbar extends Vue {
         this.isOpen = this.open;
         this.isMini = this.mini;
         this.setupDraggableToolbar();
+        this.initializeEventListeners();
     }
 
     @Watch("open")
