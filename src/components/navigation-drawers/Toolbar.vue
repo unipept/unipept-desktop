@@ -147,7 +147,7 @@ export default class Toolbar extends Vue {
     }
 
     private activateDataset(dataset: PeptideContainer) {
-        this.$store.dispatch("setActiveDataset, dataset");
+        this.$store.dispatch("setActiveDataset", dataset);
     }
 
     /**
