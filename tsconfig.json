@@ -16,7 +16,8 @@
     "types": [
       "vuetify",
       "webpack-env",
-      "jquery"
+      "jquery",
+      "custom"
     ],
     "paths": {
       "@/*": [
