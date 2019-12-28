@@ -51,14 +51,14 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
-import Configuration from './../../logic/configuration/Configuration';
-import ConfigurationManager from './../../logic/configuration/ConfigurationManager';
-import { Prop, Watch } from 'vue-property-decorator';
+import Vue from "vue";
+import Component from "vue-class-component";
+import Configuration from "./../../logic/configuration/Configuration";
+import ConfigurationManager from "./../../logic/configuration/ConfigurationManager";
+import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
 import VForm from "vuetify";
-import Utils from '@/logic/Utils';
+import Utils from "@/logic/Utils";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -84,28 +84,28 @@ export default class SettingsPage extends Vue {
         configManager.readConfiguration().then((result) => this.configuration = result);
     }
 
-    @Watch('configuration.apiSource')
-    @Watch('configuration.useNativeTitlebar')
+    @Watch("configuration.apiSource")
+    @Watch("configuration.useNativeTitlebar")
     private async saveChanges(): Promise<void> {
         this.updateStore("setBaseUrl", this.configuration.apiSource);
         this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
     }
 
     private async updateStore(method, value) {
-      this.errorVisible = false;
-      if (this.configuration != null && this.$refs.form && this.$refs.form.validate()) {
-          try {
-              this.$store.dispatch(method, value);
-          } catch (err) {
-              if (err == "InvalidConfigurationException") {
-                this.showError("You've provided an invalid configuration. Please correct any errors and try again.");
-              } else if (err == "IOException") {
-                this.showError(
-                  "An error occurred while writing changes to the configuration. Check your disk and try again."
-                );
-              }
-          }
-      }
+        this.errorVisible = false;
+        if (this.configuration != null && this.$refs.form && this.$refs.form.validate()) {
+            try {
+                this.$store.dispatch(method, value);
+            } catch (err) {
+                if (err == "InvalidConfigurationException") {
+                    this.showError("You've provided an invalid configuration. Please correct any errors and try again.");
+                } else if (err == "IOException") {
+                    this.showError(
+                        "An error occurred while writing changes to the configuration. Check your disk and try again."
+                    );
+                }
+            }
+        }
     }
 
     private showError(message: string): void {

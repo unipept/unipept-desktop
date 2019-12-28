@@ -66,13 +66,13 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
-import {Prop, Watch} from 'vue-property-decorator';
-import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
-import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
-import ExperimentSummaryDialog from './../analysis/ExperimentSummaryDialog.vue';
-import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
+import Vue from "vue";
+import Component from "vue-class-component";
+import { Prop, Watch } from "vue-property-decorator";
+import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
+import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import { EventBus } from "unipept-web-components/src/components/EventBus";
 import LoadDatasetsCard from "unipept-web-components/src/components/dataset/LoadDatasetsCard.vue";
 
@@ -84,9 +84,9 @@ import LoadDatasetsCard from "unipept-web-components/src/components/dataset/Load
     }
 })
 export default class Toolbar extends Vue {
-    @Prop({required: false, default: false})
+    @Prop({ required: false, default: false })
     private open: boolean;
-    @Prop({required: false, default: true})
+    @Prop({ required: false, default: true })
     private mini: boolean;
 
     private selectSampleDialog: boolean = false;
@@ -119,20 +119,20 @@ export default class Toolbar extends Vue {
         this.isMini = this.mini;
     }
 
-    @Watch('isOpen')
+    @Watch("isOpen")
     private onIsOpenChanged() {
-        this.$emit('update:open', this.isOpen);
+        this.$emit("update:open", this.isOpen);
     }
 
-    @Watch('isMini')
+    @Watch("isMini")
     private onIsMiniChanged() {
-        this.$emit('update:mini', this.isMini);
+        this.$emit("update:mini", this.isMini);
     }
 
     private initializeEventListeners() {
         EventBus.$on("select-dataset", (dataset: PeptideContainer) => {
-            this.$store.dispatch('selectDataset', dataset);
-            this.$store.dispatch('processDataset', dataset);
+            this.$store.dispatch("selectDataset", dataset);
+            this.$store.dispatch("processDataset", dataset);
             this.selectSampleDialog = false;
         })
     }

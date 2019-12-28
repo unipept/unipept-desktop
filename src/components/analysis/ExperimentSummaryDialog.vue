@@ -20,11 +20,11 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
-import { Prop, Component, Watch } from 'vue-property-decorator';
-import TaxaDataSource from 'unipept-web-components/src/logic/data-source/TaxaDataSource';
-import MissingPeptidesList from 'unipept-web-components/src/components/analysis/statistics/MissingPeptidesList.vue';
+import Vue from "vue";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import { Prop, Component, Watch } from "vue-property-decorator";
+import TaxaDataSource from "unipept-web-components/src/logic/data-source/TaxaDataSource";
+import MissingPeptidesList from "unipept-web-components/src/components/analysis/statistics/MissingPeptidesList.vue";
 
 @Component({
     components: {

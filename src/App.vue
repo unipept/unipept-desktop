@@ -32,41 +32,41 @@
 
 <script lang="ts">
 import Vue from "vue";
-import Component from 'vue-class-component';
-import { Prop, Watch } from 'vue-property-decorator';
-import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
-import Toolbar from './components/navigation-drawers/Toolbar.vue';
-import { Titlebar, Color } from 'custom-electron-titlebar'
+import Component from "vue-class-component";
+import { Prop, Watch } from "vue-property-decorator";
+import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
+import Toolbar from "./components/navigation-drawers/Toolbar.vue";
+import { Titlebar, Color } from "custom-electron-titlebar"
 import Utils from "./logic/Utils";
-import ConfigurationManager from './logic/configuration/ConfigurationManager';
-import Configuration from './logic/configuration/Configuration';
-import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
+import ConfigurationManager from "./logic/configuration/ConfigurationManager";
+import Configuration from "./logic/configuration/Configuration";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 
-const electron = window.require('electron');
+const electron = window.require("electron");
 const ipcRenderer  = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
 
 @Component({
-  components: {
-    Toolbar
-  },
-  computed: {
-    baseUrl: {
-      get(): string {
-        return this.$store.getters.baseUrl;
-      }
+    components: {
+        Toolbar
     },
-    useNativeTitlebar: {
-      get(): boolean {
-        return this.$store.getters.useNativeTitlebar;
-      }
-    },
-    assaysInProgress: {
-      get(): Assay[] {
-        return this.$store.getters.selectedDatasets.filter((assay: Assay) => assay.progress < 1);
-      }
+    computed: {
+        baseUrl: {
+            get(): string {
+                return this.$store.getters.baseUrl;
+            }
+        },
+        useNativeTitlebar: {
+            get(): boolean {
+                return this.$store.getters.useNativeTitlebar;
+            }
+        },
+        assaysInProgress: {
+            get(): Assay[] {
+                return this.$store.getters.selectedDatasets.filter((assay: Assay) => assay.progress < 1);
+            }
+        }
     }
-  }
 })
 export default class App extends Vue {
   private navDrawer: boolean = false;
@@ -80,40 +80,40 @@ export default class App extends Vue {
   private static previouslyInitialized: boolean = false;
 
   async mounted() {
-    // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
-    // pass through the Vue app.
-    ipcRenderer.on('navigate', (sender, location) => {
-      if (location !== this.$route.path) {
-          this.rightNavMini = true;
-          this.$router.push(location);
-      }
-    });    
+      // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
+      // pass through the Vue app.
+      ipcRenderer.on("navigate", (sender, location) => {
+          if (location !== this.$route.path) {
+              this.rightNavMini = true;
+              this.$router.push(location);
+          }
+      });    
 
-    await this.initConfiguration();
-    await this.setUpTitlebar();
+      await this.initConfiguration();
+      await this.setUpTitlebar();
   }
 
   @Watch("assaysInProgress")
   private assaysInProgressChanged(assays: Assay[]) {
-    if (!assays || assays.length === 0) {
-      electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
-    } else {
-      const average: number = assays.reduce((prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0) / assays.length;
-      electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
-    }
+      if (!assays || assays.length === 0) {
+          electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
+      } else {
+          const average: number = assays.reduce((prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0) / assays.length;
+          electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
+      }
   }
 
   @Watch("useNativeTitlebar")
   private setUpTitlebar() {
-    if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
-      this.titleBar = new Titlebar({
-        icon: require("./assets/icon.svg"),
-        backgroundColor: Color.fromHex('#004ba0')
-      });
+      if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
+          this.titleBar = new Titlebar({
+              icon: require("./assets/icon.svg"),
+              backgroundColor: Color.fromHex("#004ba0")
+          });
 
-      document.getElementsByName("html")[0].style.overflowY = "hidden";
-    }
-    App.previouslyInitialized = true;
+          document.getElementsByName("html")[0].style.overflowY = "hidden";
+      }
+      App.previouslyInitialized = true;
   }
 
   /** 
@@ -121,57 +121,57 @@ export default class App extends Vue {
    * store.
    */
   private async initConfiguration() {
-    this.loading = true;
-    let configurationManager = new ConfigurationManager();
-    try {
-      let config: Configuration = await configurationManager.readConfiguration();
-      this.$store.dispatch('setBaseUrl', config.apiSource);
-      this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
-    } catch (err) {
-      console.error(err)
-    }
+      this.loading = true;
+      let configurationManager = new ConfigurationManager();
+      try {
+          let config: Configuration = await configurationManager.readConfiguration();
+          this.$store.dispatch("setBaseUrl", config.apiSource);
+          this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
+      } catch (err) {
+          console.error(err)
+      }
    
-    this.loading = false;
+      this.loading = false;
   }
 
   private onToolbarWidthUpdated(newValue: number) {
-    this.toolbarWidth = newValue;
+      this.toolbarWidth = newValue;
   }
 
   @Watch("baseUrl")
   private async onBaseUrlChanged(newUrl: string) {
-    let configurationManager = new ConfigurationManager();
-    // Read the previous configuration.
-    let currentConfig = await configurationManager.readConfiguration();
-    // Make requested changes to the previous configuration.
-    currentConfig.apiSource = newUrl;
-    // Write changes to disk.
-    await configurationManager.writeConfiguration(currentConfig);
+      let configurationManager = new ConfigurationManager();
+      // Read the previous configuration.
+      let currentConfig = await configurationManager.readConfiguration();
+      // Make requested changes to the previous configuration.
+      currentConfig.apiSource = newUrl;
+      // Write changes to disk.
+      await configurationManager.writeConfiguration(currentConfig);
   }
 
   @Watch("useNativeTitlebar")
   private async onUseNativeTitlebarChanged(newValue: boolean) {
-    let configurationManager = new ConfigurationManager();
-    // Read the previous configuration.
-    let currentConfig = await configurationManager.readConfiguration();
-    // Make requested changes to the previous configuration.
-    currentConfig.useNativeTitlebar = newValue;
-    // Write changes to disk.
-    await configurationManager.writeConfiguration(currentConfig);
+      let configurationManager = new ConfigurationManager();
+      // Read the previous configuration.
+      let currentConfig = await configurationManager.readConfiguration();
+      // Make requested changes to the previous configuration.
+      currentConfig.useNativeTitlebar = newValue;
+      // Write changes to disk.
+      await configurationManager.writeConfiguration(currentConfig);
   }
 
   private selectDataset(value: PeptideContainer) {
-    // @ts-ignore
-    this.$store.dispatch("selectDataset", value);
+      // @ts-ignore
+      this.$store.dispatch("selectDataset", value);
   }
 
   private deselectDataset(value: PeptideContainer) {
-    // @ts-ignore
-    this.$store.dispatch("deselectDataset", value);
+      // @ts-ignore
+      this.$store.dispatch("deselectDataset", value);
   }
 
   private onActivateDataset(value: PeptideContainer) {
-    this.$store.dispatch("setActiveDataset", value);
+      this.$store.dispatch("setActiveDataset", value);
   }
 }
 </script>
