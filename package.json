@@ -1,6 +1,5 @@
 {
   "name": "unipept-desktop",
-  "productName": "Unipept Desktop",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +9,9 @@
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "postuninstall": "electron-builder install-app-deps",
+    "styleguide": "vue-cli-service styleguidist",
+    "styleguide:build": "vue-cli-service styleguidist:build"
   },
   "main": "background.js",
   "dependencies": {
@@ -59,6 +60,7 @@
     "style-loader": "^1.0.0",
     "typescript": "^3.4.3",
     "vue-cli-plugin-electron-builder": "^1.4.0",
+    "vue-cli-plugin-styleguidist": "^4.2.3",
     "vue-cli-plugin-vuetify": "^0.6.3",
     "vue-template-compiler": "^2.6.10",
     "vuetify-loader": "^1.2.2",
@@ -88,5 +90,6 @@
   "browserslist": [
     "> 1%",
     "last 2 versions"
-  ]
+  ],
+  "productName": "Unipept Desktop"
 }
