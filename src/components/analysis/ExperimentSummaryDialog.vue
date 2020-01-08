@@ -3,7 +3,7 @@
         <v-card>
             <v-card-title>Experiment summary</v-card-title>
             <v-card-text>
-                <span v-if="!dataset || loading">
+                <span v-if="!assay || loading">
                     <v-progress-circular :size="50" :width="5" color="primary" indeterminate></v-progress-circular>
                 </span>
                 <div v-else>
@@ -11,7 +11,7 @@
                     <span v-if="missedPeptides.length > 0">
                         Unfortunately {{ missedPeptides.length }} peptides couldn't be found.
                     </span>
-                    <missing-peptides-list :dataset="dataset">
+                    <missing-peptides-list :dataset="assay">
                     </missing-peptides-list>
                 </div>
             </v-card-text>
@@ -33,7 +33,7 @@ import MissingPeptidesList from 'unipept-web-components/src/components/analysis/
 })
 export default class ExperimentSummaryDialog extends Vue {
     @Prop({ required: true })
-    private dataset: Assay;
+    private assay: Assay;
     @Prop({ required: true })
     private active: boolean;
 
@@ -62,9 +62,9 @@ export default class ExperimentSummaryDialog extends Vue {
 
     @Watch("dataset")
     private async onDatasetChanged(): Promise<void> {
-        if (this.dataset) {
+        if (this.assay) {
             this.loading = true;
-            let taxaSource: TaxaDataSource = await this.dataset.dataRepository.createTaxaDataSource();
+            let taxaSource: TaxaDataSource = await this.assay.dataRepository.createTaxaDataSource();
             this.searchedPeptides = await taxaSource.getAmountOfSearchedPeptides();
             this.matchedPeptides = await taxaSource.getAmountOfMatchedPeptides();
             this.missedPeptides = await taxaSource.getMissedPeptides();

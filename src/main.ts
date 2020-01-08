@@ -11,6 +11,7 @@ import HomePage from './components/pages/HomePage.vue';
 import AnalysisPage from './components/pages/AnalysisPage.vue';
 import SettingsPage from './components/pages/SettingsPage.vue';
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
+import { AssayStore } from './state/AssayStore';
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -18,6 +19,7 @@ Vue.use(vueFullscreen);
 
 const store = new Vuex.Store({
   modules: {
+      assay: AssayStore,
       global: GlobalStore,
       configuration: ConfigurationStore,
       desktopConfiguration: DesktopConfigurationStore
