@@ -105,14 +105,14 @@ export default class App extends Vue {
 
   @Watch("useNativeTitlebar")
   private setUpTitlebar() {
-    // if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
-    //   this.titleBar = new Titlebar({
-    //     icon: require("./assets/icon.svg"),
-    //     backgroundColor: Color.fromHex('#004ba0')
-    //   });
+    if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
+      this.titleBar = new Titlebar({
+        icon: require("./assets/icon.svg"),
+        backgroundColor: Color.fromHex('#004ba0')
+      });
 
-    //   document.getElementsByName("html")[0].style.overflowY = "hidden";
-    // }
+      document.getElementsByName("html")[0].style.overflowY = "hidden";
+    }
     App.previouslyInitialized = true;
   }
 
