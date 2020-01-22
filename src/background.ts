@@ -14,8 +14,8 @@ let win: BrowserWindow | null
 protocol.registerSchemesAsPrivileged([{scheme: 'app', privileges: { secure: true, standard: true } }])
 
 async function createWindow () {
-  let configManager = new ConfigurationManager(app);
-  let config = await configManager.readConfiguration();
+  // let configManager = new ConfigurationManager(app);
+  // let config = await configManager.readConfiguration();
   // Create the browser window.
   let options: Electron.BrowserWindowConstructorOptions = { 
     width: 800, 
@@ -24,9 +24,9 @@ async function createWindow () {
   };
 
 
-  if (Utils.isWindows() && !config.useNativeTitlebar) {
-    options["frame"] = false;
-  }
+  // if (Utils.isWindows() && !config.useNativeTitlebar) {
+  //   options["frame"] = false;
+  // }
 
   win = new BrowserWindow(options)
 
