@@ -47,7 +47,7 @@ export default class ExperimentSummaryDialog extends Vue {
 
     public mounted() {
         this.dialogVisible = this.active;
-        this.onDatasetChanged();
+        this.onAssayChanged();
     }
 
     @Watch("active")
@@ -60,8 +60,8 @@ export default class ExperimentSummaryDialog extends Vue {
         this.$emit("update:active", this.dialogVisible);
     }
 
-    @Watch("dataset")
-    private async onDatasetChanged(): Promise<void> {
+    @Watch("assay")
+    private async onAssayChanged(): Promise<void> {
         if (this.assay) {
             this.loading = true;
             let taxaSource: TaxaDataSource = await this.assay.dataRepository.createTaxaDataSource();

@@ -135,6 +135,7 @@ export default class Toolbar extends Vue {
     }
 
     private showExperimentSummary(dataset: Assay) {
+        console.log(dataset);
         this.summaryDataset = dataset;
         this.summaryActive = true;
     }
