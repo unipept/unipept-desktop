@@ -63,7 +63,7 @@ const BrowserWindow = electron.BrowserWindow;
     },
     assaysInProgress: {
       get(): Assay[] {
-        return this.$store.getters.selectedDatasets.filter((assay: Assay) => assay.progress < 1);
+        return this.$store.getters.getSelectedAssays.filter((assay: Assay) => assay.progress < 1);
       }
     }
   }
@@ -128,6 +128,7 @@ export default class App extends Vue {
       this.$store.dispatch('setBaseUrl', config.apiSource);
       this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
     } catch (err) {
+      // TODO: show a proper error message to the user in case this happens
       console.error(err)
     }
    
