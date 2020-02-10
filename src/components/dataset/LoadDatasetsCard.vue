@@ -105,7 +105,7 @@ export default class LoadDatasetsCard extends Vue {
 
     private onDestroyAssay(assay: Assay) {
         // Remove the assay from the store, then also delete it from local storage.
-        this.$store.dispatch('removeStoredAssay', assay);
+        this.$store.dispatch("removeStoredAssay", assay);
         this.deleteAssayFromStorage(assay);
         this.$emit("destroy-assay", assay);
     }
@@ -121,7 +121,7 @@ export default class LoadDatasetsCard extends Vue {
      * @param assay Assay for which all data should be removed from persistent storage.
      */
     private deleteAssayFromStorage(assay: Assay) {
-        this.$store.dispatch('removeStoredAssay', assay);
+        this.$store.dispatch("removeStoredAssay", assay);
         const storageRemover: StorageRemover = new StorageRemover();
         assay.visit(storageRemover);
     }
@@ -136,7 +136,7 @@ export default class LoadDatasetsCard extends Vue {
         assay.visit(storageWriter).then(() => {
             // We only need to add the assay to the store, if it's explicitly written to local storage.
             if (assay.getStorageType() === StorageType.LocalStorage) {
-                this.$store.dispatch('addStoredAssay', assay);
+                this.$store.dispatch("addStoredAssay", assay);
             }
         });
     }

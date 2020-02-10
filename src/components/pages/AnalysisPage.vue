@@ -4,7 +4,9 @@
             <v-col>
                 <single-dataset-visualizations-card 
                     :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
-                    :analysisInProgress="$store.getters.datasetsInProgress > 0">
+                    :analysisInProgress="$store.getters.datasetsInProgress > 0"
+                    v-on:update-selected-term="onUpdateSelectedTerm"
+                    v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
             </v-col>
         </v-row>
@@ -12,7 +14,8 @@
             <v-col>
                 <functional-summary-card 
                     :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
-                    :analysisInProgress="$store.getters.datasetsInProgress > 0">
+                    :analysisInProgress="$store.getters.datasetsInProgress > 0"
+                    :selectedTaxonId="$store.getters.getSelectedTaxonId">
                 </functional-summary-card>
             </v-col>
         </v-row>
@@ -34,6 +37,13 @@ import FunctionalSummaryCard from "unipept-web-components/src/components/analysi
     }
 })
 export default class AnalysisPage extends Vue {
+    private onUpdateSelectedTaxonId(id: number) {
+        this.$store.dispatch("setSelectedTaxonId", id);
+    }
+
+    private onUpdateSelectedTerm(term: string) {
+        this.$store.dispatch("setSelectedTerm", term);
+    }
 }
 </script>
 

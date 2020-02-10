@@ -1,29 +1,29 @@
-import Vue from 'vue'
-import App from './App.vue'
-import vuetify from './plugins/vuetify';
-import {FilterStore} from 'unipept-web-components/src/state/FilterStore';
-import {ConfigurationStore} from 'unipept-web-components/src/state/ConfigurationStore';
-import {DesktopConfigurationStore} from './state/DesktopConfigurationStore';
-import Vuex from 'vuex';
-import vueFullscreen from 'vue-fullscreen';
-import VueRouter from 'vue-router';
-import HomePage from './components/pages/HomePage.vue';
-import AnalysisPage from './components/pages/AnalysisPage.vue';
-import SettingsPage from './components/pages/SettingsPage.vue';
+import Vue from "vue"
+import App from "./App.vue"
+import vuetify from "./plugins/vuetify";
+import { FilterStore } from "unipept-web-components/src/state/FilterStore";
+import { ConfigurationStore } from "unipept-web-components/src/state/ConfigurationStore";
+import { DesktopConfigurationStore } from "./state/DesktopConfigurationStore";
+import Vuex from "vuex";
+import vueFullscreen from "vue-fullscreen";
+import VueRouter from "vue-router";
+import HomePage from "./components/pages/HomePage.vue";
+import AnalysisPage from "./components/pages/AnalysisPage.vue";
+import SettingsPage from "./components/pages/SettingsPage.vue";
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
-import { AssayStore } from './state/AssayStore';
+import { AssayStore } from "./state/AssayStore";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
 Vue.use(vueFullscreen);
 
 const store = new Vuex.Store({
-  modules: {
-      assay: AssayStore,
-      filter: FilterStore,
-      configuration: ConfigurationStore,
-      desktopConfiguration: DesktopConfigurationStore
-  }
+    modules: {
+        assay: AssayStore,
+        filter: FilterStore,
+        configuration: ConfigurationStore,
+        desktopConfiguration: DesktopConfigurationStore
+    }
 });
 
 const routes = [

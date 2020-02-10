@@ -1,7 +1,7 @@
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import { GetterTree, MutationTree, ActionTree, ActionContext, Store } from "vuex";
 import MpaAnalysisManager from "unipept-web-components/src/logic/data-management/MpaAnalysisManager";
-import MPAConfig from 'unipept-web-components/src/logic/data-management/MPAConfig';
+import MPAConfig from "unipept-web-components/src/logic/data-management/MPAConfig";
 
 /**
  * The AssayState keeps track of which assays are currently selected by the user for analysis, and which assays are
@@ -192,12 +192,12 @@ const assayActions: ActionTree<AssayState, any> = {
                 }
             }
 
-            store.commit('SET_ACTIVE_ASSAY', newActive);
+            store.commit("SET_ACTIVE_ASSAY", newActive);
         }
     },
 
     addStoredAssay(store: ActionContext<AssayState, any>, assay: Assay) {
-        store.commit('ADD_STORED_ASSAY', assay);
+        store.commit("ADD_STORED_ASSAY", assay);
     },
 
     /**
@@ -209,12 +209,12 @@ const assayActions: ActionTree<AssayState, any> = {
      * @param assay The assay that should be added to the list of stored assays.
      */
     removeStoredAssay(store: ActionContext<AssayState, any>, assay: Assay) {
-        store.dispatch('deselectAssay', assay);
-        store.commit('REMOVE_STORED_ASSAY', assay);
+        store.dispatch("deselectAssay", assay);
+        store.commit("REMOVE_STORED_ASSAY", assay);
     },
     
     setActiveAssay(store: ActionContext<AssayState, any>, assay: Assay) {
-        store.commit('SET_ACTIVE_ASSAY', assay);
+        store.commit("SET_ACTIVE_ASSAY", assay);
     },
 
     /**
@@ -234,12 +234,12 @@ const assayActions: ActionTree<AssayState, any> = {
     },
 
     updateSearchSettings(store: ActionContext<AssayState, any>, settings: MPAConfig) {
-        store.commit('SET_SEARCH_SETTINGS', settings);
-        store.commit('SET_ACTIVE_ASSAY', null);
+        store.commit("SET_SEARCH_SETTINGS", settings);
+        store.commit("SET_ACTIVE_ASSAY", null);
 
         // Reprocess all currently selected assays.
         for (let assay of store.getters.getSelectedAssays) {
-            store.dispatch('processAssay', assay);
+            store.dispatch("processAssay", assay);
         }
     }
 }

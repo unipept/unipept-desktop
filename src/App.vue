@@ -122,17 +122,17 @@ export default class App extends Vue {
    * store.
    */
   private async initConfiguration() {
-    this.loading = true;
-    let configurationManager = new ConfigurationManager();
-    try {
-      let config: Configuration = await configurationManager.readConfiguration();
-      this.$store.dispatch('setBaseUrl', config.apiSource);
-      this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
-    } catch (err) {
+      this.loading = true;
+      let configurationManager = new ConfigurationManager();
+      try {
+          let config: Configuration = await configurationManager.readConfiguration();
+          this.$store.dispatch("setBaseUrl", config.apiSource);
+          this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
+      } catch (err) {
       // TODO: show a proper error message to the user in case this happens
-      console.error(err)
-    }
-    this.loading = false;
+          console.error(err)
+      }
+      this.loading = false;
   }
 
   private onToolbarWidthUpdated(newValue: number) {

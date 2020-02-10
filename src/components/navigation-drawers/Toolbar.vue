@@ -73,13 +73,13 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
-import Component from 'vue-class-component';
-import {Prop, Watch} from 'vue-property-decorator';
-import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
-import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
-import ExperimentSummaryDialog from './../analysis/ExperimentSummaryDialog.vue';
-import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
+import Vue from "vue";
+import Component from "vue-class-component";
+import { Prop, Watch } from "vue-property-decorator";
+import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
+import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
 
 @Component({
