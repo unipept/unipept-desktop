@@ -3,7 +3,7 @@ import Configuration from "./Configuration";
 // from a specified path.
 import fs from "fs";
 // import { promises as fs } from 'fs';
-import { App } from 'electron';
+import { App } from "electron";
 
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
@@ -11,7 +11,7 @@ export default class ConfigurationManager {
     // This is the default configuration object that's used as a fallback for inconsistent/inavailable configuration
     // values.
     private static readonly DEFAULT_CONFIG: Configuration = {
-        apiSource: 'http://localhost:3000',
+        apiSource: "http://localhost:3000",
         useNativeTitlebar: false
     };
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
@@ -100,23 +100,23 @@ export default class ConfigurationManager {
      */
     private isUrl(url: string): boolean {
         // See https://stackoverflow.com/questions/5717093/check-if-a-javascript-string-is-a-url/49849482
-        const pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
-            '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|'+ // domain name
-            '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-            '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
-            '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
-            '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+        const pattern = new RegExp("^(https?:\\/\\/)?"+ // protocol
+            "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|"+ // domain name
+            "((\\d{1,3}\\.){3}\\d{1,3}))"+ // OR ip (v4) address
+            "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*"+ // port and path
+            "(\\?[;&a-z\\d%_.~+=-]*)?"+ // query string
+            "(\\#[-a-z\\d_]*)?$","i"); // fragment locator
         return pattern.test(url);
     }
 
     private getConfigurationFilePath(): string {
         if (!this.app) {
-            const { app } = require('electron').remote;
+            const { app } = require("electron").remote;
             this.app = app;
         }
 
         // Get a reference to the user data folder in which configuration data will be stored.
-        const configurationFolder = this.app.getPath('userData');
+        const configurationFolder = this.app.getPath("userData");
         return configurationFolder + "/" + ConfigurationManager.CONFIG_FILE_NAME;
     } 
 }

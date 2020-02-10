@@ -90,9 +90,9 @@ import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
     }
 })
 export default class Toolbar extends Vue {
-    @Prop({required: false, default: false})
+    @Prop({ required: false, default: false })
     private open: boolean;
-    @Prop({required: false, default: true})
+    @Prop({ required: false, default: true })
     private mini: boolean;
 
     private selectSampleDialog: boolean = false;
@@ -124,18 +124,17 @@ export default class Toolbar extends Vue {
         this.isMini = this.mini;
     }
 
-    @Watch('isOpen')
+    @Watch("isOpen")
     private onIsOpenChanged() {
-        this.$emit('update:open', this.isOpen);
+        this.$emit("update:open", this.isOpen);
     }
 
-    @Watch('isMini')
+    @Watch("isMini")
     private onIsMiniChanged() {
-        this.$emit('update:mini', this.isMini);
+        this.$emit("update:mini", this.isMini);
     }
 
-    private showExperimentSummary(dataset: Assay) {
-        console.log(dataset);
+    private showExperimentSummary(dataset) {
         this.summaryDataset = dataset;
         this.summaryActive = true;
     }

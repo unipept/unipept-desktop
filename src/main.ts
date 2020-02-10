@@ -27,35 +27,35 @@ const store = new Vuex.Store({
 });
 
 const routes = [
-  { 
-    path: '/', 
-    component: AnalysisPage, 
-    meta: {
-      title: 'Analyse' 
+    { 
+        path: "/", 
+        component: AnalysisPage, 
+        meta: {
+            title: "Analyse" 
+        }
+    },
+    { 
+        path: "/settings", 
+        component: SettingsPage, 
+        meta: {
+            title: "Settings"
+        }
     }
-  },
-  { 
-    path: '/settings', 
-    component: SettingsPage, 
-    meta: {
-      title: 'Settings'
-    }
-  }
 ]
 
 const router = new VueRouter({
-  routes,
-  mode: 'hash'
+    routes,
+    mode: "hash"
 })
 
 Vue.config.productionTip = false
 
 new Vue({
-  // @ts-ignore
-  store: store,
-  vuetify: vuetify,
-  router: router,
-  render: h => h(App)
-}).$mount('#app')
+    // @ts-ignore
+    store: store,
+    vuetify: vuetify,
+    router: router,
+    render: h => h(App)
+}).$mount("#app")
 
 
