@@ -4,7 +4,7 @@
             <v-col>
                 <single-dataset-visualizations-card 
                     :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
-                    :analysisInProgress="$store.getters.datasetsInProgress > 0"
+                    :analysisInProgress="$store.getters.getSelectedAssays.length > 0"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -14,7 +14,7 @@
             <v-col>
                 <functional-summary-card 
                     :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
-                    :analysisInProgress="$store.getters.datasetsInProgress > 0"
+                    :analysisInProgress="$store.getters.getSelectedAssays.length > 0"
                     :selectedTaxonId="$store.getters.getSelectedTaxonId">
                 </functional-summary-card>
             </v-col>

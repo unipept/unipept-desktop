@@ -115,7 +115,7 @@ export default class SettingsPage extends Vue {
 }
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
   .settings-title {
     color: black;
     font-size: 18px;
