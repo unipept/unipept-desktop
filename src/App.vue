@@ -51,6 +51,7 @@ const BrowserWindow = electron.BrowserWindow;
         Toolbar
     },
     computed: {
+    
         baseUrl: {
             get(): string {
                 return this.$store.getters.baseUrl;
@@ -63,7 +64,7 @@ const BrowserWindow = electron.BrowserWindow;
         },
         assaysInProgress: {
             get(): Assay[] {
-                return this.$store.getters.selectedDatasets.filter((assay: Assay) => assay.progress < 1);
+                return this.$store.getters.getSelectedAssays.filter((assay: Assay) => assay.progress < 1);
             }
         }
     }
@@ -121,17 +122,17 @@ export default class App extends Vue {
    * store.
    */
   private async initConfiguration() {
-      this.loading = true;
-      let configurationManager = new ConfigurationManager();
-      try {
-          let config: Configuration = await configurationManager.readConfiguration();
-          this.$store.dispatch("setBaseUrl", config.apiSource);
-          this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
-      } catch (err) {
-          console.error(err)
-      }
-   
-      this.loading = false;
+    this.loading = true;
+    let configurationManager = new ConfigurationManager();
+    try {
+      let config: Configuration = await configurationManager.readConfiguration();
+      this.$store.dispatch('setBaseUrl', config.apiSource);
+      this.$store.dispatch('setUseNativeTitlebar', config.useNativeTitlebar);
+    } catch (err) {
+      // TODO: show a proper error message to the user in case this happens
+      console.error(err)
+    }
+    this.loading = false;
   }
 
   private onToolbarWidthUpdated(newValue: number) {
@@ -183,6 +184,8 @@ export default class App extends Vue {
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
+    /* Vuetify centers all elements by default. This is however something we dont want. */
+    text-align: left !important;
   }
 
   .v-application--wrap {

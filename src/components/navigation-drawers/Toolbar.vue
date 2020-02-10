@@ -25,25 +25,25 @@
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
-                <div class="sample-list-placeholder" v-if="!this.$store.getters.selectedDatasets || this.$store.getters.selectedDatasets.length === 0">
+                <div class="sample-list-placeholder" v-if="!this.$store.getters.getSelectedAssays || this.$store.getters.getSelectedAssays.length === 0">
                     No samples selected.
                 </div>
                 <v-list dense>
-                    <v-list-item :class="{'v-list-item--active': $store.getters.activeDataset === dataset}" @click="activateDataset(dataset)" v-for="dataset of this.$store.getters.selectedDatasets" :key="dataset.id">
+                    <v-list-item :class="{'v-list-item--active': $store.getters.getActiveAssay === assay}" @click="activateDataset(assay)" v-for="assay of this.$store.getters.getSelectedAssays" :key="assay.id">
                         <v-list-item-title>
-                            {{ dataset.getName() }}
+                            {{ assay.getName() }}
                         </v-list-item-title>
                         <v-list-item-subtitle>
-                            {{ dataset.getAmountOfPeptides() }} peptides
+                            {{ assay.getAmountOfPeptides() }} peptides
                         </v-list-item-subtitle>
                         <v-list-item-action>
-                            <v-progress-circular v-if="dataset.progress !== 1" :rotate="-90" :size="18" :value="dataset.progress * 100" color="primary"></v-progress-circular>
+                            <v-progress-circular v-if="assay.progress !== 1" :rotate="-90" :size="18" :value="assay.progress * 100" color="primary"></v-progress-circular>
                             <div v-else style="display: flex; flex-direction: row;">
                                 <tooltip message="Display experiment summary." position="bottom">
-                                    <v-icon @click="showExperimentSummary(dataset)" v-on:click.stop small>mdi-information-outline</v-icon>
+                                    <v-icon @click="showExperimentSummary(assay)" v-on:click.stop small>mdi-information-outline</v-icon>
                                 </tooltip>
                                 <tooltip message="Remove dataset from analysis." position="bottom">
-                                    <v-icon @click="deselectDataset(dataset)" v-on:click.stop small>mdi-close</v-icon>
+                                    <v-icon @click="deselectDataset(assay)" v-on:click.stop small>mdi-close</v-icon>
                                 </tooltip>
                             </div>
                         </v-list-item-action>
@@ -53,28 +53,34 @@
             </div>
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
-        <experiment-summary-dialog :dataset="summaryDataset" :active.sync="summaryActive"></experiment-summary-dialog>
+        <experiment-summary-dialog 
+            :assay="summaryDataset"
+            :active.sync="summaryActive">
+        </experiment-summary-dialog>
         <v-dialog v-model="selectSampleDialog" max-width="800">
             <v-card>
                 <v-card-title>
                     Sample selection
                 </v-card-title>
-                <load-datasets-card :selected-datasets="this.$store.getters.selectedDatasets" :stored-datasets="this.$store.getters.storedDatasets"></load-datasets-card>
+                <load-datasets-card 
+                    :selected-assays="this.$store.getters.getSelectedAssays" 
+                    :stored-assays="this.$store.getters.getStoredAssays"
+                    v-on:create-assay="onCreateAssay">
+                </load-datasets-card>
             </v-card>
         </v-dialog>
     </div>
 </template>
 
 <script lang="ts">
-import Vue from "vue";
-import Component from "vue-class-component";
-import { Prop, Watch } from "vue-property-decorator";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
-import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import { EventBus } from "unipept-web-components/src/components/EventBus";
-import LoadDatasetsCard from "unipept-web-components/src/components/dataset/LoadDatasetsCard.vue";
+import Vue from 'vue';
+import Component from 'vue-class-component';
+import {Prop, Watch} from 'vue-property-decorator';
+import Tooltip from 'unipept-web-components/src/components/custom/Tooltip.vue';
+import PeptideContainer from 'unipept-web-components/src/logic/data-management/PeptideContainer';
+import ExperimentSummaryDialog from './../analysis/ExperimentSummaryDialog.vue';
+import Assay from 'unipept-web-components/src/logic/data-management/assay/Assay';
+import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
 
 @Component({
     components: {
@@ -106,7 +112,6 @@ export default class Toolbar extends Vue {
         this.isOpen = this.open;
         this.isMini = this.mini;
         this.setupDraggableToolbar();
-        this.initializeEventListeners();
     }
 
     @Watch("open")
@@ -129,14 +134,6 @@ export default class Toolbar extends Vue {
         this.$emit("update:mini", this.isMini);
     }
 
-    private initializeEventListeners() {
-        EventBus.$on("select-dataset", (dataset: PeptideContainer) => {
-            this.$store.dispatch("selectDataset", dataset);
-            this.$store.dispatch("processDataset", dataset);
-            this.selectSampleDialog = false;
-        })
-    }
-
     private showExperimentSummary(dataset) {
         this.summaryDataset = dataset;
         this.summaryActive = true;
@@ -146,8 +143,8 @@ export default class Toolbar extends Vue {
         this.selectSampleDialog = true;
     }
 
-    private activateDataset(dataset: PeptideContainer) {
-        this.$store.dispatch("setActiveDataset, dataset");
+    private activateDataset(assay: Assay) {
+        this.$store.dispatch("setActiveAssay", assay);
     }
 
     /**
@@ -189,6 +186,13 @@ export default class Toolbar extends Vue {
             this.originalToolbarWidth = this.toolbarWidth;
             document.removeEventListener("mousemove", mouseMoveListener);
         });
+    }
+
+    private onCreateAssay(assay: Assay) {
+        // Close the datasets card
+        this.selectSampleDialog = false;
+        // Process the newly selected assay
+        this.$store.dispatch("processAssay", assay);
     }
 
     @Watch("toolbarWidth")

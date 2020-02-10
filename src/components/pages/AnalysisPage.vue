@@ -2,13 +2,17 @@
     <v-container fluid>
         <v-row>
             <v-col>
-                <single-dataset-visualizations-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="$store.getters.datasetsInProgress > 0">
+                <single-dataset-visualizations-card 
+                    :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
+                    :analysisInProgress="$store.getters.datasetsInProgress > 0">
                 </single-dataset-visualizations-card>
             </v-col>
         </v-row>
         <v-row>
             <v-col>
-                <functional-summary-card :dataRepository="this.$store.getters.activeDataset ? this.$store.getters.activeDataset.dataRepository : null" :analysisInProgress="$store.getters.datasetsInProgress > 0">
+                <functional-summary-card 
+                    :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
+                    :analysisInProgress="$store.getters.datasetsInProgress > 0">
                 </functional-summary-card>
             </v-col>
         </v-row>

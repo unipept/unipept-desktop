@@ -1,6 +1,5 @@
 {
   "name": "unipept-desktop",
-  "productName": "Unipept Desktop",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,24 +9,19 @@
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "postuninstall": "electron-builder install-app-deps",
+    "styleguide": "vue-cli-service styleguidist",
+    "styleguide:build": "vue-cli-service styleguidist:build"
   },
   "main": "background.js",
   "dependencies": {
     "@babel/preset-env": "^7.6.0",
     "axios": "^0.19.0",
     "babel-polyfill": "^6.26.0",
-    "canvg": "^2.0.0",
-    "clipboard": "^2.0.4",
-    "clipboard-polyfill": "^2.8.6",
     "core-js": "^2.6.9",
-    "crypto-js": "^3.1.9-1",
     "custom-electron-titlebar": "^3.1.0",
-    "html2canvas": "^1.0.0-rc.5",
     "jquery": "^3.4.1",
     "regenerator-runtime": "^0.13.3",
-    "unipept-heatmap": "^1.0.26",
-    "unipept-visualizations": "^1.7.3",
     "vue": "^2.6.10",
     "vue-class-component": "^7.1.0",
     "vue-fullscreen": "^2.1.5",
@@ -59,6 +53,7 @@
     "style-loader": "^1.0.0",
     "typescript": "^3.4.3",
     "vue-cli-plugin-electron-builder": "^1.4.0",
+    "vue-cli-plugin-styleguidist": "^4.2.3",
     "vue-cli-plugin-vuetify": "^0.6.3",
     "vue-template-compiler": "^2.6.10",
     "vuetify-loader": "^1.2.2",
@@ -88,5 +83,6 @@
   "browserslist": [
     "> 1%",
     "last 2 versions"
-  ]
+  ],
+  "productName": "Unipept Desktop"
 }
