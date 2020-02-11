@@ -2,18 +2,17 @@ import Assay from "unipept-web-components/src/logic/data-management/assay/Assay"
 import { GetterTree, MutationTree, ActionTree, ActionContext, Store } from "vuex";
 import MpaAnalysisManager from "unipept-web-components/src/logic/data-management/MpaAnalysisManager";
 import MPAConfig from "unipept-web-components/src/logic/data-management/MPAConfig";
+import Study from "@/logic/study/study";
+import Entity from "unipept-web-components/src/logic/data-management/assay/Entity";
 
 /**
  * The AssayState keeps track of which assays are currently selected by the user for analysis, and which assays are
  * present in the browser's local storage. This store guarantees that the initial objects set in this state will only
  * be modified and will not be replaced by different objects (which might break Vue reactivity).
- * 
- * NOTE: THIS IS A TEMPORARY VERSION OF THE STORE, ONLY HERE TO MAKE SURE THE DESKTOP APP KEEPS WORKING WHILE
- * WE'RE UPDATING THE WEB COMPONENTS.
  */
 export interface AssayState {
     // Which assays are currently selected by the user for analysis?
-    selectedAssays: Assay[],
+    selectedStudies: Study[],
     // Which assay are stored in this browser's local storage?
     storedAssays: Assay[],
     // Did the user already start with the analysis of the samples?
@@ -25,7 +24,7 @@ export interface AssayState {
 }
 
 const assayState: AssayState = {
-    selectedAssays: [],
+    selectedStudies: [],
     storedAssays: [],
     analysisStarted: false,
     activeAssay: null,
@@ -37,8 +36,14 @@ const assayState: AssayState = {
 }
 
 const assayGetters: GetterTree<AssayState, any> = {
-    getSelectedAssays(state: AssayState): Assay[] {
-        return state.selectedAssays;
+    getSelectedStudies(state: AssayState): Study[] {
+        return state.selectedStudies;
+    },
+    /**
+     * Returns a list with all assays from all studies that are currently part of this project.
+     */
+    getAllAssays(state: AssayState): Assay[] {
+        return state.selectedStudies.reduce((acc, current) => acc.concat(current.assays), []);
     },
     getStoredAssays(state: AssayState): Assay[] {
         return state.storedAssays
@@ -62,12 +67,12 @@ const assayGetters: GetterTree<AssayState, any> = {
  * @param list The list in which we look for the index of the given assay.
  * @return Position of the given item, in the given list. -1 if the item was not found.
  */
-const findAssayIndex = function(item: Assay, list: Assay[]): number {
+function findIndex<T extends Entity<any>>(item: T, list: T[]): number {
     if (!item) {
         return -1;
     }
 
-    return list.findIndex((value: Assay) => value.getId() === item.getId());
+    return list.findIndex((value: T) => value.getId() === item.getId());
 }
 
 
@@ -77,14 +82,23 @@ const assayMutations: MutationTree<AssayState> = {
      * selected. The given assay will always be added to the end of the selected assay list.
      * 
      * @param state Instance of the AssayState to which the given assay should be added.
-     * @param assay The assay that should be added to the selection.
+     * @param data A tuple containing the assay that should be added as first item, and the study to which this assay
+     * should be added in the second position.
      */
-    SELECT_ASSAY(state: AssayState, assay: Assay) {
-        const idx: number = findAssayIndex(assay, state.selectedAssays);
+    SELECT_ASSAY(state: AssayState, data: [Assay, Study]) {
+        const assay = data[0];
+        const study = data[1];
 
-        // The new assay will only be selected if no assay with the same ID has already been selected.
-        if (idx === -1) {
-            state.selectedAssays.push(assay);
+        const idx: number = findIndex(study, state.selectedStudies);
+
+        if (idx !== -1) {
+            const study: Study = state.selectedStudies[idx];
+            const assayIdx: number = findIndex(assay, study.assays);
+            
+            // Now add the assay to this study if it hasn't been selected before
+            if (assayIdx === -1) {
+                study.assays.push(assay);
+            }
         }
     },
 
@@ -92,14 +106,22 @@ const assayMutations: MutationTree<AssayState> = {
      * Remove an assay from the list of selected assays. No error is thrown when a non-existant assay is being removed.
      * 
      * @param state Instance of the AssayState from which the given assay should be removed.
-     * @param assay The assay that should be removed from the selection.
+     * @param data A tuple containing the assay that should be deselected as the first item and the study from which
+     * this assay should be removed in the second position.
      */
-    DESELECT_ASSAY(state: AssayState, assay: Assay) {
-        const idx: number = findAssayIndex(assay, state.selectedAssays);
+    DESELECT_ASSAY(state: AssayState, data: [Assay, Study]) {
+        const assay = data[0];
+        const study = data[1];
 
-        // Assay will only be removed when it is found in the list of selected items.
+        const idx: number = findIndex(study, state.selectedStudies);
+
         if (idx !== -1) {
-            state.selectedAssays.splice(idx, 1);
+            const study: Study = state.selectedStudies[idx];
+            const assayIdx: number = findIndex(assay, study.assays);
+            
+            if (assayIdx !== -1) {
+                study.assays.splice(idx, 1);
+            }
         }
     },
 
@@ -112,7 +134,7 @@ const assayMutations: MutationTree<AssayState> = {
      * stored by this function, it will only be marked as stored.
      */
     ADD_STORED_ASSAY(state: AssayState, assay: Assay) {
-        const idx: number = findAssayIndex(assay, state.storedAssays);
+        const idx: number = findIndex(assay, state.storedAssays);
 
         if (idx === -1) {
             state.storedAssays.push(assay);
@@ -126,7 +148,7 @@ const assayMutations: MutationTree<AssayState> = {
      * @param assay The assay that should be removed from the list of stored assays.
      */
     REMOVE_STORED_ASSAY(state: AssayState, assay: Assay) {
-        const idx: number = findAssayIndex(assay, state.storedAssays);
+        const idx: number = findIndex(assay, state.storedAssays);
 
         if (idx !== -1) {
             state.storedAssays.splice(idx, 1);
@@ -179,7 +201,7 @@ const assayActions: ActionTree<AssayState, any> = {
     resetActiveAssay(store: ActionContext<AssayState, any>) {
         let shouldReselect: boolean = true;
         if (!store.getters.activeAssay) {
-            const idx: number = findAssayIndex(store.getters.getActiveAssay, store.getters.getSelectedAssays);
+            const idx: number = findIndex(store.getters.getActiveAssay, store.getters.getSelectedAssays);
             shouldReselect = idx === -1;
         }
 

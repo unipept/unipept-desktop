@@ -31,7 +31,7 @@
                     <v-col cols="11">
                       <div class="settings-title">Use native titlebar</div>
                       <span class="settings-text">Forces the application to use the native titlebar on Windows.</span>
-                      <span class="settings-text settings-important-text">Changing this option requires you to restart the application.</span>
+                      <span class="settings-text settings-important-text"> Changing this option requires you to restart the application.</span>
                     </v-col>
                     <v-col cols="1">
                       <v-switch :disabled="!isWindows" v-model="configuration.useNativeTitlebar"></v-switch>

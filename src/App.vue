@@ -51,7 +51,6 @@ const BrowserWindow = electron.BrowserWindow;
         Toolbar
     },
     computed: {
-    
         baseUrl: {
             get(): string {
                 return this.$store.getters.baseUrl;
@@ -64,7 +63,9 @@ const BrowserWindow = electron.BrowserWindow;
         },
         assaysInProgress: {
             get(): Assay[] {
-                return this.$store.getters.getSelectedAssays.filter((assay: Assay) => assay.progress < 1);
+                return this.$store.getters.getSelectedStudies
+                    .filter((assay: Assay) => assay.progress < 1)
+                    .concat((acc, current) => acc.concat(current), []);
             }
         }
     }

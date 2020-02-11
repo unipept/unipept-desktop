@@ -25,10 +25,10 @@
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
-                <div class="sample-list-placeholder" v-if="!this.$store.getters.getSelectedAssays || this.$store.getters.getSelectedAssays.length === 0">
-                    No samples selected.
+                <div class="sample-list-placeholder" v-if="this.$store.getters.getSelectedStudies.length === 0">
+                    No studies present.
                 </div>
-                <v-list dense>
+                <!-- <v-list dense>
                     <v-list-item :class="{'v-list-item--active': $store.getters.getActiveAssay === assay}" @click="activateDataset(assay)" v-for="assay of this.$store.getters.getSelectedAssays" :key="assay.id">
                         <v-list-item-title>
                             {{ assay.getName() }}
@@ -48,8 +48,12 @@
                             </div>
                         </v-list-item-action>
                     </v-list-item>
-                </v-list>
-                <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
+                </v-list> -->
+
+                
+                <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">
+                    Select sample
+                </v-btn>
             </div>
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
@@ -215,7 +219,7 @@ export default class Toolbar extends Vue {
     .toolbar-content {
         height: 100%;
         position: fixed; 
-        left: 80px; 
+        left: 55px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
         display: none;
