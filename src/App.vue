@@ -20,9 +20,9 @@
       <v-content 
         :style="{
           'min-height': '100%',
-          'max-width': rightNavMini ? 'calc(100% - 80px)' : 'calc(100% - ' + (toolbarWidth + 80) + 'px)',
+          'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
           'position': 'relative',
-          'left': rightNavMini ? '80px' : (toolbarWidth + 80) + 'px'
+          'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
         }">
         <router-view style="min-height: 100%;"></router-view>
       </v-content>
@@ -65,7 +65,7 @@ const BrowserWindow = electron.BrowserWindow;
             get(): Assay[] {
                 return this.$store.getters.getSelectedStudies
                     .filter((assay: Assay) => assay.progress < 1)
-                    .concat((acc, current) => acc.concat(current), []);
+                    .reduce((acc, current) => acc.concat(current), []);
             }
         }
     }

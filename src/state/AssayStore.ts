@@ -78,8 +78,9 @@ function findIndex<T extends Entity<any>>(item: T, list: T[]): number {
 
 const assayMutations: MutationTree<AssayState> = {
     /**
-     * Add an assay to the list of selected assays. Assays will only be added if no assay with the same ID is already
-     * selected. The given assay will always be added to the end of the selected assay list.
+     * Add an assay to the list of selected assays for the given study. Assays will only be added if no assay with the 
+     * same ID is already selected (within this study). The given assay will always be added to the end of the selected 
+     * assay list.
      * 
      * @param state Instance of the AssayState to which the given assay should be added.
      * @param data A tuple containing the assay that should be added as first item, and the study to which this assay
@@ -103,7 +104,8 @@ const assayMutations: MutationTree<AssayState> = {
     },
 
     /**
-     * Remove an assay from the list of selected assays. No error is thrown when a non-existant assay is being removed.
+     * Remove an assay from the list of selected assays for a given study. No error is thrown when a non-existant assay 
+     * is being removed.
      * 
      * @param state Instance of the AssayState from which the given assay should be removed.
      * @param data A tuple containing the assay that should be deselected as the first item and the study from which
@@ -122,6 +124,21 @@ const assayMutations: MutationTree<AssayState> = {
             if (assayIdx !== -1) {
                 study.assays.splice(idx, 1);
             }
+        }
+    },
+
+    /**
+     * Add a study to the list of selected studies.
+     * 
+     * @param state Instance of AssayState to which a new study should be added.
+     * @param study The study that should be added to the list of selected studies. Nothing happens if a study with the
+     * same ID already exists.
+     */
+    ADD_STUDY(state: AssayState, study: Study) {
+        const idx: number = findIndex(study, state.selectedStudies);
+
+        if (idx === -1) {
+            state.selectedStudies.push(study);
         }
     },
 
@@ -189,6 +206,10 @@ const assayActions: ActionTree<AssayState, any> = {
     deselectAssay(store: ActionContext<AssayState, any>, assay: Assay) {
         store.commit("DESELECT_ASSAY", assay);
         store.dispatch("resetActiveAssay", assay);
+    },
+
+    addStudy(store: ActionContext<AssayState, any>, study: Study) {
+        store.commit("ADD_STUDY", study);
     },
 
     /**

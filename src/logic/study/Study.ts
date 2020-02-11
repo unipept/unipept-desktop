@@ -4,10 +4,11 @@ import Entity from "unipept-web-components/src/logic/data-management/assay/Entit
 export default class Study implements Entity<string> {
     public readonly assays: Assay[] = [];
     public readonly name: string;
-    
+
     private id: string;
     
-    constructor(name: string) {
+    constructor(id: string, name: string) {
+        this.id = id;
         this.name = name;
     }
 

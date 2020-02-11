@@ -28,29 +28,42 @@
                 <div class="sample-list-placeholder" v-if="this.$store.getters.getSelectedStudies.length === 0">
                     No studies present.
                 </div>
-                <!-- <v-list dense>
-                    <v-list-item :class="{'v-list-item--active': $store.getters.getActiveAssay === assay}" @click="activateDataset(assay)" v-for="assay of this.$store.getters.getSelectedAssays" :key="assay.id">
-                        <v-list-item-title>
-                            {{ assay.getName() }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle>
-                            {{ assay.getAmountOfPeptides() }} peptides
-                        </v-list-item-subtitle>
-                        <v-list-item-action>
-                            <v-progress-circular v-if="assay.progress !== 1" :rotate="-90" :size="18" :value="assay.progress * 100" color="primary"></v-progress-circular>
-                            <div v-else style="display: flex; flex-direction: row;">
-                                <tooltip message="Display experiment summary." position="bottom">
-                                    <v-icon @click="showExperimentSummary(assay)" v-on:click.stop small>mdi-information-outline</v-icon>
-                                </tooltip>
-                                <tooltip message="Remove dataset from analysis." position="bottom">
-                                    <v-icon @click="deselectDataset(assay)" v-on:click.stop small>mdi-close</v-icon>
-                                </tooltip>
-                            </div>
-                        </v-list-item-action>
-                    </v-list-item>
-                </v-list> -->
-
-                
+                <div v-for="study of $store.getters.getSelectedStudies" :key="study.getId()">
+                    <div class="study-item">
+                        <v-icon color="#424242" style="padding-left: 8px;">mdi-chevron-down</v-icon>
+                        <span class="study-item-name">{{ study.name }}</span>
+                        <v-icon color="#424242" size="20" style="margin-left: auto;">mdi-file-plus-outline</v-icon>
+                    </div>
+                    <v-list dense v-if="study.assays.length > 0">
+                        <v-list-item 
+                            :class="{'v-list-item--active': $store.getters.getActiveAssay === assay}" 
+                            @click="activateAssay(assay)" v-for="assay of study.assays" 
+                            :key="assay.getId()">
+                            <v-list-item-title>
+                                {{ assay.getName() }}
+                            </v-list-item-title>
+                            <v-list-item-subtitle>
+                                {{ assay.getAmountOfPeptides() }} peptides
+                            </v-list-item-subtitle>
+                            <v-list-item-action>
+                                <v-progress-circular 
+                                    v-if="assay.progress !== 1" 
+                                    :rotate="-90" :size="18" 
+                                    :value="assay.progress * 100" 
+                                    color="primary">
+                                </v-progress-circular>
+                                <div v-else style="display: flex; flex-direction: row;">
+                                    <tooltip message="Display experiment summary." position="bottom">
+                                        <v-icon @click="showExperimentSummary(assay)" v-on:click.stop small>mdi-information-outline</v-icon>
+                                    </tooltip>
+                                    <tooltip message="Remove assay from analysis." position="bottom">
+                                        <v-icon @click="deselectAssay(assay)" v-on:click.stop small>mdi-close</v-icon>
+                                    </tooltip>
+                                </div>
+                            </v-list-item-action>
+                        </v-list-item>
+                    </v-list>
+                </div>
                 <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">
                     Select sample
                 </v-btn>
@@ -85,6 +98,7 @@ import PeptideContainer from "unipept-web-components/src/logic/data-management/P
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
+import Study from "@/logic/study/Study";
 
 @Component({
     components: {
@@ -116,6 +130,10 @@ export default class Toolbar extends Vue {
         this.isOpen = this.open;
         this.isMini = this.mini;
         this.setupDraggableToolbar();
+
+        this.$store.dispatch("addStudy", new Study("1", "Antibiotic XR223"))
+        this.$store.dispatch("addStudy", new Study("2", "Sample S8"));
+        this.$store.dispatch("addStudy", new Study("3", "THX-1138"));
     }
 
     @Watch("open")
@@ -147,7 +165,7 @@ export default class Toolbar extends Vue {
         this.selectSampleDialog = true;
     }
 
-    private activateDataset(assay: Assay) {
+    private activateAssay(assay: Assay) {
         this.$store.dispatch("setActiveAssay", assay);
     }
 
@@ -239,7 +257,7 @@ export default class Toolbar extends Vue {
 
     .toolbar-container {
         position: relative; 
-        top: 56px; 
+        top: 64px; 
         height: 100%;
     }
 
@@ -271,5 +289,24 @@ export default class Toolbar extends Vue {
 
     .navigation-toolbar .v-list-item .v-icon:hover {
         color: #2196F3;
+    }
+
+    .study-item {
+        display: flex;
+        align-items: center;
+        background-color: #eee; 
+        color: #424242; 
+        font-weight: 700; 
+        text-transform: uppercase; 
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .study-item-name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
