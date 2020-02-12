@@ -5,6 +5,15 @@
                 <v-list>
                     <v-list-item :class="{'v-list-item--active': $route.path === '/'}" link @click="navigateAndToggleExpand('/')">
                         <v-list-item-icon>
+                            <v-icon>mdi-home</v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                            <v-list-item-title>Home</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item :class="{'v-list-item--active': $route.path === '/analysis/single'}" link @click="navigateAndToggleExpand('/analysis/single')">
+                        <v-list-item-icon>
                             <v-icon>mdi-bacteria</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
@@ -12,7 +21,7 @@
                         </v-list-item-content>
                     </v-list-item>
 
-                    <v-list-item :class="{'v-list-item--active': $route.path === '/compare'}" link @click="navigateAndToggleExpand('/compare')">
+                    <v-list-item :class="{'v-list-item--active': $route.path === '/analysis/multi'}" link @click="navigateAndToggleExpand('/analysis/multi')">
                         <v-list-item-icon>
                             <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
@@ -27,10 +36,10 @@
             <div class="toolbar-container">
                 <div 
                     class="sample-list-placeholder" 
-                    v-if="!this.$store.getters.getProject || this.$store.getters.getProject.getStudies().length === 0">
+                    v-if="!$store.getters.getProject || $store.getters.getProject.getStudies().length === 0">
                     No studies present.
                 </div>
-                <div v-for="study of $store.getters.getSelectedStudies" :key="study.getId()">
+                <div v-else v-for="study of $store.getters.getProject.getStudies()" :key="study.getId()">
                     <div class="study-item">
                         <v-icon 
                             color="#424242" 
@@ -46,10 +55,10 @@
                             mdi-file-plus-outline
                         </v-icon>
                     </div>
-                    <v-list dense v-if="study.assays.length > 0">
+                    <v-list dense v-if="study.getAssays().length > 0">
                         <v-list-item 
                             :class="{'v-list-item--active': $store.getters.getActiveAssay === assay}" 
-                            @click="activateAssay(assay)" v-for="assay of study.assays" 
+                            @click="activateAssay(assay)" v-for="assay of study.getAssays()" 
                             :key="assay.getId()">
                             <v-list-item-title>
                                 {{ assay.getName() }}
@@ -92,7 +101,7 @@
                     Sample selection
                 </v-card-title>
                 <load-datasets-card 
-                    :selected-assays="selectedStudy.assays" 
+                    :selected-assays="selectedStudy.getAssays()" 
                     :stored-assays="this.$store.getters.getStoredAssays"
                     v-on:create-assay="onCreateAssay">
                 </load-datasets-card>
