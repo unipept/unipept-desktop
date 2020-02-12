@@ -25,14 +25,26 @@
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
-                <div class="sample-list-placeholder" v-if="this.$store.getters.getSelectedStudies.length === 0">
+                <div 
+                    class="sample-list-placeholder" 
+                    v-if="!this.$store.getters.getProject || this.$store.getters.getProject.getStudies().length === 0">
                     No studies present.
                 </div>
                 <div v-for="study of $store.getters.getSelectedStudies" :key="study.getId()">
                     <div class="study-item">
-                        <v-icon color="#424242" style="padding-left: 8px;">mdi-chevron-down</v-icon>
+                        <v-icon 
+                            color="#424242" 
+                            style="padding-left: 8px;">
+                            mdi-chevron-down
+                        </v-icon>
                         <span class="study-item-name">{{ study.name }}</span>
-                        <v-icon color="#424242" size="20" style="margin-left: auto;">mdi-file-plus-outline</v-icon>
+                        <v-icon 
+                            color="#424242" 
+                            size="20" 
+                            style="margin-left: auto;"
+                            @click="createAssay(study)">
+                            mdi-file-plus-outline
+                        </v-icon>
                     </div>
                     <v-list dense v-if="study.assays.length > 0">
                         <v-list-item 
@@ -64,8 +76,8 @@
                         </v-list-item>
                     </v-list>
                 </div>
-                <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">
-                    Select sample
+                <v-btn class="select-sample-button" depressed color="primary">
+                    Create new study
                 </v-btn>
             </div>
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
@@ -74,13 +86,13 @@
             :assay="summaryDataset"
             :active.sync="summaryActive">
         </experiment-summary-dialog>
-        <v-dialog v-model="selectSampleDialog" max-width="800">
+        <v-dialog v-model="selectSampleDialog" max-width="800" v-if="selectedStudy">
             <v-card>
                 <v-card-title>
                     Sample selection
                 </v-card-title>
                 <load-datasets-card 
-                    :selected-assays="this.$store.getters.getSelectedAssays" 
+                    :selected-assays="selectedStudy.assays" 
                     :stored-assays="this.$store.getters.getStoredAssays"
                     v-on:create-assay="onCreateAssay">
                 </load-datasets-card>
@@ -98,7 +110,7 @@ import PeptideContainer from "unipept-web-components/src/logic/data-management/P
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
-import Study from "@/logic/study/Study";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 
 @Component({
     components: {
@@ -126,14 +138,12 @@ export default class Toolbar extends Vue {
     private originalToolbarWidth: number = 210;
     private toolbarWidth: number = this.originalToolbarWidth;
 
+    private selectedStudy: Study = null;
+
     mounted() {
         this.isOpen = this.open;
         this.isMini = this.mini;
         this.setupDraggableToolbar();
-
-        this.$store.dispatch("addStudy", new Study("1", "Antibiotic XR223"))
-        this.$store.dispatch("addStudy", new Study("2", "Sample S8"));
-        this.$store.dispatch("addStudy", new Study("3", "THX-1138"));
     }
 
     @Watch("open")
@@ -161,13 +171,14 @@ export default class Toolbar extends Vue {
         this.summaryActive = true;
     }
 
-    private selectSample() {
-        this.selectSampleDialog = true;
-    }
-
     private activateAssay(assay: Assay) {
         this.$store.dispatch("setActiveAssay", assay);
     }
+
+    private createAssay(study: Study) {
+        this.selectedStudy = study;
+        this.selectSampleDialog = true;
+    } 
 
     /**
      * The visibility of the sidebar should only toggle when the current route is the same as the route that a 
@@ -213,6 +224,7 @@ export default class Toolbar extends Vue {
     private onCreateAssay(assay: Assay) {
         // Close the datasets card
         this.selectSampleDialog = false;
+        console.log(this.selectedStudy);
         // Process the newly selected assay
         this.$store.dispatch("processAssay", assay);
     }
@@ -304,6 +316,7 @@ export default class Toolbar extends Vue {
     }
 
     .study-item-name {
+        font-size: 14px;
         flex: 1;
         white-space: nowrap;
         overflow: hidden;

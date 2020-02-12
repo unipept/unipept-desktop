@@ -2,8 +2,9 @@ import Assay from "unipept-web-components/src/logic/data-management/assay/Assay"
 import { GetterTree, MutationTree, ActionTree, ActionContext, Store } from "vuex";
 import MpaAnalysisManager from "unipept-web-components/src/logic/data-management/MpaAnalysisManager";
 import MPAConfig from "unipept-web-components/src/logic/data-management/MPAConfig";
-import Study from "@/logic/study/study";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Entity from "unipept-web-components/src/logic/data-management/assay/Entity";
+import Project from "unipept-web-components/src/logic/data-management/project/Project";
 
 /**
  * The AssayState keeps track of which assays are currently selected by the user for analysis, and which assays are
@@ -11,8 +12,8 @@ import Entity from "unipept-web-components/src/logic/data-management/assay/Entit
  * be modified and will not be replaced by different objects (which might break Vue reactivity).
  */
 export interface AssayState {
-    // Which assays are currently selected by the user for analysis?
-    selectedStudies: Study[],
+    // What project are we currently working with?
+    project: Project,
     // Which assay are stored in this browser's local storage?
     storedAssays: Assay[],
     // Did the user already start with the analysis of the samples?
@@ -24,7 +25,7 @@ export interface AssayState {
 }
 
 const assayState: AssayState = {
-    selectedStudies: [],
+    project: null,
     storedAssays: [],
     analysisStarted: false,
     activeAssay: null,
@@ -36,14 +37,17 @@ const assayState: AssayState = {
 }
 
 const assayGetters: GetterTree<AssayState, any> = {
-    getSelectedStudies(state: AssayState): Study[] {
-        return state.selectedStudies;
+    getProject(state: AssayState): Project {
+        return state.project;
     },
     /**
      * Returns a list with all assays from all studies that are currently part of this project.
      */
     getAllAssays(state: AssayState): Assay[] {
-        return state.selectedStudies.reduce((acc, current) => acc.concat(current.assays), []);
+        if (!state.project) {
+            return [];
+        }
+        return state.project.getStudies().reduce((acc, current) => acc.concat(current.getAssays()), []);
     },
     getStoredAssays(state: AssayState): Assay[] {
         return state.storedAssays
@@ -90,15 +94,15 @@ const assayMutations: MutationTree<AssayState> = {
         const assay = data[0];
         const study = data[1];
 
-        const idx: number = findIndex(study, state.selectedStudies);
+        const idx: number = findIndex(study, state.project.getStudies());
 
         if (idx !== -1) {
-            const study: Study = state.selectedStudies[idx];
-            const assayIdx: number = findIndex(assay, study.assays);
+            const study: Study = state.project.getStudies()[idx];
+            const assayIdx: number = findIndex(assay, study.getAssays());
             
             // Now add the assay to this study if it hasn't been selected before
             if (assayIdx === -1) {
-                study.assays.push(assay);
+                study.getAssays().push(assay);
             }
         }
     },
@@ -115,14 +119,14 @@ const assayMutations: MutationTree<AssayState> = {
         const assay = data[0];
         const study = data[1];
 
-        const idx: number = findIndex(study, state.selectedStudies);
+        const idx: number = findIndex(study, state.project.getStudies());
 
         if (idx !== -1) {
-            const study: Study = state.selectedStudies[idx];
-            const assayIdx: number = findIndex(assay, study.assays);
+            const study: Study = state.project.getStudies()[idx];
+            const assayIdx: number = findIndex(assay, study.getAssays());
             
             if (assayIdx !== -1) {
-                study.assays.splice(idx, 1);
+                study.getAssays().splice(idx, 1);
             }
         }
     },
@@ -135,10 +139,10 @@ const assayMutations: MutationTree<AssayState> = {
      * same ID already exists.
      */
     ADD_STUDY(state: AssayState, study: Study) {
-        const idx: number = findIndex(study, state.selectedStudies);
+        const idx: number = findIndex(study, state.project.getStudies());
 
         if (idx === -1) {
-            state.selectedStudies.push(study);
+            state.project.getStudies().push(study);
         }
     },
 
@@ -222,13 +226,13 @@ const assayActions: ActionTree<AssayState, any> = {
     resetActiveAssay(store: ActionContext<AssayState, any>) {
         let shouldReselect: boolean = true;
         if (!store.getters.activeAssay) {
-            const idx: number = findIndex(store.getters.getActiveAssay, store.getters.getSelectedAssays);
+            const idx: number = findIndex(store.getters.getActiveAssay, store.getters.getAllAssays);
             shouldReselect = idx === -1;
         }
 
         if (shouldReselect) {
             let newActive: Assay = null;
-            for (let current of store.getters.getSelectedAssays) {
+            for (let current of store.getters.getAllAssays) {
                 if (current.progress == 1) {
                     newActive = current;
                     break;

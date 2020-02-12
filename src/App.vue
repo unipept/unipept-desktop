@@ -63,9 +63,13 @@ const BrowserWindow = electron.BrowserWindow;
         },
         assaysInProgress: {
             get(): Assay[] {
-                return this.$store.getters.getSelectedStudies
-                    .filter((assay: Assay) => assay.progress < 1)
-                    .reduce((acc, current) => acc.concat(current), []);
+                if (this.$store.getters.getProject) {
+                    return this.$store.getters.getProject.getStudies()
+                        .filter((assay: Assay) => assay.progress < 1)
+                        .reduce((acc, current) => acc.concat(current), []);
+                } else {
+                    return [];
+                }
             }
         }
     }
