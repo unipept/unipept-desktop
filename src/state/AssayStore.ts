@@ -81,6 +81,10 @@ function findIndex<T extends Entity<any>>(item: T, list: T[]): number {
 
 
 const assayMutations: MutationTree<AssayState> = {
+    SET_PROJECT(state: AssayState, project: Project) {
+        state.project = project;
+    },
+
     /**
      * Add an assay to the list of selected assays for the given study. Assays will only be added if no assay with the 
      * same ID is already selected (within this study). The given assay will always be added to the end of the selected 
@@ -200,6 +204,10 @@ const assayMutations: MutationTree<AssayState> = {
 }
 
 const assayActions: ActionTree<AssayState, any> = {
+    setProject(store: ActionContext<AssayState, any>, project: Project) {
+        store.commit("SET_PROJECT", project);
+    },
+
     selectAssay(store: ActionContext<AssayState, any>, assay: Assay) {
         store.commit("SELECT_ASSAY", assay);
         if (store.getters.isAnalysisStarted) {

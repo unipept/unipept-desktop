@@ -15,42 +15,27 @@
             <v-tab>
                 Pride
             </v-tab>
-            <v-tab>
-                Local data
-            </v-tab>
         </v-tabs>
         <v-tabs-items v-model="currentTab">
             <v-tab-item>
                 <create-dataset-card
                     v-on:create-assay="onCreateAssay"
-                    v-on:destroy-assay="onDestroyAssay"
-                    v-on:store-assay="onStoreAssay">
+                    v-on:destroy-assay="onDestroyAssay">
                 </create-dataset-card>
             </v-tab-item>
             
             <v-tab-item>
                 <load-sample-dataset-card 
                     v-on:create-assay="onCreateAssay"
-                    v-on:destroy-assay="onDestroyAssay"
-                    v-on:store-assay="onStoreAssay">
+                    v-on:destroy-assay="onDestroyAssay">
                 </load-sample-dataset-card>
             </v-tab-item>
             
             <v-tab-item>
                 <load-pride-dataset-card
                     v-on:create-assay="onCreateAssay"
-                    v-on:destroy-assay="onDestroyAssay"
-                    v-on:store-assay="onStoreAssay">
+                    v-on:destroy-assay="onDestroyAssay">
                 </load-pride-dataset-card>
-            </v-tab-item>
-            
-            <v-tab-item>
-                <load-local-dataset-card
-                    v-on:create-assay="onCreateAssay"
-                    v-on:destroy-assay="onDestroyAssay"
-                    v-on:store-assay="onStoreAssay"
-                    :stored-assays="$store.getters.getStoredAssays">
-                </load-local-dataset-card>
             </v-tab-item>
         </v-tabs-items>
     </v-card>
@@ -70,9 +55,8 @@ import LoadLocalDatasetCard from "unipept-web-components/src/components/dataset/
 import SampleDataset from "unipept-web-components/src/logic/data-management/SampleDataset";
 import Tooltip from "unipept-web-components/src/custom/Tooltip.vue";
 import SampleDatasetCollection from "unipept-web-components/src/logic/data-management/SampleDatasetCollection";
-import StorageWriter from "unipept-web-components/src/logic/data-management/assay/visitors/browser/BrowserStorageWriter";
 import { StorageType } from "unipept-web-components/src/logic/data-management/StorageType";
-import StorageRemover from "unipept-web-components/src/logic/data-management/assay/visitors/browser/BrowserStorageRemover";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 
 @Component({
     components: {
@@ -84,9 +68,7 @@ import StorageRemover from "unipept-web-components/src/logic/data-management/ass
 })
 export default class LoadDatasetsCard extends Vue {
     @Prop({ required: true })
-    private storedAssays: Assay[];
-    @Prop({ required: true })
-    private selectedAssays: Assay[];
+    private study: Study;
     @Prop({ required: false, default: "primary" })
     private tabsColor: string;
     @Prop({ required: false, default: "secondary" })
@@ -99,47 +81,21 @@ export default class LoadDatasetsCard extends Vue {
     private currentTab: number = 0;
 
     private onCreateAssay(assay: Assay) {
-        this.$store.dispatch("selectAssay", assay);
+        this.study.addAssay(assay);
         this.$emit("create-assay", assay);
     }
 
     private onDestroyAssay(assay: Assay) {
         // Remove the assay from the store, then also delete it from local storage.
-        this.$store.dispatch("removeStoredAssay", assay);
-        this.deleteAssayFromStorage(assay);
+        this.study.removeAssay(assay);
         this.$emit("destroy-assay", assay);
     }
 
-    private onStoreAssay(assay: Assay) {
-        this.storeAssayInStorage(assay);
-        this.$emit("store-assay", assay);
-    }
-
-    /**
-     * Remove all data about an assay from persistent storage.
-     * 
-     * @param assay Assay for which all data should be removed from persistent storage.
-     */
-    private deleteAssayFromStorage(assay: Assay) {
-        this.$store.dispatch("removeStoredAssay", assay);
-        const storageRemover: StorageRemover = new StorageRemover();
-        assay.accept(storageRemover);
-    }
-
-    /**
-     * Write all data related to the given assay to persistent storage.
-     * 
-     * @param assay Assay for which all data should be written to persistent storage.
-     */
-    private storeAssayInStorage(assay: Assay) {
-        const storageWriter: StorageWriter = new StorageWriter();
-        assay.accept(storageWriter).then(() => {
-            // We only need to add the assay to the store, if it's explicitly written to local storage.
-            if (assay.getStorageType() === StorageType.LocalStorage) {
-                this.$store.dispatch("addStoredAssay", assay);
-            }
-        });
-    }
+    // Do nothing, this does not make sense for the desktop app
+    // private onStoreAssay(assay: Assay) {
+    //     this.storeAssayInStorage(assay);
+    //     this.$emit("store-assay", assay);
+    // }
 }
 </script>
 

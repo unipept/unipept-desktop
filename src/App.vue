@@ -10,7 +10,7 @@
 
       <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on the 
            right side -->
-      <Toolbar 
+      <Toolbar
         :open.sync="rightNavDrawer" 
         :mini.sync="rightNavMini" 
         v-on:activate-dataset="onActivateDataset" 
@@ -84,6 +84,8 @@ export default class App extends Vue {
   private toolbarWidth: number = 210;
   // Has this component been initialized before?
   private static previouslyInitialized: boolean = false;
+
+  private showHomePageDialog: boolean = true;
 
   async mounted() {
       // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
