@@ -4,23 +4,26 @@ import AssayVisitor from "unipept-web-components/src/logic/data-management/assay
 // import chokidar from "chokidar";
 import fs from "fs";
 import path from "path";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import StudyVisitor from "unipept-web-components/src/logic/data-management/study/visitors/StudyVisitor";
-import StudyFileSystemReader from "unipept-web-components/src/logic/data-management/study/visitors/filesystem/StudyFileSystemReader";
 import FileSystemStudy from "../filesystem/FileSystemStudy";
 import StudyFileSystemWriter from "unipept-web-components/src/logic/data-management/study/visitors/filesystem/StudyFileSystemWriter";
+import ErrorInformation from "@/logic/error/ErrorInformation";
+import ErrorInformationListener from "@/logic/error/ErrorInformationListener";
+import ErrorInformationPublisher from "@/logic/error/ErrorInformationPublisher";
 
 
-export default class Project {
+export default class Project extends ErrorInformationPublisher {
     public readonly studies: Study[] = [];
     public readonly projectPath: string;
     
     private unknownCounter: number = 0;
     
-    private readonly actionQueue: (() => Promise<void>)[] = [];
+    private readonly actionQueue: (() => Promise<ErrorInformation[]>)[] = [];
     private readonly syncInterval: number;
 
     constructor(path: string, syncInterval: number = 1000) {
+        super();
+
         this.projectPath = path;
         if (!this.projectPath.endsWith("/")) {
             this.projectPath += "/"
@@ -43,7 +46,16 @@ export default class Project {
         const study: Study = new FileSystemStudy(this, undefined, studyName);
         this.pushAction(async() => {
             const studyWriter: StudyVisitor = new StudyFileSystemWriter(this.projectPath + studyName + "/study.json");
-            studyWriter.visitStudy(study);
+            try {
+                await studyWriter.visitStudy(study);
+            } catch (err) {
+                return [
+                    new ErrorInformation(
+                        "Study write error",
+                        `Could not write study ${studyName} to your local filesystem. Make sure the filesystem is writeable.`
+                    )
+                ]
+            }
         });
         this.studies.push(study);
         return study;
@@ -65,9 +77,10 @@ export default class Project {
         this.flushQueue();
     }
 
-    public pushAction(action: () => Promise<void>) {
+    public pushAction(action: () => Promise<ErrorInformation[]>) {
         this.actionQueue.push(action);
     }
+
     
     /**
      * Flushes the action queue at specific times, making sure that all operations are performed in order by waiting
@@ -75,12 +88,14 @@ export default class Project {
      */
     private async flushQueue() {
         while (this.actionQueue.length > 0) {
-            const action: () => Promise<void> = this.actionQueue.shift();
-            await action();
+            const action: () => Promise<ErrorInformation[]> = this.actionQueue.shift();
+            const errors: ErrorInformation[] = await action();
+            await this.publishErrorInformation(errors);
         }
 
         setTimeout(async() => this.flushQueue(), this.syncInterval);
     }
+
 
     // private async fileAdded(filePath: string) {
     //     // Create new study or assay based on path.

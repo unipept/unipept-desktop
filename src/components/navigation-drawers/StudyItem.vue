@@ -3,35 +3,35 @@
         <div class="study-item">
             <v-icon
                 v-if="!collapsed"
-                color="#424242" 
+                color="#424242"
                 style="padding-left: 8px;"
-                @click="collapsed = !collapsed"> 
+                @click="collapsed = !collapsed">
                 mdi-chevron-down
             </v-icon>
             <v-icon
                 v-else
-                color="#424242" 
+                color="#424242"
                 style="padding-left: 8px;"
-                @click="collapsed = !collapsed"> 
+                @click="collapsed = !collapsed">
                 mdi-chevron-right
             </v-icon>
-            <span 
-                v-if="!isEditingStudyName" 
+            <span
+                v-if="!isEditingStudyName"
                 v-on:dblclick="enableStudyEdit()"
                 class="study-item-name">
                 {{ studyName }}
             </span>
-            <input 
-                v-if="isEditingStudyName" 
-                v-on:blur="disableStudyEdit()" 
+            <input
+                v-if="isEditingStudyName"
+                v-on:blur="disableStudyEdit()"
                 v-on:keyup.enter="disableStudyEdit()"
                 :class="{ 'study-item-name': true, 'error-item': !isValidStudyName }"
-                type="text" 
+                type="text"
                 v-model="studyName" />
             <div style="margin-left: auto;">
                 <v-tooltip bottom v-if="!isValidStudyName">
                     <template v-slot:activator="{ on }">
-                        <v-icon 
+                        <v-icon
                             v-on="on"
                             size="20"
                             color="red">
@@ -40,9 +40,9 @@
                     </template>
                     <span>Invalid study name. Name must be unique and non-empty.</span>
                 </v-tooltip>
-                <v-icon 
-                    color="#424242" 
-                    size="20" 
+                <v-icon
+                    color="#424242"
+                    size="20"
                     @click="createAssay(study)">
                     mdi-file-plus-outline
                 </v-icon>
@@ -50,10 +50,10 @@
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
             <div class="assay-item" v-for="assay of study.getAssays()" :key="assay.getId()">
-                <v-progress-circular 
-                    v-if="assay.progress !== 1" 
-                    :rotate="-90" :size="16" 
-                    :value="assay.progress * 100" 
+                <v-progress-circular
+                    v-if="assay.progress !== 1"
+                    :rotate="-90" :size="16"
+                    :value="assay.progress * 100"
                     color="primary">
                 </v-progress-circular>
                 <v-icon
@@ -123,7 +123,7 @@ export default class StudyItem extends Vue {
     private onStudyChanged() {
         this.studyName = this.study.getName();
     }
-    
+
     private enableStudyEdit() {
         this.isEditingStudyName = true;
     }
@@ -135,7 +135,7 @@ export default class StudyItem extends Vue {
         }
     }
 
-    @Watch("studyName") 
+    @Watch("studyName")
     private onStudyNameChanged() {
         this.checkStudyNameValidity();
     }
@@ -158,6 +158,10 @@ export default class StudyItem extends Vue {
     private activateAssay(assay: Assay) {
         this.$store.dispatch("setActiveAssay", assay);
     }
+
+    private createAssay(study: Study) {
+        study.createAssay();
+    }
 }
 </script>
 
@@ -169,8 +173,8 @@ export default class StudyItem extends Vue {
     .study-item {
         display: flex;
         align-items: center;
-        background-color: #eee; 
-        color: #424242; 
+        background-color: #eee;
+        color: #424242;
         font-weight: 700;
     }
 

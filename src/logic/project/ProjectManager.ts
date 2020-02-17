@@ -5,12 +5,13 @@ import StudyFileSystemReader from "unipept-web-components/src/logic/data-managem
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import FileSystemStudy from "../filesystem/FileSystemStudy";
 import { FileSystemStudyConsts } from "unipept-web-components/src/logic/data-management/study/visitors/filesystem/FileSystemStudyConsts";
+import ErrorInformationPublisher from "@/logic/error/ErrorInformationPublisher";
+import ErrorInformation from "@/logic/error/ErrorInformation";
 
-export default class ProjectManager {
+export default class ProjectManager extends ErrorInformationPublisher {
     /**
-     * 
-     * @param projectLocation 
-     * @throws {IOException}
+     * @param projectLocation The main directory of the project on disk.
+     * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
      */
     public async loadExistingProject(projectLocation: string): Promise<Project> {
         if (!projectLocation.endsWith("/")) {
@@ -18,11 +19,12 @@ export default class ProjectManager {
         }
 
         const project: Project = new Project(projectLocation);
+        const errors: ErrorInformation[] = [];
         
         // Check all subdirectories of the given project and try to load the studies.
         const subDirectories: string[] = readdirSync(projectLocation, { withFileTypes: true })
-            .filter(dirent => dirent.isDirectory())
-            .map(dirent => dirent.name);
+            .filter(dirEntry => dirEntry.isDirectory())
+            .map(dirEntry => dirEntry.name);
 
         const studies: Study[] = [];
 
@@ -30,12 +32,21 @@ export default class ProjectManager {
             const studyReader: StudyVisitor = new StudyFileSystemReader(
                 projectLocation + directory + "/" + FileSystemStudyConsts.STUDY_METADATA_FILE
             );
-            const study: Study = new FileSystemStudy(project);
-            studyReader.visitStudy(study);
-            studies.push(study);
+
+            try {
+                const study: Study = new FileSystemStudy(project);
+                await studyReader.visitStudy(study);
+                studies.push(study);
+            } catch (err) {
+                errors.push(new ErrorInformation(
+                    "Invalid study",
+                    `Could not read study ${directory}. Make sure that this is a readable file that correctly represents a study.`)
+                );
+            }
         }
 
         project.setStudies(studies);
+        await this.publishErrorInformation(errors);
         return project;
     }
 }
