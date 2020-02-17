@@ -3,7 +3,7 @@
         <v-container fluid>
             <v-row>
                 <v-col>
-                    <recent-projects></recent-projects>
+                    <recent-projects v-on:open-project="onOpenProject"></recent-projects>
                 </v-col>
                 <v-divider vertical></v-divider>
                 <v-col>
@@ -36,10 +36,10 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import ProjectManager from "unipept-web-components/src/logic/data-management/project/ProjectManager";
-import Project from "unipept-web-components/src/logic/data-management/project/Project";
+import Project from "@/logic/project/Project";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import RecentProjects from "./../project/RecentProjects.vue";
+import ProjectManager from "@/logic/project/ProjectManager";
 const { dialog } = require("electron").remote;
 
 @Component({
@@ -57,16 +57,32 @@ export default class HomePage extends Vue {
         });
         if (chosenPath) {
             try {
-                const projectMng: ProjectManager = new ProjectManager();
-                const project: Project = await projectMng.initializeProject(chosenPath[0]);
-                this.$store.dispatch("setProject", project);
-                this.$router.push("/analysis/single");
+                const project: Project = new Project(chosenPath[0]);
+                await project.initialize();
+                await this.$store.dispatch("setProject", project);
+                await this.$router.push("/analysis/single");
             } catch (err) {
                 if (err instanceof IOException) {
                     this.showError(
-                        "Could not initialize your project. Please make sure that the chosen directory is writeable and try again."
+                        "Could not initialize your project. Please make sure that the chosen directory is readable and try again."
                     );
                 }
+            }
+        }
+    }
+
+    private async onOpenProject(path: string) {
+        try {
+            const projectManager: ProjectManager = new ProjectManager();
+            const project: Project = await projectManager.loadExistingProject(path);
+            await project.initialize();
+            await this.$store.dispatch("setProject", project);
+            await this.$router.push("/analysis/single");
+        } catch (err) {
+            if (err instanceof IOException) {
+                this.showError(
+                    "Could not open your project. Please make sure that the chosen directory is readable and try again."
+                );
             }
         }
     }

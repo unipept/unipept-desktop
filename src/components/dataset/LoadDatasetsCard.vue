@@ -81,7 +81,7 @@ export default class LoadDatasetsCard extends Vue {
     private currentTab: number = 0;
 
     private onCreateAssay(assay: Assay) {
-        this.study.addAssay(assay);
+        // this.study.addAssay(assay);
         this.$emit("create-assay", assay);
     }
 

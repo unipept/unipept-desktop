@@ -4,7 +4,7 @@ import MpaAnalysisManager from "unipept-web-components/src/logic/data-management
 import MPAConfig from "unipept-web-components/src/logic/data-management/MPAConfig";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Entity from "unipept-web-components/src/logic/data-management/assay/Entity";
-import Project from "unipept-web-components/src/logic/data-management/project/Project";
+import Project from "@/logic/project/Project";
 
 /**
  * The AssayState keeps track of which assays are currently selected by the user for analysis, and which assays are

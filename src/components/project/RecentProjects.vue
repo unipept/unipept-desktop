@@ -2,7 +2,10 @@
     <div>
         <span>Recent projects</span>
         <v-list two-line>
-            <v-list-item v-for="recentProject of recentProjects" :key="recentProject.name" @click="() => {}">
+            <v-list-item 
+                v-for="recentProject of recentProjects" 
+                :key="recentProject.name" 
+                @click="openPreviouslyLoadedProject(recentProject.path)">
                 <v-list-item-content>
                     <v-list-item-title>{{ recentProject.name }}</v-list-item-title>
                     <v-list-item-subtitle>{{ recentProject.path }}</v-list-item-subtitle>
@@ -17,7 +20,7 @@
                 </v-list-item-action>
             </v-list-item>
         </v-list>
-        <div class="open-project-button">
+        <div class="open-project-button" @click="openProject()">
             <v-icon>mdi-folder-open-outline</v-icon>
             <a>Open other project...</a>
         </div>
@@ -27,6 +30,8 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
+import ProjectManager from "@/logic/project/ProjectManager.ts";
+const { dialog } = require("electron").remote;
 
 @Component
 export default class RecentProjects extends Vue {
@@ -42,6 +47,20 @@ export default class RecentProjects extends Vue {
             lastOpened: "February 12, 2020"
         }
     ];
+
+    private async openProject() {
+        const chosenPath: string | undefined = dialog.showOpenDialogSync({
+            properties: ["openDirectory"]
+        });
+
+        if (chosenPath) {
+            this.$emit("open-project", chosenPath[0]);
+        }
+    }
+
+    private async openPreviouslyLoadedProject(path: string) {
+        this.$emit("open-project", path);
+    }
 }
 </script>
 
