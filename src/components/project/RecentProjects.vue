@@ -30,7 +30,7 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import ProjectManager from "@/logic/project/ProjectManager.ts";
+import ProjectManager from "@/logic/filesystem/project/ProjectManager.ts";
 const { dialog } = require("electron").remote;
 
 @Component

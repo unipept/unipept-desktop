@@ -1,29 +1,25 @@
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import AssayFileSystemReader from "unipept-web-components/src/logic/data-management/assay/visitors/filesystem/AssayFileSystemReader";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/visitors/AssayVisitor";
 // import chokidar from "chokidar";
 import fs from "fs";
 import path from "path";
-import StudyVisitor from "unipept-web-components/src/logic/data-management/study/visitors/StudyVisitor";
-import FileSystemStudy from "../filesystem/FileSystemStudy";
-import StudyFileSystemWriter from "unipept-web-components/src/logic/data-management/study/visitors/filesystem/StudyFileSystemWriter";
-import ErrorInformation from "@/logic/error/ErrorInformation";
-import ErrorInformationListener from "@/logic/error/ErrorInformationListener";
-import ErrorInformationPublisher from "@/logic/error/ErrorInformationPublisher";
+import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
+import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
+import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
+import uuidv4 from "uuid/v4";
 
-
-export default class Project extends ErrorInformationPublisher {
+export default class Project {
     public readonly studies: Study[] = [];
     public readonly projectPath: string;
     
     private unknownCounter: number = 0;
-    
-    private readonly actionQueue: (() => Promise<ErrorInformation[]>)[] = [];
+
+    // This queue keeps track of all actions that need to be performed. These actions may throw errors, and in the
+    // event that an Error is thrown, the ErrorListener's of this class are informed and file synchronization stops
+    // immediately.
+    private readonly actionQueue: (() => Promise<void>)[] = [];
     private readonly syncInterval: number;
 
-    constructor(path: string, syncInterval: number = 1000) {
-        super();
-
+    constructor(path: string, syncInterval: number = 250) {
         this.projectPath = path;
         if (!this.projectPath.endsWith("/")) {
             this.projectPath += "/"
@@ -41,21 +37,11 @@ export default class Project extends ErrorInformationPublisher {
         return this.studies;
     }
 
-    public createStudy(): Study {
-        const studyName: string = `Unknown (${this.unknownCounter++})`;
-        const study: Study = new FileSystemStudy(this, undefined, studyName);
+    public createStudy(name: string): Study {
+        const study: Study = new Study(new FileSystemStudyChangeListener(this), uuidv4(), name);
         this.pushAction(async() => {
-            const studyWriter: StudyVisitor = new StudyFileSystemWriter(this.projectPath + studyName + "/study.json");
-            try {
-                await studyWriter.visitStudy(study);
-            } catch (err) {
-                return [
-                    new ErrorInformation(
-                        "Study write error",
-                        `Could not write study ${studyName} to your local filesystem. Make sure the filesystem is writeable.`
-                    )
-                ]
-            }
+            const studyWriter: StudyVisitor = new StudyFileSystemWriter(this.projectPath);
+            await studyWriter.visitStudy(study);
         });
         this.studies.push(study);
         return study;
@@ -77,7 +63,7 @@ export default class Project extends ErrorInformationPublisher {
         this.flushQueue();
     }
 
-    public pushAction(action: () => Promise<ErrorInformation[]>) {
+    public pushAction(action: () => Promise<void>) {
         this.actionQueue.push(action);
     }
 
@@ -88,9 +74,8 @@ export default class Project extends ErrorInformationPublisher {
      */
     private async flushQueue() {
         while (this.actionQueue.length > 0) {
-            const action: () => Promise<ErrorInformation[]> = this.actionQueue.shift();
-            const errors: ErrorInformation[] = await action();
-            await this.publishErrorInformation(errors);
+            const action: () => Promise<void> = this.actionQueue.shift();
+            await action();
         }
 
         setTimeout(async() => this.flushQueue(), this.syncInterval);

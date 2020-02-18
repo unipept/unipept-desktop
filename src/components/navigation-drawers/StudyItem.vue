@@ -43,7 +43,7 @@
                 <v-icon
                     color="#424242"
                     size="20"
-                    @click="createAssay(study)">
+                    @click="showCreateAssayDialog = true">
                     mdi-file-plus-outline
                 </v-icon>
             </div>
@@ -68,20 +68,21 @@
                         <v-icon :disabled="assay.progress !== 1" @click="showExperimentSummary(assay)" v-on:click.stop color="#424242" size="20">mdi-information-outline</v-icon>
                     </tooltip>
                     <tooltip message="Remove assay from analysis." position="bottom">
-                        <v-icon :disabled="assay.progress !== 1" @click="deselectAssay(assay)" v-on:click.stop color="#424242" size="20">mdi-close</v-icon>
+                        <v-icon :disabled="assay.progress !== 1" @click="deleteAssay(assay)" v-on:click.stop color="#424242" size="20">mdi-close</v-icon>
                     </tooltip>
                 </div>
             </div>
         </div>
         <experiment-summary-dialog :assay="summaryDataset" :active.sync="summaryActive">
         </experiment-summary-dialog>
-        <v-dialog v-model="selectSampleDialog" max-width="800" v-if="study">
+        <v-dialog v-model="showCreateAssayDialog" max-width="800" v-if="study">
             <v-card>
                 <v-card-title>
-                    Sample selection
+                    Create assay
                 </v-card-title>
-                <load-datasets-card :study="study">
-                </load-datasets-card>
+                <v-card-text>
+                    <create-assay :study="study" v-on:create-assay="onCreateAssay"></create-assay>
+                </v-card-text>
             </v-card>
         </v-dialog>
     </div>
@@ -94,11 +95,16 @@ import { Prop, Watch } from "vue-property-decorator";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
-
+import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
+import CreateAssay from "./../assay/CreateAssay.vue";
+import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 
 @Component({
     components: {
-        ExperimentSummaryDialog
+        ExperimentSummaryDialog,
+        CreateDatasetCard,
+        CreateAssay,
+        Tooltip
     }
 })
 export default class StudyItem extends Vue {
@@ -107,7 +113,7 @@ export default class StudyItem extends Vue {
 
     private collapsed: boolean = false;
     private studyName: string = "";
-    private selectSampleDialog: boolean = false;
+    private showCreateAssayDialog: boolean = false;
 
     private summaryDataset: Assay = null;
     private summaryActive: boolean = false;
@@ -159,8 +165,12 @@ export default class StudyItem extends Vue {
         this.$store.dispatch("setActiveAssay", assay);
     }
 
-    private createAssay(study: Study) {
-        study.createAssay();
+    private async onCreateAssay(assay: Assay) {
+        this.showCreateAssayDialog = false;
+    }
+
+    private async deleteAssay(assay: Assay) {
+        await this.study.removeAssay(assay);
     }
 }
 </script>

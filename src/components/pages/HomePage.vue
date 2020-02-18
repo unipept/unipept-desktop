@@ -36,13 +36,11 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import Project from "@/logic/project/Project";
+import Project from "@/logic/filesystem/project/Project";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import RecentProjects from "./../project/RecentProjects.vue";
-import ProjectManager from "@/logic/project/ProjectManager";
+import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
-import ErrorInformationListener from "@/logic/error/ErrorInformationListener";
-import ErrorInformation from "@/logic/error/ErrorInformation";
 const { dialog } = require("electron").remote;
 
 @Component({
@@ -50,13 +48,10 @@ const { dialog } = require("electron").remote;
         RecentProjects
     }
 })
-export default class HomePage extends Vue implements ErrorInformationListener {
+export default class HomePage extends Vue {
     private errorMessage: string = "";
     private errorSnackbarVisible: boolean = false;
 
-    public async handleErrorInformation(error: ErrorInformation) {
-        this.showError(error.message);
-    }
 
     private async createProject() {
         const chosenPath: string | undefined = dialog.showOpenDialogSync({

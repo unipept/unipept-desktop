@@ -18,16 +18,13 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Project from "@/logic/project/Project";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Project from "@/logic/filesystem/project/Project";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import StudyItem from "./StudyItem.vue";
 
 @Component({
     components: {
-        LoadDatasetsCard,
         Tooltip,
         StudyItem
     }
@@ -38,7 +35,7 @@ export default class ToolbarExplorer extends Vue {
 
     private createStudy() {
         if (this.project !== null) {
-            const study: Study = this.project.createStudy();
+            const study: Study = this.project.createStudy("Unknown");
         }
     }
 }
