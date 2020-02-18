@@ -25,6 +25,19 @@
           'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
         }">
         <router-view style="min-height: 100%;"></router-view>
+        <v-dialog v-model="errorDialog" persistent max-width="400">
+            <v-card>
+                <v-card-title>Synchronization error</v-card-title>
+                <v-card-text>
+                    Could not synchronize your latest changes with the local disk. Please retry or restart the
+                    application if this problem persists.
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn color="primary" text @click="errorDialog = false">Retry</v-btn>
+                    <v-btn color="error" text @click="errorDialog = false">Exit application</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
       </v-content>
     </v-app>
   </div>
@@ -41,6 +54,8 @@ import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Project from "@/logic/filesystem/project/Project";
+import ErrorListener from "@/logic/filesystem/ErrorListener";
 
 const electron = window.require("electron");
 const ipcRenderer  = electron.ipcRenderer;
@@ -71,10 +86,15 @@ const BrowserWindow = electron.BrowserWindow;
                     return [];
                 }
             }
+        },
+        watchableProject: {
+            get(): Project {
+                return this.$store.getters.getProject
+            }
         }
     }
 })
-export default class App extends Vue {
+export default class App extends Vue implements ErrorListener {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
@@ -86,10 +106,11 @@ export default class App extends Vue {
   private static previouslyInitialized: boolean = false;
 
   private showHomePageDialog: boolean = true;
+  private errorDialog: boolean = false;
 
   async mounted() {
-      // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation should
-      // pass through the Vue app.
+      // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation
+      // should pass through the Vue app.
       ipcRenderer.on("navigate", (sender, location) => {
           if (location !== this.$route.path) {
               this.rightNavMini = true;
@@ -99,6 +120,11 @@ export default class App extends Vue {
 
       await this.initConfiguration();
       await this.setUpTitlebar();
+  }
+
+  public handleError(err: Error) {
+      console.error(err);
+      this.errorDialog = true;
   }
 
   @Watch("assaysInProgress")
@@ -124,6 +150,14 @@ export default class App extends Vue {
       App.previouslyInitialized = true;
   }
 
+  @Watch("watchableProject")
+  private onProjectChanged() {
+      const project: Project = this.$store.getters.getProject;
+      if (project) {
+          project.addErrorListener(this);
+      }
+  }
+
   /** 
    * Read the current application configuration from disk and set up all corresponding values in the configuration
    * store.
@@ -136,7 +170,7 @@ export default class App extends Vue {
           this.$store.dispatch("setBaseUrl", config.apiSource);
           this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
       } catch (err) {
-      // TODO: show a proper error message to the user in case this happens
+          // TODO: show a proper error message to the user in case this happens
           console.error(err)
       }
       this.loading = false;

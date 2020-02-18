@@ -6,6 +6,7 @@ import StudyVisitor from "unipept-web-components/src/logic/data-management/study
 import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import uuidv4 from "uuid/v4";
+import ErrorListener from "@/logic/filesystem/ErrorListener";
 
 export default class Project {
     public readonly studies: Study[] = [];
@@ -19,6 +20,8 @@ export default class Project {
     private readonly actionQueue: (() => Promise<void>)[] = [];
     private readonly syncInterval: number;
 
+    private errorListeners: ErrorListener[] = [];
+
     constructor(path: string, syncInterval: number = 250) {
         this.projectPath = path;
         if (!this.projectPath.endsWith("/")) {
@@ -26,6 +29,10 @@ export default class Project {
         }
 
         this.syncInterval = syncInterval;
+    }
+
+    public addErrorListener(listener: ErrorListener) {
+        this.errorListeners.push(listener);
     }
 
     public setStudies(studies: Study[]) {
@@ -73,12 +80,18 @@ export default class Project {
      * for each operation to succesfully succeed.
      */
     private async flushQueue() {
-        while (this.actionQueue.length > 0) {
-            const action: () => Promise<void> = this.actionQueue.shift();
-            await action();
-        }
+        try {
+            while (this.actionQueue.length > 0) {
+                const action: () => Promise<void> = this.actionQueue.shift();
+                await action();
+            }
 
-        setTimeout(async() => this.flushQueue(), this.syncInterval);
+            setTimeout(async() => this.flushQueue(), this.syncInterval);
+        } catch (err) {
+            for (const listener of this.errorListeners) {
+                listener.handleError(err);
+            }
+        }
     }
 
 

@@ -18,12 +18,10 @@ export default class StudyFileSystemWriter extends FileSystemStudyVisitor {
 
         try {
             // Make parent directory if it does not exist yet...
-            await mkdirp(
-                path.dirname(`${this.projectPath}${study.getName()}/${FileSystemStudyConsts.STUDY_METADATA_FILE}`)
-            );
+            await mkdirp(`${this.projectPath}${study.getName()}`);
 
             fs.writeFileSync(
-                this.projectPath,
+                `${this.projectPath}${study.getName()}/${FileSystemStudyConsts.STUDY_METADATA_FILE}`,
                 JSON.stringify(toWrite),
                 {
                     encoding: "utf-8"
