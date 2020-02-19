@@ -18,13 +18,13 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
     public async visitStudy(study: Study): Promise<void> {
         try {
             const serializedObject: string = fs.readFileSync(
-                `${this.projectPath}${study.getName()}/${FileSystemStudyConsts.STUDY_METADATA_FILE}`,
+                `${this.studyPath}${FileSystemStudyConsts.STUDY_METADATA_FILE}`,
                 {
                     encoding: "utf-8"
                 }
             );
             const deserializedObject = JSON.parse(serializedObject);
-            study.setName(path.basename(path.dirname(this.projectPath)));
+            study.setName(path.basename(this.studyPath));
             study.setId(deserializedObject.id);
         } catch (err) {
             throw new IOException(err);

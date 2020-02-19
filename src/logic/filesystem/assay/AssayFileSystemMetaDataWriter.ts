@@ -1,4 +1,4 @@
-import FileSystemAssayVisitor from "src/logic/filesystem/assay/FileSystemAssayVisitor";
+import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";

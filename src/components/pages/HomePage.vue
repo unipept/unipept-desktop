@@ -86,11 +86,10 @@ export default class HomePage extends Vue {
             await this.$store.dispatch("setProject", project);
             await this.$router.push("/analysis/single");
         } catch (err) {
-            if (err instanceof IOException) {
-                this.showError(
-                    "Could not open your project. Please make sure that the chosen directory is readable and try again."
-                );
-            }
+            console.error(err);
+            this.showError(
+                "Could not open your project. Please make sure that the chosen directory is readable and try again."
+            );
         }
     }
 

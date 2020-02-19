@@ -8,7 +8,6 @@ import StudyVisitor from "unipept-web-components/src/logic/data-management/study
 
 export default class FileSystemStudyChangeListener implements ChangeListener<Study> {
     private readonly project: Project;
-    private readonly study: Study;
 
     constructor(project: Project) {
         this.project = project;
@@ -16,22 +15,26 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
 
     public onChange(object: Study, field: string, oldValue: any, newValue: any) {
         if (field == "name") {
-            this.project.pushAction(() => this.renameStudyFile(oldValue, newValue));
+            this.project.pushAction(async() => await this.renameStudyFile(oldValue, newValue));
         } else if (field == "id") {
-            this.project.pushAction(() => this.serializeStudy(object));
+            this.project.pushAction(async() => await this.serializeStudy(object));
         }
     }
 
     private async renameStudyFile(oldName: string, newName: string): Promise<void> {
-        await mkdirp(this.project.projectPath + name);
+        if (!oldName) {
+            return;
+        }
+
+        await mkdirp(this.project.projectPath + newName);
         fs.renameSync(
             `${this.project.projectPath}${oldName}`,
-            `${this.project.projectPath}${name}`
+            `${this.project.projectPath}${newName}`
         );
     }
 
     private async serializeStudy(study: Study): Promise<void> {
-        const studyWriter: StudyVisitor = new StudyFileSystemWriter(this.project.projectPath);
+        const studyWriter: StudyVisitor = new StudyFileSystemWriter(`${this.project.projectPath}${study.getName()}`);
         study.accept(studyWriter);
     }
 }

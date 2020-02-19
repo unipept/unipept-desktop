@@ -7,6 +7,11 @@ import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import uuidv4 from "uuid/v4";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
+import MetaProteomicsAssay from 'unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay';
+import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
+import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
+import AssayFileSystemMetaDataWriter from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 
 export default class Project {
     public readonly studies: Study[] = [];
@@ -54,6 +59,26 @@ export default class Project {
         return study;
     }
 
+    public createMetaProteomicsAssay(name: string, peptides: string[], study: Study): MetaProteomicsAssay {
+        const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
+            new FileSystemAssayChangeListener(this, study),
+            uuidv4(),
+            undefined,
+            name,
+            new Date()
+        );
+        assay.setPeptides(peptides);
+        this.pushAction(async() => {
+            const path: string = `${this.projectPath}${study.getName()}/`;
+            const metaDataWriter: AssayVisitor = new AssayFileSystemMetaDataWriter(path);
+            await assay.accept(metaDataWriter);
+            const dataWriter: AssayVisitor = new AssayFileSystemDataWriter(path);
+            await assay.accept(dataWriter);
+        });
+        study.addAssay(assay);
+        return assay;
+    }
+
     public removeStudy(study: Study): void {
         // Remove study from disk.
 
@@ -88,6 +113,7 @@ export default class Project {
 
             setTimeout(async() => this.flushQueue(), this.syncInterval);
         } catch (err) {
+            console.error(err);
             for (const listener of this.errorListeners) {
                 listener.handleError(err);
             }
@@ -124,7 +150,7 @@ export default class Project {
     //                 const assayName: string = fileName.replace(".assay.json", "");
     //                 // Make sure that this assay hasn't been imported already.
     //                 if (!study.getAssays().find(val => val.getName() === assayName)) {
-    //                     const assayReader: AssayVisitor = new AssayFileSystemReader(filePath);
+    //                     const assayReader: AssayVisitor = new AssayFileSystemMetaDataReader(filePath);
     //                     const assay = new MetaProteomicsAssay();
     //                     assayReader.visitMetaProteomicsAssay(assay);
     //                     study.addAssay(assay);

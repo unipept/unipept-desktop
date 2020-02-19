@@ -1,11 +1,11 @@
-import FileSystemAssayVisitor from "src/logic/filesystem/assay/FileSystemAssayVisitor";
+import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import * as fs from "fs";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 
-export default class AssayFileSystemReader extends FileSystemAssayVisitor implements AssayVisitor {
+export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisitor implements AssayVisitor {
     public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
         throw new Error("Method not implemented.");
     }

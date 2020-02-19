@@ -19,6 +19,7 @@ import Assay from "unipept-web-components/src/logic/data-management/assay/Assay"
 import Component from "vue-class-component";
 import DatasetForm from "unipept-web-components/src/components/dataset/DatasetForm.vue";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
+import Project from "@/logic/filesystem/project/Project";
 
 @Component({
     components: {
@@ -28,13 +29,18 @@ import Study from "unipept-web-components/src/logic/data-management/study/Study"
 export default class CreateAssay extends Vue {
     @Prop({ required: true })
     private study: Study;
+    @Prop({ required: true })
+    private project: Project;
     private peptides: string;
     private name: string;
 
     private async createAssay() {
-        // const assay: Assay = await this.study.createAssay();
-        // assay.setName(this.name);
-        // this.$emit("create-assay", assay);
+        const assay: Assay = this.project.createMetaProteomicsAssay(
+            this.name,
+            this.peptides.split(/\r?\n/),
+            this.study
+        );
+        this.$emit("create-assay", assay);
     }
 }
 </script>

@@ -6,7 +6,7 @@
             No studies present.
         </div>
         <div v-else v-for="study of project.getStudies()" :key="study.getId()">
-            <study-item :study="study"></study-item>
+            <study-item :study="study" :project="project"></study-item>
         </div>
         <v-btn class="select-sample-button" depressed color="primary" @click="createStudy()">
             Create study
@@ -35,7 +35,7 @@ export default class ToolbarExplorer extends Vue {
 
     private createStudy() {
         if (this.project !== null) {
-            const study: Study = this.project.createStudy("Unknown");
+            this.project.createStudy("Unknown");
         }
     }
 }

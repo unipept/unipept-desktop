@@ -5,13 +5,16 @@ import StudyVisitor from "unipept-web-components/src/logic/data-management/study
  * path of the file associated with a study.
  */
 export default abstract class FileSystemStudyVisitor extends StudyVisitor {
-    protected projectPath: string;
+    protected studyPath: string;
 
     /**
-     * @param projectPath Points to the root of the project directory.
+     * @param studyPath Points to the root of the study directory.
      */
-    constructor(projectPath: string) {
+    constructor(studyPath: string) {
         super();
-        this.projectPath = projectPath;
+        if (!studyPath.endsWith("/")) {
+            studyPath += "/";
+        }
+        this.studyPath = studyPath;
     }
 }

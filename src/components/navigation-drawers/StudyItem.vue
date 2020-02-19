@@ -81,7 +81,7 @@
                     Create assay
                 </v-card-title>
                 <v-card-text>
-                    <create-assay :study="study" v-on:create-assay="onCreateAssay"></create-assay>
+                    <create-assay :project="project" :study="study" v-on:create-assay="onCreateAssay"></create-assay>
                 </v-card-text>
             </v-card>
         </v-dialog>
@@ -98,6 +98,7 @@ import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
 import CreateAssay from "./../assay/CreateAssay.vue";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import Project from "@/logic/filesystem/project/Project";
 
 @Component({
     components: {
@@ -110,6 +111,8 @@ import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 export default class StudyItem extends Vue {
     @Prop({ required: true })
     private study: Study;
+    @Prop({ required: true })
+    private project: Project;
 
     private collapsed: boolean = false;
     private studyName: string = "";
