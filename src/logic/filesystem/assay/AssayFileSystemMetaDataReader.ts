@@ -20,7 +20,6 @@ export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisito
             )
             const deserialized: any = JSON.parse(data);
             mpAssay.setId(deserialized.id);
-            mpAssay.setName(deserialized.name);
         } catch (err) {
             throw new IOException(err);
         }

@@ -170,6 +170,7 @@ export default class StudyItem extends Vue {
 
     private async onCreateAssay(assay: Assay) {
         this.showCreateAssayDialog = false;
+        await this.$store.dispatch("processAssay", assay);
     }
 
     private async deleteAssay(assay: Assay) {

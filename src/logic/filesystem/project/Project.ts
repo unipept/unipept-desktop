@@ -52,7 +52,7 @@ export default class Project {
     public createStudy(name: string): Study {
         const study: Study = new Study(new FileSystemStudyChangeListener(this), uuidv4(), name);
         this.pushAction(async() => {
-            const studyWriter: StudyVisitor = new StudyFileSystemWriter(this.projectPath);
+            const studyWriter: StudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`);
             await studyWriter.visitStudy(study);
         });
         this.studies.push(study);

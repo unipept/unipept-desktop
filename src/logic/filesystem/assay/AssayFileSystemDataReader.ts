@@ -9,6 +9,7 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     }
 
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
+        console.log(mpAssay);
         const peptidesString: string = fs.readFileSync(`${this.directoryPath}${mpAssay.getName()}.txt`, {
             encoding: "utf-8"
         });

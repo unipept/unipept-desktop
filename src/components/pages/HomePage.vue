@@ -83,6 +83,11 @@ export default class HomePage extends Vue {
             const projectManager: ProjectManager = new ProjectManager();
             const project: Project = await projectManager.loadExistingProject(path);
             await project.initialize();
+            for (const study of project.getStudies()) {
+                for (const assay of study.getAssays()) {
+                    await this.$store.dispatch("processAssay", assay);
+                }
+            }
             await this.$store.dispatch("setProject", project);
             await this.$router.push("/analysis/single");
         } catch (err) {

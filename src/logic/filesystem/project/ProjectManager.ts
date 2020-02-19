@@ -44,18 +44,12 @@ export default class ProjectManager  {
             directory += "/";
         }
 
-        console.log(readdirSync(directory, { withFileTypes: true })
-            .filter(entry => !entry.isDirectory())
-            .map(entry => entry.name));
-
         // Check all files in the given directory and try to load the assays
         const files: string[] = readdirSync(directory, { withFileTypes: true })
             .filter(entry => !entry.isDirectory())
             .map(entry => entry.name)
             .filter(name => !name.startsWith(".") && name !== "study.json" && name.endsWith(".json"))
             .map(name => name.replace(".json", ""));
-
-        console.log(files);
 
         const studyReader: StudyVisitor = new StudyFileSystemReader(directory);
 
