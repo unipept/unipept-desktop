@@ -35,7 +35,7 @@
                             v-on="on"
                             size="20"
                             color="red">
-                            mdi-alert-circle-outline
+                            mdi-alert-outline
                         </v-icon>
                     </template>
                     <span>Invalid study name. Name must be unique and non-empty.</span>
@@ -49,32 +49,15 @@
             </div>
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
-            <div class="assay-item" v-for="assay of study.getAssays()" :key="assay.getId()">
-                <v-progress-circular
-                    v-if="assay.progress !== 1"
-                    :rotate="-90" :size="16"
-                    :value="assay.progress * 100"
-                    color="primary">
-                </v-progress-circular>
-                <v-icon
-                    color="#424242"
-                    size="20"
-                    v-if="assay.progress === 1">
-                    mdi-file-document-box-outline
-                </v-icon>
-                <span>{{ assay.getName() }}</span>
-                <div style="display: flex; flex-direction: row; margin-left: auto;">
-                    <tooltip message="Display experiment summary." position="bottom">
-                        <v-icon :disabled="assay.progress !== 1" @click="showExperimentSummary(assay)" v-on:click.stop color="#424242" size="20">mdi-information-outline</v-icon>
-                    </tooltip>
-                    <tooltip message="Remove assay from analysis." position="bottom">
-                        <v-icon :disabled="assay.progress !== 1" @click="deleteAssay(assay)" v-on:click.stop color="#424242" size="20">mdi-close</v-icon>
-                    </tooltip>
-                </div>
-            </div>
+            <assay-item
+                v-for="assay of study.getAssays()"
+                :assay="assay"
+                v-bind:key="assay.getId()"
+                :active-assay="$store.getters.getActiveAssay"
+                v-on:select-assay="onSelectAssay"
+                v-on:remove-assay="onRemoveAssay">
+            </assay-item>
         </div>
-        <experiment-summary-dialog :assay="summaryDataset" :active.sync="summaryActive">
-        </experiment-summary-dialog>
         <v-dialog v-model="showCreateAssayDialog" max-width="800" v-if="study">
             <v-card>
                 <v-card-title>
@@ -94,18 +77,18 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
 import CreateAssay from "./../assay/CreateAssay.vue";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import Project from "@/logic/filesystem/project/Project";
+import AssayItem from "./AssayItem.vue";
 
 @Component({
     components: {
-        ExperimentSummaryDialog,
         CreateDatasetCard,
         CreateAssay,
-        Tooltip
+        Tooltip,
+        AssayItem
     }
 })
 export default class StudyItem extends Vue {
@@ -113,13 +96,13 @@ export default class StudyItem extends Vue {
     private study: Study;
     @Prop({ required: true })
     private project: Project;
+    @Prop({ required: true })
+    // The assay that's currently selected by the user for analysis
+    private activeAssay: Assay;
 
     private collapsed: boolean = false;
     private studyName: string = "";
     private showCreateAssayDialog: boolean = false;
-
-    private summaryDataset: Assay = null;
-    private summaryActive: boolean = false;
 
     private isEditingStudyName: boolean = false;
     private isValidStudyName: boolean = true;
@@ -159,31 +142,22 @@ export default class StudyItem extends Vue {
         }
     }
 
-    private showExperimentSummary(dataset) {
-        this.summaryDataset = dataset;
-        this.summaryActive = true;
-    }
-
-    private activateAssay(assay: Assay) {
-        this.$store.dispatch("setActiveAssay", assay);
-    }
-
     private async onCreateAssay(assay: Assay) {
         this.showCreateAssayDialog = false;
         await this.$store.dispatch("processAssay", assay);
     }
 
-    private async deleteAssay(assay: Assay) {
+    private async onSelectAssay(assay: Assay) {
+        await this.$store.dispatch("setActiveAssay", assay);
+    }
+
+    private async onRemoveAssay(assay: Assay) {
         await this.study.removeAssay(assay);
     }
 }
 </script>
 
 <style scoped>
-    .assay-items {
-        margin-left: 16px;
-    }
-
     .study-item {
         display: flex;
         align-items: center;
@@ -192,22 +166,9 @@ export default class StudyItem extends Vue {
         font-weight: 700;
     }
 
-    .assay-item {
-        display: flex;
-        align-items: center;
-        color: #424242;
-        font-weight: 700;
-    }
-
-    .assay-item > span {
-        margin-left: 8px;
-    }
-
     .study-item-name {
         font-size: 16px;
         flex: 1;
-        /* text-transform: uppercase;  */
-        text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

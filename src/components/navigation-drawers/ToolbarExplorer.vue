@@ -6,7 +6,7 @@
             No studies present.
         </div>
         <div v-else v-for="study of project.getStudies()" :key="study.getId()">
-            <study-item :study="study" :project="project"></study-item>
+            <study-item :active-assay="$store.getters.getActiveAssay" :study="study" :project="project"></study-item>
         </div>
         <v-btn class="select-sample-button" depressed color="primary" @click="createStudy()">
             Create study
