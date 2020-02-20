@@ -1,7 +1,8 @@
 <template>
     <div>
         <div
-            @click="selectAssay(assay)"
+            @click="selectAssay()"
+            @contextmenu="showContextMenu()"
             :class="{
                 'assay-item': true,
                 'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
@@ -52,31 +53,37 @@
                         mdi-information-outline
                     </v-icon>
                 </tooltip>
-                <tooltip message="Remove assay from analysis." position="bottom">
-                    <v-icon
-                        :disabled="assay.progress !== 1"
-                        @click="removeAssay(assay)"
-                        v-on:click.stop color="#424242"
-                        size="20">
-                        mdi-close
-                    </v-icon>
-                </tooltip>
             </div>
         </div>
         <experiment-summary-dialog
             :assay="assay"
             :active.sync="experimentSummaryActive">
         </experiment-summary-dialog>
+        <v-dialog v-model="removeConfirmationActive" width="600">
+            <v-card>
+                <v-card-title>Confirm assay deletion</v-card-title>
+                <v-card-text>
+                    Are you sure you want to permanently delete this assay? This action cannot be undone.
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="removeConfirmationActive = false">Cancel</v-btn>
+                    <v-btn text color="red" @click="removeAssay()">Delete</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import { Prop, Watch } from "vue-property-decorator";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+const { remote } = require("electron");
+const { Menu, MenuItem } = remote;
 
 @Component({
     components: {
@@ -91,6 +98,7 @@ export default class AssayItem extends Vue {
     private activeAssay: Assay;
 
     private experimentSummaryActive: boolean = false;
+    private removeConfirmationActive: boolean = false;
     private isEditingAssayName: boolean = false;
     private isValidAssayName: boolean = true;
 
@@ -102,6 +110,7 @@ export default class AssayItem extends Vue {
 
     private enableAssayEdit() {
         this.isEditingAssayName = true;
+
     }
 
     private disableAssayEdit() {
@@ -109,6 +118,30 @@ export default class AssayItem extends Vue {
             this.isEditingAssayName = false;
             this.assay.setName(this.assayName);
         }
+    }
+
+    private showContextMenu() {
+        const menu = new Menu()
+        menu.append(new MenuItem({
+            label: "Rename",
+            click: () => {
+                this.enableAssayEdit();
+            }
+        }));
+        menu.append(new MenuItem({ type: "separator" }))
+        menu.append(new MenuItem({
+            label: "Duplicate",
+            click: () => {
+
+            }
+        }));
+        menu.append(new MenuItem({
+            label: "Delete",
+            click: () => {
+                this.removeConfirmationActive = true;
+            }
+        }));
+        menu.popup();
     }
 
     @Watch("assayName")
@@ -127,12 +160,12 @@ export default class AssayItem extends Vue {
         this.assayName = this.assay.getName();
     }
 
-    private selectAssay(assay: Assay) {
-        this.$emit("select-assay", assay);
+    private selectAssay() {
+        this.$emit("select-assay", this.assay);
     }
 
-    private removeAssay(assay: Assay) {
-        this.$emit("remove-assay", assay);
+    private removeAssay() {
+        this.$emit("remove-assay", this.assay);
     }
 }
 </script>

@@ -3,7 +3,10 @@
         <v-navigation-drawer v-model="isOpen" :mini-variant="true" fixed :class="{'toolbar-navigation-drawer': !isMini}" permanent>
             <div class="navigation-toolbar" style="position: relative; top: 64px;">
                 <v-list>
-                    <v-list-item :class="{'v-list-item--active': $route.path === '/'}" link @click="navigate('/')">
+                    <v-list-item
+                        :class="{'v-list-item--active': $route.path === '/'}"
+                        link
+                        @click="navigateAndCloseSideBar('/')">
                         <v-list-item-icon>
                             <v-icon>mdi-home</v-icon>
                         </v-list-item-icon>
@@ -120,8 +123,9 @@ export default class Toolbar extends Vue {
         }
     }
 
-    private navigate(routeToGo: string) {
+    private navigateAndCloseSideBar(routeToGo: string) {
         if (this.$route.path !== routeToGo) {
+            this.isMini = true;
             this.$router.replace(routeToGo);
         }
     }

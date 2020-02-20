@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="study-item">
+        <div class="study-item" @contextmenu="showContextMenu()">
             <v-icon
                 v-if="!collapsed"
                 color="#424242"
@@ -68,6 +68,11 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+        <confirm-deletion-dialog
+                v-model="removeConfirmationActive"
+                :action="() => removeStudy()"
+                item-type="study">
+        </confirm-deletion-dialog>
     </div>
 </template>
 
@@ -82,9 +87,13 @@ import CreateAssay from "./../assay/CreateAssay.vue";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import Project from "@/logic/filesystem/project/Project";
 import AssayItem from "./AssayItem.vue";
+import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
+const { remote } = require("electron");
+const { Menu, MenuItem } = remote;
 
 @Component({
     components: {
+        ConfirmDeletionDialog,
         CreateDatasetCard,
         CreateAssay,
         Tooltip,
@@ -112,12 +121,37 @@ export default class StudyItem extends Vue {
     private collapsed: boolean = false;
     private studyName: string = "";
     private showCreateAssayDialog: boolean = false;
+    private removeConfirmationActive: boolean = false;
 
     private isEditingStudyName: boolean = false;
     private isValidStudyName: boolean = true;
 
     mounted() {
         this.onStudyChanged();
+    }
+
+    private showContextMenu() {
+        const menu = new Menu()
+        menu.append(new MenuItem({
+            label: "Rename",
+            click: () => {
+                this.enableStudyEdit();
+            }
+        }));
+        menu.append(new MenuItem({ type: "separator" }))
+        menu.append(new MenuItem({
+            label: "Duplicate",
+            click: () => {
+
+            }
+        }));
+        menu.append(new MenuItem({
+            label: "Delete",
+            click: () => {
+                this.removeConfirmationActive = true;
+            }
+        }));
+        menu.popup();
     }
 
     @Watch("study")
@@ -149,6 +183,10 @@ export default class StudyItem extends Vue {
             this.isValidStudyName = false;
             return false;
         }
+    }
+
+    private removeStudy() {
+        this.project.removeStudy(this.study);
     }
 
     private async onCreateAssay(assay: Assay) {

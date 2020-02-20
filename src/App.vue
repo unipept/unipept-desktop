@@ -25,7 +25,7 @@
           'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
         }">
         <router-view style="min-height: 100%;"></router-view>
-        <v-dialog v-model="errorDialog" persistent max-width="400">
+        <v-dialog v-model="errorDialog" persistent max-width="600">
             <v-card>
                 <v-card-title>Synchronization error</v-card-title>
                 <v-card-text>
@@ -33,8 +33,9 @@
                     application if this problem persists.
                 </v-card-text>
                 <v-card-actions>
-                    <v-btn color="primary" text @click="errorDialog = false">Retry</v-btn>
+                    <v-spacer></v-spacer>
                     <v-btn color="error" text @click="errorDialog = false">Exit application</v-btn>
+                    <v-btn color="primary" text @click="errorDialog = false">Retry</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>

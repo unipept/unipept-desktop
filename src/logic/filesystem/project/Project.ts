@@ -12,6 +12,7 @@ import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAs
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import AssayFileSystemMetaDataWriter from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 
 export default class Project {
     public readonly studies: Study[] = [];
@@ -68,23 +69,25 @@ export default class Project {
             new Date()
         );
         assay.setPeptides(peptides);
-        this.pushAction(async() => {
-            const path: string = `${this.projectPath}${study.getName()}/`;
-            const metaDataWriter: AssayVisitor = new AssayFileSystemMetaDataWriter(path);
-            await assay.accept(metaDataWriter);
-            const dataWriter: AssayVisitor = new AssayFileSystemDataWriter(path);
-            await assay.accept(dataWriter);
-        });
         study.addAssay(assay);
         return assay;
     }
 
     public removeStudy(study: Study): void {
-        // Remove study from disk.
-
+        const idx: number = this.studies.findIndex(item => item.getId() == study.getId());
+        if (idx >= 0) {
+            this.studies.splice(idx, 1);
+        }
+        // Also remove study from disk.
+        this.pushAction(async() => {
+            const studyRemover: StudyVisitor = new StudyFileSystemRemover(
+                `${this.projectPath}${study.getName()}/`
+            );
+            await study.accept(studyRemover);
+        });
     }
 
-    public async initialize() {
+    public initialize() {
         // const watcher = chokidar.watch(this.projectPath);
 
         // watcher
@@ -102,7 +105,7 @@ export default class Project {
     
     /**
      * Flushes the action queue at specific times, making sure that all operations are performed in order by waiting
-     * for each operation to succesfully succeed.
+     * for each operation to successfully succeed.
      */
     private async flushQueue() {
         try {

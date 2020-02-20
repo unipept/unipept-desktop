@@ -3,7 +3,7 @@
         <v-card>
             <v-card-title>Experiment summary</v-card-title>
             <v-card-text>
-                <span v-if="!assay || loading">
+                <span v-if="!assay || loading" style="display: flex; justify-content: center;">
                     <v-progress-circular :size="50" :width="5" color="primary" indeterminate></v-progress-circular>
                 </span>
                 <div v-else>
@@ -62,7 +62,7 @@ export default class ExperimentSummaryDialog extends Vue {
 
     @Watch("assay")
     private async onAssayChanged(): Promise<void> {
-        if (this.assay) {
+        if (this.assay && this.assay.progress === 1) {
             this.loading = true;
             let taxaSource: TaxaDataSource = await this.assay.dataRepository.createTaxaDataSource();
             this.searchedPeptides = await taxaSource.getAmountOfSearchedPeptides();
