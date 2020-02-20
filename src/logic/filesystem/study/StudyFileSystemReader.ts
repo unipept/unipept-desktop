@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import { FileSystemStudyConsts } from "@/logic/filesystem/study/FileSystemStudyConsts";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
 
 /**
  * Class that's able to fully deserialize a study that's stored in the local filesystem of a user.
@@ -30,4 +31,9 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
             throw new IOException(err);
         }
     }
+
+    public async getExpectedFileEvents(study: Study): Promise<FileEvent[]> {
+        return [];
+    }
+
 }

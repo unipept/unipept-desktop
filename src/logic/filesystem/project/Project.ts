@@ -1,18 +1,17 @@
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
-// import chokidar from "chokidar";
+import chokidar from "chokidar";
 import fs from "fs";
-import path from "path";
 import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
 import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import uuidv4 from "uuid/v4";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
-import MetaProteomicsAssay from 'unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay';
+import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
-import AssayFileSystemMetaDataWriter from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
+import {FileEventType} from "@/logic/filesystem/project/FileEventType";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
+import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 
 export default class Project {
     public readonly studies: Study[] = [];
@@ -23,10 +22,12 @@ export default class Project {
     // This queue keeps track of all actions that need to be performed. These actions may throw errors, and in the
     // event that an Error is thrown, the ErrorListener's of this class are informed and file synchronization stops
     // immediately.
-    private readonly actionQueue: (() => Promise<void>)[] = [];
+    private readonly actionQueue: ([() => Promise<void>, () => Promise<FileEvent[]>])[] = [];
     private readonly syncInterval: number;
 
     private errorListeners: ErrorListener[] = [];
+
+    private expectedFileEvents: Map<FileEventType, string[]>;
 
     constructor(path: string, syncInterval: number = 250) {
         this.projectPath = path;
@@ -35,6 +36,11 @@ export default class Project {
         }
 
         this.syncInterval = syncInterval;
+
+        this.expectedFileEvents = new Map();
+        for (const type of Object.values(FileEventType)) {
+            this.expectedFileEvents.set(type as FileEventType, []);
+        }
     }
 
     public addErrorListener(listener: ErrorListener) {
@@ -52,9 +58,11 @@ export default class Project {
 
     public createStudy(name: string): Study {
         const study: Study = new Study(new FileSystemStudyChangeListener(this), uuidv4(), name);
+        const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`);
         this.pushAction(async() => {
-            const studyWriter: StudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`);
             await studyWriter.visitStudy(study);
+        }, async() => {
+            return await studyWriter.getExpectedFileEvents(study);
         });
         this.studies.push(study);
         return study;
@@ -88,18 +96,24 @@ export default class Project {
     }
 
     public initialize() {
-        // const watcher = chokidar.watch(this.projectPath);
+        const watcher = chokidar.watch(this.projectPath, {
+            ignoreInitial: true,
+            // Ignore hidden files
+            ignored: ".*"
+        });
 
-        // watcher
-        //     .on("add", this.fileAdded)
-        //     .on("change", this.fileChanged)
-        //     .on("unlink", this.fileDeleted);
+        watcher
+            .on("add",(path: string) => this.fileAdded(path))
+            .on("change", (path: string) => this.fileChanged(path))
+            .on("unlink", (path: string) => this.fileDeleted(path))
+            .on("addDir", (path: string) => this.directoryAdded(path))
+            .on("unlinkDir", (path: string) => this.directoryDeleted(path));
 
         this.flushQueue();
     }
 
-    public pushAction(action: () => Promise<void>) {
-        this.actionQueue.push(action);
+    public pushAction(action: () => Promise<void>, expectedEvents: () => Promise<FileEvent[]> = async() => []) {
+        this.actionQueue.push([action, expectedEvents]);
     }
 
     
@@ -110,7 +124,15 @@ export default class Project {
     private async flushQueue() {
         try {
             while (this.actionQueue.length > 0) {
-                const action: () => Promise<void> = this.actionQueue.shift();
+                const item: [() => Promise<void>, () => Promise<FileEvent[]>] = this.actionQueue.shift();
+                const action: () => Promise<void> = item[0];
+                const events: () => Promise<FileEvent[]> = item[1];
+
+                // First push the expected actions and then do execute the action
+                for (const event of await events()) {
+                    this.expectedFileEvents.get(event.eventType).push(event.path);
+                }
+
                 await action();
             }
 
@@ -123,57 +145,58 @@ export default class Project {
         }
     }
 
+    private shouldInterceptEvent(path: string, eventType: FileEventType): boolean {
+        const idx: number = this.expectedFileEvents.get(eventType).indexOf(path);
+        if (idx >= 0) {
+            this.expectedFileEvents.get(eventType).splice(idx, 1);
+            return true;
+        }
+        return false;
+    }
 
-    // private async fileAdded(filePath: string) {
-    //     // Create new study or assay based on path.
-        
-    //     // Only if the given path is not a directory, we should act and check if we need to add a new study or assay to
-    //     // existing study.
-    //     if (!this.isDirectory(filePath)) {
-    //         const studyName: string = path.dirname(filePath).split(path.sep).pop();
-    //         const fileName: string = path.basename(filePath);
 
-    //         if (fileName === "study.json") {
-    //             // Add a new study containing all the assays in this folder.
-    //             const study: Study = new Study();
-    //             const studyReader: StudyVisitor = new StudyFileSystemReader(filePath);
+    private async fileAdded(filePath: string) {
+        if (this.shouldInterceptEvent(filePath, FileEventType.AddFile)) {
+            console.log("Intercepted event " + filePath);
+            return;
+        }
+        console.log("Added: " + filePath);
+    }
 
-    //             studyReader.visitStudy(study);
-                
-    //             fs.readdirSync
-    //             this.studies.push(study);
-    //         } else if (fileName.endsWith(".assay.json")) {
-    //             // This is an assay file.
-    //             // Check if there's already a study associated with this assay (otherwise, just ignore the assay, it
-    //             // will get parsed once the study becomes available).
-                
-    //             const study: Study = this.studyMap.get(studyName);
-                
-    //             if (study) {
-    //                 const assayName: string = fileName.replace(".assay.json", "");
-    //                 // Make sure that this assay hasn't been imported already.
-    //                 if (!study.getAssays().find(val => val.getName() === assayName)) {
-    //                     const assayReader: AssayVisitor = new AssayFileSystemMetaDataReader(filePath);
-    //                     const assay = new MetaProteomicsAssay();
-    //                     assayReader.visitMetaProteomicsAssay(assay);
-    //                     study.addAssay(assay);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+    private async directoryAdded(directoryPath: string) {
+        if (this.shouldInterceptEvent(directoryPath, FileEventType.AddDir)) {
+            console.log("Intercepted event " + directoryPath);
+            return;
+        }
+        console.log("Added dir: " + directoryPath);
+    }
 
-    // private async fileChanged(filePath: string) {
-    //     // Reload study or assay if required. The name of the item did not change, instead it's contents changed and
-    //     // we should parse the contents again.
-    // }
+    private async fileChanged(filePath: string) {
+        if (this.shouldInterceptEvent(filePath, FileEventType.Change)) {
+            console.log("Intercepted event " + filePath);
+            return;
+        }
+        console.log("Changed: " + filePath);
+    }
 
-    // private async fileDeleted(filePath: string) {
+    private async fileDeleted(filePath: string) {
+        if (this.shouldInterceptEvent(filePath, FileEventType.RemoveFile)) {
+            console.log("Intercepted event " + filePath);
+            return;
+        }
+        console.log("Deleted: " + filePath);
+    }
 
-    // }
+    private async directoryDeleted(directoryPath: string) {
+        if (this.shouldInterceptEvent(directoryPath, FileEventType.RemoveDir)) {
+            console.log("Intercepted event " + directoryPath);
+            return;
+        }
+        console.log("Deleted dir: " + directoryPath);
+    }
 
-    // private async isDirectory(filePath: string): Promise<boolean> {
-    //     const stat = fs.lstatSync(filePath);
-    //     return stat.isDirectory();
-    // }
+    private async isDirectory(filePath: string): Promise<boolean> {
+        const stat = fs.lstatSync(filePath);
+        return stat.isDirectory();
+    }
 }

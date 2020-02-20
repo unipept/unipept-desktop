@@ -1,6 +1,8 @@
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 
 /**
  * A specific kind of visitor for assays that's specifically tailored at storing and reading information from the
@@ -19,6 +21,7 @@ export default abstract class FileSystemAssayVisitor implements AssayVisitor {
         this.directoryPath = directoryPath;
     }
 
+    public abstract getExpectedFileEvents(assay: Assay): Promise<FileEvent[]>;
     public abstract visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void>;
     public abstract visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void>;
 }

@@ -2,9 +2,10 @@ import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import fs from "fs";
 import mkdirp from "mkdirp";
-import path from "path";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
-import { FileSystemStudyConsts } from "@/logic/filesystem/study/FileSystemStudyConsts";
+import {FileSystemStudyConsts} from "@/logic/filesystem/study/FileSystemStudyConsts";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
+import {FileEventType} from "@/logic/filesystem/project/FileEventType";
 
 
 /**
@@ -30,5 +31,11 @@ export default class StudyFileSystemWriter extends FileSystemStudyVisitor {
         } catch (err) {
             throw new IOException(err);
         }
+    }
+
+    async getExpectedFileEvents(study: Study): Promise<FileEvent[]> {
+        return [
+            new FileEvent(FileEventType.AddFile, `${this.studyPath}${FileSystemStudyConsts.STUDY_METADATA_FILE}`)
+        ]
     }
 }

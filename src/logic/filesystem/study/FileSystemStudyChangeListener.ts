@@ -4,12 +4,15 @@ import Study from "unipept-web-components/src/logic/data-management/study/Study"
 import mkdirp from "mkdirp";
 import * as fs from "fs";
 import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
-import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import AssayFileSystemMetaDataWriter from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
+import { FileEventType } from "@/logic/filesystem/project/FileEventType";
+import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
+import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
+import {readdirSync} from "fs";
 
 export default class FileSystemStudyChangeListener implements ChangeListener<Study> {
     private readonly project: Project;
@@ -20,47 +23,86 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
 
     public onChange(object: Study, field: string, oldValue: any, newValue: any) {
         if (field == "name") {
-            this.project.pushAction(async() => await this.renameStudyFile(oldValue, newValue));
+            this.renameStudyFile(oldValue, newValue);
         } else if (field == "id") {
-            this.project.pushAction(async() => await this.serializeStudy(object));
+            this.serializeStudy(object);
         } else if (field == "delete-assay") {
-            this.project.pushAction(async() => await this.removeAssay(object, oldValue));
+            this.removeAssay(object, oldValue);
         } else if (field == "add-assay") {
-            this.project.pushAction(async() => await this.createAssay(object, newValue));
+            this.createAssay(object, newValue);
         }
     }
 
-    private async renameStudyFile(oldName: string, newName: string): Promise<void> {
-        if (!oldName) {
-            return;
-        }
+    private renameStudyFile(oldName: string, newName: string): void {
+        this.project.pushAction(async() => {
+            if (!oldName) {
+                return;
+            }
 
-        await mkdirp(this.project.projectPath + newName);
-        fs.renameSync(
-            `${this.project.projectPath}${oldName}`,
-            `${this.project.projectPath}${newName}`
-        );
+            await mkdirp(this.project.projectPath + newName);
+            fs.renameSync(
+                `${this.project.projectPath}${oldName}`,
+                `${this.project.projectPath}${newName}`
+            );
+        }, async() => {
+            if (!oldName) {
+                return [];
+            }
+
+            const events: FileEvent[] = [];
+            for (const file of readdirSync(`${this.project.projectPath}${oldName}`, { withFileTypes: true })) {
+                events.push(
+                    new FileEvent(FileEventType.RemoveFile, `${this.project.projectPath}${oldName}/${file.name}`)
+                );
+                events.push(
+                    new FileEvent(FileEventType.AddFile, `${this.project.projectPath}${newName}/${file.name}`)
+                );
+            }
+
+            events.push(new FileEvent(FileEventType.RemoveDir, `${this.project.projectPath}${oldName}`));
+            events.push(new FileEvent(FileEventType.AddDir, `${this.project.projectPath}${newName}`));
+
+            return events;
+        })
     }
 
-    private async serializeStudy(study: Study): Promise<void> {
-        const studyWriter: StudyVisitor = new StudyFileSystemWriter(
+    private serializeStudy(study: Study): void {
+        const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(
             `${this.project.projectPath}${study.getName()}`
         );
-        await study.accept(studyWriter);
+
+        this.project.pushAction(async() => {
+            await study.accept(studyWriter);
+        }, async() => {
+            return await studyWriter.getExpectedFileEvents(study)
+        });
     }
 
-    private async removeAssay(study: Study, assay: Assay): Promise<void> {
-        const assayRemover: AssayVisitor = new AssayFileSystemDestroyer(
+    private removeAssay(study: Study, assay: Assay): void {
+        const assayRemover: FileSystemAssayVisitor = new AssayFileSystemDestroyer(
             `${this.project.projectPath}${study.getName()}`
         );
-        await assay.accept(assayRemover);
+
+        this.project.pushAction(async() => {
+            await assay.accept(assayRemover);
+        }, async() => {
+            return await assayRemover.getExpectedFileEvents(assay);
+        })
     }
 
-    private async createAssay(study: Study, assay: Assay): Promise<void> {
+    private createAssay(study: Study, assay: Assay): void {
         const path: string = `${this.project.projectPath}${study.getName()}/`;
-        const metaDataWriter: AssayVisitor = new AssayFileSystemMetaDataWriter(path);
-        await assay.accept(metaDataWriter);
-        const dataWriter: AssayVisitor = new AssayFileSystemDataWriter(path);
-        await assay.accept(dataWriter);
+        const metaDataWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(path);
+        const dataWriter: FileSystemAssayVisitor = new AssayFileSystemDataWriter(path);
+
+        this.project.pushAction(async() => {
+            await assay.accept(metaDataWriter);
+            await assay.accept(dataWriter);
+        }, async() => {
+            return [
+                ...await metaDataWriter.getExpectedFileEvents(assay),
+                ...await dataWriter.getExpectedFileEvents(assay)
+            ]
+        })
     }
 }

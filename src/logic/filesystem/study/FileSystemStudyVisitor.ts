@@ -1,4 +1,6 @@
 import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 
 /**
  * A type of StudyVisitor that is built for interaction with the local filesystem. This Visitor needs to know the
@@ -17,4 +19,6 @@ export default abstract class FileSystemStudyVisitor extends StudyVisitor {
         }
         this.studyPath = studyPath;
     }
+
+    public abstract async getExpectedFileEvents(study: Study): Promise<FileEvent[]>;
 }

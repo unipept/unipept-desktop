@@ -4,6 +4,8 @@ import MetaProteomicsAssay from "unipept-web-components/src/logic/data-managemen
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import * as fs from "fs";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
+import FileEvent from "@/logic/filesystem/project/FileEvent";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 
 export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisitor implements AssayVisitor {
     public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
@@ -23,5 +25,9 @@ export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisito
         } catch (err) {
             throw new IOException(err);
         }
+    }
+
+    public async getExpectedFileEvents(assay: Assay): Promise<FileEvent[]> {
+        return [];
     }
 }
