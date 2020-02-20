@@ -5,7 +5,10 @@
             v-if="!project || project.getStudies().length === 0">
             No studies present.
         </div>
-        <div v-else v-for="study of project.getStudies()" :key="study.getId()">
+        <div
+            v-else
+            v-for="study of project.getStudies()"
+            :key="study.getId()">
             <study-item :active-assay="$store.getters.getActiveAssay" :study="study" :project="project"></study-item>
         </div>
         <v-btn class="select-sample-button" depressed color="primary" @click="createStudy()">
@@ -27,6 +30,15 @@ import StudyItem from "./StudyItem.vue";
     components: {
         Tooltip,
         StudyItem
+    },
+    computed: {
+        sortedStudies: {
+            get(): Study[] {
+                return this.project.getStudies().sort(
+                    (a: Study, b: Study) => a.getName().localeCompare(b.getName())
+                )
+            }
+        }
     }
 })
 export default class ToolbarExplorer extends Vue {

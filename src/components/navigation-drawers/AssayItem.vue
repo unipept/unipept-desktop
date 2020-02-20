@@ -144,7 +144,7 @@ export default class AssayItem extends Vue {
         color: #424242;
         font-weight: 700;
         cursor: pointer;
-        padding-left: 16px;
+        padding-left: 24px;
     }
 
     .assay-item:hover {

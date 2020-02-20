@@ -50,7 +50,7 @@
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
             <assay-item
-                v-for="assay of study.getAssays()"
+                v-for="assay of sortedAssays"
                 :assay="assay"
                 v-bind:key="assay.getId()"
                 :active-assay="$store.getters.getActiveAssay"
@@ -89,6 +89,15 @@ import AssayItem from "./AssayItem.vue";
         CreateAssay,
         Tooltip,
         AssayItem
+    },
+    computed: {
+        sortedAssays: {
+            get(): Assay[] {
+                return this.study.getAssays().sort(
+                    (a: Assay, b: Assay) => a.getName().localeCompare(b.getName())
+                )
+            }
+        }
     }
 })
 export default class StudyItem extends Vue {
