@@ -1,31 +1,42 @@
 import Project from "./Project";
-import { readdirSync } from "fs";
-import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
-import StudyFileSystemReader from "./../study/StudyFileSystemReader";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import { FileSystemStudyConsts } from "./../study/FileSystemStudyConsts";
-import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
-import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
-import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
-import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
+import Database, { Statement } from "better-sqlite3";
+import * as fs from "fs";
+import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
+import * as path from "path";
+import uuidv4 from "uuid/v4";
+import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
+// @ts-ignore
+import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
+import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
+import StudyFileSystemWriter from "@/logic/filesystem/study/StudyFileSystemWriter";
+import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 
 export default class ProjectManager  {
+    public readonly DB_FILE_NAME: string = "metadata.sqlite";
+
     /**
      * @param projectLocation The main directory of the project on disk.
      * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
+     * @throws {InvalidProjectException} When the given directory does not contain all required project files.
      */
     public async loadExistingProject(projectLocation: string): Promise<Project> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
 
-        const project: Project = new Project(projectLocation);
+        if (!fs.existsSync(projectLocation + this.DB_FILE_NAME)) {
+            throw new InvalidProjectException("Project metadata file was not found!");
+        }
+
+        const db = new Database(projectLocation + this.DB_FILE_NAME, {
+            verbose: (mess) => console.warn(mess)
+        });
+        const project: Project = new Project(projectLocation, db);
 
         // Check all subdirectories of the given project and try to load the studies.
-        const subDirectories: string[] = readdirSync(projectLocation, { withFileTypes: true })
+        const subDirectories: string[] = fs.readdirSync(projectLocation, { withFileTypes: true })
             .filter(dirEntry => dirEntry.isDirectory())
             .map(dirEntry => dirEntry.name);
 
@@ -39,40 +50,45 @@ export default class ProjectManager  {
         return project;
     }
 
+    /**
+     * Create a new project and correctly initialize all required files in the given directory.
+     * @param projectLocation Path to root directory of project.
+     */
+    public async initializeProject(projectLocation: string): Promise<Project> {
+        if (!projectLocation.endsWith("/")) {
+            projectLocation += "/";
+        }
+
+        const db = new Database(projectLocation + this.DB_FILE_NAME, {
+            verbose: (mess) => console.warn(mess)
+        });
+        db.exec(schema_v1);
+
+        return new Project(projectLocation, db);
+    }
+
     private async loadStudy(directory: string, project: Project): Promise<Study> {
         if (!directory.endsWith("/")) {
             directory += "/";
         }
 
-        // Check all files in the given directory and try to load the assays
-        const files: string[] = readdirSync(directory, { withFileTypes: true })
-            .filter(entry => !entry.isDirectory())
-            .map(entry => entry.name)
-            .filter(name => !name.startsWith(".") && name !== "study.json" && name.endsWith(".json"))
-            .map(name => name.replace(".json", ""));
+        const studyName: string = path.basename(directory);
+        let study: Study;
 
-        const studyReader: StudyVisitor = new StudyFileSystemReader(directory);
-
-        const study: Study = new Study(new FileSystemStudyChangeListener(project));
-        await studyReader.visitStudy(study);
-
-        const assays: MetaProteomicsAssay[] = [];
-        for (const file of files) {
-            console.log("Reading file " + file);
-            const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
-                new FileSystemAssayChangeListener(project, study),
-                undefined,
-                undefined,
-                file,
-                undefined
-            );
-
-            const metaDataReader: AssayVisitor = new AssayFileSystemMetaDataReader(directory);
-            await assay.accept(metaDataReader);
-            const dataReader: AssayVisitor = new AssayFileSystemDataReader(directory);
-            await assay.accept(dataReader);
-            study.addAssay(assay);
+        // Check if the given study name is present in the database. If not, add the study with a new ID.
+        const row = project.db.prepare("SELECT * FROM studies WHERE `name`=?").get(studyName);
+        if (row) {
+            // Retrieve study-id.
+            study = new Study(new FileSystemStudyChangeListener(project), row.id, studyName);
+        } else {
+            study = new Study(new FileSystemStudyChangeListener(project), uuidv4(), studyName);
+            // Store study in database
+            const studyWriter: StudyVisitor = new StudyFileSystemWriter(directory, project);
+            await study.accept(studyWriter);
         }
+
+        const studyReader: StudyVisitor = new StudyFileSystemReader(directory, project);
+        await study.accept(studyReader);
 
         return study;
     }

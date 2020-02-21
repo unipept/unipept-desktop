@@ -9,14 +9,19 @@ import ErrorListener from "@/logic/filesystem/ErrorListener";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import {FileEventType} from "@/logic/filesystem/project/FileEventType";
+import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
+import * as path from "path";
+import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
+import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
+import { Database } from "better-sqlite3";
 
 export default class Project {
     public readonly studies: Study[] = [];
     public readonly projectPath: string;
-    
+    public readonly db: Database;
+
     private unknownCounter: number = 0;
 
     // This queue keeps track of all actions that need to be performed. These actions may throw errors, and in the
@@ -25,11 +30,14 @@ export default class Project {
     private readonly actionQueue: ([() => Promise<void>, () => Promise<FileEvent[]>])[] = [];
     private readonly syncInterval: number;
 
+    private studyByName: Map<string, Study> = new Map();
+
     private errorListeners: ErrorListener[] = [];
 
     private expectedFileEvents: Map<FileEventType, string[]>;
 
-    constructor(path: string, syncInterval: number = 250) {
+    constructor(path: string, db: Database, syncInterval: number = 250) {
+        this.db = db;
         this.projectPath = path;
         if (!this.projectPath.endsWith("/")) {
             this.projectPath += "/"
@@ -48,6 +56,10 @@ export default class Project {
     }
 
     public setStudies(studies: Study[]) {
+        this.studyByName.clear();
+        for (const study of studies) {
+            this.studyByName.set(study.getName(), study);
+        }
         this.studies.splice(0, this.studies.length);
         this.studies.push(...studies);
     }
@@ -58,12 +70,13 @@ export default class Project {
 
     public createStudy(name: string): Study {
         const study: Study = new Study(new FileSystemStudyChangeListener(this), uuidv4(), name);
-        const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`);
+        const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`, this);
         this.pushAction(async() => {
             await studyWriter.visitStudy(study);
         }, async() => {
             return await studyWriter.getExpectedFileEvents(study);
         });
+        this.studyByName.set(study.getName(), study);
         this.studies.push(study);
         return study;
     }
@@ -85,11 +98,13 @@ export default class Project {
         const idx: number = this.studies.findIndex(item => item.getId() == study.getId());
         if (idx >= 0) {
             this.studies.splice(idx, 1);
+            this.studyByName.delete(study.getName());
         }
         // Also remove study from disk.
         this.pushAction(async() => {
             const studyRemover: StudyVisitor = new StudyFileSystemRemover(
-                `${this.projectPath}${study.getName()}/`
+                `${this.projectPath}${study.getName()}/`,
+                this
             );
             await study.accept(studyRemover);
         });
@@ -99,7 +114,11 @@ export default class Project {
         const watcher = chokidar.watch(this.projectPath, {
             ignoreInitial: true,
             // Ignore hidden files
-            ignored: ".*"
+            ignored: ".*",
+            awaitWriteFinish: {
+                stabilityThreshold: 2000,
+                pollInterval: 100
+            }
         });
 
         watcher
@@ -157,10 +176,10 @@ export default class Project {
 
     private async fileAdded(filePath: string) {
         if (this.shouldInterceptEvent(filePath, FileEventType.AddFile)) {
-            console.log("Intercepted event " + filePath);
             return;
         }
-        console.log("Added: " + filePath);
+
+
     }
 
     private async directoryAdded(directoryPath: string) {

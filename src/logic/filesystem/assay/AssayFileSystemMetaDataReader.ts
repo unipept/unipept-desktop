@@ -1,29 +1,19 @@
-import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
-import * as fs from "fs";
-import IOException from "unipept-web-components/src/logic/exceptions/IOException";
+import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
+import { Statement } from "better-sqlite3";
+import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 
-export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisitor implements AssayVisitor {
+export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisitor {
     public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
-        throw new Error("Method not implemented.");
+        throw new Error("not implemented");
     }
-    
+
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
-        try {
-            const data: string = fs.readFileSync(
-                `${this.directoryPath}${mpAssay.getName()}.json`,
-                {
-                    encoding: "utf-8"
-                }
-            )
-            const deserialized: any = JSON.parse(data);
-            mpAssay.setId(deserialized.id);
-        } catch (err) {
-            throw new IOException(err);
+        const row = this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId());
+        if (row) {
+            // Nothing needs to be retrieved at this point (metadata will be added later).
         }
     }
 

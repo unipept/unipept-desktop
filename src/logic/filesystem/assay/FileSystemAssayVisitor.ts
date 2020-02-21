@@ -3,6 +3,7 @@ import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import {Database} from "better-sqlite3";
 
 /**
  * A specific kind of visitor for assays that's specifically tailored at storing and reading information from the
@@ -10,18 +11,21 @@ import Assay from "unipept-web-components/src/logic/data-management/assay/Assay"
  */
 export default abstract class FileSystemAssayVisitor implements AssayVisitor {
     protected directoryPath: string;
+    protected readonly db: Database;
 
     /**
      * @param directoryPath path to the parent directory of this assay.
      */
-    constructor(directoryPath: string) {
+    constructor(directoryPath: string, db: Database) {
         if (!directoryPath.endsWith("/")) {
             directoryPath += "/";
         }
         this.directoryPath = directoryPath;
+        this.db = db;
     }
 
     public abstract getExpectedFileEvents(assay: Assay): Promise<FileEvent[]>;
+
     public abstract visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void>;
     public abstract visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void>;
 }

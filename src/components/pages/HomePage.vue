@@ -64,16 +64,16 @@ export default class HomePage extends Vue {
             }
 
             try {
-                const project: Project = new Project(chosenPath[0]);
+                const projectManager: ProjectManager = new ProjectManager();
+                const project: Project = await projectManager.initializeProject(chosenPath[0]);
                 await project.initialize();
                 await this.$store.dispatch("setProject", project);
                 await this.$router.push("/analysis/single");
             } catch (err) {
-                if (err instanceof IOException) {
-                    this.showError(
-                        "Could not initialize your project. Please make sure that the chosen directory is readable and try again."
-                    );
-                }
+                console.error(err);
+                this.showError(
+                    "Could not initialize your project. Please make sure that the chosen directory is readable and try again."
+                );
             }
         }
     }
@@ -104,8 +104,8 @@ export default class HomePage extends Vue {
     }
 
     private async isDirectoryEmpty(path: string): Promise<boolean> {
-        const items: string[] = fs.readdirSync(path);
-        return !items || items.length === 0;
+        const items = fs.readdirSync(path);
+        return !items || items.filter(entry => !entry.startsWith(".")).length === 0;
     }
 }
 </script>

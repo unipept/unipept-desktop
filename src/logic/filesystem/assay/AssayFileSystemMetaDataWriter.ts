@@ -1,40 +1,35 @@
-import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
-import * as fs from "fs";
-import IOException from "unipept-web-components/src/logic/exceptions/IOException";
+import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
+import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import {FileEventType} from "@/logic/filesystem/project/FileEventType";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
+import {Database} from "better-sqlite3";
 
-export default class AssayFileSystemWriter extends FileSystemAssayVisitor implements AssayVisitor {
-    visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
-        throw new Error("Method not implemented.");
+export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
+    protected readonly study: Study;
+
+    public constructor(directoryPath: string, db: Database, study: Study) {
+        super(directoryPath, db);
+        this.study = study
+    }
+
+    public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
+        throw new Error("Not implemented");
     }
 
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
-        const toWrite = {
-            "id": mpAssay.getId(),
-            "date": mpAssay.getDate()
-        };
-
-        try {
-            fs.writeFileSync(
-                `${this.directoryPath}${mpAssay.getName()}.json`,
-                JSON.stringify(toWrite),
-                {
-                    encoding: "utf-8"
-                }
-            );
-        } catch (err) {
-            throw new IOException(err);
+        // Check if this study was saved before.
+        if (this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId())){
+            this.db.prepare("UPDATE assays SET `name`=?, `study_id`=? WHERE `id`=?")
+                .run(mpAssay.getName(), mpAssay.getId(), this.study.getId());
+        } else {
+            this.db.prepare("INSERT INTO assays (id, name, study_id) VALUES (?, ?, ?)")
+                .run(mpAssay.getId(), mpAssay.getName(), this.study.getId());
         }
     }
 
     public async getExpectedFileEvents(assay: Assay): Promise<FileEvent[]> {
-        return [
-            new FileEvent(FileEventType.AddFile, `${this.directoryPath}${assay.getName()}.json`)
-        ];
+        return [];
     }
 }

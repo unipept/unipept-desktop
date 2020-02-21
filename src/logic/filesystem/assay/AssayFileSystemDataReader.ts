@@ -11,10 +11,15 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     }
 
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
-        const peptidesString: string = fs.readFileSync(`${this.directoryPath}${mpAssay.getName()}.txt`, {
+        const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;
+        if (!fs.existsSync(path)) {
+            return;
+        }
+
+        const peptidesString: string = fs.readFileSync(path, {
             encoding: "utf-8"
         });
-        mpAssay.setPeptides(peptidesString.split(/\r?\n/));
+        mpAssay.peptideContainer.setPeptides(peptidesString.split(/\r?\n/));
     }
 
     public async getExpectedFileEvents(assay: Assay): Promise<FileEvent[]> {

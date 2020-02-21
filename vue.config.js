@@ -3,7 +3,9 @@ module.exports = {
         config.resolve.symlinks(false);
         config.externals([
             {
-                "fsevents": "require('fsevents')"
+                // Fix for node native addon inclusion failures
+                "fsevents": "require('fsevents')",
+                "better-sqlite3": "require('better-sqlite3')"
             }
         ])
     }

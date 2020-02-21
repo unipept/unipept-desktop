@@ -19,7 +19,7 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
 
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
         fs.writeFileSync(
-            `${this.directoryPath}${mpAssay.getName()}.txt`,
+            `${this.directoryPath}${mpAssay.getName()}.pep`,
             mpAssay.getPeptides().join("\n"),
             {
                 encoding: "utf-8"
