@@ -14,7 +14,11 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
      */
     public async visitMetaProteomicsAssay(assay: Assay): Promise<void> {
         try {
-            fs.unlinkSync(`${this.directoryPath}${assay.getName()}.pep`);
+            const path: string = `${this.directoryPath}${assay.getName()}.pep`;
+            if (fs.existsSync(path)) {
+                fs.unlinkSync(`${this.directoryPath}${assay.getName()}.pep`);
+            }
+
             // Also remove all metadata from the db
             this.db.prepare("DELETE FROM assays WHERE `id`=?").run(assay.getId());
         } catch (e) {

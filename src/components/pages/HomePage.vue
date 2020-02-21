@@ -65,7 +65,7 @@ export default class HomePage extends Vue {
 
             try {
                 const projectManager: ProjectManager = new ProjectManager();
-                const project: Project = await projectManager.initializeProject(chosenPath[0]);
+                const project: Project = await projectManager.initializeProject(chosenPath[0], this.$store.getters.baseUrl);
                 await project.initialize();
                 await this.$store.dispatch("setProject", project);
                 await this.$router.push("/analysis/single");
@@ -81,13 +81,8 @@ export default class HomePage extends Vue {
     private async onOpenProject(path: string) {
         try {
             const projectManager: ProjectManager = new ProjectManager();
-            const project: Project = await projectManager.loadExistingProject(path);
+            const project: Project = await projectManager.loadExistingProject(path, this.$store.getters.baseUrl);
             await project.initialize();
-            for (const study of project.getStudies()) {
-                for (const assay of study.getAssays()) {
-                    await this.$store.dispatch("processAssay", assay);
-                }
-            }
             await this.$store.dispatch("setProject", project);
             await this.$router.push("/analysis/single");
         } catch (err) {

@@ -44,7 +44,7 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
                     // Assay exists. Get it's ID and create a new object.
                     // TODO read in date.
                     assay = new MetaProteomicsAssay(
-                        new FileSystemAssayChangeListener(this.project, study),
+                        [new FileSystemAssayChangeListener(this.project, study)],
                         row.id,
                         undefined,
                         assayName,
@@ -53,7 +53,7 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.
                     assay = new MetaProteomicsAssay(
-                        new FileSystemAssayChangeListener(this.project, study),
+                        [new FileSystemAssayChangeListener(this.project, study)],
                         uuidv4(),
                         undefined,
                         assayName,

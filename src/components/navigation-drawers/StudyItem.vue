@@ -52,8 +52,8 @@
             <assay-item
                 v-for="assay of sortedAssays"
                 :assay="assay"
-                v-bind:key="assay.getId()"
-                :active-assay="$store.getters.getActiveAssay"
+                v-bind:key="assay.id"
+                :active-assay="project.activeAssay"
                 v-on:select-assay="onSelectAssay"
                 v-on:remove-assay="onRemoveAssay">
             </assay-item>
@@ -114,9 +114,6 @@ export default class StudyItem extends Vue {
     private study: Study;
     @Prop({ required: true })
     private project: Project;
-    @Prop({ required: true })
-    // The assay that's currently selected by the user for analysis
-    private activeAssay: Assay;
 
     private collapsed: boolean = false;
     private studyName: string = "";
@@ -191,11 +188,10 @@ export default class StudyItem extends Vue {
 
     private async onCreateAssay(assay: Assay) {
         this.showCreateAssayDialog = false;
-        await this.$store.dispatch("processAssay", assay);
     }
 
     private async onSelectAssay(assay: Assay) {
-        await this.$store.dispatch("setActiveAssay", assay);
+        this.project.activateAssay(assay);
     }
 
     private async onRemoveAssay(assay: Assay) {

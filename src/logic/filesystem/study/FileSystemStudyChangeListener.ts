@@ -48,7 +48,7 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
             );
             await study.accept(studyWriter);
         }, async() => {
-            if (!oldName) {
+            if (!oldName || oldName === newName) {
                 return [];
             }
 
