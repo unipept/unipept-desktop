@@ -12,7 +12,7 @@ import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { readdirSync } from "fs";
-import {AssayFileSystemMetaDataWriter} from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 
 export default class FileSystemStudyChangeListener implements ChangeListener<Study> {
     private readonly project: Project;
@@ -62,8 +62,8 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
                 );
             }
 
-            events.push(new FileEvent(FileEventType.RemoveDir, `${this.project.projectPath}${oldName}`));
-            events.push(new FileEvent(FileEventType.AddDir, `${this.project.projectPath}${newName}`));
+            events.push(new FileEvent(FileEventType.RemoveDir, `${this.project.projectPath}${oldName}/`));
+            events.push(new FileEvent(FileEventType.AddDir, `${this.project.projectPath}${newName}/`));
 
             return events;
         })

@@ -21,9 +21,11 @@ export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
         // Check if this study was saved before.
         if (this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId())){
+            console.debug();
             this.db.prepare("UPDATE assays SET `name`=?, `study_id`=? WHERE `id`=?")
                 .run(mpAssay.getName(), mpAssay.getId(), this.study.getId());
         } else {
+            console.debug();
             this.db.prepare("INSERT INTO assays (id, name, study_id) VALUES (?, ?, ?)")
                 .run(mpAssay.getId(), mpAssay.getName(), this.study.getId());
         }

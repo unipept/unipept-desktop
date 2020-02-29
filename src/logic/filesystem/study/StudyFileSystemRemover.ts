@@ -9,7 +9,15 @@ export default class StudyFileSystemRemover extends FileSystemStudyVisitor {
         if (!fs.existsSync(this.studyPath)) {
             return;
         }
-        fs.unlinkSync(this.studyPath);
+
+        const files: string[] = fs.readdirSync(this.studyPath, { withFileTypes: true })
+            .map(entry => entry.name);
+
+        for (const file of files) {
+            fs.unlinkSync(`${this.studyPath}${file}`);
+        }
+
+        fs.rmdirSync(this.studyPath);
     }
 
     async getExpectedFileEvents(study: Study): Promise<FileEvent[]> {

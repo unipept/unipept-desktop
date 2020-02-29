@@ -20,8 +20,8 @@ export default class StudyFileSystemWriter extends FileSystemStudyVisitor {
                 this.project.db.prepare("UPDATE studies SET `name`=? WHERE `id`=?").run(study.getName(), study.getId());
             } else {
                 this.project.db.prepare(
-                    "INSERT INTO studies (id, name) VALUES (?, ?)").run(study.getId(), study.getName()
-                );
+                    "INSERT INTO studies (id, name) VALUES (?, ?)"
+                ).run(study.getId(), study.getName());
             }
         } catch (err) {
             throw new IOException(err);

@@ -8,9 +8,8 @@ import uuidv4 from "uuid/v4";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
-import {AssayFileSystemMetaDataWriter} from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
-import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 
 
@@ -40,6 +39,7 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
 
                 const row = this.project.db.prepare("SELECT * FROM assays WHERE `name`=? and `study_id`=?")
                     .get(assayName, study.getId());
+
                 if (row) {
                     // Assay exists. Get it's ID and create a new object.
                     // TODO read in date.

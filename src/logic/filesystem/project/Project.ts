@@ -8,13 +8,13 @@ import ErrorListener from "@/logic/filesystem/ErrorListener";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import { FileEventType } from "@/logic/filesystem/project/FileEventType";
+import {FileEventType} from "@/logic/filesystem/project/FileEventType";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import * as path from "path";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
-import { Database } from "better-sqlite3";
+import {Database} from "better-sqlite3";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
 import ChangeListener from "unipept-web-components/src/logic/data-management/ChangeListener";
@@ -106,11 +106,13 @@ export default class Project {
             name
         );
         const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`, this);
+
         this.pushAction(async() => {
             await studyWriter.visitStudy(study);
         }, async() => {
             return await studyWriter.getExpectedFileEvents(study);
         });
+
         this.studies.push(study);
         return study;
     }
@@ -170,19 +172,21 @@ export default class Project {
                 const events: () => Promise<FileEvent[]> = item[1];
 
                 // First push the expected actions and then do execute the action
-                for (const event of await events()) {
-                    this.expectedFileEvents.get(event.eventType).push(event.path);
-                }
-
+                this.addExpectedEvents(await events());
                 await action();
             }
 
             setTimeout(async() => this.flushQueue(), this.syncInterval);
         } catch (err) {
-            console.error(err);
             for (const listener of this.errorListeners) {
                 listener.handleError(err);
             }
+        }
+    }
+
+    private addExpectedEvents(events: FileEvent[]) {
+        for (const event of events) {
+            this.expectedFileEvents.get(event.eventType).push(event.path);
         }
     }
 
@@ -233,27 +237,33 @@ export default class Project {
             return;
         }
 
-        if (filePath.endsWith(".pep")) {
-            // Add a new MetaProteomicsAssay to it's corresponding study
-            const assayName: string = path.basename(filePath).replace(".pep", "");
-            const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
-                [new FileSystemAssayChangeListener(this, study)],
-                uuidv4(),
-                undefined,
-                assayName,
-                new Date()
-            );
+        // Add a new MetaProteomicsAssay to it's corresponding study
+        const assayName: string = path.basename(filePath).replace(".pep", "");
+        const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
+            [new FileSystemAssayChangeListener(this, study)],
+            uuidv4(),
+            undefined,
+            assayName,
+            new Date()
+        );
 
-            const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
-                this.projectPath + studyName,
-                this.db
-            );
-            await assay.accept(assayReader);
-            study.addAssay(assay);
+        if (filePath.endsWith(".pep")) {
+            this.pushAction(async() => {
+                const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
+                    this.projectPath + studyName,
+                    this.db
+                );
+                await assay.accept(assayReader);
+                study.addAssay(assay);
+            });
         }
     }
 
     private async directoryAdded(directoryPath: string) {
+        if (!directoryPath.endsWith("/")) {
+            directoryPath += "/";
+        }
+
         if (this.shouldInterceptEvent(directoryPath, FileEventType.AddDir)) {
             return;
         }
@@ -268,18 +278,21 @@ export default class Project {
             studyName
         );
 
-        const studyReader: FileSystemStudyVisitor = new StudyFileSystemReader(directoryPath, this);
-        await study.accept(studyReader);
+        this.pushAction(async() => {
+            const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(directoryPath, this);
+            await study.accept(studyWriter);
 
-        this.studies.push(study);
+            const studyReader: FileSystemStudyVisitor = new StudyFileSystemReader(directoryPath, this);
+            await study.accept(studyReader);
+
+            this.studies.push(study);
+        });
     }
 
     private async fileChanged(filePath: string) {
         if (this.shouldInterceptEvent(filePath, FileEventType.Change)) {
-            console.log("Intercepted event " + filePath);
             return;
         }
-        console.log("Changed: " + filePath);
     }
 
     private async fileDeleted(filePath: string) {
@@ -297,9 +310,11 @@ export default class Project {
 
         if (filePath.endsWith(".pep")) {
             const assayName: string = path.basename(filePath).replace(".pep", "");
-            const assay: Assay = study.getAssays().find(assay => assay.getName() === assayName);
 
-            await study.removeAssay(assay);
+            this.pushAction(async() => {
+                const assay: Assay = study.getAssays().find(assay => assay.getName() === assayName);
+                await study.removeAssay(assay);
+            });
         }
     }
 

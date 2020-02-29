@@ -28,7 +28,7 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
 
     public async getExpectedFileEvents(assay: Assay): Promise<FileEvent[]> {
         return [
-            new FileEvent(FileEventType.AddFile, `${this.directoryPath}${assay.getName()}.txt`)
+            new FileEvent(FileEventType.AddFile, `${this.directoryPath}${assay.getName()}.pep`)
         ]
     }
 }
