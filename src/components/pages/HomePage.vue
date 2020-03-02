@@ -65,14 +65,18 @@ export default class HomePage extends Vue {
 
             try {
                 const projectManager: ProjectManager = new ProjectManager();
-                const project: Project = await projectManager.initializeProject(chosenPath[0], this.$store.getters.baseUrl);
+                const project: Project = await projectManager.initializeProject(
+                    chosenPath[0],
+                    this.$store.getters.baseUrl
+                );
                 await project.initialize();
                 await this.$store.dispatch("setProject", project);
                 await this.$router.push("/analysis/single");
             } catch (err) {
                 console.error(err);
                 this.showError(
-                    "Could not initialize your project. Please make sure that the chosen directory is readable and try again."
+                    "Could not initialize your project. Please make sure that the chosen directory is readable and " +
+                    "try again."
                 );
             }
         }

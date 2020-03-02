@@ -1,6 +1,10 @@
 <template>
     <div class="toolbar">
-        <v-navigation-drawer v-model="isOpen" :mini-variant="true" fixed :class="{'toolbar-navigation-drawer': !isMini}" permanent>
+        <v-navigation-drawer
+            v-model="isOpen"
+            :mini-variant="true"
+            fixed :class="{'toolbar-navigation-drawer': !isMini}"
+            permanent>
             <div class="navigation-toolbar" style="position: relative; top: 64px;">
                 <v-list>
                     <v-list-item

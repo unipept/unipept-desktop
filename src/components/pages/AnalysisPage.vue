@@ -25,7 +25,8 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import SingleDatasetVisualizationsCard from "unipept-web-components/src/components/visualizations/SingleDatasetVisualizationsCard.vue";
+import SingleDatasetVisualizationsCard
+    from "unipept-web-components/src/components/visualizations/SingleDatasetVisualizationsCard.vue";
 import FunctionalSummaryCard from "unipept-web-components/src/components/analysis/functional/FunctionalSummaryCard.vue";
 import DataRepository from "unipept-web-components/src/logic/data-source/DataRepository";
 

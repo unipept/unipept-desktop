@@ -3,7 +3,7 @@ import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import {Database} from "better-sqlite3";
+import { Database } from "better-sqlite3";
 
 /**
  * A specific kind of visitor for assays that's specifically tailored at storing and reading information from the
@@ -27,5 +27,6 @@ export default abstract class FileSystemAssayVisitor implements AssayVisitor {
     public abstract getExpectedFileEvents(assay: Assay): Promise<FileEvent[]>;
 
     public abstract visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void>;
+
     public abstract visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void>;
 }

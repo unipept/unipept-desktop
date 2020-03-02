@@ -8,13 +8,13 @@ import ErrorListener from "@/logic/filesystem/ErrorListener";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import {FileEventType} from "@/logic/filesystem/project/FileEventType";
+import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import * as path from "path";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
-import {Database} from "better-sqlite3";
+import { Database } from "better-sqlite3";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
 import ChangeListener from "unipept-web-components/src/logic/data-management/ChangeListener";
@@ -74,7 +74,7 @@ export default class Project {
         });
 
         watcher
-            .on("add",(path: string) => this.fileAdded(path))
+            .on("add", (path: string) => this.fileAdded(path))
             .on("change", (path: string) => this.fileChanged(path))
             .on("unlink", (path: string) => this.fileDeleted(path))
             .on("addDir", (path: string) => this.directoryAdded(path))
@@ -102,7 +102,7 @@ export default class Project {
                 new FileSystemStudyChangeListener(this),
                 this.getProjectStudyWatcher()
             ],
-            id? id: uuidv4(),
+            id ? id : uuidv4(),
             name
         );
         const studyWriter: FileSystemStudyVisitor = new StudyFileSystemWriter(`${this.projectPath}${name}/`, this);
@@ -159,7 +159,7 @@ export default class Project {
     public activateAssay(assay: Assay): void {
         this.activeAssay = assay;
     }
-    
+
     /**
      * Flushes the action queue at specific times, making sure that all operations are performed in order by waiting
      * for each operation to successfully succeed.

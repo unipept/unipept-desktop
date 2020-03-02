@@ -133,14 +133,20 @@ export default class App extends Vue implements ErrorListener {
       if (!assays || assays.length === 0) {
           electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
       } else {
-          const average: number = assays.reduce((prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0) / assays.length;
+          const average: number = assays.reduce(
+              (prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0
+          ) / assays.length;
           electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
       }
   }
 
   @Watch("useNativeTitlebar")
   private setUpTitlebar() {
-      if (Utils.isWindows() && !App.previouslyInitialized && this.titleBar == null && !this.$store.getters.useNativeTitlebar) {
+      if (
+          Utils.isWindows() &&
+          !App.previouslyInitialized &&
+          this.titleBar == null && !this.$store.getters.useNativeTitlebar
+      ) {
           this.titleBar = new Titlebar({
               icon: require("./assets/icon.svg"),
               backgroundColor: Color.fromHex("#004ba0")

@@ -1,7 +1,6 @@
 import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import {Database} from "better-sqlite3";
 import Project from "@/logic/filesystem/project/Project";
 
 /**

@@ -4,7 +4,7 @@ import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisi
 import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import {Database} from "better-sqlite3";
+import { Database } from "better-sqlite3";
 
 export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
     protected readonly study: Study;
@@ -20,8 +20,7 @@ export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
 
     public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
         // Check if this study was saved before.
-        if (this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId())){
-            console.debug();
+        if (this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId())) {
             this.db.prepare("UPDATE assays SET `name`=?, `study_id`=? WHERE `id`=?")
                 .run(mpAssay.getName(), mpAssay.getId(), this.study.getId());
         } else {

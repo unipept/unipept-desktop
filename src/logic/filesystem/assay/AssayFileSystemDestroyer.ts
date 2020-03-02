@@ -3,7 +3,7 @@ import Assay from "unipept-web-components/src/logic/data-management/assay/Assay"
 import fs from "fs";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
-import {FileEventType} from "@/logic/filesystem/project/FileEventType";
+import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 
 /**
  * Removes both the metadata and raw data for an assay.

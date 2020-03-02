@@ -4,7 +4,7 @@ import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/
 import * as fs from "fs";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import FileEvent from "@/logic/filesystem/project/FileEvent";
-import {FileEventType} from "@/logic/filesystem/project/FileEventType";
+import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 
 /**
  * Visitor that writes the raw data associated with an assay to disk. This raw data can become rather large, which is
