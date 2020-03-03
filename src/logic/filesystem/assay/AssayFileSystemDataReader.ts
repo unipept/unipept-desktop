@@ -2,8 +2,6 @@ import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisi
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import * as fs from "fs";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
@@ -19,10 +17,6 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
         const peptidesString: string = fs.readFileSync(path, {
             encoding: "utf-8"
         });
-        mpAssay.peptideContainer.setPeptides(peptidesString.split(/\r?\n/));
-    }
-
-    public async getExpectedFileEvents(assay: Assay): Promise<FileEvent[]> {
-        return [];
+        mpAssay.setPeptides(peptidesString.split(/\r?\n/));
     }
 }

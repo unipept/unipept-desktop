@@ -3,13 +3,11 @@ import chokidar from "chokidar";
 import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
 import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
-import uuidv4 from "uuid/v4";
+import { v4 as uuidv4 } from "uuid";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import { FileEventType } from "@/logic/filesystem/project/FileEventType";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import * as path from "path";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
@@ -20,6 +18,21 @@ import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReade
 import ChangeListener from "unipept-web-components/src/logic/data-management/ChangeListener";
 import MpaAnalysisManager from "unipept-web-components/src/logic/data-management/MpaAnalysisManager";
 
+
+/**
+ * A project is a collection of studies. Every project is associated with a specific directory on the user's local
+ * filesystem. Metadata about all studies and assays is stored in an SQLite-database in this directory, as well as
+ * all raw data. Every directory in this project corresponds to a study, and every file inside of a study-directory
+ * corresponds to the raw data of an assay.
+ *
+ * This class manages both the in-memory representation of a project, as well as it's representation on the local
+ * filesystem. It makes sure that all changes to studies or assays are reflected in the local filesystem and vice-versa.
+ *
+ * All changes that are performed to the filesystem should be known by this project, because it needs to know which
+ * in-memory changes are associated to which changes to the local filesystem, reported by the OS.
+ *
+ * @author Pieter Verschaffelt
+ */
 export default class Project {
     public readonly studies: Study[] = [];
     public readonly projectPath: string;
@@ -31,14 +44,11 @@ export default class Project {
     // This queue keeps track of all actions that need to be performed. These actions may throw errors, and in the
     // event that an Error is thrown, the ErrorListener's of this class are informed and file synchronization stops
     // immediately.
-    private readonly actionQueue: ([() => Promise<void>, () => Promise<FileEvent[]>])[] = [];
+    private readonly actionQueue: (() => Promise<void>)[] = [];
     private readonly syncInterval: number;
 
     private errorListeners: ErrorListener[] = [];
 
-    // Which file events are expected to happen after performing a specific operation? These events are used to keep
-    // track of redundant file-system events that may happen and ignore them.
-    private expectedFileEvents: Map<FileEventType, string[]>;
     private baseUrl: string;
 
     constructor(path: string, db: Database, baseUrl: string, syncInterval: number = 250) {
@@ -50,11 +60,6 @@ export default class Project {
 
         this.syncInterval = syncInterval;
         this.baseUrl = baseUrl;
-
-        this.expectedFileEvents = new Map();
-        for (const type of Object.values(FileEventType)) {
-            this.expectedFileEvents.set(type as FileEventType, []);
-        }
     }
 
     /**
@@ -109,8 +114,6 @@ export default class Project {
 
         this.pushAction(async() => {
             await studyWriter.visitStudy(study);
-        }, async() => {
-            return await studyWriter.getExpectedFileEvents(study);
         });
 
         this.studies.push(study);
@@ -145,8 +148,18 @@ export default class Project {
         });
     }
 
-    public pushAction(action: () => Promise<void>, expectedEvents: () => Promise<FileEvent[]> = async() => []) {
-        this.actionQueue.push([action, expectedEvents]);
+    /**
+     * Add a new asynchronous action to the action queue. All actions in this queue are automatically processed at a
+     * fixed interval rate. These actions are executed "as soon as possible" and when expected by this project. All
+     * operations that directly interact with the local filesystem should be performed through this function.
+     *
+     * This function requires knowledge of the FileEvent's that will occur as a result of executing this action.
+     *
+     * @param action An asynchronous function that should be executed as soon as possible. All actions passed through
+     * this function are guaranteed to be executed in order.
+     */
+    public pushAction(action: () => Promise<void>) {
+        this.actionQueue.push(action);
     }
 
     /**
@@ -162,17 +175,13 @@ export default class Project {
 
     /**
      * Flushes the action queue at specific times, making sure that all operations are performed in order by waiting
-     * for each operation to successfully succeed.
+     * for each operation to successfully succeed. Once such an operation files, the event loop is stopped and all
+     * error listeners subscribed to this project are notified.
      */
     private async flushQueue() {
         try {
             while (this.actionQueue.length > 0) {
-                const item: [() => Promise<void>, () => Promise<FileEvent[]>] = this.actionQueue.shift();
-                const action: () => Promise<void> = item[0];
-                const events: () => Promise<FileEvent[]> = item[1];
-
-                // First push the expected actions and then do execute the action
-                this.addExpectedEvents(await events());
+                const action: () => Promise<void> = this.actionQueue.shift();
                 await action();
             }
 
@@ -181,12 +190,6 @@ export default class Project {
             for (const listener of this.errorListeners) {
                 listener.handleError(err);
             }
-        }
-    }
-
-    private addExpectedEvents(events: FileEvent[]) {
-        for (const event of events) {
-            this.expectedFileEvents.get(event.eventType).push(event.path);
         }
     }
 
@@ -215,40 +218,33 @@ export default class Project {
         }
     }
 
-    private shouldInterceptEvent(path: string, eventType: FileEventType): boolean {
-        const idx: number = this.expectedFileEvents.get(eventType).indexOf(path);
-        if (idx >= 0) {
-            this.expectedFileEvents.get(eventType).splice(idx, 1);
-            return true;
-        }
-        return false;
-    }
-
-
     private async fileAdded(filePath: string) {
-        if (this.shouldInterceptEvent(filePath, FileEventType.AddFile)) {
-            return;
-        }
-
-        const studyName: string = path.basename(path.dirname(filePath));
-        const study: Study = this.studies.find(study => study.getName() === studyName);
-
-        if (!study) {
-            return;
-        }
-
-        // Add a new MetaProteomicsAssay to it's corresponding study
-        const assayName: string = path.basename(filePath).replace(".pep", "");
-        const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
-            [new FileSystemAssayChangeListener(this, study)],
-            uuidv4(),
-            undefined,
-            assayName,
-            new Date()
-        );
-
         if (filePath.endsWith(".pep")) {
+            const studyName: string = path.basename(path.dirname(filePath));
+
             this.pushAction(async() => {
+                const study: Study = this.studies.find(study => study.getName() === studyName);
+
+                if (!study) {
+                    return;
+                }
+
+                const assayName: string = path.basename(filePath).replace(".pep", "");
+
+                // Check if an assay with this name already exists.
+                if (study.getAssays().find(assay => assay.getName() === assayName)) {
+                    return;
+                }
+
+                // Add a new MetaProteomicsAssay to it's corresponding study if it does not exist already.
+                const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
+                    [new FileSystemAssayChangeListener(this, study)],
+                    uuidv4(),
+                    undefined,
+                    assayName,
+                    new Date()
+                );
+
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     this.projectPath + studyName,
                     this.db
@@ -264,11 +260,12 @@ export default class Project {
             directoryPath += "/";
         }
 
-        if (this.shouldInterceptEvent(directoryPath, FileEventType.AddDir)) {
+        const studyName: string = path.basename(directoryPath);
+
+        if (this.studies.find(study => study.getName() === studyName)) {
             return;
         }
 
-        const studyName: string = path.basename(directoryPath);
         const study: Study = new Study(
             [
                 new FileSystemStudyChangeListener(this),
@@ -290,39 +287,52 @@ export default class Project {
     }
 
     private async fileChanged(filePath: string) {
-        if (this.shouldInterceptEvent(filePath, FileEventType.Change)) {
-            return;
-        }
+        const studyName: string = path.basename(path.dirname(filePath));
+
+        this.pushAction(async() => {
+            const study: Study = this.studies.find(study => study.getName() === studyName);
+
+            if (!study) {
+                return;
+            }
+
+            const assayName: string = path.basename(filePath).replace(".pep", "");
+            const assay: MetaProteomicsAssay = study.getAssays().find(
+                assay => assay.getName() === assayName
+            ) as MetaProteomicsAssay;
+
+            if (!assay) {
+                return;
+            }
+
+            const dataReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(path.dirname(filePath), this.db);
+            await assay.accept(dataReader);
+        });
     }
 
     private async fileDeleted(filePath: string) {
-        if (this.shouldInterceptEvent(filePath, FileEventType.RemoveFile)) {
-            return;
-        }
-
         // Delete the assay that was just removed.
         const studyName: string = path.basename(path.dirname(filePath));
-        const study: Study = this.studies.find(study => study.getName() === studyName);
-
-        if (!study) {
-            return;
-        }
 
         if (filePath.endsWith(".pep")) {
-            const assayName: string = path.basename(filePath).replace(".pep", "");
-
             this.pushAction(async() => {
+                const study: Study = this.studies.find(study => study.getName() === studyName);
+
+                if (!study) {
+                    return;
+                }
+
+                const assayName: string = path.basename(filePath).replace(".pep", "");
+
                 const assay: Assay = study.getAssays().find(assay => assay.getName() === assayName);
-                await study.removeAssay(assay);
+                if (assay) {
+                    await study.removeAssay(assay);
+                }
             });
         }
     }
 
     private async directoryDeleted(directoryPath: string) {
-        if (this.shouldInterceptEvent(directoryPath, FileEventType.RemoveDir)) {
-            return;
-        }
-
         const studyName: string = path.basename(directoryPath);
         const study: Study = this.studies.find(study => study.getName() === studyName);
 
@@ -345,15 +355,19 @@ export default class Project {
                 } else if (field === "add-assay") {
                     // Process the given assay
                     const assay: MetaProteomicsAssay = newValue;
-                    let mpaManager = new MpaAnalysisManager();
-
-                    // TODO associate search settings per assay
-                    mpaManager.processDataset(assay, { il: true, dupes: true, missed: false }, this.baseUrl)
-                        .then(() => {
-                            this.resetActiveAssay();
-                        });
+                    this.processAssay(assay);
                 }
             }
         };
+    }
+
+    public async processAssay(assay: MetaProteomicsAssay): Promise<void> {
+        assay.reset();
+        let mpaManager = new MpaAnalysisManager();
+        // TODO associate search settings per assay
+        mpaManager.processDataset(assay, { il: true, dupes: true, missed: false }, this.baseUrl)
+            .then(() => {
+                this.resetActiveAssay();
+            });
     }
 }

@@ -3,8 +3,6 @@ import Study from "unipept-web-components/src/logic/data-management/study/Study"
 import fs from "fs";
 import mkdirp from "mkdirp";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 
 
 /**
@@ -26,11 +24,5 @@ export default class StudyFileSystemWriter extends FileSystemStudyVisitor {
         } catch (err) {
             throw new IOException(err);
         }
-    }
-
-    public async getExpectedFileEvents(study: Study): Promise<FileEvent[]> {
-        return [
-            new FileEvent(FileEventType.AddDir, `${this.studyPath}`)
-        ]
     }
 }

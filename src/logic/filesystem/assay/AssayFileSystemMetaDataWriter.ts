@@ -1,8 +1,6 @@
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import { Database } from "better-sqlite3";
 
@@ -28,9 +26,5 @@ export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
             this.db.prepare("INSERT INTO assays (id, name, study_id) VALUES (?, ?, ?)")
                 .run(mpAssay.getId(), mpAssay.getName(), this.study.getId());
         }
-    }
-
-    public async getExpectedFileEvents(assay: Assay): Promise<FileEvent[]> {
-        return [];
     }
 }

@@ -7,8 +7,6 @@ import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { readdirSync } from "fs";
@@ -37,7 +35,6 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
                 return;
             }
 
-            await mkdirp(this.project.projectPath + newName);
             fs.renameSync(
                 `${this.project.projectPath}${oldName}`,
                 `${this.project.projectPath}${newName}`
@@ -47,25 +44,6 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
                 this.project
             );
             await study.accept(studyWriter);
-        }, async() => {
-            if (!oldName || oldName === newName) {
-                return [];
-            }
-
-            const events: FileEvent[] = [];
-            for (const file of readdirSync(`${this.project.projectPath}${oldName}`, { withFileTypes: true })) {
-                events.push(
-                    new FileEvent(FileEventType.RemoveFile, `${this.project.projectPath}${oldName}/${file.name}`)
-                );
-                events.push(
-                    new FileEvent(FileEventType.AddFile, `${this.project.projectPath}${newName}/${file.name}`)
-                );
-            }
-
-            events.push(new FileEvent(FileEventType.RemoveDir, `${this.project.projectPath}${oldName}/`));
-            events.push(new FileEvent(FileEventType.AddDir, `${this.project.projectPath}${newName}/`));
-
-            return events;
         })
     }
 
@@ -77,8 +55,6 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
 
         this.project.pushAction(async() => {
             await assay.accept(assayRemover);
-        }, async() => {
-            return await assayRemover.getExpectedFileEvents(assay);
         })
     }
 
@@ -90,11 +66,6 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
         this.project.pushAction(async() => {
             await assay.accept(metaDataWriter);
             await assay.accept(dataWriter);
-        }, async() => {
-            return [
-                ...await metaDataWriter.getExpectedFileEvents(assay),
-                ...await dataWriter.getExpectedFileEvents(assay)
-            ]
         })
     }
 }

@@ -1,6 +1,4 @@
 import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Project from "@/logic/filesystem/project/Project";
 
 /**
@@ -23,6 +21,4 @@ export default abstract class FileSystemStudyVisitor extends StudyVisitor {
         this.studyPath = studyPath;
         this.project = project;
     }
-
-    public abstract async getExpectedFileEvents(study: Study): Promise<FileEvent[]>;
 }

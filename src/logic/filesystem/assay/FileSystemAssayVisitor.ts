@@ -1,7 +1,6 @@
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import { Database } from "better-sqlite3";
 
@@ -24,9 +23,6 @@ export default abstract class FileSystemAssayVisitor implements AssayVisitor {
         this.db = db;
     }
 
-    public abstract getExpectedFileEvents(assay: Assay): Promise<FileEvent[]>;
-
     public abstract visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void>;
-
     public abstract visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void>;
 }

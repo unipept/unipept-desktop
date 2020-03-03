@@ -5,8 +5,6 @@ import mkdirp from "mkdirp";
 import * as fs from "fs";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import { FileEventType } from "@/logic/filesystem/project/FileEventType";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
@@ -28,8 +26,22 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
             // Rename the study file
             this.renameAssay(object, oldValue, newValue);
         } else if (field == "peptides") {
-            // Only update the data field in this case
-            this.serializeData(object);
+            let equalPeptides: boolean = oldValue.length === newValue.length;
+
+            if (equalPeptides) {
+                // Now check if all corresponding values are equal.
+                for (let i = 0; i < oldValue.length; i++) {
+                    if (oldValue[i] !== newValue[i]) {
+                        equalPeptides = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!equalPeptides) {
+                // Only update the data field in this case
+                this.serializeData(object);
+            }
         }
     }
 
@@ -53,15 +65,6 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
 
             // Also update database values
             await assay.accept(mdWriter);
-        }, async() => {
-            if (!oldName || oldName === newName) {
-                return [];
-            }
-            return [
-                new FileEvent(FileEventType.RemoveFile, `${this.getAssayDirectory()}${oldName}.pep`),
-                new FileEvent(FileEventType.AddFile, `${this.getAssayDirectory()}${newName}.pep`),
-                ...await mdWriter.getExpectedFileEvents(assay)
-            ]
         });
     }
 
@@ -72,16 +75,18 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
             this.study
         );
         this.project.pushAction(
-            async() => await assay.accept(writer),
-            async() => await writer.getExpectedFileEvents(assay)
+            async() => await assay.accept(writer)
         );
     }
 
     private serializeData(assay: MetaProteomicsAssay): void {
         const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(this.getAssayDirectory(), this.project.db);
         this.project.pushAction(
-            async() => await assay.accept(writer),
-            async() => await writer.getExpectedFileEvents(assay)
+            async() => {
+                await assay.accept(writer);
+                // noinspection ES6MissingAwait
+                this.project.processAssay(assay)
+            }
         );
     }
 

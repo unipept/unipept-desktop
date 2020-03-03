@@ -3,8 +3,7 @@ import Study from "unipept-web-components/src/logic/data-management/study/Study"
 import * as fs from "fs";
 import path from "path";
 import IOException from "unipept-web-components/src/logic/exceptions/IOException";
-import FileEvent from "@/logic/filesystem/project/FileEvent";
-import uuidv4 from "uuid/v4";
+import { v4 as uuidv4 } from "uuid";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
@@ -78,9 +77,4 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
             throw new IOException(err);
         }
     }
-
-    public async getExpectedFileEvents(study: Study): Promise<FileEvent[]> {
-        return [];
-    }
-
 }
