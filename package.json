@@ -22,8 +22,6 @@
     "better-sqlite3": "^5.4.3",
     "chokidar": "^3.3.1",
     "core-js": "^2.6.9",
-    "custom-electron-titlebar": "^3.1.0",
-    "electron-rebuild": "^1.10.0",
     "jquery": "^3.4.1",
     "regenerator-runtime": "^0.13.3",
     "vue": "^2.6.10",

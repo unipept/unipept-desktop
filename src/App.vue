@@ -50,7 +50,6 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
 import Toolbar from "./components/navigation-drawers/Toolbar.vue";
-import { Titlebar, Color } from "custom-electron-titlebar"
 import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
@@ -99,7 +98,6 @@ export default class App extends Vue implements ErrorListener {
   private navDrawer: boolean = false;
   private rightNavDrawer: boolean = true;
   private rightNavMini: boolean = true;
-  private titleBar: Titlebar = null;
   private loading: boolean = true;
 
   private toolbarWidth: number = 210;
@@ -142,19 +140,18 @@ export default class App extends Vue implements ErrorListener {
 
   @Watch("useNativeTitlebar")
   private setUpTitlebar() {
-      if (
-          Utils.isWindows() &&
-          !App.previouslyInitialized &&
-          this.titleBar == null && !this.$store.getters.useNativeTitlebar
-      ) {
-          this.titleBar = new Titlebar({
-              icon: require("./assets/icon.svg"),
-              backgroundColor: Color.fromHex("#004ba0")
-          });
+    //   if (
+    //       Utils.isWindows() &&
+    //       !App.previouslyInitialized &&
+    //       this.titleBar == null && !this.$store.getters.useNativeTitlebar
+    //   ) {
+    //       this.titleBar = new Titlebar({
+    //           icon: require("./assets/icon.svg"),
+    //           backgroundColor: Color.fromHex("#004ba0")
+    //       });
 
-          document.getElementsByName("html")[0].style.overflowY = "hidden";
-      }
-      App.previouslyInitialized = true;
+    //   }
+    //   App.previouslyInitialized = true;
   }
 
   @Watch("watchableProject")
@@ -254,17 +251,30 @@ export default class App extends Vue implements ErrorListener {
     font-family: Roboto, sans-serif;
   }
 
-  .container-after-titlebar .v-app-bar {
-    margin-top: 30px !important;
+  html {
+      overflow-y: auto !important;
   }
 
-  .container-after-titlebar .v-navigation-drawer {
-    top: 30px !important;
-  }
+//   .container-after-titlebar .v-app-bar {
+//     margin-top: 30px !important;
+//   }
 
-  .container-after-titlebar {
-    top: 0 !important;
-    position: static !important;
-    margin-top: 30px !important;
-  }
+//   .container-after-titlebar .v-navigation-drawer {
+//     top: 30px !important;
+//   }
+
+//   .container-after-titlebar {
+//     top: 0 !important;
+//     position: static !important;
+//     margin-top: 30px !important;
+//   }
+
+//   .container-after-titlebar .v-content__wrap {
+//       max-height: 100vh;
+//   }
+
+//   .container-after-titlebar .v-content__wrap > .container {
+//       height: 100%;
+//       overflow-y: scroll;
+//   }
 </style>

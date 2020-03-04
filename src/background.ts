@@ -24,9 +24,9 @@ async function createWindow() {
     };
 
 
-    if (Utils.isWindows() && !config.useNativeTitlebar) {
-        options["frame"] = false;
-    }
+    // if (Utils.isWindows() && !config.useNativeTitlebar) {
+    //     options["frame"] = false;
+    // }
 
     win = new BrowserWindow(options)
 
