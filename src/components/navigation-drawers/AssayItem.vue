@@ -1,29 +1,29 @@
 <template>
     <div>
         <div
-            @click="selectAssay()"
-            @contextmenu="showContextMenu()"
-            :class="{
+                @click="selectAssay()"
+                @contextmenu="showContextMenu()"
+                :class="{
                 'assay-item': true,
                 'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
                 'assay-item--error': !isValidAssayName
             }">
             <v-progress-circular
-                v-if="assay.progress !== 1"
-                :rotate="-90" :size="16"
-                :value="assay.progress * 100"
-                color="primary">
+                    v-if="assay.progress !== 1"
+                    :rotate="-90" :size="16"
+                    :value="assay.progress * 100"
+                    color="primary">
             </v-progress-circular>
             <v-icon
-                color="#424242"
-                size="20"
-                v-if="assay.progress === 1 && isValidAssayName">
+                    color="#424242"
+                    size="20"
+                    v-if="assay.progress === 1 && isValidAssayName">
                 mdi-file-document-box-outline
             </v-icon>
             <tooltip
-                v-if="!isValidAssayName"
-                message="Invalid assay name. Name must be unique and non-empty."
-                position="bottom">
+                    v-if="!isValidAssayName"
+                    :message="nameError"
+                    position="bottom">
                 <v-icon
                         @click="() => {}"
                         size="20"
@@ -32,32 +32,32 @@
                 </v-icon>
             </tooltip>
             <span
-                v-if="!isEditingAssayName"
-                v-on:dblclick="enableAssayEdit()">
+                    v-if="!isEditingAssayName"
+                    v-on:dblclick="enableAssayEdit()">
                 {{ assay.getName() }}
             </span>
             <input
-                v-else
-                v-model="assayName"
-                v-on:blur="disableAssayEdit()"
-                v-on:keyup.enter="disableAssayEdit()"
-                :class="{ 'error-item': !isValidAssayName }"
-                type="text"/>
+                    v-else
+                    v-model="assayName"
+                    v-on:blur="disableAssayEdit()"
+                    v-on:keyup.enter="disableAssayEdit()"
+                    :class="{ 'error-item': !isValidAssayName }"
+                    type="text"/>
             <div style="display: flex; flex-direction: row; margin-left: auto;">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
-                        :disabled="assay.progress !== 1"
-                        @click="experimentSummaryActive = true"
-                        v-on:click.stop color="#424242"
-                        size="20">
+                            :disabled="assay.progress !== 1"
+                            @click="experimentSummaryActive = true"
+                            v-on:click.stop color="#424242"
+                            size="20">
                         mdi-information-outline
                     </v-icon>
                 </tooltip>
             </div>
         </div>
         <experiment-summary-dialog
-            :assay="assay"
-            :active.sync="experimentSummaryActive">
+                :assay="assay"
+                :active.sync="experimentSummaryActive">
         </experiment-summary-dialog>
         <v-dialog v-model="removeConfirmationActive" width="600">
             <v-card>
@@ -82,6 +82,8 @@ import { Prop, Watch } from "vue-property-decorator";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
+
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
 
@@ -96,6 +98,8 @@ export default class AssayItem extends Vue {
     private assay: Assay;
     @Prop({ required: true })
     private activeAssay: Assay;
+    @Prop({ required: true })
+    private study: Study;
 
     private experimentSummaryActive: boolean = false;
     private removeConfirmationActive: boolean = false;
@@ -103,6 +107,8 @@ export default class AssayItem extends Vue {
     private isValidAssayName: boolean = true;
 
     private assayName: string = "";
+
+    private nameError: string = "";
 
     mounted() {
         this.onAssayChanged();
@@ -146,13 +152,24 @@ export default class AssayItem extends Vue {
 
     @Watch("assayName")
     private checkAssayNameValidity(): boolean {
-        if (this.assayName !== "") {
-            this.isValidAssayName = true;
-            return true;
-        } else {
+        if (this.assayName === "") {
+            this.nameError = "Name cannot be empty.";
             this.isValidAssayName = false;
             return false;
         }
+
+        const nameExists: boolean = this.study.getAssays()
+            .map(s => s.getName().toLocaleLowerCase())
+            .indexOf(this.assayName.toLocaleLowerCase()) !== -1;
+
+        if ((nameExists && this.assay.getName() !== this.assayName)) {
+            this.nameError = "A study with this name already exists.";
+            this.isValidAssayName = false;
+            return false;
+        }
+
+        this.isValidAssayName = true;
+        return true;
     }
 
     @Watch("assay")

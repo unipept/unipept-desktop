@@ -38,7 +38,7 @@
                             mdi-alert-outline
                         </v-icon>
                     </template>
-                    <span>Invalid study name. Name must be unique and non-empty.</span>
+                    <span>{{ nameError }}</span>
                 </v-tooltip>
                 <v-icon
                     color="#424242"
@@ -52,6 +52,7 @@
             <assay-item
                 v-for="assay of sortedAssays"
                 :assay="assay"
+                :study="study"
                 v-bind:key="assay.id"
                 :active-assay="project.activeAssay"
                 v-on:select-assay="onSelectAssay"
@@ -123,6 +124,8 @@ export default class StudyItem extends Vue {
     private isEditingStudyName: boolean = false;
     private isValidStudyName: boolean = true;
 
+    private nameError: string = "";
+
     mounted() {
         this.onStudyChanged();
     }
@@ -169,17 +172,30 @@ export default class StudyItem extends Vue {
 
     @Watch("studyName")
     private onStudyNameChanged() {
-        this.checkStudyNameValidity();
+        if (this.isEditingStudyName) {
+            this.checkStudyNameValidity();
+        }
     }
 
     private checkStudyNameValidity(): boolean {
-        if (this.studyName !== "") {
-            this.isValidStudyName = true;
-            return true;
-        } else {
+        if (this.studyName === "") {
+            this.nameError = "Name cannot be empty.";
             this.isValidStudyName = false;
             return false;
         }
+
+        const nameExists: boolean = this.project.getStudies()
+            .map(s => s.getName().toLocaleLowerCase())
+            .indexOf(this.studyName.toLocaleLowerCase()) !== -1;
+
+        if ((nameExists && this.study.getName() !== this.studyName)) {
+            this.nameError = "A study with this name already exists.";
+            this.isValidStudyName = false;
+            return false;
+        }
+
+        this.isValidStudyName = true;
+        return true;
     }
 
     private removeStudy() {

@@ -47,7 +47,18 @@ export default class ToolbarExplorer extends Vue {
 
     private createStudy() {
         if (this.project !== null) {
-            this.project.createStudy("Unknown");
+            // Check which studies already exist, and make sure there isn't one with the same name.
+            const unknowns = this.project.getStudies()
+                .map(s => s.getName())
+                .filter(s => s.startsWith("Unknown"))
+                .map(s => s.replace(/[^0-9]/g, ""))
+                .map(s => s === "" ? 0 : parseInt(s))
+
+            let studyName: string = "Unknown";
+            if (unknowns.length > 0) {
+                studyName += ` (${Math.max(...unknowns) + 1})`
+            }
+            this.project.createStudy(studyName);
         }
     }
 }
