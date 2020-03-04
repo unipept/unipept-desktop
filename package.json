@@ -15,7 +15,7 @@
     "styleguide": "vue-cli-service styleguidist",
     "styleguide:build": "vue-cli-service styleguidist:build"
   },
-  "main": "./background.js",
+  "main": "./src/background.ts",
   "dependencies": {
     "@babel/preset-env": "^7.6.0",
     "@types/better-sqlite3": "^5.4.0",
@@ -64,13 +64,6 @@
     "vuetify-loader": "^1.2.2",
     "worker-loader": "^2.0.0",
     "workerize-loader": "^1.1.0"
-  },
-  "build": {
-    "appId": "be.ugent.unipept.desktop",
-    "files": [
-      "dist/**/*",
-      "package.json"
-    ]
   },
   "eslintConfig": {
     "root": true,

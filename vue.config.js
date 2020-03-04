@@ -8,5 +8,12 @@ module.exports = {
                 "better-sqlite3": "require('better-sqlite3')"
             }
         ])
+    },
+    pluginOptions: {
+        electronBuilder: {
+            builderOptions: {
+                "appId": "be.ugent.unipept.desktop"
+            }
+        }
     }
 }
