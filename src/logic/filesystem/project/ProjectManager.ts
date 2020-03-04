@@ -8,6 +8,7 @@ import * as path from "path";
 import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
 import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
+import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 
 export default class ProjectManager  {
     public readonly DB_FILE_NAME: string = "metadata.sqlite";
@@ -41,6 +42,8 @@ export default class ProjectManager  {
             await this.loadStudy(`${projectLocation}${directory}`, project);
         }
 
+        await this.addToRecentProjects(projectLocation);
+
         return project;
     }
 
@@ -58,6 +61,8 @@ export default class ProjectManager  {
             verbose: (mess) => console.warn(mess)
         });
         db.exec(schema_v1);
+
+        await this.addToRecentProjects(projectLocation);
 
         return new Project(projectLocation, db, baseUrl);
     }
@@ -81,5 +86,10 @@ export default class ProjectManager  {
 
         const studyReader = new StudyFileSystemReader(directory, project);
         await study.accept(studyReader);
+    }
+
+    private async addToRecentProjects(path: string) {
+        const recentManager = new RecentProjectsManager();
+        await recentManager.addRecentProject(path);
     }
 }
