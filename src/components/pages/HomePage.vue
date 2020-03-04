@@ -47,6 +47,7 @@ import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 const { dialog } = require("electron").remote;
 
 @Component({
@@ -58,7 +59,6 @@ const { dialog } = require("electron").remote;
 export default class HomePage extends Vue {
     private errorMessage: string = "";
     private errorSnackbarVisible: boolean = false;
-
 
     private async createProject() {
         const chosenPath: string | undefined = dialog.showOpenDialogSync({
@@ -76,6 +76,7 @@ export default class HomePage extends Vue {
                     chosenPath[0],
                     this.$store.getters.baseUrl
                 );
+
                 await project.initialize();
                 await this.$store.dispatch("setProject", project);
                 await this.$router.push("/analysis/single");
