@@ -15,7 +15,7 @@
     "styleguide": "vue-cli-service styleguidist",
     "styleguide:build": "vue-cli-service styleguidist:build"
   },
-  "main": "./src/background.ts",
+  "main": "background.js",
   "dependencies": {
     "@babel/preset-env": "^7.6.0",
     "@types/better-sqlite3": "^5.4.0",

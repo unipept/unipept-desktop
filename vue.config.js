@@ -13,7 +13,7 @@ module.exports = {
         electronBuilder: {
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop"
-            }
+            },
         }
     }
 }
