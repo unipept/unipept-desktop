@@ -8,19 +8,23 @@
                 <v-divider vertical></v-divider>
                 <v-col>
                     <div style="display: flex; flex-direction: column; align-items: center;">
-                        <img src="@/assets/logo.svg" style="max-width: 200px;"/>
+                        <img src="@/assets/logo.png" style="max-width: 200px;"/>
                         <span class="logo-headline">Unipept Desktop</span>
                         <span class="logo-subline">Version 0.0.1</span>
 
                         <div class="project-actions">
-                            <div @click="createProject()">
-                                <v-icon>mdi-folder-plus-outline</v-icon>
-                                <span>Create new project</span>
-                            </div>
-                            <div>
-                                <v-icon>mdi-folder-download-outline</v-icon>
-                                <span>Import project</span>
-                            </div>
+                            <tooltip message="Select an empty folder and create a new project." position="bottom">
+                                <div @click="createProject()">
+                                    <v-icon>mdi-folder-plus-outline</v-icon>
+                                    <span>Create new project</span>
+                                </div>
+                            </tooltip>
+                            <tooltip message="Import a project from an external model." position="bottom">
+                                <div>
+                                    <v-icon>mdi-folder-download-outline</v-icon>
+                                    <span>Import project</span>
+                                </div>
+                            </tooltip>
                         </div>
                     </div>
                 </v-col>
@@ -41,11 +45,14 @@ import IOException from "unipept-web-components/src/logic/exceptions/IOException
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
+import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
+import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 const { dialog } = require("electron").remote;
 
 @Component({
     components: {
-        RecentProjects
+        RecentProjects,
+        Tooltip
     }
 })
 export default class HomePage extends Vue {
@@ -75,7 +82,7 @@ export default class HomePage extends Vue {
             } catch (err) {
                 console.error(err);
                 this.showError(
-                    "Could not initialize your project. Please make sure that the chosen directory is readable and " +
+                    "Could not initialize your project. Please make sure that the chosen directory is writeable and " +
                     "try again."
                 );
             }
@@ -90,10 +97,15 @@ export default class HomePage extends Vue {
             await this.$store.dispatch("setProject", project);
             await this.$router.push("/analysis/single");
         } catch (err) {
-            console.error(err);
-            this.showError(
-                "Could not open your project. Please make sure that the chosen directory is readable and try again."
-            );
+            if (err instanceof InvalidProjectException) {
+                this.showError("This is not a valid Unipept project. Maybe you want to create a new project?");
+            } else {
+                console.error(err);
+                this.showError(
+                    "Could not open your project. Please make sure that the chosen directory is writeable and try " +
+                    "again."
+                );
+            }
         }
     }
 

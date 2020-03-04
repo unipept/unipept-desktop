@@ -20,20 +20,27 @@
                 </v-list-item-action>
             </v-list-item>
         </v-list>
-        <div class="open-project-button" @click="openProject()">
-            <v-icon>mdi-folder-open-outline</v-icon>
-            <a>Open other project...</a>
-        </div>
+        <tooltip message="Select a previously created project to open." position="bottom">
+            <div class="open-project-button" @click="openProject()">
+                <v-icon>mdi-folder-open-outline</v-icon>
+                <a>Open other project...</a>
+            </div>
+        </tooltip>
     </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
+import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager.ts";
 const { dialog } = require("electron").remote;
 
-@Component
+@Component({
+    components: {
+        Tooltip
+    }
+})
 export default class RecentProjects extends Vue {
     private recentProjects: { name: string, path: string, lastOpened: string }[] = [
         {

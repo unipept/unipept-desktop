@@ -2,13 +2,13 @@
  * @mixin
  */
 module.exports = {
-	props: {
-		/**
+    props: {
+        /**
 		 * Set size of the element
 		 */
-		size: {
-			type: String,
-			default: '14px'
-		}
-	}
+        size: {
+            type: String,
+            default: "14px"
+        }
+    }
 }
