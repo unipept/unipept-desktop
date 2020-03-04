@@ -3,8 +3,8 @@
         <v-row>
             <v-col>
                 <single-dataset-visualizations-card 
-                    :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
-                    :analysisInProgress="$store.getters.getSelectedAssays.length > 0"
+                    :dataRepository="dataRepository"
+                    :analysisInProgress="$store.getters.getProject.getAllAssays.length > 0"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -13,8 +13,8 @@
         <v-row>
             <v-col>
                 <functional-summary-card 
-                    :dataRepository="this.$store.getters.getActiveAssay ? this.$store.getters.getActiveAssay.dataRepository : null" 
-                    :analysisInProgress="$store.getters.getSelectedAssays.length > 0"
+                    :dataRepository="dataRepository"
+                    :analysisInProgress="$store.getters.getProject.getAllAssays.length > 0"
                     :selectedTaxonId="$store.getters.getSelectedTaxonId">
                 </functional-summary-card>
             </v-col>
@@ -24,16 +24,26 @@
 
 <script lang="ts">
 import Vue from "vue";
-import { Prop, Watch } from "vue-property-decorator";
 import Component from "vue-class-component";
-import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
-import SingleDatasetVisualizationsCard from "unipept-web-components/src/components/visualizations/SingleDatasetVisualizationsCard.vue";
+import SingleDatasetVisualizationsCard
+    from "unipept-web-components/src/components/visualizations/SingleDatasetVisualizationsCard.vue";
 import FunctionalSummaryCard from "unipept-web-components/src/components/analysis/functional/FunctionalSummaryCard.vue";
+import DataRepository from "unipept-web-components/src/logic/data-source/DataRepository";
 
 @Component({
     components: {
         SingleDatasetVisualizationsCard,
         FunctionalSummaryCard
+    },
+    computed: {
+        dataRepository: {
+            get(): DataRepository {
+                if (this.$store.getters.getProject.activeAssay) {
+                    return this.$store.getters.getProject.activeAssay.dataRepository;
+                }
+                return null;
+            }
+        }
     }
 })
 export default class AnalysisPage extends Vue {

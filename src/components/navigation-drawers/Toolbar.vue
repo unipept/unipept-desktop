@@ -1,9 +1,29 @@
 <template>
     <div class="toolbar">
-        <v-navigation-drawer v-model="isOpen" :mini-variant="true" fixed :class="{'toolbar-navigation-drawer': !isMini}" permanent>
+        <v-navigation-drawer
+            v-model="isOpen"
+            :mini-variant="true"
+            fixed :class="{'toolbar-navigation-drawer': !isMini}"
+            permanent>
             <div class="navigation-toolbar" style="position: relative; top: 64px;">
                 <v-list>
-                    <v-list-item :class="{'v-list-item--active': $route.path === '/'}" link @click="navigateAndToggleExpand('/')">
+                    <v-list-item
+                        :class="{'v-list-item--active': $route.path === '/'}"
+                        link
+                        @click="navigateAndCloseSideBar('/')">
+                        <v-list-item-icon>
+                            <v-icon>mdi-home</v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                            <v-list-item-title>Home</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+
+                    <v-list-item 
+                        :disabled="$store.getters.getProject === null" 
+                        :class="{'v-list-item--active': $route.path === '/analysis/single'}" 
+                        link 
+                        @click="navigateAndToggleExpand('/analysis/single')">
                         <v-list-item-icon>
                             <v-icon>mdi-bacteria</v-icon>
                         </v-list-item-icon>
@@ -12,7 +32,11 @@
                         </v-list-item-content>
                     </v-list-item>
 
-                    <v-list-item :class="{'v-list-item--active': $route.path === '/compare'}" link @click="navigateAndToggleExpand('/compare')">
+                    <v-list-item 
+                        :disabled="$store.getters.getProject === null" 
+                        :class="{'v-list-item--active': $route.path === '/analysis/multi'}" 
+                        link 
+                        @click="navigateAndToggleExpand('/analysis/multi')">
                         <v-list-item-icon>
                             <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
@@ -25,50 +49,10 @@
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
-                <div class="sample-list-placeholder" v-if="!this.$store.getters.getSelectedAssays || this.$store.getters.getSelectedAssays.length === 0">
-                    No samples selected.
-                </div>
-                <v-list dense>
-                    <v-list-item :class="{'v-list-item--active': $store.getters.getActiveAssay === assay}" @click="activateDataset(assay)" v-for="assay of this.$store.getters.getSelectedAssays" :key="assay.id">
-                        <v-list-item-title>
-                            {{ assay.getName() }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle>
-                            {{ assay.getAmountOfPeptides() }} peptides
-                        </v-list-item-subtitle>
-                        <v-list-item-action>
-                            <v-progress-circular v-if="assay.progress !== 1" :rotate="-90" :size="18" :value="assay.progress * 100" color="primary"></v-progress-circular>
-                            <div v-else style="display: flex; flex-direction: row;">
-                                <tooltip message="Display experiment summary." position="bottom">
-                                    <v-icon @click="showExperimentSummary(assay)" v-on:click.stop small>mdi-information-outline</v-icon>
-                                </tooltip>
-                                <tooltip message="Remove dataset from analysis." position="bottom">
-                                    <v-icon @click="deselectDataset(assay)" v-on:click.stop small>mdi-close</v-icon>
-                                </tooltip>
-                            </div>
-                        </v-list-item-action>
-                    </v-list-item>
-                </v-list>
-                <v-btn @click="selectSample" class="select-sample-button" depressed color="primary">Select sample</v-btn>
+                <toolbar-explorer :project="$store.getters.getProject"></toolbar-explorer>
             </div>
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
-        <experiment-summary-dialog 
-            :assay="summaryDataset"
-            :active.sync="summaryActive">
-        </experiment-summary-dialog>
-        <v-dialog v-model="selectSampleDialog" max-width="800">
-            <v-card>
-                <v-card-title>
-                    Sample selection
-                </v-card-title>
-                <load-datasets-card 
-                    :selected-assays="this.$store.getters.getSelectedAssays" 
-                    :stored-assays="this.$store.getters.getStoredAssays"
-                    v-on:create-assay="onCreateAssay">
-                </load-datasets-card>
-            </v-card>
-        </v-dialog>
     </div>
 </template>
 
@@ -78,15 +62,14 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
-import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import LoadDatasetsCard from "../dataset/LoadDatasetsCard.vue";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
+import ToolbarExplorer from "./ToolbarExplorer.vue";
 
 @Component({
     components: {
         Tooltip,
-        ExperimentSummaryDialog,
-        LoadDatasetsCard
+        ToolbarExplorer
     }
 })
 export default class Toolbar extends Vue {
@@ -94,11 +77,6 @@ export default class Toolbar extends Vue {
     private open: boolean;
     @Prop({ required: false, default: true })
     private mini: boolean;
-
-    private selectSampleDialog: boolean = false;
-
-    private summaryActive: boolean = false;
-    private summaryDataset: Assay = null;
 
     // These are the models that will be used internally by this component to sync the current state.
     private isOpen: boolean = false;
@@ -134,19 +112,6 @@ export default class Toolbar extends Vue {
         this.$emit("update:mini", this.isMini);
     }
 
-    private showExperimentSummary(dataset) {
-        this.summaryDataset = dataset;
-        this.summaryActive = true;
-    }
-
-    private selectSample() {
-        this.selectSampleDialog = true;
-    }
-
-    private activateDataset(assay: Assay) {
-        this.$store.dispatch("setActiveAssay", assay);
-    }
-
     /**
      * The visibility of the sidebar should only toggle when the current route is the same as the route that a 
      * component click should lead to.
@@ -158,6 +123,13 @@ export default class Toolbar extends Vue {
             this.isMini = !this.isMini;
         } else {
             // If the user does wan't to navigate, we change the current path.
+            this.$router.replace(routeToGo);
+        }
+    }
+
+    private navigateAndCloseSideBar(routeToGo: string) {
+        if (this.$route.path !== routeToGo) {
+            this.isMini = true;
             this.$router.replace(routeToGo);
         }
     }
@@ -188,13 +160,6 @@ export default class Toolbar extends Vue {
         });
     }
 
-    private onCreateAssay(assay: Assay) {
-        // Close the datasets card
-        this.selectSampleDialog = false;
-        // Process the newly selected assay
-        this.$store.dispatch("processAssay", assay);
-    }
-
     @Watch("toolbarWidth")
     private onToolbarWidthChanged(newWidth: number) {
         this.$emit("update:toolbar-width", newWidth);
@@ -215,7 +180,7 @@ export default class Toolbar extends Vue {
     .toolbar-content {
         height: 100%;
         position: fixed; 
-        left: 80px; 
+        left: 55px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
         display: none;
@@ -235,20 +200,12 @@ export default class Toolbar extends Vue {
 
     .toolbar-container {
         position: relative; 
-        top: 56px; 
+        top: 64px; 
         height: 100%;
     }
 
     .container-after-titlebar .toolbar-container {
         height: calc(100% - 30px);
-    }
-
-    .sample-list-placeholder {
-        margin-left: 8px; 
-        margin-right: 8px;
-        position: relative;
-        top: 16px;
-        text-align: center;
     }
 
     // Change default styling of selected navigation drawer item.
@@ -267,5 +224,9 @@ export default class Toolbar extends Vue {
 
     .navigation-toolbar .v-list-item .v-icon:hover {
         color: #2196F3;
+    }
+
+    .v-list-item--disabled .v-icon {
+        color: rgba(0, 0, 0, 0.15);
     }
 </style>

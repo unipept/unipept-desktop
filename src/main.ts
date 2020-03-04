@@ -27,8 +27,15 @@ const store = new Vuex.Store({
 });
 
 const routes = [
+    {
+        path: "/",
+        component: HomePage,
+        meta: {
+            title: "Home"
+        }
+    },
     { 
-        path: "/", 
+        path: "/analysis/single", 
         component: AnalysisPage, 
         meta: {
             title: "Analyse" 
