@@ -8,5 +8,23 @@ module.exports = {
                 "better-sqlite3": "require('better-sqlite3')"
             }
         ])
+    },
+    pluginOptions: {
+        electronBuilder: {
+            builderOptions: {
+                "appId": "be.ugent.unipept.desktop"
+                // Disable code signing for now.
+                // "mac": {
+                //     "hardenedRuntime": true,
+                //     "gatekeeperAssess": false,
+                //     "entitlements": "build/entitlements.mac.plist",
+                //     "entitlementsInherit": "build/entitlements.mac.plist"
+                // },
+                // "afterSign": "scripts/notarize.js",
+                // "dmg": {
+                //     "sign": false
+                // }
+            },
+        }
     }
 }
