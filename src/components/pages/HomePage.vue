@@ -10,7 +10,7 @@
                     <div style="display: flex; flex-direction: column; align-items: center;">
                         <img src="@/assets/logo.png" style="max-width: 200px;"/>
                         <span class="logo-headline">Unipept Desktop</span>
-                        <span class="logo-subline">Version 0.0.1</span>
+                        <span class="logo-subline">Version {{ version }}</span>
 
                         <div class="project-actions">
                             <tooltip message="Select an empty folder and create a new project." position="bottom">
@@ -48,7 +48,10 @@ import fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
-const { dialog } = require("electron").remote;
+
+const electron = require("electron");
+const { dialog } = electron.remote;
+const app = electron.remote.app;
 
 @Component({
     components: {
@@ -59,6 +62,11 @@ const { dialog } = require("electron").remote;
 export default class HomePage extends Vue {
     private errorMessage: string = "";
     private errorSnackbarVisible: boolean = false;
+    private version: string = "";
+
+    mounted() {
+        this.version = app.getVersion();
+    }
 
     private async createProject() {
         const chosenPath: string | undefined = dialog.showOpenDialogSync({

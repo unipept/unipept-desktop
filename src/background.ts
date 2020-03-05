@@ -21,7 +21,8 @@ async function createWindow() {
     let options: Electron.BrowserWindowConstructorOptions = {
         width: 800,
         height: 600,
-        webPreferences: { nodeIntegration: true }
+        webPreferences: { nodeIntegration: true },
+        show: false
     };
 
 
@@ -31,42 +32,51 @@ async function createWindow() {
 
     win = new BrowserWindow(options)
 
+    autoUpdater.on("update-available", () => {
+        if (win) {
+            win.webContents.send("update-available");
+        }
+    });
+
+    autoUpdater.on("update-downloaded", () => {
+        if (win) {
+            win.webContents.send("update-downloaded");
+        }
+    });
+
+    autoUpdater.on("download-progress", (progress) => {
+        if (win) {
+            win.webContents.send("download-progress", progress.percent);
+        }
+    });
+
+    autoUpdater.on("error", (err) => {
+        if (win) {
+            win.webContents.send("update-error", err);
+        }
+    })
+
+    win.once("ready-to-show", () => {
+        win.show();
+        autoUpdater.checkForUpdatesAndNotify();
+    });
+
     // Set the toolbar menu for this window
     const menu = createMenu(win);
     Menu.setApplicationMenu(menu);
 
     if (process.env.WEBPACK_DEV_SERVER_URL) {
         // Load the url of the dev server if in development mode
-        win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+        await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
         if (!process.env.IS_TEST) win.webContents.openDevTools()
     } else {
         createProtocol("app")
         // Load the index.html when not in development
-        win.loadURL("app://./index.html")
+        await win.loadURL("app://./index.html")
     }
 
     win.on("closed", () => {
         win = null
-    });
-
-    autoUpdater.on("update-available", () => {
-        win.webContents.send("update-available");
-    });
-
-    autoUpdater.on("update-downloaded", () => {
-        win.webContents.send("update-downloaded");
-    });
-
-    autoUpdater.on("download-progress", (progress) => {
-        win.webContents.send("download-progress", progress.percent);
-    });
-
-    autoUpdater.on("error", (err) => {
-        win.webContents.send("update-error", err);
-    })
-
-    win.on("ready-to-show", () => {
-        autoUpdater.checkForUpdatesAndNotify();
     });
 }
 

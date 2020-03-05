@@ -62,14 +62,12 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
 import Toolbar from "./components/navigation-drawers/Toolbar.vue";
-import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import Project from "@/logic/filesystem/project/Project";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
-
-const electron = window.require("electron");
+const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
 
@@ -147,11 +145,11 @@ export default class App extends Vue implements ErrorListener {
             this.updatedSnackbar = true;
         });
 
-        ipcRenderer.on("download-progress", (value) => {
+        ipcRenderer.on("download-progress", (sender, value) => {
             this.updatingProgress = value;
         });
 
-        ipcRenderer.on("update-error", (err) => {
+        ipcRenderer.on("update-error", (sender, err) => {
             console.error(err);
             this.updatingSnackbar = false;
             this.updateMessage = "An error occurred while updating the application. Please try again later."
