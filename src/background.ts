@@ -1,10 +1,11 @@
 "use strict"
 
-import { app, protocol, BrowserWindow, Menu, shell } from "electron"
+import { app, protocol, BrowserWindow, Menu, shell, ipcMain } from "electron"
 import { createProtocol, installVueDevtools } from "vue-cli-plugin-electron-builder/lib"
 import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 const isDevelopment = process.env.NODE_ENV !== "production"
+import { autoUpdater } from "electron-updater";
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -17,10 +18,10 @@ async function createWindow() {
     let configManager = new ConfigurationManager(app);
     let config = await configManager.readConfiguration();
     // Create the browser window.
-    let options: Electron.BrowserWindowConstructorOptions = { 
-        width: 800, 
-        height: 600, 
-        webPreferences: { nodeIntegration: true } 
+    let options: Electron.BrowserWindowConstructorOptions = {
+        width: 800,
+        height: 600,
+        webPreferences: { nodeIntegration: true }
     };
 
 
@@ -35,7 +36,7 @@ async function createWindow() {
     Menu.setApplicationMenu(menu);
 
     if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
+        // Load the url of the dev server if in development mode
         win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
         if (!process.env.IS_TEST) win.webContents.openDevTools()
     } else {
@@ -46,6 +47,26 @@ async function createWindow() {
 
     win.on("closed", () => {
         win = null
+    });
+
+    autoUpdater.on("update-available", () => {
+        win.webContents.send("update-available");
+    });
+
+    autoUpdater.on("update-downloaded", () => {
+        win.webContents.send("update-downloaded");
+    });
+
+    autoUpdater.on("download-progress", (progress) => {
+        win.webContents.send("download-progress", progress.percent);
+    });
+
+    autoUpdater.on("error", (err) => {
+        win.webContents.send("update-error", err);
+    })
+
+    win.on("ready-to-show", () => {
+        autoUpdater.checkForUpdatesAndNotify();
     });
 }
 

@@ -18,12 +18,12 @@
             </Toolbar>
 
             <v-content
-                    :style="{
-          'min-height': '100%',
-          'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
-          'position': 'relative',
-          'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
-        }">
+                :style="{
+                  'min-height': '100%',
+                  'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
+                  'position': 'relative',
+                  'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
+                }">
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
                     <v-card>
@@ -39,6 +39,18 @@
                         </v-card-actions>
                     </v-card>
                 </v-dialog>
+                <!-- Snackbar that's shown while the update to the application is running -->
+                <v-snackbar v-model="updatingSnackbar" color="info" :timeout="0">
+                    <v-progress-circular rotate="180" color="white" :value="updatingProgress"></v-progress-circular>
+                    <span style="margin-left: 16px;">
+                        Installing new version of Unipept Desktop.
+                    </span>
+                </v-snackbar>
+                <!-- Snackbar that's shown after the application has successfully been updated -->
+                <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="0">
+                    {{ updateMessage }}
+                    <v-btn text dark @click="updatedSnackbar = false">Close</v-btn>
+                </v-snackbar>
             </v-content>
         </v-app>
     </div>
@@ -100,6 +112,13 @@ export default class App extends Vue implements ErrorListener {
     private rightNavMini: boolean = true;
     private loading: boolean = true;
 
+    private updatingSnackbar: boolean = false;
+    private updatingProgress: number = 0;
+
+    private updatedSnackbar: boolean = false;
+    private updateMessage: string = "";
+    private updatedColor: string = "info";
+
     private toolbarWidth: number = 210;
     // Has this component been initialized before?
     private static previouslyInitialized: boolean = false;
@@ -116,6 +135,29 @@ export default class App extends Vue implements ErrorListener {
                 this.$router.push(location);
             }
         });
+
+        ipcRenderer.on("update-available", () => {
+            this.updatingSnackbar = true;
+        });
+
+        ipcRenderer.on("update-downloaded", () => {
+            this.updatingSnackbar = false;
+            this.updateMessage = "Update completed. Restart the application to finish the installation."
+            this.updatedColor = "info";
+            this.updatedSnackbar = true;
+        });
+
+        ipcRenderer.on("download-progress", (value) => {
+            this.updatingProgress = value;
+        });
+
+        ipcRenderer.on("update-error", (err) => {
+            console.error(err);
+            this.updatingSnackbar = false;
+            this.updateMessage = "An error occurred while updating the application. Please try again later."
+            this.updatedColor = "error";
+            this.updatedSnackbar = true;
+        })
 
         await this.initConfiguration();
         await this.setUpTitlebar();
