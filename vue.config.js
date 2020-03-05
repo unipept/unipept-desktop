@@ -12,7 +12,14 @@ module.exports = {
     pluginOptions: {
         electronBuilder: {
             builderOptions: {
-                "appId": "be.ugent.unipept.desktop"
+                "appId": "be.ugent.unipept.desktop",
+                "mac": {
+                    "hardenedRuntime": true,
+                    "gatekeeperAssess": false,
+                    "entitlements": "build/entitlements.mac.plist",
+                    "entitlementsInherit": "build/entitlements.mac.plist"
+                },
+                "afterSign": "scripts/notarize.js"
             },
         }
     }
