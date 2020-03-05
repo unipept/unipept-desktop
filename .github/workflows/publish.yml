@@ -17,4 +17,4 @@ jobs:
       - name: Build application for Windows
         run: npm run electron:publish
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
