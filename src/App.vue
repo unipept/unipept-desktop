@@ -40,12 +40,16 @@
                     </v-card>
                 </v-dialog>
                 <!-- Snackbar that's shown while the update to the application is running -->
-                <v-snackbar v-model="updatingSnackbar" color="info" :timeout="0">
-                    <v-progress-circular rotate="180" color="white" :value="updatingProgress"></v-progress-circular>
-                    <span style="margin-left: 16px;">
-                        Installing new version of Unipept Desktop.
-                    </span>
-                </v-snackbar>
+                <div class="updating-snackbar-container">
+                    <v-snackbar v-model="updatingSnackbar" color="info" :timeout="0">
+                        <div class="updating-snackbar-content">
+                            <v-progress-linear color="white" :value="updatingProgress"></v-progress-linear>
+                            <div class="updating-snackbar-text">
+                                Installing new version of Unipept Desktop.
+                            </div>
+                        </div>
+                    </v-snackbar>
+                </div>
                 <!-- Snackbar that's shown after the application has successfully been updated -->
                 <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="0">
                     {{ updateMessage }}
@@ -293,6 +297,22 @@ export default class App extends Vue implements ErrorListener {
 
     html {
         overflow-y: auto !important;
+    }
+
+    .updating-snackbar-content {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        align-items: center;
+        align-self: start;
+    }
+
+    .updating-snackbar-content .updating-snackbar-text {
+        margin-top: 10px;
+    }
+
+    .updating-snackbar-container .v-snack__content {
+        padding: 0;
     }
 
     //   .container-after-titlebar .v-app-bar {
