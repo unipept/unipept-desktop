@@ -7,14 +7,17 @@ on:
 
 jobs:
   publish:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          os: [macos-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
       - name: Install dependencies
         run: npm install
-      - name: Build application for Windows
+      - name: Build application for ${{ matrix.os }}
         run: npm run electron:publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
