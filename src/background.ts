@@ -1,11 +1,13 @@
 "use strict"
 
-import { app, protocol, BrowserWindow, Menu, shell, ipcMain } from "electron"
+import { app, protocol, BrowserWindow, Menu, shell, ipcMain, netLog } from "electron"
 import { createProtocol, installVueDevtools } from "vue-cli-plugin-electron-builder/lib"
 import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
-const isDevelopment = process.env.NODE_ENV !== "production"
 import { autoUpdater } from "electron-updater";
+import log from "electron-log";
+
+const isDevelopment = process.env.NODE_ENV !== "production"
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -30,7 +32,10 @@ async function createWindow() {
     //     options["frame"] = false;
     // }
 
-    win = new BrowserWindow(options)
+    win = new BrowserWindow(options);
+
+    log.transports.file.level = "debug";
+    autoUpdater.logger = log;
 
     autoUpdater.on("update-available", () => {
         if (win) {

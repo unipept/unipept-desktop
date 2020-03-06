@@ -23,8 +23,6 @@ export default class RecentProjectsManager {
                 encoding: "utf-8"
             });
 
-            console.log(JSON.parse(projectData));
-
             return JSON.parse(projectData)
                 .map(obj => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened))));
         } catch (err) {
@@ -65,8 +63,6 @@ export default class RecentProjectsManager {
                     lastOpened: p.lastOpened.getTime()
                 }
             });
-
-        console.log(toWrite);
 
         fs.writeFileSync(this.getRecentsFilePath(), JSON.stringify(toWrite), {
             encoding: "utf-8"
