@@ -19,7 +19,7 @@
 
             <div style="display: flex; flex-direction: row; margin-left: auto; height: 32px;">
                 <tooltip message="Add assay to comparative analysis." position="bottom">
-                    <v-checkbox v-model="selected" dense></v-checkbox>
+                    <v-checkbox v-model="selected" dense @click.native.stop></v-checkbox>
                 </tooltip>
             </div>
         </div>

@@ -21,8 +21,8 @@
                                         </v-col>
                                         <v-col cols="4">
                                             <v-text-field label="https://unipept.ugent.be" single-line filled
-                                                          v-model="configuration.apiSource"
-                                                          :rules="apiSourceRules"></v-text-field>
+                                                v-model="configuration.apiSource"
+                                                :rules="apiSourceRules"></v-text-field>
                                         </v-col>
                                     </v-row>
                                 </v-container>

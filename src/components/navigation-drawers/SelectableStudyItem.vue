@@ -29,10 +29,10 @@
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
             <selectable-assay-item
-                    v-for="assay of sortedAssays"
-                    :assay="assay"
-                    :study="study"
-                    v-bind:key="assay.id">
+                v-for="assay of sortedAssays"
+                :assay="assay"
+                :study="study"
+                v-bind:key="assay.id">
             </selectable-assay-item>
         </div>
     </div>
