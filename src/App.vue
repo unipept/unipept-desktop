@@ -9,7 +9,7 @@
             </v-app-bar>
 
             <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on
-                 the right side -->
+                 the left side -->
             <Toolbar
                     :open.sync="rightNavDrawer"
                     :mini.sync="rightNavMini"
@@ -18,12 +18,12 @@
             </Toolbar>
 
             <v-content
-                    :style="{
-          'min-height': '100%',
-          'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
-          'position': 'relative',
-          'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
-        }">
+                :style="{
+                    'min-height': '100%',
+                    'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
+                    'position': 'relative',
+                    'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
+                }">
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
                     <v-card>

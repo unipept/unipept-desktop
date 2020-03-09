@@ -32,7 +32,9 @@
                 v-for="assay of sortedAssays"
                 :assay="assay"
                 :study="study"
-                v-bind:key="assay.id">
+                v-bind:key="assay.id"
+                :value="assayInComparison(assay)"
+                v-on:input="toggleAssayComparison(assay)">
             </selectable-assay-item>
         </div>
     </div>
@@ -42,7 +44,7 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import SelectableAssayItem from "@/components/navigation-drawers/SelectableAssayItem.vue";
-import { Prop } from "vue-property-decorator";
+import { Prop, Watch } from "vue-property-decorator";
 import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 
@@ -63,8 +65,35 @@ import Assay from "unipept-web-components/src/logic/data-management/assay/Assay"
 export default class SelectableStudyItem extends Vue {
     @Prop({ required: true })
     private study: Study;
+    @Prop({ required: true })
+    private assaysInComparison: Assay[];
 
     private collapsed: boolean = false;
+
+    private inComparison: Assay[] = [];
+
+    private mounted() {
+        this.onAssaysInComparisonChanged();
+    }
+
+    @Watch("assaysInComparison")
+    private onAssaysInComparisonChanged() {
+        this.inComparison = [...this.assaysInComparison];
+    }
+
+    private toggleAssayComparison(assay: Assay) {
+        const idx: number = this.assaysInComparison.findIndex(a => a.getId() === assay.getId());
+
+        if (idx === -1) {
+            this.$emit("select-assay", assay);
+        } else {
+            this.$emit("deselect-assay", assay);
+        }
+    }
+
+    private assayInComparison(assay: Assay): boolean {
+        return this.assaysInComparison.findIndex(a => a.getId() === assay.getId()) !== -1;
+    }
 }
 </script>
 
