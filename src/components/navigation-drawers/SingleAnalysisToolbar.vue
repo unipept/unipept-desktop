@@ -1,7 +1,7 @@
 <template>
     <div>
-        <div 
-            class="sample-list-placeholder" 
+        <div
+            class="sample-list-placeholder"
             v-if="!project || project.getStudies().length === 0">
             No studies present.
         </div>
@@ -41,7 +41,7 @@ import StudyItem from "./StudyItem.vue";
         }
     }
 })
-export default class ToolbarExplorer extends Vue {
+export default class SingleAnalysisToolbar extends Vue {
     @Prop({ required: true })
     private project: Project;
 
@@ -66,7 +66,7 @@ export default class ToolbarExplorer extends Vue {
 
 <style>
     .sample-list-placeholder {
-        margin-left: 8px; 
+        margin-left: 8px;
         margin-right: 8px;
         position: relative;
         top: 16px;

@@ -1,9 +1,9 @@
 <template>
     <div>
         <div
-                @click="selectAssay()"
-                @contextmenu="showContextMenu()"
-                :class="{
+            @click="selectAssay()"
+            @contextmenu="showContextMenu()"
+            :class="{
                 'assay-item': true,
                 'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
                 'assay-item--error': !isValidAssayName
@@ -25,9 +25,9 @@
                     :message="nameError"
                     position="bottom">
                 <v-icon
-                        @click="() => {}"
-                        size="20"
-                        color="red">
+                    @click="() => {}"
+                    size="20"
+                    color="red">
                     mdi-alert-outline
                 </v-icon>
             </tooltip>
@@ -43,13 +43,13 @@
                     v-on:keyup.enter="disableAssayEdit()"
                     :class="{ 'error-item': !isValidAssayName }"
                     type="text"/>
-            <div style="display: flex; flex-direction: row; margin-left: auto;">
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
-                            :disabled="assay.progress !== 1"
-                            @click="experimentSummaryActive = true"
-                            v-on:click.stop color="#424242"
-                            size="20">
+                        :disabled="assay.progress !== 1"
+                        @click="experimentSummaryActive = true"
+                        v-on:click.stop color="#424242"
+                        size="20">
                         mdi-information-outline
                     </v-icon>
                 </tooltip>
@@ -187,50 +187,6 @@ export default class AssayItem extends Vue {
 }
 </script>
 
-<style scoped>
-    .assay-item {
-        display: flex;
-        align-items: center;
-        color: #424242;
-        font-weight: 700;
-        cursor: pointer;
-        padding-left: 24px;
-    }
-
-    .assay-item:hover {
-        background-color: #F6F6F6;
-    }
-
-    .assay-item > span, input {
-        margin-left: 8px;
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .assay-item--selected {
-        color: rgb(24, 103, 192);
-        background-color: #E5EDF8;
-    }
-
-    .assay-item--selected:hover {
-        background-color: #E5EDF8;
-    }
-
-    .assay-item--selected .v-icon {
-        color: rgb(24, 103, 192) !important;
-    }
-
-    .assay-item--error {
-        color: #F44336;
-    }
-
-    .assay-item--error.assay-item--selected {
-        background-color: #FFEBEE;
-    }
-
-    .assay-item--error .v-icon {
-        color: #F44336 !important;
-    }
+<style scoped lang="less">
+    @import "./../../assets/style/navigation-drawers/assay-item.css.less";
 </style>

@@ -12,6 +12,7 @@ import AnalysisPage from "./components/pages/AnalysisPage.vue";
 import SettingsPage from "./components/pages/SettingsPage.vue";
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 import { AssayStore } from "./state/AssayStore";
+import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.vue";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -34,16 +35,23 @@ const routes = [
             title: "Home"
         }
     },
-    { 
-        path: "/analysis/single", 
-        component: AnalysisPage, 
+    {
+        path: "/analysis/single",
+        component: AnalysisPage,
         meta: {
-            title: "Analyse" 
+            title: "Analyse"
         }
     },
-    { 
-        path: "/settings", 
-        component: SettingsPage, 
+    {
+        path: "/analysis/multi",
+        component: ComparativeAnalysisPage,
+        meta: {
+            title: "Comparative analysis"
+        }
+    },
+    {
+        path: "/settings",
+        component: SettingsPage,
         meta: {
             title: "Settings"
         }
