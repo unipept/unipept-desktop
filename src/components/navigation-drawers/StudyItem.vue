@@ -53,6 +53,7 @@
                 v-for="assay of sortedAssays"
                 :assay="assay"
                 :study="study"
+                :project="project"
                 v-bind:key="assay.id"
                 :active-assay="project.activeAssay"
                 v-on:select-assay="onSelectAssay"

@@ -25,7 +25,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
             // Rename the study file
             this.renameAssay(object, oldValue, newValue);
         } else if (field == "peptides") {
-            let equalPeptides: boolean = oldValue.length === newValue.length;
+            let equalPeptides: boolean = oldValue && oldValue.length === newValue.length;
 
             if (equalPeptides) {
                 // Now check if all corresponding values are equal.

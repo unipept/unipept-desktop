@@ -107,7 +107,7 @@ export default class AssayItem extends Vue {
     @Prop({ required: true })
     private project: Project;
 
-    private peptideTrust: PeptideTrust;
+    private peptideTrust: PeptideTrust = null;
     private experimentSummaryActive: boolean = false;
     private removeConfirmationActive: boolean = false;
     private isEditingAssayName: boolean = false;

@@ -13,10 +13,10 @@ CREATE TABLE assays (
 );
 
 CREATE TABLE search_configuration (
-    id INT PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
     equate_il INT NOT NULL,
     filter_duplicates INT NOT NULL,
-    missing_cleave_handling INT NOT NULL
+    missing_cleavage_handling INT NOT NULL
 );
 
 
