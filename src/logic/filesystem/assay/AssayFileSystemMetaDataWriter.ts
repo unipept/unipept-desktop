@@ -1,8 +1,7 @@
-import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import { Database } from "better-sqlite3";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 
 export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
     protected readonly study: Study;
@@ -12,11 +11,7 @@ export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
         this.study = study
     }
 
-    public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
-        throw new Error("Not implemented");
-    }
-
-    public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
+    public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
         // Check if this study was saved before.
         if (this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId())) {
             this.db.prepare("UPDATE assays SET `name`=?, `study_id`=? WHERE `id`=?")

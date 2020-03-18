@@ -16,7 +16,10 @@ rm -fR node_modules/unipept-web-components
 # First install each of the dependencies listed in the web-components package
 cat "./../unipept-web-components/package.json" | jq ".dependencies" | grep -v "^[{|}]" | cut -d":" -f1 | sed "s/^ *//" | xargs npm install --no-save
 
-# Then, link the two packages together
+# Recreate an empty directory
 mkdir node_modules/unipept-web-components
-ln -s ../../../unipept-web-components/src ./node_modules/unipept-web-components/src
-ln -s ../../../unipept-web-components/package.json ./node_modules/unipept-web-components/package.json
+
+# Then, start a watcher that automatically applies changes made to the original web components into our local copy
+# inside of node_modules
+node link_with_web_components_watch.js
+

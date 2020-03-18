@@ -1,11 +1,8 @@
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import chokidar from "chokidar";
-import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
 import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import { v4 as uuidv4 } from "uuid";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
@@ -13,10 +10,17 @@ import * as path from "path";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import { Database } from "better-sqlite3";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
-import ChangeListener from "unipept-web-components/src/logic/data-management/ChangeListener";
-import MpaAnalysisManager from "unipept-web-components/src/logic/data-management/MpaAnalysisManager";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import StudyVisitor from "unipept-web-components/src/business/entities/study/StudyVisitor";
+import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
+import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
+import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
+import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
+import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 
 
 /**
@@ -50,6 +54,9 @@ export default class Project {
     private errorListeners: ErrorListener[] = [];
 
     private baseUrl: string;
+
+    // Maps assays to their processed counterparts. TODO: should be updated to a map, once we are using Vue 3.
+    private processedAssays: {} = {};
 
     constructor(path: string, db: Database, baseUrl: string, syncInterval: number = 250) {
         this.db = db;
@@ -120,10 +127,11 @@ export default class Project {
         return study;
     }
 
-    public createMetaProteomicsAssay(name: string, peptides: string[], study: Study): MetaProteomicsAssay {
-        const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
+    public createMetaProteomicsAssay(name: string, peptides: string[], study: Study): ProteomicsAssay {
+        const assay: ProteomicsAssay = new ProteomicsAssay(
             [new FileSystemAssayChangeListener(this, study)],
             uuidv4(),
+            new SearchConfiguration(),
             undefined,
             name,
             new Date()
@@ -173,6 +181,17 @@ export default class Project {
         this.activeAssay = assay;
     }
 
+    public getProcessingResults(assay: Assay): { progress: number, countTable: CountTable<Peptide> } {
+        if (assay.getId() in this.processedAssays) {
+            return this.processedAssays[assay.getId()];
+        } else {
+            return {
+                progress: 0,
+                countTable: undefined
+            }
+        }
+    }
+
     /**
      * Flushes the action queue at specific times, making sure that all operations are performed in order by waiting
      * for each operation to successfully succeed. Once such an operation files, the event loop is stopped and all
@@ -208,7 +227,7 @@ export default class Project {
         if (shouldReselect) {
             let newActive: Assay = null;
             for (let current of this.getAllAssays()) {
-                if (current.progress == 1) {
+                if (this.getProcessingResults(current).progress == 1) {
                     newActive = current;
                     break;
                 }
@@ -237,9 +256,10 @@ export default class Project {
                 }
 
                 // Add a new MetaProteomicsAssay to it's corresponding study if it does not exist already.
-                const assay: MetaProteomicsAssay = new MetaProteomicsAssay(
+                const assay: ProteomicsAssay = new ProteomicsAssay(
                     [new FileSystemAssayChangeListener(this, study)],
                     uuidv4(),
+                    new SearchConfiguration(),
                     undefined,
                     assayName,
                     new Date()
@@ -297,9 +317,9 @@ export default class Project {
             }
 
             const assayName: string = path.basename(filePath).replace(".pep", "");
-            const assay: MetaProteomicsAssay = study.getAssays().find(
+            const assay: ProteomicsAssay = study.getAssays().find(
                 assay => assay.getName() === assayName
-            ) as MetaProteomicsAssay;
+            ) as ProteomicsAssay;
 
             if (!assay) {
                 return;
@@ -354,20 +374,31 @@ export default class Project {
                     }
                 } else if (field === "add-assay") {
                     // Process the given assay
-                    const assay: MetaProteomicsAssay = newValue;
+                    const assay: ProteomicsAssay = newValue;
                     this.processAssay(assay);
                 }
             }
         };
     }
 
-    public async processAssay(assay: MetaProteomicsAssay): Promise<void> {
-        assay.reset();
-        let mpaManager = new MpaAnalysisManager();
-        // TODO associate search settings per assay
-        mpaManager.processDataset(assay, { il: true, dupes: true, missed: false }, this.baseUrl)
-            .then(() => {
-                this.resetActiveAssay();
-            });
+    public async processAssay(assay: ProteomicsAssay): Promise<void> {
+        const processedItem = {
+            progress: 0,
+            countTable: undefined
+        };
+
+        this.processedAssays[assay.id] = processedItem;
+
+        const countTableProcessor = new PeptideCountTableProcessor();
+        const countTable = await countTableProcessor.getPeptideCountTable(
+            assay.getPeptides(),
+            assay.getSearchConfiguration()
+        );
+
+        await Pept2DataCommunicator.process(countTable, assay.getSearchConfiguration(), {
+            onProgressUpdate: (progress: number) => processedItem.progress = progress
+        });
+
+        processedItem.countTable = countTable;
     }
 }
