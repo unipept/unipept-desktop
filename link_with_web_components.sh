@@ -11,11 +11,10 @@ set -o pipefail
 # This script assumes that the unipept-web-components project and the unipept-desktop project
 # live in the same parent folder.
 
-rm -fR node_modules/unipept-web-components
-
 # First install each of the dependencies listed in the web-components package
 cat "./../unipept-web-components/package.json" | jq ".dependencies" | grep -v "^[{|}]" | cut -d":" -f1 | sed "s/^ *//" | xargs npm install --no-save
 
+rm -fR node_modules/unipept-web-components
 # Recreate an empty directory
 mkdir node_modules/unipept-web-components
 

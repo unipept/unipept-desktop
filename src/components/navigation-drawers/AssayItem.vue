@@ -6,20 +6,23 @@
             :class="{
                 'assay-item': true,
                 'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
-                'assay-item--error': !isValidAssayName
+                'assay-item--error': !isValidAssayName || errorStatus
             }">
-            <v-progress-circular
-                    v-if="assay.progress !== 1"
+            <div
+                v-if="isValidAssayName && !errorStatus">
+                <v-progress-circular
+                    v-if="progress !== 1"
                     :rotate="-90" :size="16"
-                    :value="assay.progress * 100"
+                    :value="progress * 100"
                     color="primary">
-            </v-progress-circular>
-            <v-icon
+                </v-progress-circular>
+                <v-icon
+                    v-else
                     color="#424242"
-                    size="20"
-                    v-if="assay.progress === 1 && isValidAssayName">
-                mdi-file-document-box-outline
-            </v-icon>
+                    size="20">
+                    mdi-text-box-outline
+                </v-icon>
+            </div>
             <tooltip
                 v-if="!isValidAssayName"
                 :message="nameError"
@@ -29,6 +32,16 @@
                     size="20"
                     color="red">
                     mdi-alert-outline
+                </v-icon>
+            </tooltip>
+            <tooltip
+                v-if="errorStatus"
+                message="A network communication error occurred while processing this assay. Click here to try again."
+                position="bottom">
+                <v-icon
+                    size="20"
+                    color="red">
+                    mdi-restart-alert
                 </v-icon>
             </tooltip>
             <span
@@ -95,6 +108,18 @@ const { Menu, MenuItem } = remote;
     components: {
         Tooltip,
         ExperimentSummaryDialog
+    },
+    computed: {
+        progress: {
+            get(): number {
+                return this.project.getProcessingResults(this.assay).progress;
+            }
+        },
+        errorStatus: {
+            get(): boolean {
+                return this.project.getProcessingResults(this.assay).errorStatus;
+            }
+        }
     }
 })
 export default class AssayItem extends Vue {
