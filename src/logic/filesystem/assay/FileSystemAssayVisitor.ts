@@ -1,6 +1,8 @@
+import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
+import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
+import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import { Database } from "better-sqlite3";
-import AssayVisitor from "unipept-web-components/src/business/entities/assay/AssayVisitor";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 
 /**
  * A specific kind of visitor for assays that's specifically tailored at storing and reading information from the
@@ -12,7 +14,6 @@ export default abstract class FileSystemAssayVisitor implements AssayVisitor {
 
     /**
      * @param directoryPath path to the parent directory of this assay.
-     * @param db The database-object that keeps track of metadata for the assays.
      */
     constructor(directoryPath: string, db: Database) {
         if (!directoryPath.endsWith("/")) {
@@ -22,5 +23,6 @@ export default abstract class FileSystemAssayVisitor implements AssayVisitor {
         this.db = db;
     }
 
-    public abstract visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void>;
+    public abstract visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void>;
+    public abstract visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void>;
 }

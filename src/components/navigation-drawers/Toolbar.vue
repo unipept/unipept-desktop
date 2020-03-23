@@ -19,10 +19,10 @@
                         </v-list-item-content>
                     </v-list-item>
 
-                    <v-list-item
-                        :disabled="$store.getters.getProject === null"
-                        :class="{'v-list-item--active': $route.path === '/analysis/single'}"
-                        link
+                    <v-list-item 
+                        :disabled="$store.getters.getProject === null" 
+                        :class="{'v-list-item--active': $route.path === '/analysis/single'}" 
+                        link 
                         @click="navigateAndToggleExpand('/analysis/single')">
                         <v-list-item-icon>
                             <v-icon>mdi-bacteria</v-icon>
@@ -32,10 +32,10 @@
                         </v-list-item-content>
                     </v-list-item>
 
-                    <v-list-item
-                        :disabled="$store.getters.getProject === null"
-                        :class="{'v-list-item--active': $route.path === '/analysis/multi'}"
-                        link
+                    <v-list-item 
+                        :disabled="$store.getters.getProject === null" 
+                        :class="{'v-list-item--active': $route.path === '/analysis/multi'}" 
+                        link 
                         @click="navigateAndToggleExpand('/analysis/multi')">
                         <v-list-item-icon>
                             <v-icon>mdi-test-tube</v-icon>
@@ -61,6 +61,9 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import ToolbarExplorer from "./ToolbarExplorer.vue";
 
 @Component({
@@ -110,7 +113,7 @@ export default class Toolbar extends Vue {
     }
 
     /**
-     * The visibility of the sidebar should only toggle when the current route is the same as the route that a
+     * The visibility of the sidebar should only toggle when the current route is the same as the route that a 
      * component click should lead to.
      */
     private navigateAndToggleExpand(routeToGo: string) {
@@ -176,8 +179,8 @@ export default class Toolbar extends Vue {
 
     .toolbar-content {
         height: 100%;
-        position: fixed;
-        left: 55px;
+        position: fixed; 
+        left: 55px; 
         background-color: white;
         border-right: 1px solid rgba(0, 0, 0, 0.12);
         display: none;
@@ -196,8 +199,8 @@ export default class Toolbar extends Vue {
     }
 
     .toolbar-container {
-        position: relative;
-        top: 64px;
+        position: relative; 
+        top: 64px; 
         height: 100%;
     }
 
@@ -208,7 +211,7 @@ export default class Toolbar extends Vue {
     // Change default styling of selected navigation drawer item.
     .navigation-toolbar .v-list-item--active .v-icon {
         // TODO extract this color to constants.less and import it.
-        color: #1976D2 !important;
+        color: #1976D2 !important; 
     }
 
     .navigation-toolbar .v-list-item--active {

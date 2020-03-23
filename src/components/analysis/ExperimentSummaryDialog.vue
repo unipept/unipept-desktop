@@ -3,16 +3,15 @@
         <v-card>
             <v-card-title>Experiment summary</v-card-title>
             <v-card-text>
-                <span v-if="!peptideTrust" style="display: flex; justify-content: center;">
+                <span v-if="!assay || loading" style="display: flex; justify-content: center;">
                     <v-progress-circular :size="50" :width="5" color="primary" indeterminate></v-progress-circular>
                 </span>
                 <div v-else>
-                    We managed to match {{ peptideTrust.matchedPeptides }} of your
-                    {{ peptideTrust.searchedPeptides }} peptides.
-                    <span v-if="peptideTrust.missedPeptides.length > 0">
-                        Unfortunately {{ peptideTrust.missedPeptides.length }} peptides couldn't be found.
+                    We managed to match {{ matchedPeptides }} of your {{ searchedPeptides }} peptides.
+                    <span v-if="missedPeptides.length > 0">
+                        Unfortunately {{ missedPeptides.length }} peptides couldn't be found.
                     </span>
-                    <missing-peptides-list :missed-peptides="peptideTrust.missedPeptides">
+                    <missing-peptides-list :dataset="assay">
                     </missing-peptides-list>
                 </div>
             </v-card-text>
@@ -22,9 +21,10 @@
 
 <script lang="ts">
 import Vue from "vue";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import { Prop, Component, Watch } from "vue-property-decorator";
+import TaxaDataSource from "unipept-web-components/src/logic/data-source/TaxaDataSource";
 import MissingPeptidesList from "unipept-web-components/src/components/analysis/statistics/MissingPeptidesList.vue";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 
 @Component({
     components: {
@@ -33,14 +33,21 @@ import PeptideTrust from "unipept-web-components/src/business/processors/raw/Pep
 })
 export default class ExperimentSummaryDialog extends Vue {
     @Prop({ required: true })
-    private peptideTrust: PeptideTrust;
+    private assay: Assay;
     @Prop({ required: true })
     private active: boolean;
 
     private dialogVisible: boolean = false;
 
+    private searchedPeptides: number = 0;
+    private matchedPeptides: number = 0;
+    private missedPeptides: string[] = [];
+
+    private loading: boolean = true;
+
     public mounted() {
         this.dialogVisible = this.active;
+        this.onAssayChanged();
     }
 
     @Watch("active")
@@ -51,6 +58,18 @@ export default class ExperimentSummaryDialog extends Vue {
     @Watch("dialogVisible")
     private onDialogVisibleChanged() {
         this.$emit("update:active", this.dialogVisible);
+    }
+
+    @Watch("assay")
+    private async onAssayChanged(): Promise<void> {
+        if (this.assay && this.assay.progress === 1) {
+            this.loading = true;
+            let taxaSource: TaxaDataSource = await this.assay.dataRepository.createTaxaDataSource();
+            this.searchedPeptides = await taxaSource.getAmountOfSearchedPeptides();
+            this.matchedPeptides = await taxaSource.getAmountOfMatchedPeptides();
+            this.missedPeptides = await taxaSource.getMissedPeptides();
+            this.loading = false;
+        }
     }
 }
 </script>

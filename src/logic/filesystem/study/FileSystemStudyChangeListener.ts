@@ -1,16 +1,16 @@
 import Project from "./../project/Project";
+import ChangeListener from "unipept-web-components/src/logic/data-management/ChangeListener";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import mkdirp from "mkdirp";
 import * as fs from "fs";
 import StudyFileSystemWriter from "./../study/StudyFileSystemWriter";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { readdirSync } from "fs";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 
 export default class FileSystemStudyChangeListener implements ChangeListener<Study> {
     private readonly project: Project;

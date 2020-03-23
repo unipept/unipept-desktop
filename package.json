@@ -27,7 +27,6 @@
     "electron-updater": "^2.2.4",
     "jquery": "^3.4.1",
     "regenerator-runtime": "^0.13.3",
-    "unipept-web-components": "0.1.13",
     "vue": "^2.6.10",
     "vue-class-component": "^7.1.0",
     "vue-fullscreen": "^2.1.5",
