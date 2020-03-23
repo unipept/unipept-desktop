@@ -1,77 +1,63 @@
 <template>
     <div>
         <div
-            @click="selectAssay()"
-            @contextmenu="showContextMenu()"
-            :class="{
+                @click="selectAssay()"
+                @contextmenu="showContextMenu()"
+                :class="{
                 'assay-item': true,
                 'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
-                'assay-item--error': !isValidAssayName || errorStatus
+                'assay-item--error': !isValidAssayName
             }">
-            <div
-                v-if="isValidAssayName && !errorStatus">
-                <v-progress-circular
-                    v-if="progress !== 1"
+            <v-progress-circular
+                    v-if="assay.progress !== 1"
                     :rotate="-90" :size="16"
-                    :value="progress * 100"
+                    :value="assay.progress * 100"
                     color="primary">
-                </v-progress-circular>
-                <v-icon
-                    v-else
+            </v-progress-circular>
+            <v-icon
                     color="#424242"
-                    size="20">
-                    mdi-text-box-outline
-                </v-icon>
-            </div>
-            <tooltip
-                v-if="!isValidAssayName"
-                :message="nameError"
-                position="bottom">
-                <v-icon
-                    @click="() => {}"
                     size="20"
-                    color="red">
+                    v-if="assay.progress === 1 && isValidAssayName">
+                mdi-file-document-box-outline
+            </v-icon>
+            <tooltip
+                    v-if="!isValidAssayName"
+                    :message="nameError"
+                    position="bottom">
+                <v-icon
+                        @click="() => {}"
+                        size="20"
+                        color="red">
                     mdi-alert-outline
                 </v-icon>
             </tooltip>
-            <tooltip
-                v-if="errorStatus"
-                message="A network communication error occurred while processing this assay. Click here to try again."
-                position="bottom">
-                <v-icon
-                    @click="reanalyse()"
-                    size="20"
-                    color="red">
-                    mdi-restart-alert
-                </v-icon>
-            </tooltip>
             <span
-                v-if="!isEditingAssayName"
-                v-on:dblclick="enableAssayEdit()">
+                    v-if="!isEditingAssayName"
+                    v-on:dblclick="enableAssayEdit()">
                 {{ assay.getName() }}
             </span>
             <input
-                v-else
-                v-model="assayName"
-                v-on:blur="disableAssayEdit()"
-                v-on:keyup.enter="disableAssayEdit()"
-                :class="{ 'error-item': !isValidAssayName }"
-                type="text"/>
+                    v-else
+                    v-model="assayName"
+                    v-on:blur="disableAssayEdit()"
+                    v-on:keyup.enter="disableAssayEdit()"
+                    :class="{ 'error-item': !isValidAssayName }"
+                    type="text"/>
             <div style="display: flex; flex-direction: row; margin-left: auto;">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
-                        :disabled="project.getProcessingResults(assay).progress !== 1"
-                        @click="experimentSummaryActive = true"
-                        v-on:click.stop color="#424242"
-                        size="20">
+                            :disabled="assay.progress !== 1"
+                            @click="experimentSummaryActive = true"
+                            v-on:click.stop color="#424242"
+                            size="20">
                         mdi-information-outline
                     </v-icon>
                 </tooltip>
             </div>
         </div>
         <experiment-summary-dialog
-            :peptide-trust="peptideTrust"
-            :active.sync="experimentSummaryActive">
+                :assay="assay"
+                :active.sync="experimentSummaryActive">
         </experiment-summary-dialog>
         <v-dialog v-model="removeConfirmationActive" width="600">
             <v-card>
@@ -95,12 +81,8 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
-import Project from "@/logic/filesystem/project/Project";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Study from "unipept-web-components/src/logic/data-management/study/Study";
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -109,31 +91,16 @@ const { Menu, MenuItem } = remote;
     components: {
         Tooltip,
         ExperimentSummaryDialog
-    },
-    computed: {
-        progress: {
-            get(): number {
-                return this.project.getProcessingResults(this.assay).progress;
-            }
-        },
-        errorStatus: {
-            get(): boolean {
-                return this.project.getProcessingResults(this.assay).errorStatus;
-            }
-        }
     }
 })
 export default class AssayItem extends Vue {
     @Prop({ required: true })
-    private assay: ProteomicsAssay;
+    private assay: Assay;
     @Prop({ required: true })
-    private activeAssay: ProteomicsAssay;
+    private activeAssay: Assay;
     @Prop({ required: true })
     private study: Study;
-    @Prop({ required: true })
-    private project: Project;
 
-    private peptideTrust: PeptideTrust = null;
     private experimentSummaryActive: boolean = false;
     private removeConfirmationActive: boolean = false;
     private isEditingAssayName: boolean = false;
@@ -206,24 +173,8 @@ export default class AssayItem extends Vue {
     }
 
     @Watch("assay")
-    private async onAssayChanged() {
+    private onAssayChanged() {
         this.assayName = this.assay.getName();
-        this.peptideTrust = await this.computePeptideTrust();
-    }
-
-    private async computePeptideTrust(): Promise<PeptideTrust> {
-        const peptideProcessor = new PeptideCountTableProcessor();
-        const peptideCounts = await peptideProcessor.getPeptideCountTable(
-            this.assay.getPeptides(),
-            this.assay.getSearchConfiguration()
-        );
-
-        await Pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
-        return await Pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
-    }
-
-    private reanalyse() {
-        this.project.processAssay(this.assay);
     }
 
     private selectAssay() {

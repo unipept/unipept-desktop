@@ -1,7 +1,7 @@
 import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
+import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import fs from "fs";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 
 /**
  * Removes both the metadata and raw data for an assay.
@@ -10,7 +10,7 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
     /**
      * @throws {IOException}
      */
-    public async visitProteomicsAssay(assay: ProteomicsAssay): Promise<void> {
+    public async visitMetaProteomicsAssay(assay: Assay): Promise<void> {
         try {
             const path: string = `${this.directoryPath}${assay.getName()}.pep`;
             if (fs.existsSync(path)) {
@@ -22,5 +22,9 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
         } catch (e) {
             throw new IOException(e);
         }
+    }
+
+    public async visitMetaGenomicsAssay(assay: Assay): Promise<void> {
+        throw new Error("Not implemented");
     }
 }

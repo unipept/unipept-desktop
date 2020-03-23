@@ -1,3 +1,3 @@
-import Exception from "unipept-web-components/src/business/exceptions/Exception";
+import Exception from "unipept-web-components/src/logic/exceptions/Exception"
 
 export default class InvalidProjectException extends Exception {}

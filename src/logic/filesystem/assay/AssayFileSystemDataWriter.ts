@@ -1,6 +1,7 @@
 import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
+import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
+import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
 import * as fs from "fs";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 
 /**
  * Visitor that writes the raw data associated with an assay to disk. This raw data can become rather large, which is
@@ -9,7 +10,11 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
  * @see AssayFileSystemMetaDataWriter
  */
 export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
-    public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
+    public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
+        throw new Error("not implemented");
+    }
+
+    public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
         fs.writeFileSync(
             `${this.directoryPath}${mpAssay.getName()}.pep`,
             mpAssay.getPeptides().join("\n"),

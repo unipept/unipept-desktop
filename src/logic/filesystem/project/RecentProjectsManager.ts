@@ -1,7 +1,7 @@
 import RecentProject from "@/logic/filesystem/project/RecentProject";
 import fs from "fs";
 import path from "path";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 
 export default class RecentProjectsManager {
     public static readonly RECENT_PROJECTS_FILE = "recents.json";
