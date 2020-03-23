@@ -17,10 +17,10 @@ async function createWindow() {
     let configManager = new ConfigurationManager(app);
     let config = await configManager.readConfiguration();
     // Create the browser window.
-    let options: Electron.BrowserWindowConstructorOptions = { 
-        width: 800, 
-        height: 600, 
-        webPreferences: { nodeIntegration: true } 
+    let options: Electron.BrowserWindowConstructorOptions = {
+        width: 800,
+        height: 600,
+        webPreferences: { nodeIntegration: true }
     };
 
 
@@ -51,7 +51,7 @@ async function createWindow() {
 
 // Fill the native OS menu with all required menu items.
 function createMenu(win: BrowserWindow) {
-    const settingsItem = { 
+    const settingsItem = {
         label: "Settings",
         click: async() => {
             if (process.env.WEBPACK_DEV_SERVER_URL) {

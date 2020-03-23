@@ -34,16 +34,16 @@ const routes = [
             title: "Home"
         }
     },
-    { 
-        path: "/analysis/single", 
-        component: AnalysisPage, 
+    {
+        path: "/analysis/single",
+        component: AnalysisPage,
         meta: {
-            title: "Analyse" 
+            title: "Analyse"
         }
     },
-    { 
-        path: "/settings", 
-        component: SettingsPage, 
+    {
+        path: "/settings",
+        component: SettingsPage,
         meta: {
             title: "Settings"
         }

@@ -1,15 +1,14 @@
-import ChangeListener from "unipept-web-components/src/logic/data-management/ChangeListener";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import Project from "@/logic/filesystem/project/Project";
 import mkdirp from "mkdirp";
 import * as fs from "fs";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import Study from "unipept-web-components/src/business/entities/study/Study";
 
-export default class FileSystemAssayChangeListener implements ChangeListener<MetaProteomicsAssay> {
+export default class FileSystemAssayChangeListener implements ChangeListener<ProteomicsAssay> {
     private readonly project: Project;
     private readonly study: Study;
 
@@ -18,7 +17,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
         this.study = study;
     }
 
-    public onChange(object: MetaProteomicsAssay, field: string, oldValue: any, newValue: any) {
+    public onChange(object: ProteomicsAssay, field: string, oldValue: any, newValue: any) {
         if (["date"].indexOf(field) !== -1) {
             // Only update metadata in this case
             this.serializeMetaData(object);
@@ -26,7 +25,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
             // Rename the study file
             this.renameAssay(object, oldValue, newValue);
         } else if (field == "peptides") {
-            let equalPeptides: boolean = oldValue.length === newValue.length;
+            let equalPeptides: boolean = oldValue && oldValue.length === newValue.length;
 
             if (equalPeptides) {
                 // Now check if all corresponding values are equal.
@@ -45,7 +44,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
         }
     }
 
-    private renameAssay(assay: Assay, oldName: string, newName: string): void {
+    private renameAssay(assay: ProteomicsAssay, oldName: string, newName: string): void {
         const mdWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             this.getAssayDirectory(),
             this.project.db,
@@ -68,7 +67,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
         });
     }
 
-    private serializeMetaData(assay: MetaProteomicsAssay): void {
+    private serializeMetaData(assay: ProteomicsAssay): void {
         const writer: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             this.getAssayDirectory(),
             this.project.db,
@@ -79,7 +78,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Met
         );
     }
 
-    private serializeData(assay: MetaProteomicsAssay): void {
+    private serializeData(assay: ProteomicsAssay): void {
         const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(this.getAssayDirectory(), this.project.db);
         this.project.pushAction(
             async() => {

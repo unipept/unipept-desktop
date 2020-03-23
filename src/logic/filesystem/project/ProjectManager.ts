@@ -1,5 +1,4 @@
 import Project from "./Project";
-import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import Database from "better-sqlite3";
 import * as fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
@@ -7,8 +6,9 @@ import * as path from "path";
 // @ts-ignore
 import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
 import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import IOException from "unipept-web-components/src/business/exceptions/IOException";
 
 export default class ProjectManager  {
     public readonly DB_FILE_NAME: string = "metadata.sqlite";

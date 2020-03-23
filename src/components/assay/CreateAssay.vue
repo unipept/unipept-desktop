@@ -15,11 +15,11 @@
 <script lang="ts">
 import Vue from "vue";
 import { Prop } from "vue-property-decorator";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import Component from "vue-class-component";
 import DatasetForm from "unipept-web-components/src/components/dataset/DatasetForm.vue";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Project from "@/logic/filesystem/project/Project";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 
 @Component({
     components: {
