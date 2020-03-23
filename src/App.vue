@@ -247,6 +247,11 @@ export default class App extends Vue implements ErrorListener {
         overflow-y: auto !important;
     }
 
+    .v-content__wrap .container--fluid {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
     //   .container-after-titlebar .v-app-bar {
     //     margin-top: 30px !important;
     //   }

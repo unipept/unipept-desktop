@@ -181,13 +181,14 @@ export default class Project {
         this.activeAssay = assay;
     }
 
-    public getProcessingResults(assay: Assay): { progress: number, countTable: CountTable<Peptide> } {
+    public getProcessingResults(assay: Assay): { progress: number, countTable: CountTable<Peptide>, errorStatus: string } {
         if (assay.getId() in this.processedAssays) {
             return this.processedAssays[assay.getId()];
         } else {
             return {
                 progress: 0,
-                countTable: undefined
+                countTable: undefined,
+                errorStatus: undefined
             }
         }
     }
@@ -384,7 +385,8 @@ export default class Project {
     public async processAssay(assay: ProteomicsAssay): Promise<void> {
         const processedItem = {
             progress: 0,
-            countTable: undefined
+            countTable: undefined,
+            errorStatus: undefined
         };
 
         this.processedAssays[assay.id] = processedItem;
@@ -395,10 +397,19 @@ export default class Project {
             assay.getSearchConfiguration()
         );
 
-        await Pept2DataCommunicator.process(countTable, assay.getSearchConfiguration(), {
-            onProgressUpdate: (progress: number) => processedItem.progress = progress
-        });
+        try {
+            await Pept2DataCommunicator.process(countTable, assay.getSearchConfiguration(), {
+                onProgressUpdate: (progress: number) => processedItem.progress = progress
+            });
+        } catch (err) {
+            if (!this.activeAssay) {
+                this.activeAssay = assay;
+            }
+            processedItem.errorStatus = err;
+        }
 
         processedItem.countTable = countTable;
+
+        this.resetActiveAssay();
     }
 }
