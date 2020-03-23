@@ -402,6 +402,9 @@ export default class Project {
                 onProgressUpdate: (progress: number) => processedItem.progress = progress
             });
         } catch (err) {
+            if (!this.activeAssay) {
+                this.activeAssay = assay;
+            }
             processedItem.errorStatus = err;
         }
 

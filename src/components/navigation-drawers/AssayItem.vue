@@ -39,6 +39,7 @@
                 message="A network communication error occurred while processing this assay. Click here to try again."
                 position="bottom">
                 <v-icon
+                    @click="reanalyse()"
                     size="20"
                     color="red">
                     mdi-restart-alert
@@ -219,6 +220,10 @@ export default class AssayItem extends Vue {
 
         await Pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
         return await Pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+    }
+
+    private reanalyse() {
+        this.project.processAssay(this.assay);
     }
 
     private selectAssay() {

@@ -30,8 +30,8 @@
                 </v-icon>
                 <p>
                     A network communication error occurred while processing this assay. Please check that you
-                    are connected to the internet, or that your Unipept API-endpoint is correctly set and try
-                    again.
+                    are connected to the internet, or that your Unipept API-endpoint is correctly set and
+                    <a @click="reanalyse()">try again.</a>
                 </p>
             </div>
     </v-container>
@@ -67,6 +67,10 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
         },
         errorStatus: {
             get(): boolean {
+                if (!this.activeAssay) {
+                    return false;
+                }
+
                 return this.$store.getters.getProject.getProcessingResults(this.activeAssay).errorStatus !== undefined;
             }
         }
@@ -79,6 +83,13 @@ export default class AnalysisPage extends Vue {
 
     private onUpdateSelectedTerm(term: string) {
         this.$store.dispatch("setSelectedTerm", term);
+    }
+
+    private reanalyse() {
+        const activeAssay = this.$store.getters.getProject.activeAssay;
+        if (activeAssay) {
+            this.$store.getters.getProject.processAssay(activeAssay);
+        }
     }
 }
 </script>
