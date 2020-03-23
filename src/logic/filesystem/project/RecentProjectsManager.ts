@@ -66,8 +66,6 @@ export default class RecentProjectsManager {
                 }
             });
 
-        console.log(toWrite);
-
         fs.writeFileSync(this.getRecentsFilePath(), JSON.stringify(toWrite), {
             encoding: "utf-8"
         });
