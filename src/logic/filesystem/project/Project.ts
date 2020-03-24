@@ -182,15 +182,15 @@ export default class Project {
     }
 
     public getProcessingResults(assay: Assay): { progress: number, countTable: CountTable<Peptide>, errorStatus: string } {
-        if (assay.getId() in this.processedAssays) {
-            return this.processedAssays[assay.getId()];
-        } else {
-            return {
+        if (!(assay.getId() in this.processedAssays)) {
+            this.processedAssays[assay.getId()] = {
                 progress: 0,
                 countTable: undefined,
                 errorStatus: undefined
             }
         }
+
+        return this.processedAssays[assay.getId()];
     }
 
     /**
@@ -383,13 +383,10 @@ export default class Project {
     }
 
     public async processAssay(assay: ProteomicsAssay): Promise<void> {
-        const processedItem = {
-            progress: 0,
-            countTable: undefined,
-            errorStatus: undefined
-        };
-
-        this.processedAssays[assay.id] = processedItem;
+        const processedItem = this.getProcessingResults(assay);
+        processedItem.errorStatus = undefined;
+        processedItem.progress = 0;
+        processedItem.countTable = undefined;
 
         const countTableProcessor = new PeptideCountTableProcessor();
         const countTable = await countTableProcessor.getPeptideCountTable(

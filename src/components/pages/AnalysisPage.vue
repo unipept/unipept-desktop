@@ -3,7 +3,6 @@
         <v-row>
             <v-col>
                 <single-dataset-visualizations-card
-                    v-if="!errorStatus"
                     :peptide-count-table="activeCountTable"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
                     :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
@@ -62,6 +61,8 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
             get(): CountTable<Peptide> {
                 if (this.activeAssay) {
                     return this.$store.getters.getProject.getProcessingResults(this.activeAssay).countTable;
+                } else {
+                    return undefined;
                 }
             }
         },

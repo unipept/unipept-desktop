@@ -51,7 +51,6 @@ export default class RecentProjects extends Vue {
     private async mounted() {
         const recentMng = new RecentProjectsManager();
         this.recentProjects.push(...await recentMng.getRecentProjects());
-        console.log(this.recentProjects);
     }
 
     private async openProject() {
