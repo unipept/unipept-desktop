@@ -19,11 +19,11 @@
 
             <v-content
                     :style="{
-          'min-height': '100%',
-          'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
-          'position': 'relative',
-          'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
-        }">
+                  'min-height': '100%',
+                  'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
+                  'position': 'relative',
+                  'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
+                }">
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
                     <v-card>

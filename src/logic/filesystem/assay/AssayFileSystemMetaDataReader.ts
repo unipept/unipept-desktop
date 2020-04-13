@@ -1,7 +1,7 @@
 import { Statement } from "better-sqlite3";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import SearchConfiguration from "unipept-web-components/dist/business/configuration/SearchConfiguration";
+import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 
 export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisitor {
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {

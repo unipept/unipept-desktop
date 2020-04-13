@@ -154,6 +154,7 @@ export default class Project {
             );
             await study.accept(studyRemover);
         });
+        this.resetActiveAssay();
     }
 
     /**
@@ -228,7 +229,7 @@ export default class Project {
         if (shouldReselect) {
             let newActive: Assay = null;
             for (let current of this.getAllAssays()) {
-                if (this.getProcessingResults(current).progress == 1) {
+                if (this.getProcessingResults(current).progress === 1) {
                     newActive = current;
                     break;
                 }
