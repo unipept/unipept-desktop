@@ -1,9 +1,12 @@
 "use strict"
 
-import { app, protocol, BrowserWindow, Menu, shell } from "electron"
+import { app, protocol, BrowserWindow, Menu, shell, ipcMain, netLog } from "electron"
 import { createProtocol, installVueDevtools } from "vue-cli-plugin-electron-builder/lib"
 import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
+import { autoUpdater } from "electron-updater";
+import log from "electron-log";
+
 const isDevelopment = process.env.NODE_ENV !== "production"
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -17,10 +20,11 @@ async function createWindow() {
     let configManager = new ConfigurationManager(app);
     let config = await configManager.readConfiguration();
     // Create the browser window.
-    let options: Electron.BrowserWindowConstructorOptions = { 
-        width: 800, 
-        height: 600, 
-        webPreferences: { nodeIntegration: true } 
+    let options: Electron.BrowserWindowConstructorOptions = {
+        width: 800,
+        height: 600,
+        webPreferences: { nodeIntegration: true },
+        show: false
     };
 
 
@@ -28,20 +32,52 @@ async function createWindow() {
     //     options["frame"] = false;
     // }
 
-    win = new BrowserWindow(options)
+    win = new BrowserWindow(options);
+
+    log.transports.file.level = "debug";
+    autoUpdater.logger = log;
+
+    autoUpdater.on("update-available", () => {
+        if (win) {
+            win.webContents.send("update-available");
+        }
+    });
+
+    autoUpdater.on("update-downloaded", () => {
+        if (win) {
+            win.webContents.send("update-downloaded");
+        }
+    });
+
+    autoUpdater.on("download-progress", (progress) => {
+        if (win) {
+            win.webContents.send("download-progress", progress.percent);
+        }
+    });
+
+    autoUpdater.on("error", (err) => {
+        if (win) {
+            win.webContents.send("update-error", err);
+        }
+    })
+
+    win.once("ready-to-show", () => {
+        win.show();
+        autoUpdater.checkForUpdatesAndNotify();
+    });
 
     // Set the toolbar menu for this window
     const menu = createMenu(win);
     Menu.setApplicationMenu(menu);
 
     if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-        win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+        // Load the url of the dev server if in development mode
+        await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
         if (!process.env.IS_TEST) win.webContents.openDevTools()
     } else {
         createProtocol("app")
         // Load the index.html when not in development
-        win.loadURL("app://./index.html")
+        await win.loadURL("app://./index.html")
     }
 
     win.on("closed", () => {
