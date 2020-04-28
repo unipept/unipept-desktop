@@ -30,8 +30,8 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import Study from "unipept-web-components/src/business/entities/study/Study";
 import ExperimentSummaryDialog from "@/components/analysis/ExperimentSummaryDialog.vue";
 import { Prop, Watch } from "vue-property-decorator";
 

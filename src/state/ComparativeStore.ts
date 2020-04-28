@@ -1,5 +1,5 @@
 import { GetterTree, MutationTree, ActionTree, ActionContext, Store } from "vuex";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 
 /**
  * The AssayState keeps track of which assays are currently selected by the user for analysis, and which assays are

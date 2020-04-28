@@ -1,15 +1,16 @@
 import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import * as fs from "fs";
 import path from "path";
-import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import { v4 as uuidv4 } from "uuid";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
-import AssayVisitor from "unipept-web-components/src/logic/data-management/assay/AssayVisitor";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import AssayVisitor from "unipept-web-components/src/business/entities/assay/AssayVisitor";
+import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 
 
 /**
@@ -42,18 +43,20 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
                 if (row) {
                     // Assay exists. Get it's ID and create a new object.
                     // TODO read in date.
-                    assay = new MetaProteomicsAssay(
+                    assay = new ProteomicsAssay(
                         [new FileSystemAssayChangeListener(this.project, study)],
                         row.id,
+                        new SearchConfiguration(),
                         undefined,
                         assayName,
                         new Date()
                     );
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.
-                    assay = new MetaProteomicsAssay(
+                    assay = new ProteomicsAssay(
                         [new FileSystemAssayChangeListener(this.project, study)],
                         uuidv4(),
+                        new SearchConfiguration(),
                         undefined,
                         assayName,
                         new Date()

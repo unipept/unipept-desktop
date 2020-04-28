@@ -24,10 +24,10 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Project from "@/logic/filesystem/project/Project";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
+import Study from "unipept-web-components/src/business/entities/study/Study";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import SelectableStudyItem from "@/components/navigation-drawers/SelectableStudyItem.vue";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 
 @Component({
     components: {

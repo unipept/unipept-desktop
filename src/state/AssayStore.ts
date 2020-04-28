@@ -1,5 +1,4 @@
 import { GetterTree, MutationTree, ActionTree, ActionContext, Store } from "vuex";
-import Entity from "unipept-web-components/src/logic/data-management/assay/Entity";
 import Project from "@/logic/filesystem/project/Project";
 
 /**

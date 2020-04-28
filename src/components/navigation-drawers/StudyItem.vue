@@ -53,6 +53,7 @@
                 v-for="assay of sortedAssays"
                 :assay="assay"
                 :study="study"
+                :project="project"
                 v-bind:key="assay.id"
                 :active-assay="project.activeAssay"
                 v-on:select-assay="onSelectAssay"
@@ -81,14 +82,14 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
 import CreateAssay from "./../assay/CreateAssay.vue";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import Project from "@/logic/filesystem/project/Project";
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import Study from "unipept-web-components/src/business/entities/study/Study";
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
 

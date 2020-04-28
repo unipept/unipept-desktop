@@ -45,8 +45,8 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import SelectableAssayItem from "@/components/navigation-drawers/SelectableAssayItem.vue";
 import { Prop, Watch } from "vue-property-decorator";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 
 @Component({
     components: {

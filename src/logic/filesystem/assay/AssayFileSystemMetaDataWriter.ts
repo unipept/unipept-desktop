@@ -1,8 +1,8 @@
-import MetaGenomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaGenomicsAssay";
-import MetaProteomicsAssay from "unipept-web-components/src/logic/data-management/assay/MetaProteomicsAssay";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
-import { Database } from "better-sqlite3";
+import { Database, RunResult } from "better-sqlite3";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 
 export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
     protected readonly study: Study;
@@ -12,19 +12,50 @@ export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
         this.study = study
     }
 
-    public async visitMetaGenomicsAssay(mgAssay: MetaGenomicsAssay): Promise<void> {
-        throw new Error("Not implemented");
-    }
-
-    public async visitMetaProteomicsAssay(mpAssay: MetaProteomicsAssay): Promise<void> {
+    public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
         // Check if this study was saved before.
-        if (this.db.prepare("SELECT * FROM assays WHERE `id`=?").get(mpAssay.getId())) {
+        const queryResults = this.db.prepare(
+            `
+                SELECT * FROM assays 
+                INNER JOIN search_configuration ON assays.configuration_id = search_configuration.id WHERE assays.id=?
+            `
+        ).get(mpAssay.getId());
+
+        let searchConfig = mpAssay.getSearchConfiguration();
+        if (!searchConfig) {
+            searchConfig = new SearchConfiguration();
+            mpAssay.setSearchConfiguration(searchConfig);
+        }
+
+        if (queryResults) {
+            this.db.prepare(
+                `
+                    UPDATE search_configuration SET equate_il = ?, filter_duplicates = ?, missing_cleavage_handling = ?
+                    WHERE id=?
+                `
+            ).run(
+                searchConfig.equateIl ? 1 : 0,
+                searchConfig.filterDuplicates ? 1 : 0,
+                searchConfig.enableMissingCleavageHandling ? 1 : 0,
+                queryResults.configuration_id
+            );
+
             this.db.prepare("UPDATE assays SET `name`=?, `study_id`=? WHERE `id`=?")
                 .run(mpAssay.getName(), mpAssay.getId(), this.study.getId());
         } else {
-            console.debug();
-            this.db.prepare("INSERT INTO assays (id, name, study_id) VALUES (?, ?, ?)")
-                .run(mpAssay.getId(), mpAssay.getName(), this.study.getId());
+            const info: RunResult = this.db.prepare(
+                `
+                    INSERT INTO search_configuration (equate_il, filter_duplicates, missing_cleavage_handling)
+                    VALUES (?, ?, ?)
+                `
+            ).run(
+                searchConfig.equateIl ? 1 : 0,
+                searchConfig.filterDuplicates ? 1 : 0,
+                searchConfig.enableMissingCleavageHandling ? 1: 0
+            );
+
+            this.db.prepare("INSERT INTO assays (id, name, study_id, configuration_id) VALUES (?, ?, ?, ?)")
+                .run(mpAssay.getId(), mpAssay.getName(), this.study.getId(), info.lastInsertRowid);
         }
     }
 }

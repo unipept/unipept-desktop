@@ -1,5 +1,5 @@
-import StudyVisitor from "unipept-web-components/src/logic/data-management/study/StudyVisitor";
 import Project from "@/logic/filesystem/project/Project";
+import StudyVisitor from "unipept-web-components/src/business/entities/study/StudyVisitor";
 
 /**
  * A type of StudyVisitor that is built for interaction with the local filesystem. This Visitor needs to know the
