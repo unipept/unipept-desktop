@@ -34,6 +34,7 @@
     "jquery": "^3.4.1",
     "regenerator-runtime": "^0.13.3",
     "unipept-web-components": "1.0.2",
+    "uuid": "^7.0.3",
     "vue": "^2.6.10",
     "vue-class-component": "^7.1.0",
     "vue-fullscreen": "^2.1.5",

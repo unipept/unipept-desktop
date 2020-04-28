@@ -19,10 +19,10 @@
 
             <v-content
                 :style="{
-                  'min-height': '100%',
-                  'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
-                  'position': 'relative',
-                  'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
+                    'min-height': '100%',
+                    'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
+                    'position': 'relative',
+                    'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
                 }">
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
@@ -64,14 +64,14 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import PeptideContainer from "unipept-web-components/src/logic/data-management/PeptideContainer";
 import Toolbar from "./components/navigation-drawers/Toolbar.vue";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
-import Assay from "unipept-web-components/src/logic/data-management/assay/Assay";
 import Project from "@/logic/filesystem/project/Project";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 const electron = require("electron");
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
 
@@ -93,8 +93,8 @@ const BrowserWindow = electron.BrowserWindow;
         assaysInProgress: {
             get(): Assay[] {
                 if (this.$store.getters.getProject) {
-                    return this.$store.getters.getProject.getStudies()
-                        .filter((assay: Assay) => assay.progress < 1)
+                    return this.$store.getters.getProject.getAllAssays()
+                        .filter((a: Assay) => this.$store.getters.getProject.getProcessingResults(a).progress < 1)
                         .reduce((acc, current) => acc.concat(current), []);
                 } else {
                     return [];
@@ -172,11 +172,13 @@ export default class App extends Vue implements ErrorListener {
 
     @Watch("assaysInProgress")
     private assaysInProgressChanged(assays: Assay[]) {
+        const project: Project = this.$store.getters.getProject;
+
         if (!assays || assays.length === 0) {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev += currentAssay.progress, 0
+                (prev: number, currentAssay: Assay) => prev += project.getProcessingResults(currentAssay).progress, 0
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }
@@ -250,17 +252,7 @@ export default class App extends Vue implements ErrorListener {
         await configurationManager.writeConfiguration(currentConfig);
     }
 
-    private selectDataset(value: PeptideContainer) {
-        // @ts-ignore
-        this.$store.dispatch("selectDataset", value);
-    }
-
-    private deselectDataset(value: PeptideContainer) {
-        // @ts-ignore
-        this.$store.dispatch("deselectDataset", value);
-    }
-
-    private onActivateDataset(value: PeptideContainer) {
+    private onActivateDataset(value: ProteomicsAssay) {
         this.$store.dispatch("setActiveDataset", value);
     }
 }
@@ -313,6 +305,11 @@ export default class App extends Vue implements ErrorListener {
 
     .updating-snackbar-container .v-snack__content {
         padding: 0;
+    }
+
+    .v-content__wrap .container--fluid {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     //   .container-after-titlebar .v-app-bar {

@@ -87,7 +87,7 @@ async function createWindow() {
 
 // Fill the native OS menu with all required menu items.
 function createMenu(win: BrowserWindow) {
-    const settingsItem = { 
+    const settingsItem = {
         label: "Settings",
         click: async() => {
             if (process.env.WEBPACK_DEV_SERVER_URL) {

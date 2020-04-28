@@ -1,7 +1,7 @@
 <template>
     <div>
-        <div 
-            class="sample-list-placeholder" 
+        <div
+            class="sample-list-placeholder"
             v-if="!project || project.getStudies().length === 0">
             No studies present.
         </div>
@@ -22,9 +22,9 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Project from "@/logic/filesystem/project/Project";
-import Study from "unipept-web-components/src/logic/data-management/study/Study";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import StudyItem from "./StudyItem.vue";
+import Study from "unipept-web-components/src/business/entities/study/Study";
 
 @Component({
     components: {
@@ -66,7 +66,7 @@ export default class ToolbarExplorer extends Vue {
 
 <style>
     .sample-list-placeholder {
-        margin-left: 8px; 
+        margin-left: 8px;
         margin-right: 8px;
         position: relative;
         top: 16px;

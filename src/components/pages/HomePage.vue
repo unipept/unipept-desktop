@@ -41,7 +41,6 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import Project from "@/logic/filesystem/project/Project";
-import IOException from "unipept-web-components/src/logic/exceptions/IOException";
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
