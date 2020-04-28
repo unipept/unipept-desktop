@@ -11,6 +11,7 @@
             :key="study.getId()">
             <selectable-study-item
                 :study="study"
+                :project="project"
                 :assays-in-comparison="$store.getters.getSelectedAssays"
                 v-on:select-assay="selectAssay"
                 v-on:deselect-assay="deselectAssay">

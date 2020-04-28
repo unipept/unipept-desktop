@@ -2,17 +2,17 @@
     <div>
         <div class="study-item">
             <v-icon
-                    v-if="!collapsed"
-                    color="#424242"
-                    style="padding-left: 8px;"
-                    @click="collapsed = !collapsed">
+                v-if="!collapsed"
+                color="#424242"
+                style="padding-left: 8px;"
+                @click="collapsed = !collapsed">
                 mdi-chevron-down
             </v-icon>
             <v-icon
-                    v-else
-                    color="#424242"
-                    style="padding-left: 8px;"
-                    @click="collapsed = !collapsed">
+                v-else
+                color="#424242"
+                style="padding-left: 8px;"
+                @click="collapsed = !collapsed">
                 mdi-chevron-right
             </v-icon>
             <span class="study-item-name">
@@ -21,7 +21,7 @@
             <div class="study-action" style="margin-right: 0;">
                 <v-tooltip bottom>
                     <template v-slot:activator="{ on }">
-                        <v-checkbox dense></v-checkbox>
+                        <v-checkbox dense :disabled="isProcessing"></v-checkbox>
                     </template>
                     <span>Toggle selection of all assays in this study.</span>
                 </v-tooltip>
@@ -32,6 +32,7 @@
                 v-for="assay of sortedAssays"
                 :assay="assay"
                 :study="study"
+                :project="project"
                 v-bind:key="assay.id"
                 :value="assayInComparison(assay)"
                 v-on:input="toggleAssayComparison(assay)">
@@ -47,6 +48,7 @@ import SelectableAssayItem from "@/components/navigation-drawers/SelectableAssay
 import { Prop, Watch } from "vue-property-decorator";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import Project from "@/logic/filesystem/project/Project";
 
 @Component({
     components: {
@@ -59,6 +61,11 @@ import Assay from "unipept-web-components/src/business/entities/assay/Assay";
                     (a: Assay, b: Assay) => a.getName().localeCompare(b.getName())
                 )
             }
+        },
+        isProcessing: {
+            get(): boolean {
+                return this.study.getAssays().some(a => this.project.getProcessingResults(a).progress !== 1);
+            }
         }
     }
 })
@@ -67,6 +74,8 @@ export default class SelectableStudyItem extends Vue {
     private study: Study;
     @Prop({ required: true })
     private assaysInComparison: Assay[];
+    @Prop({ required: true })
+    private project: Project;
 
     private collapsed: boolean = false;
 
