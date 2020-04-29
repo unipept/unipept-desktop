@@ -56,6 +56,8 @@ import Project from "@/logic/filesystem/project/Project";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
+import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 
 const electron = window.require("electron");
 const ipcRenderer = electron.ipcRenderer;
@@ -66,11 +68,6 @@ const BrowserWindow = electron.BrowserWindow;
         Toolbar
     },
     computed: {
-        baseUrl: {
-            get(): string {
-                return this.$store.getters.baseUrl;
-            }
-        },
         useNativeTitlebar: {
             get(): boolean {
                 return this.$store.getters.useNativeTitlebar;
@@ -173,8 +170,8 @@ export default class App extends Vue implements ErrorListener {
         let configurationManager = new ConfigurationManager();
         try {
             let config: Configuration = await configurationManager.readConfiguration();
-            this.$store.dispatch("setBaseUrl", config.apiSource);
-            this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
+            NetworkConfiguration.BASE_URL = config.apiSource;
+            await this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
             console.error(err)
@@ -184,28 +181,6 @@ export default class App extends Vue implements ErrorListener {
 
     private onToolbarWidthUpdated(newValue: number) {
         this.toolbarWidth = newValue;
-    }
-
-    @Watch("baseUrl")
-    private async onBaseUrlChanged(newUrl: string) {
-        let configurationManager = new ConfigurationManager();
-        // Read the previous configuration.
-        let currentConfig = await configurationManager.readConfiguration();
-        // Make requested changes to the previous configuration.
-        currentConfig.apiSource = newUrl;
-        // Write changes to disk.
-        await configurationManager.writeConfiguration(currentConfig);
-    }
-
-    @Watch("useNativeTitlebar")
-    private async onUseNativeTitlebarChanged(newValue: boolean) {
-        let configurationManager = new ConfigurationManager();
-        // Read the previous configuration.
-        let currentConfig = await configurationManager.readConfiguration();
-        // Make requested changes to the previous configuration.
-        currentConfig.useNativeTitlebar = newValue;
-        // Write changes to disk.
-        await configurationManager.writeConfiguration(currentConfig);
     }
 
     private onActivateDataset(value: ProteomicsAssay) {
@@ -220,6 +195,10 @@ export default class App extends Vue implements ErrorListener {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         color: #2c3e50;
+    }
+
+    a {
+        text-decoration: none;
     }
 
     .v-application--wrap {

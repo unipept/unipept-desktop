@@ -53,12 +53,10 @@ export default class Project {
 
     private errorListeners: ErrorListener[] = [];
 
-    private baseUrl: string;
-
     // Maps assays to their processed counterparts. TODO: should be updated to a map, once we are using Vue 3.
     private processedAssays: {} = {};
 
-    constructor(path: string, db: Database, baseUrl: string, syncInterval: number = 250) {
+    constructor(path: string, db: Database, syncInterval: number = 250) {
         this.db = db;
         this.projectPath = path;
         if (!this.projectPath.endsWith("/")) {
@@ -66,7 +64,6 @@ export default class Project {
         }
 
         this.syncInterval = syncInterval;
-        this.baseUrl = baseUrl;
     }
 
     /**
