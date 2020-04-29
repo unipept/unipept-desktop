@@ -28,7 +28,7 @@
                 :class="{ 'study-item-name': true, 'error-item': !isValidStudyName }"
                 type="text"
                 v-model="studyName" />
-            <div style="margin-left: auto;">
+            <div class="study-action">
                 <v-tooltip bottom v-if="!isValidStudyName">
                     <template v-slot:activator="{ on }">
                         <v-icon
@@ -71,9 +71,9 @@
             </v-card>
         </v-dialog>
         <confirm-deletion-dialog
-                v-model="removeConfirmationActive"
-                :action="() => removeStudy()"
-                item-type="study">
+            v-model="removeConfirmationActive"
+            :action="() => removeStudy()"
+            item-type="study">
         </confirm-deletion-dialog>
     </div>
 </template>
@@ -217,24 +217,6 @@ export default class StudyItem extends Vue {
 }
 </script>
 
-<style scoped>
-    .study-item {
-        display: flex;
-        align-items: center;
-        background-color: #eee;
-        color: #424242;
-        font-weight: 700;
-    }
-
-    .study-item-name {
-        font-size: 16px;
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .error-item {
-        color: red;
-    }
+<style scoped lang="less">
+    @import "./../../assets/style/navigation-drawers/study-item.css.less";
 </style>

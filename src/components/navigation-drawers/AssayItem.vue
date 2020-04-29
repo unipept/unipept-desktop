@@ -57,7 +57,7 @@
                 v-on:keyup.enter="disableAssayEdit()"
                 :class="{ 'error-item': !isValidAssayName }"
                 type="text"/>
-            <div style="display: flex; flex-direction: row; margin-left: auto;">
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
                         :disabled="project.getProcessingResults(assay).progress !== 1"
@@ -236,50 +236,6 @@ export default class AssayItem extends Vue {
 }
 </script>
 
-<style scoped>
-    .assay-item {
-        display: flex;
-        align-items: center;
-        color: #424242;
-        font-weight: 700;
-        cursor: pointer;
-        padding-left: 24px;
-    }
-
-    .assay-item:hover {
-        background-color: #F6F6F6;
-    }
-
-    .assay-item > span, input {
-        margin-left: 8px;
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .assay-item--selected {
-        color: rgb(24, 103, 192);
-        background-color: #E5EDF8;
-    }
-
-    .assay-item--selected:hover {
-        background-color: #E5EDF8;
-    }
-
-    .assay-item--selected .v-icon {
-        color: rgb(24, 103, 192) !important;
-    }
-
-    .assay-item--error {
-        color: #F44336;
-    }
-
-    .assay-item--error.assay-item--selected {
-        background-color: #FFEBEE;
-    }
-
-    .assay-item--error .v-icon {
-        color: #F44336 !important;
-    }
+<style scoped lang="less">
+    @import "./../../assets/style/navigation-drawers/assay-item.css.less";
 </style>

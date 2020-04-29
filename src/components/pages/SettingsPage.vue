@@ -21,8 +21,9 @@
                                         </v-col>
                                         <v-col cols="4">
                                             <v-text-field label="https://unipept.ugent.be" single-line filled
-                                                          v-model="configuration.apiSource"
-                                                          :rules="apiSourceRules"></v-text-field>
+                                                v-model="configuration.apiSource"
+                                                :rules="apiSourceRules">
+                                            </v-text-field>
                                         </v-col>
                                     </v-row>
                                 </v-container>
@@ -69,6 +70,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
 import VForm from "vuetify";
 import Utils from "@/logic/Utils";
+import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -94,10 +96,16 @@ export default class SettingsPage extends Vue {
         configManager.readConfiguration().then((result) => this.configuration = result);
     }
 
+    private async beforeDestroy() {
+        let configurationManager = new ConfigurationManager();
+        // Write changes to disk.
+        await configurationManager.writeConfiguration(this.configuration);
+    }
+
     @Watch("configuration.apiSource")
     @Watch("configuration.useNativeTitlebar")
     private async saveChanges(): Promise<void> {
-        this.updateStore("setBaseUrl", this.configuration.apiSource);
+        NetworkConfiguration.BASE_URL = this.configuration.apiSource;
         this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
     }
 

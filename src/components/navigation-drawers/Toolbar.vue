@@ -49,7 +49,14 @@
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
-                <toolbar-explorer :project="$store.getters.getProject"></toolbar-explorer>
+                <single-analysis-toolbar
+                    :project="$store.getters.getProject"
+                    v-if="$route.path === '/analysis/single'">
+                </single-analysis-toolbar>
+                <comparative-analysis-toolbar
+                    :project="$store.getters.getProject"
+                    v-if="$route.path === '/analysis/multi'">
+                </comparative-analysis-toolbar>
             </div>
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
@@ -61,12 +68,18 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import Study from "unipept-web-components/src/business/entities/study/Study";
+import SingleAnalysisToolbar from "./SingleAnalysisToolbar.vue";
+import ComparativeAnalysisToolbar from "@/components/navigation-drawers/ComparativeAnalysisToolbar.vue";
 import ToolbarExplorer from "./ToolbarExplorer.vue";
+
 
 @Component({
     components: {
+        ComparativeAnalysisToolbar,
         Tooltip,
-        ToolbarExplorer
+        SingleAnalysisToolbar
     }
 })
 export default class Toolbar extends Vue {

@@ -15,11 +15,10 @@ export default class ProjectManager  {
 
     /**
      * @param projectLocation The main directory of the project on disk.
-     * @param baseUrl Root-URL of processing backend.
      * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
      * @throws {InvalidProjectException} When the given directory does not contain all required project files.
      */
-    public async loadExistingProject(projectLocation: string, baseUrl: string): Promise<Project> {
+    public async loadExistingProject(projectLocation: string): Promise<Project> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
@@ -31,7 +30,7 @@ export default class ProjectManager  {
         const db = new Database(projectLocation + this.DB_FILE_NAME, {
             verbose: (mess) => console.warn(mess)
         });
-        const project: Project = new Project(projectLocation, db, baseUrl);
+        const project: Project = new Project(projectLocation, db);
 
         // Check all subdirectories of the given project and try to load the studies.
         const subDirectories: string[] = fs.readdirSync(projectLocation, { withFileTypes: true })
@@ -50,9 +49,8 @@ export default class ProjectManager  {
     /**
      * Create a new project and correctly initialize all required files in the given directory.
      * @param projectLocation Path to root directory of project.
-     * @param baseUrl Root-URL of processing backend.
      */
-    public async initializeProject(projectLocation: string, baseUrl: string): Promise<Project> {
+    public async initializeProject(projectLocation: string): Promise<Project> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
@@ -64,7 +62,7 @@ export default class ProjectManager  {
 
         await this.addToRecentProjects(projectLocation);
 
-        return new Project(projectLocation, db, baseUrl);
+        return new Project(projectLocation, db);
     }
 
     private async loadStudy(directory: string, project: Project): Promise<void> {

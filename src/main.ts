@@ -12,6 +12,8 @@ import AnalysisPage from "./components/pages/AnalysisPage.vue";
 import SettingsPage from "./components/pages/SettingsPage.vue";
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 import { AssayStore } from "./state/AssayStore";
+import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.vue";
+import { ComparativeStore } from "@/state/ComparativeStore";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -22,7 +24,8 @@ const store = new Vuex.Store({
         assay: AssayStore,
         filter: FilterStore,
         configuration: ConfigurationStore,
-        desktopConfiguration: DesktopConfigurationStore
+        desktopConfiguration: DesktopConfigurationStore,
+        comparative: ComparativeStore
     }
 });
 
@@ -39,6 +42,13 @@ const routes = [
         component: AnalysisPage,
         meta: {
             title: "Analyse"
+        }
+    },
+    {
+        path: "/analysis/multi",
+        component: ComparativeAnalysisPage,
+        meta: {
+            title: "Comparative analysis"
         }
     },
     {
