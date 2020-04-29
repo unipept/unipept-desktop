@@ -75,7 +75,6 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 
-const electron = window.require("electron");
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
 
