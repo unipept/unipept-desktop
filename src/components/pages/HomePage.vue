@@ -1,7 +1,14 @@
 <template>
     <div class="homepage-container">
         <v-container fluid>
-            <v-row>
+            <v-row v-if="!loading">
+                <v-col :cols="12" class="d-flex justify-center align-center flex-column">
+                    <v-progress-circular :size="70" :width="7" color="primary" indeterminate>
+                    </v-progress-circular>
+                    Please standy by while we're loading your project
+                </v-col>
+            </v-row>
+            <v-row v-else>
                 <v-col>
                     <recent-projects v-on:open-project="onOpenProject"></recent-projects>
                 </v-col>
@@ -46,7 +53,6 @@ import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -62,6 +68,7 @@ export default class HomePage extends Vue {
     private errorMessage: string = "";
     private errorSnackbarVisible: boolean = false;
     private version: string = "";
+    private loading: boolean = false;
 
     mounted() {
         this.version = app.getVersion();
@@ -71,6 +78,7 @@ export default class HomePage extends Vue {
         const chosenPath: string | undefined = dialog.showOpenDialogSync({
             properties: ["openDirectory"]
         });
+
         if (chosenPath) {
             if (!await this.isDirectoryEmpty(chosenPath[0])) {
                 this.showError("Chosen directory is not empty! New projects require an empty directory.");
@@ -95,6 +103,7 @@ export default class HomePage extends Vue {
     }
 
     private async onOpenProject(path: string) {
+        this.loading = true;
         try {
             const projectManager: ProjectManager = new ProjectManager();
             const project: Project = await projectManager.loadExistingProject(path);
@@ -112,6 +121,7 @@ export default class HomePage extends Vue {
                 );
             }
         }
+        this.loading = false;
     }
 
     private showError(message: string) {

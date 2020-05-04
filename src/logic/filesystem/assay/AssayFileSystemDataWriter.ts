@@ -1,5 +1,5 @@
 import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
-import * as fs from "fs";
+import { promises as fs } from "fs";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 
 /**
@@ -10,7 +10,7 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
  */
 export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
-        fs.writeFileSync(
+        await fs.writeFile(
             `${this.directoryPath}${mpAssay.getName()}.pep`,
             mpAssay.getPeptides().join("\n"),
             {
