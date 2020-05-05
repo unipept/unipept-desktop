@@ -23,16 +23,16 @@
         </v-row>
     </v-container>
     <v-container fluid v-else class="error-container">
-            <div class="network-error">
-                <v-icon x-large>
-                    mdi-wifi-strength-4-alert
-                </v-icon>
-                <p>
-                    A network communication error occurred while processing this assay. Please check that you
-                    are connected to the internet, or that your Unipept API-endpoint is correctly set and
-                    <a @click="reanalyse()">try again.</a>
-                </p>
-            </div>
+        <div class="network-error">
+            <v-icon x-large>
+                mdi-wifi-strength-4-alert
+            </v-icon>
+            <p>
+                A network communication error occurred while processing this assay. Please check that you
+                are connected to the internet, or that your Unipept API-endpoint is correctly set and
+                <a @click="reanalyse()">try again.</a>
+            </p>
+        </div>
     </v-container>
 </template>
 

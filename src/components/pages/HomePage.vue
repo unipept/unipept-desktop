@@ -1,11 +1,11 @@
 <template>
     <div class="homepage-container">
         <v-container fluid>
-            <v-row v-if="!loading">
+            <v-row v-if="loading">
                 <v-col :cols="12" class="d-flex justify-center align-center flex-column">
                     <v-progress-circular :size="70" :width="7" color="primary" indeterminate>
                     </v-progress-circular>
-                    Please standy by while we're loading your project
+                    Please stand by while we're loading your project...
                 </v-col>
             </v-row>
             <v-row v-else>
