@@ -2,6 +2,14 @@
     <v-container fluid v-if="!errorStatus">
         <v-row>
             <v-col>
+                <analysis-summary
+                    :assay="activeAssay"
+                    :peptide-count-table="activeCountTable">
+                </analysis-summary>
+            </v-col>
+        </v-row>
+        <v-row>
+            <v-col>
                 <single-dataset-visualizations-card
                     :peptide-count-table="activeCountTable"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
@@ -45,9 +53,11 @@ import FunctionalSummaryCard from "unipept-web-components/src/components/analysi
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
+import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 
 @Component({
     components: {
+        AnalysisSummary,
         SingleDatasetVisualizationsCard,
         FunctionalSummaryCard
     },
