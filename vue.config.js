@@ -1,3 +1,6 @@
+const ThreadsPlugin = require('threads-plugin')
+// const NodeTargetPlugin = require('webpack/lib/node/NodeTargetPlugin');
+
 module.exports = {
     chainWebpack: config => {
         config.resolve.symlinks(false);
@@ -26,5 +29,13 @@ module.exports = {
                 // }
             },
         }
+    },
+    configureWebpack: {
+        plugins: [
+            // new ThreadsPlugin({
+            //     plugins: [new NodeTargetPlugin()]
+            // })
+            new ThreadsPlugin()
+        ]
     }
 }

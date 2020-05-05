@@ -40,12 +40,29 @@
                     </template>
                     <span>{{ nameError }}</span>
                 </v-tooltip>
-                <v-icon
-                    color="#424242"
-                    size="20"
-                    @click="showCreateAssayDialog = true">
-                    mdi-file-plus-outline
-                </v-icon>
+                <v-menu>
+                    <template v-slot:activator="{ on: menu }">
+                        <v-tooltip bottom>
+                            <template v-slot:activator="{ on: tooltip }">
+                                <v-icon
+                                    color="#424242"
+                                    size="20"
+                                    v-on="{ ...tooltip, ...menu }">
+                                    mdi-file-plus-outline
+                                </v-icon>
+                            </template>
+                            <span>Create a new assay</span>
+                        </v-tooltip>
+                    </template>
+                    <v-list>
+                        <v-list-item @click="showCreateAssayDialog = true">
+                            <v-list-item-title>From peptides</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="createFromFile()">
+                            <v-list-item-title>From file</v-list-item-title>
+                        </v-list-item>
+                    </v-list>
+                </v-menu>
             </div>
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
@@ -92,6 +109,11 @@ import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
+const fs = require("fs").promises;
+import path from "path";
+
+const electron = require("electron");
+const { dialog } = electron.remote;
 
 @Component({
     components: {
@@ -201,6 +223,17 @@ export default class StudyItem extends Vue {
 
     private removeStudy() {
         this.project.removeStudy(this.study);
+    }
+
+    private async createFromFile() {
+        const chosenPath: string | undefined = await dialog.showOpenDialog({
+            properties: ["openFile"]
+        });
+
+        if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
+            const assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
+            await fs.copyFile(chosenPath["filePaths"][0], this.project.projectPath + this.study.getName() + "/" + assayName + ".pep");
+        }
     }
 
     private async onCreateAssay(assay: Assay) {
