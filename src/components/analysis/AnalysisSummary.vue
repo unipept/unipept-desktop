@@ -53,7 +53,8 @@
                     <v-col>
                         <peptide-summary-table
                             :assay="assay"
-                            :peptide-count-table="peptideCountTable">
+                            :peptide-count-table="peptideCountTable"
+                            :project="project">
                         </peptide-summary-table>
                     </v-col>
                 </v-row>

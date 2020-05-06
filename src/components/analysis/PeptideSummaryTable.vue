@@ -2,7 +2,8 @@
     <v-data-table
         :headers="headers"
         :items="items"
-        :items-per-page="5">
+        :items-per-page="5"
+        :loading="loading || progress !== 1">
         <template v-slot:item.matched="{ item }">
             <div>
                 <v-checkbox disabled hide-details v-model="item.matched" readonly class="mt-0 pt-0 float-right"></v-checkbox>
@@ -20,15 +21,32 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
+import Project from "@/logic/filesystem/project/Project";
 
-@Component
+@Component({
+    computed: {
+        progress: {
+            get(): number {
+                if (this.project) {
+                    return this.project.getProcessingResults(this.assay).progress;
+                } else {
+                    return 0;
+                }
+            }
+        }
+    }
+})
 export default class PeptideSummaryTable extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
     @Prop({ required: true })
+    private project: Project;
+    @Prop({ required: true })
     private peptideCountTable: CountTable<Peptide>;
 
     private items = [];
+
+    private loading: boolean;
 
     private headers = [
         {
@@ -60,10 +78,12 @@ export default class PeptideSummaryTable extends Vue {
     }
 
     @Watch("assay")
+    @Watch("peptideCountTable")
     private async computeItems() {
-        if (this.peptideCountTable) {
-            this.items.length = 0;
+        this.items.splice(0, this.items.length);
 
+        if (this.peptideCountTable) {
+            this.loading = true;
             await Pept2DataCommunicator.process(this.peptideCountTable, this.assay.getSearchConfiguration());
             const lcaIds = [];
 
@@ -94,6 +114,7 @@ export default class PeptideSummaryTable extends Vue {
                     matched: matched
                 }
             }));
+            this.loading = false;
         }
     }
 }
