@@ -4,7 +4,8 @@
             <v-col>
                 <analysis-summary
                     :assay="activeAssay"
-                    :peptide-count-table="activeCountTable">
+                    :peptide-count-table="activeCountTable"
+                    :project="$store.getters.getProject">
                 </analysis-summary>
             </v-col>
         </v-row>

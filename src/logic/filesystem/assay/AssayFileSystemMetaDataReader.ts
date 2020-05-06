@@ -15,9 +15,9 @@ export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisito
 
         if (row) {
             const configuration: SearchConfiguration = new SearchConfiguration(
-                row.equate_il,
-                row.filter_duplicates,
-                row.missing_cleavage_handling
+                row.equate_il === 1,
+                row.filter_duplicates === 1,
+                row.missing_cleavage_handling === 1
             );
 
             mpAssay.setSearchConfiguration(configuration);

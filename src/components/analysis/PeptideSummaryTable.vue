@@ -5,7 +5,7 @@
         :items-per-page="5">
         <template v-slot:item.matched="{ item }">
             <div>
-                <v-checkbox hide-details v-model="item.matched" readonly class="mt-0 pt-0 float-right"></v-checkbox>
+                <v-checkbox disabled hide-details v-model="item.matched" readonly class="mt-0 pt-0 float-right"></v-checkbox>
             </div>
         </template>
     </v-data-table>
