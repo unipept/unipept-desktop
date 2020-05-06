@@ -5,7 +5,8 @@
                 <analysis-summary
                     :assay="activeAssay"
                     :peptide-count-table="activeCountTable"
-                    :project="$store.getters.getProject">
+                    :project="$store.getters.getProject"
+                    :peptide-trust="activeTrust">
                 </analysis-summary>
             </v-col>
         </v-row>
@@ -55,6 +56,7 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
+import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 
 @Component({
     components: {
@@ -72,6 +74,15 @@ import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
             get(): CountTable<Peptide> {
                 if (this.activeAssay) {
                     return this.$store.getters.getProject.getProcessingResults(this.activeAssay).countTable;
+                } else {
+                    return undefined;
+                }
+            }
+        },
+        activeTrust: {
+            get(): PeptideTrust {
+                if (this.activeAssay) {
+                    return this.$store.getters.getProject.getProcessingResults(this.activeAssay).trust;
                 } else {
                     return undefined;
                 }
