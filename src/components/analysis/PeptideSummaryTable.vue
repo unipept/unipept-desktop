@@ -5,9 +5,18 @@
         :items-per-page="5"
         :loading="loading || progress !== 1">
         <template v-slot:item.matched="{ item }">
-            <div>
-                <v-checkbox disabled hide-details v-model="item.matched" readonly class="mt-0 pt-0 float-right"></v-checkbox>
-            </div>
+            <v-tooltip v-if="item.matched" bottom>
+                <template v-slot:activator="{ on }">
+                    <v-icon v-on="on">mdi-check</v-icon>
+                </template>
+                <span>This peptide was matched with at least one protein.</span>
+            </v-tooltip>
+            <v-tooltip v-else bottom>
+                <template v-slot:activator="{ on }">
+                    <v-icon>mdi-close</v-icon>
+                </template>
+                <span>We were unable to match this peptide with a protein.</span>
+            </v-tooltip>
         </template>
     </v-data-table>
 </template>
@@ -46,7 +55,7 @@ export default class PeptideSummaryTable extends Vue {
 
     private items = [];
 
-    private loading: boolean;
+    private loading: boolean = false;
 
     private headers = [
         {
@@ -67,7 +76,7 @@ export default class PeptideSummaryTable extends Vue {
             width: "30%"
         }, {
             text: "Matched?",
-            align: "end",
+            align: "center",
             value: "matched",
             width: "10%"
         }
