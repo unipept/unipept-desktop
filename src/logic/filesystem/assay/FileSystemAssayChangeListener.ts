@@ -18,7 +18,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     }
 
     public onChange(object: ProteomicsAssay, field: string, oldValue: any, newValue: any) {
-        if (["date"].indexOf(field) !== -1) {
+        if (["date", "searchConfiguration"].indexOf(field) !== -1) {
             // Only update metadata in this case
             this.serializeMetaData(object);
         } else if (field == "name") {

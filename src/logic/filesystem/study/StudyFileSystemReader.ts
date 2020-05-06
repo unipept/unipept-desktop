@@ -11,6 +11,7 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import AssayVisitor from "unipept-web-components/src/business/entities/assay/AssayVisitor";
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 
 
 /**
@@ -51,6 +52,9 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
                         assayName,
                         new Date()
                     );
+
+                    const assayVisitor = new AssayFileSystemMetaDataReader(this.studyPath, this.project.db);
+                    await assay.accept(assayVisitor);
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.
                     assay = new ProteomicsAssay(
