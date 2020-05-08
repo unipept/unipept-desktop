@@ -39,6 +39,7 @@
                         <peptide-summary-table
                             :assay="assay"
                             :peptide-count-table="peptideCountTable"
+                            :communication-source="communicationSource"
                             :project="project">
                         </peptide-summary-table>
                     </v-col>
@@ -65,6 +66,7 @@ import SearchSettingsForm from "unipept-web-components/src/components/analysis/S
 import Project from "@/logic/filesystem/project/Project";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm },
@@ -85,6 +87,8 @@ export default class AnalysisSummary extends Vue {
     private peptideTrust: PeptideTrust;
     @Prop({ required: true })
     private project: Project;
+    @Prop({ required: true })
+    private communicationSource: CommunicationSource;
 
     private equateIl: boolean = true;
     private filterDuplicates: boolean = true;

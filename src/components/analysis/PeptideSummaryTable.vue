@@ -31,6 +31,7 @@ import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptid
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
 import Project from "@/logic/filesystem/project/Project";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 @Component({
     computed: {
@@ -52,6 +53,8 @@ export default class PeptideSummaryTable extends Vue {
     private project: Project;
     @Prop({ required: true })
     private peptideCountTable: CountTable<Peptide>;
+    @Prop({ required: true })
+    private communicationSource: CommunicationSource;
 
     private items = [];
 
@@ -103,7 +106,7 @@ export default class PeptideSummaryTable extends Vue {
                 }
             });
 
-            const lcaOntology = await (new NcbiOntologyProcessor()).getOntologyByIds(lcaIds);
+            const lcaOntology = await (new NcbiOntologyProcessor(this.communicationSource)).getOntologyByIds(lcaIds);
 
             this.items.push(...this.peptideCountTable.getOntologyIds().map((peptide) => {
                 const response = Pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());

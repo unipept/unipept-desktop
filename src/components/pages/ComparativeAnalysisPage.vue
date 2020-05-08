@@ -10,6 +10,7 @@
                                 <v-card-text>
                                     <v-container fluid>
                                         <multi-assay-data-source
+                                            :communication-source="communicationSource"
                                             :assays="$store.getters.getSelectedAssays"
                                             v-on:selected-items="updateSelectedItems">
                                             <template slot-scope="props">
@@ -91,6 +92,8 @@ import Normalizer from "unipept-web-components/src/business/normalisation/Normal
 import AllNormalizer from "unipept-web-components/src/business/normalisation/AllNormalizer";
 import NormalizationSelector from "unipept-web-components/src/components/heatmap/NormalizationSelector.vue";
 import CollapsableCard from "@/components/pages/CollapsableCard.vue";
+import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 @Component({
     components: {
@@ -110,6 +113,7 @@ import CollapsableCard from "@/components/pages/CollapsableCard.vue";
 export default class ComparativeAnalysisPage extends Vue {
     private selectedItems: MultiAssayDataSourceItem[] = [];
     private normalizer: Normalizer = new AllNormalizer();
+    private communicationSource: CommunicationSource = new DefaultCommunicationSource();
 
     private updateSelectedItems(newItems: MultiAssayDataSourceItem[]) {
         this.selectedItems.length = 0;

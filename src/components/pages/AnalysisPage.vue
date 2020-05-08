@@ -6,7 +6,8 @@
                     :assay="activeAssay"
                     :peptide-count-table="activeCountTable"
                     :project="$store.getters.getProject"
-                    :peptide-trust="activeTrust">
+                    :peptide-trust="activeTrust"
+                    :communication-source="communicationSource">
                 </analysis-summary>
             </v-col>
         </v-row>
@@ -16,6 +17,7 @@
                     :peptide-count-table="activeCountTable"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
                     :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
+                    :communication-source="communicationSource"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -25,6 +27,7 @@
             <v-col>
                 <functional-summary-card
                     :peptide-count-table="activeCountTable"
+                    :communication-source="communicationSource"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
                     :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
                     :selectedTaxonId="$store.getters.getSelectedTaxonId">
@@ -57,6 +60,9 @@ import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptid
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+
 
 @Component({
     components: {
@@ -100,6 +106,8 @@ import PeptideTrust from "unipept-web-components/src/business/processors/raw/Pep
     }
 })
 export default class AnalysisPage extends Vue {
+    private communicationSource: CommunicationSource = new DefaultCommunicationSource();
+
     private onUpdateSelectedTaxonId(id: number) {
         this.$store.dispatch("setSelectedTaxonId", id);
     }
