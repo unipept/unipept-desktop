@@ -10,12 +10,17 @@
             }">
             <div
                 v-if="isValidAssayName && !errorStatus">
-                <v-progress-circular
-                    v-if="progress !== 1"
-                    :rotate="-90" :size="16"
-                    :value="progress * 100"
-                    color="primary">
-                </v-progress-circular>
+                <v-tooltip bottom v-if="progress !== 1">
+                    <template v-slot:activator="{ on }">
+                        <v-progress-circular
+                            :rotate="-90" :size="16"
+                            :value="progress * 100"
+                            v-on="on"
+                            color="primary">
+                        </v-progress-circular>
+                    </template>
+                    <span>{{ Math.round(progress * 100) }}%</span>
+                </v-tooltip>
                 <v-icon
                     v-else
                     color="#424242"
@@ -101,6 +106,9 @@ import PeptideCountTableProcessor from "unipept-web-components/src/business/proc
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import Project from "@/logic/filesystem/project/Project";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -132,6 +140,9 @@ export default class AssayItem extends Vue {
     private study: Study;
     @Prop({ required: true })
     private project: Project;
+
+    // TODO retrieve from project instead of making one here
+    private communicationSource: CommunicationSource = new DefaultCommunicationSource();
 
     private peptideTrust: PeptideTrust = null;
     private experimentSummaryActive: boolean = false;
@@ -218,8 +229,9 @@ export default class AssayItem extends Vue {
             this.assay.getSearchConfiguration()
         );
 
-        await Pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
-        return await Pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+        const pept2DataCommunicator = this.communicationSource.getPept2DataCommunicator();
+        await pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
+        return await pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
     }
 
     private reanalyse() {

@@ -22,6 +22,8 @@ import Pept2DataCommunicator from "unipept-web-components/src/business/communica
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
+import AssayProcessor from "@/logic/communication/AssayProcessor";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 
 /**
@@ -180,13 +182,16 @@ export default class Project {
         this.activeAssay = assay;
     }
 
-    public getProcessingResults(assay: Assay): { progress: number, countTable: CountTable<Peptide>, errorStatus: string, trust: PeptideTrust } {
+    public getProcessingResults(
+        assay: Assay
+    ): { progress: number, countTable: CountTable<Peptide>, errorStatus: string, trust: PeptideTrust, communicators: CommunicationSource } {
         if (!(assay.getId() in this.processedAssays)) {
             this.processedAssays[assay.getId()] = {
                 progress: 0,
                 countTable: undefined,
                 errorStatus: undefined,
-                trust: undefined
+                trust: undefined,
+                communicators: undefined
             }
         }
 
@@ -388,17 +393,22 @@ export default class Project {
         processedItem.progress = 0;
         processedItem.countTable = undefined;
         processedItem.trust = undefined;
-
-        const countTableProcessor = new PeptideCountTableProcessor();
-        const countTable = await countTableProcessor.getPeptideCountTable(
-            assay.getPeptides(),
-            assay.getSearchConfiguration()
-        );
+        processedItem.communicators = undefined;
 
         try {
-            await Pept2DataCommunicator.process(countTable, assay.getSearchConfiguration(), {
-                onProgressUpdate: (progress: number) => processedItem.progress = progress
+            const assayProcessor = new AssayProcessor();
+            const [countTable, communicators] = await assayProcessor.processAssay(assay, {
+                onProgressUpdate: (progress: number) => {
+                    processedItem.progress = progress
+                }
             });
+
+            processedItem.communicators = communicators;
+            processedItem.countTable = countTable;
+            processedItem.trust = await communicators.getPept2DataCommunicator().getPeptideTrust(
+                countTable,
+                assay.getSearchConfiguration()
+            );
         } catch (err) {
             console.warn(err);
             if (!this.activeAssay) {
@@ -406,9 +416,6 @@ export default class Project {
             }
             processedItem.errorStatus = err;
         }
-
-        processedItem.countTable = countTable;
-        processedItem.trust = await Pept2DataCommunicator.getPeptideTrust(countTable, assay.getSearchConfiguration());
 
         this.resetActiveAssay();
     }

@@ -96,11 +96,12 @@ export default class PeptideSummaryTable extends Vue {
 
         if (this.peptideCountTable) {
             this.loading = true;
-            await Pept2DataCommunicator.process(this.peptideCountTable, this.assay.getSearchConfiguration());
+            const pept2DataCommunicator = this.communicationSource.getPept2DataCommunicator();
+            await pept2DataCommunicator.process(this.peptideCountTable, this.assay.getSearchConfiguration());
             const lcaIds = [];
 
             this.peptideCountTable.getOntologyIds().map((peptide) => {
-                const response = Pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
+                const response = pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
                 if (response) {
                     lcaIds.push(response.lca);
                 }
@@ -109,7 +110,7 @@ export default class PeptideSummaryTable extends Vue {
             const lcaOntology = await (new NcbiOntologyProcessor(this.communicationSource)).getOntologyByIds(lcaIds);
 
             this.items.push(...this.peptideCountTable.getOntologyIds().map((peptide) => {
-                const response = Pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
+                const response = pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
                 let lcaName: string = "N/A";
                 let matched: boolean = false;
 

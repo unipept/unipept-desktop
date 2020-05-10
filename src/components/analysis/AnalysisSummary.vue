@@ -1,5 +1,5 @@
 <template>
-    <v-card v-if="assay">
+    <v-card v-if="assay && peptideTrust">
         <v-card-title>
             {{ assay.getName() }}
         </v-card-title>

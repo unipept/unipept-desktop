@@ -7,7 +7,7 @@
                     :peptide-count-table="activeCountTable"
                     :project="$store.getters.getProject"
                     :peptide-trust="activeTrust"
-                    :communication-source="communicationSource">
+                    :communication-source="activeCommunicationSource">
                 </analysis-summary>
             </v-col>
         </v-row>
@@ -17,7 +17,7 @@
                     :peptide-count-table="activeCountTable"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
                     :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
-                    :communication-source="communicationSource"
+                    :communication-source="activeCommunicationSource"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -27,7 +27,7 @@
             <v-col>
                 <functional-summary-card
                     :peptide-count-table="activeCountTable"
-                    :communication-source="communicationSource"
+                    :communication-source="activeCommunicationSource"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
                     :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
                     :selectedTaxonId="$store.getters.getSelectedTaxonId">
@@ -80,18 +80,24 @@ import DefaultCommunicationSource from "unipept-web-components/src/business/comm
             get(): CountTable<Peptide> {
                 if (this.activeAssay) {
                     return this.$store.getters.getProject.getProcessingResults(this.activeAssay).countTable;
-                } else {
-                    return undefined;
                 }
+                return undefined;
             }
         },
         activeTrust: {
             get(): PeptideTrust {
                 if (this.activeAssay) {
                     return this.$store.getters.getProject.getProcessingResults(this.activeAssay).trust;
-                } else {
-                    return undefined;
                 }
+                return undefined;
+            }
+        },
+        activeCommunicationSource: {
+            get(): CommunicationSource {
+                if (this.activeAssay) {
+                    return this.$store.getters.getProject.getProcessingResults(this.activeAssay).communicators;
+                }
+                return undefined;
             }
         },
         errorStatus: {
@@ -99,7 +105,6 @@ import DefaultCommunicationSource from "unipept-web-components/src/business/comm
                 if (!this.activeAssay) {
                     return false;
                 }
-
                 return this.$store.getters.getProject.getProcessingResults(this.activeAssay).errorStatus !== undefined;
             }
         }

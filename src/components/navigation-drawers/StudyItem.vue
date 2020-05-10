@@ -111,6 +111,7 @@ const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
 const fs = require("fs").promises;
 import path from "path";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
