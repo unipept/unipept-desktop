@@ -10,6 +10,10 @@ import EcResponseCommunicator from "unipept-web-components/src/business/communic
 import InterproResponseCommunicator from "unipept-web-components/src/business/communication/functional/interpro/InterproResponseCommunicator";
 import NcbiResponseCommunicator from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponseCommunicator";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
+import { GoCode } from "unipept-web-components/src/business/ontology/functional/go/GoDefinition";
+import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
+import { InterproCode } from "unipept-web-components/src/business/ontology/functional/interpro/InterproDefinition";
+import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
 
 export default class AssayProcessor {
     public async processAssay(
@@ -36,19 +40,19 @@ export default class AssayProcessor {
 
         // Now we have to extract all functional annotations and NCBI-taxons from the received responses and preload
         // these as well...
-        const gos = [];
-        const ecs = [];
-        const iprs = [];
-        const ncbis = [];
+        const gos = new Set<GoCode>();
+        const ecs = new Set<EcCode>();
+        const iprs = new Set<InterproCode>();
+        const ncbis = new Set<NcbiId>();
 
         for (const peptide of peptideCountTable.getOntologyIds()) {
             const response = pept2DataCommunicator.getPeptideResponse(peptide, assay.getSearchConfiguration());
             if (response) {
-                gos.push(...Object.keys(response.fa.data).filter(x => x.startsWith("GO:")));
-                ecs.push(...Object.keys(response.fa.data).filter(x => x.startsWith("EC:")));
-                iprs.push(...Object.keys(response.fa.data).filter(x => x.startsWith("IPR:")));
-                ncbis.push(response.lca);
-                ncbis.push(...response.lineage.filter(l => l));
+                Object.keys(response.fa.data).filter(x => x.startsWith("GO:")).map(x => gos.add(x));
+                Object.keys(response.fa.data).filter(x => x.startsWith("EC:")).map(x => ecs.add(x));
+                Object.keys(response.fa.data).filter(x => x.startsWith("IPR:")).map(x => iprs.add(x));
+                ncbis.add(response.lca);
+                response.lineage.filter(l => l).map(x => ncbis.add(x));
             }
         }
 
@@ -58,13 +62,13 @@ export default class AssayProcessor {
         const iprCommunicator = new InterproResponseCommunicator();
         const ncbiCommunicator = new NcbiResponseCommunicator();
 
-        await goCommunicator.process(gos);
+        await goCommunicator.process(Array.from(gos));
         this.setProgress(0.7, progressListener);
-        await ecCommunicator.process(ecs);
+        await ecCommunicator.process(Array.from(ecs));
         this.setProgress(0.8, progressListener);
-        await iprCommunicator.process(iprs);
+        await iprCommunicator.process(Array.from(iprs));
         this.setProgress(0.9, progressListener);
-        await ncbiCommunicator.process(ncbis);
+        await ncbiCommunicator.process(Array.from(ncbis));
         this.setProgress(1, progressListener);
 
         return [peptideCountTable, new CachedCommunicationSource(

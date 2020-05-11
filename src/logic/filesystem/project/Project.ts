@@ -388,6 +388,7 @@ export default class Project {
     }
 
     public async processAssay(assay: ProteomicsAssay): Promise<void> {
+        console.log("Process: " + assay.getName());
         const processedItem = this.getProcessingResults(assay);
         processedItem.errorStatus = undefined;
         processedItem.progress = 0;
