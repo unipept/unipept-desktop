@@ -141,9 +141,6 @@ export default class AssayItem extends Vue {
     @Prop({ required: true })
     private project: Project;
 
-    // TODO retrieve from project instead of making one here
-    private communicationSource: CommunicationSource = new DefaultCommunicationSource();
-
     private peptideTrust: PeptideTrust = null;
     private experimentSummaryActive: boolean = false;
     private removeConfirmationActive: boolean = false;
@@ -217,21 +214,25 @@ export default class AssayItem extends Vue {
     }
 
     @Watch("assay")
+    @Watch("progress")
     private async onAssayChanged() {
         this.assayName = this.assay.getName();
         this.peptideTrust = await this.computePeptideTrust();
     }
 
     private async computePeptideTrust(): Promise<PeptideTrust> {
-        const peptideProcessor = new PeptideCountTableProcessor();
-        const peptideCounts = await peptideProcessor.getPeptideCountTable(
-            this.assay.getPeptides(),
-            this.assay.getSearchConfiguration()
-        );
+        if (this.assay) {
+            const processingResults = this.project.getProcessingResults(this.assay);
+            const communicators = processingResults.communicators;
+            const peptideCounts = processingResults.countTable;
 
-        const pept2DataCommunicator = this.communicationSource.getPept2DataCommunicator();
-        await pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
-        return await pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+            if (communicators && peptideCounts) {
+                const pept2DataCommunicator = communicators.getPept2DataCommunicator();
+                await pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
+                return await pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+            }
+        }
+        return undefined;
     }
 
     private reanalyse() {

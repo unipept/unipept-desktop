@@ -1,5 +1,5 @@
 const ThreadsPlugin = require('threads-plugin')
-// const NodeTargetPlugin = require('webpack/lib/node/NodeTargetPlugin');
+const NodeTargetPlugin = require('webpack/lib/node/NodeTargetPlugin');
 
 module.exports = {
     chainWebpack: config => {
@@ -10,7 +10,7 @@ module.exports = {
                 "fsevents": "require('fsevents')",
                 "better-sqlite3": "require('better-sqlite3')"
             }
-        ])
+        ]);
     },
     pluginOptions: {
         electronBuilder: {
@@ -32,10 +32,10 @@ module.exports = {
     },
     configureWebpack: {
         plugins: [
-            // new ThreadsPlugin({
-            //     plugins: [new NodeTargetPlugin()]
-            // })
-            new ThreadsPlugin()
+            new ThreadsPlugin({
+                plugins: [new NodeTargetPlugin()]
+            })
+            // new ThreadsPlugin()
         ]
     }
 }

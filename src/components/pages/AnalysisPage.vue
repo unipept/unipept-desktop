@@ -111,8 +111,6 @@ import DefaultCommunicationSource from "unipept-web-components/src/business/comm
     }
 })
 export default class AnalysisPage extends Vue {
-    private communicationSource: CommunicationSource = new DefaultCommunicationSource();
-
     private onUpdateSelectedTaxonId(id: number) {
         this.$store.dispatch("setSelectedTaxonId", id);
     }

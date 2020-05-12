@@ -24,6 +24,7 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import AssayProcessor from "@/logic/communication/AssayProcessor";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 
 
 /**
@@ -273,7 +274,8 @@ export default class Project {
 
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     this.projectPath + studyName,
-                    this.db
+                    this.db,
+                    false
                 );
                 await assay.accept(assayReader);
                 study.addAssay(assay);
@@ -388,7 +390,7 @@ export default class Project {
     }
 
     public async processAssay(assay: ProteomicsAssay): Promise<void> {
-        console.log("Process: " + assay.getName());
+        console.log("Process: " + assay.getName() + " with id " + assay.getId());
         const processedItem = this.getProcessingResults(assay);
         processedItem.errorStatus = undefined;
         processedItem.progress = 0;
@@ -397,15 +399,17 @@ export default class Project {
         processedItem.communicators = undefined;
 
         try {
-            const assayProcessor = new AssayProcessor();
-            const [countTable, communicators] = await assayProcessor.processAssay(assay, {
+            const assayProcessor = new AssayProcessor(this.db, this.projectPath + ProjectManager.DB_FILE_NAME, assay, {
                 onProgressUpdate: (progress: number) => {
                     processedItem.progress = progress
                 }
             });
 
+            const [countTable, communicators] = await assayProcessor.processAssay();
+
             processedItem.communicators = communicators;
             processedItem.countTable = countTable;
+            console.log(communicators);
             processedItem.trust = await communicators.getPept2DataCommunicator().getPeptideTrust(
                 countTable,
                 assay.getSearchConfiguration()

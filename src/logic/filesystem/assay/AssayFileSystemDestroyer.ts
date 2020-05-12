@@ -18,7 +18,10 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
             }
 
             // Also remove all metadata from the db
-            this.db.prepare("DELETE FROM assays WHERE `id`=?").run(assay.getId());
+            this.db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assay.getId());
+            this.db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assay.getId());
+            this.db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assay.getId());
+            this.db.prepare("DELETE FROM assays WHERE `id` = ?").run(assay.getId());
         } catch (e) {
             throw new IOException(e);
         }
