@@ -1,11 +1,12 @@
 <template>
     <div class="homepage-container">
         <v-container fluid>
-            <v-row v-if="loading">
+            <v-row v-if="loadingProject || loadingApplication">
                 <v-col :cols="12" class="d-flex justify-center align-center flex-column">
                     <v-progress-circular :size="70" :width="7" color="primary" indeterminate>
                     </v-progress-circular>
-                    Please stand by while we're loading your project...
+                    <span v-if="loadingProject">Please stand by while we're loading your project...</span>
+                    <span v-if="loadingApplication">Please stand by while we're loading the application...</span>
                 </v-col>
             </v-row>
             <v-row v-else>
@@ -40,6 +41,20 @@
                 {{ errorMessage }}
                 <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
             </v-snackbar>
+            <v-dialog persistent v-model="downloadingDatabase" max-width="600px">
+                <v-card>
+                    <v-card-title>
+                        Updating static database
+                    </v-card-title>
+                    <v-card-text>
+                        This application requires a database with static information to operate correctly. This database
+                        is not present or outdated and needs to be retrieved from our servers. Please stand by while
+                        we're processing this download.
+                        <v-progress-linear :value="downloadDatabaseProgress" class="mt-4"></v-progress-linear>
+                        <div style="text-align: center;">{{ downloadDatabaseProgress }}%</div>
+                    </v-card-text>
+                </v-card>
+            </v-dialog>
         </v-container>
     </div>
 </template>
@@ -53,6 +68,7 @@ import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -68,10 +84,54 @@ export default class HomePage extends Vue {
     private errorMessage: string = "";
     private errorSnackbarVisible: boolean = false;
     private version: string = "";
-    private loading: boolean = false;
+    private loadingApplication: boolean = false;
+    private loadingProject: boolean = false;
+    // Whether we're currently downloading the static information database (user interaction should be blocked during
+    // this event).
+    private downloadingDatabase: boolean = false;
+    private downloadDatabaseProgress: number = 0;
 
-    mounted() {
+    async mounted() {
+        this.loadingApplication = true;
         this.version = app.getVersion();
+        const shouldUpdate: boolean = await this.checkStaticDatabaseUpdate();
+        console.log(shouldUpdate);
+        this.loadingApplication = false;
+        if (shouldUpdate) {
+            this.downloadingDatabase = true;
+            await this.updateStaticDatabase();
+            this.downloadingDatabase = false;
+        }
+    }
+
+    private async checkStaticDatabaseUpdate(): Promise<boolean> {
+        try {
+            const staticDbManager = new StaticDatabaseManager();
+            return await staticDbManager.requiresUpdate();
+        } catch (err) {
+            console.warn(err);
+            this.showError(
+                "Could not check if required files need to be updated. Please check your internet connection and retry. " +
+                "The application will work without these files, but will be slower or less accurate than usual."
+            );
+        }
+    }
+
+    private async updateStaticDatabase(): Promise<void> {
+        try {
+            const staticDbManager = new StaticDatabaseManager();
+            return await staticDbManager.updateDatabase({
+                onProgressUpdate: (progress: number): void => {
+                    this.downloadDatabaseProgress = Math.ceil(progress * 100);
+                }
+            });
+        } catch (err) {
+            console.warn(err);
+            this.showError(
+                "An error occurred while trying to update or install required files. The application will work " +
+                "without these files, but will be slower or less accurate than usual."
+            );
+        }
     }
 
     private async createProject() {
@@ -103,7 +163,7 @@ export default class HomePage extends Vue {
     }
 
     private async onOpenProject(path: string) {
-        this.loading = true;
+        this.loadingProject = true;
         try {
             const projectManager: ProjectManager = new ProjectManager();
             const project: Project = await projectManager.loadExistingProject(path);
@@ -121,7 +181,7 @@ export default class HomePage extends Vue {
                 );
             }
         }
-        this.loading = false;
+        this.loadingProject = false;
     }
 
     private showError(message: string) {

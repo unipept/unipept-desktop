@@ -5,10 +5,6 @@ import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptid
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
-import GoResponseCommunicator from "unipept-web-components/src/business/communication/functional/go/GoResponseCommunicator";
-import EcResponseCommunicator from "unipept-web-components/src/business/communication/functional/ec/EcResponseCommunicator";
-import InterproResponseCommunicator from "unipept-web-components/src/business/communication/functional/interpro/InterproResponseCommunicator";
-import NcbiResponseCommunicator from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponseCommunicator";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import { Database } from "better-sqlite3";
 import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
@@ -32,43 +28,11 @@ export default class AssayProcessor {
 
         const [pept2DataResponses, peptideTrust] = await this.getPept2Data(peptideCountTable);
 
-        const start = new Date().getTime();
-        // Now we have to extract all functional annotations and NCBI-taxons from the received responses and preload
-        // these as well...
-        const spawnStart = new Date().getTime();
-        const extractorWorker = await spawn(new Worker("./AssayProcessor.worker.ts"));
-        console.log("Spawning took " + (new Date().getTime() - spawnStart) / 1000 + "s");
-        const [gos, ecs, iprs, ncbis] = await extractorWorker.extractAnnotations(
-            peptideCountTable.toMap(),
-            pept2DataResponses
-        );
-
-        const end = new Date().getTime();
-        console.log("Extracting fa's took " + (end - start) / 1000 + "s");
-
-        // Now preload all the extracted annotations using the respective communicators
-        const goCommunicator = new GoResponseCommunicator();
-        const ecCommunicator = new EcResponseCommunicator();
-        const iprCommunicator = new InterproResponseCommunicator();
-        const ncbiCommunicator = new NcbiResponseCommunicator();
-
-        await goCommunicator.process(gos);
-        this.setProgress(0.7);
-        await ecCommunicator.process(ecs);
-        this.setProgress(0.8);
-        await iprCommunicator.process(iprs);
-        this.setProgress(0.9);
-        await ncbiCommunicator.process(ncbis);
-        this.setProgress(1);
-
         // Now update the storage metadata in the db
         await this.updateStorageMetadata();
 
+        this.setProgress(1);
         return [peptideCountTable, new CachedCommunicationSource(
-            ecCommunicator.getResponseMap(),
-            goCommunicator.getResponseMap(),
-            iprCommunicator.getResponseMap(),
-            ncbiCommunicator.getResponseMap(),
             pept2DataResponses,
             peptideTrust,
             this.assay.getSearchConfiguration()
@@ -107,11 +71,9 @@ export default class AssayProcessor {
         } else {
             // Process assay and write results to database.
             const pept2DataProgressNotifier: ProgressListener = {
-                // We consider the Pept2Data-communication part as 60% of the total progress.
-                onProgressUpdate: (progress: number) => this.setProgress(0.6 * progress)
+                onProgressUpdate: (val: number) => this.setProgress(val)
             }
 
-            console.log("Making a new communicator...");
             const pept2DataCommunicator = new Pept2DataCommunicator();
             await pept2DataCommunicator.process(
                 peptideCountTable,
@@ -148,7 +110,9 @@ export default class AssayProcessor {
     }
 
     private setProgress(value: number) {
+        console.log("Start of set progress for " + value);
         if (this.progressListener) {
+            console.log("Set progress " + value);
             this.progressListener.onProgressUpdate(value);
         }
     }

@@ -401,6 +401,7 @@ export default class Project {
         try {
             const assayProcessor = new AssayProcessor(this.db, this.projectPath + ProjectManager.DB_FILE_NAME, assay, {
                 onProgressUpdate: (progress: number) => {
+                    console.log("Setting progress " + progress);
                     processedItem.progress = progress
                 }
             });
@@ -409,7 +410,6 @@ export default class Project {
 
             processedItem.communicators = communicators;
             processedItem.countTable = countTable;
-            console.log(communicators);
             processedItem.trust = await communicators.getPept2DataCommunicator().getPeptideTrust(
                 countTable,
                 assay.getSearchConfiguration()

@@ -31,6 +31,7 @@
     "core-js": "^2.6.9",
     "electron-log": "^4.0.7",
     "electron-updater": "4.3.1",
+    "follow-redirects": "^1.11.0",
     "jquery": "^3.4.1",
     "regenerator-runtime": "^0.13.3",
     "threads": "^1.4.1",
@@ -44,7 +45,8 @@
     "vue-styleguidist": "^4.2.3",
     "vuetify": "^2.1.1",
     "vuex": "^3.1.1",
-    "whatwg-fetch": "^3.0.0"
+    "whatwg-fetch": "^3.0.0",
+    "yauzl": "^2.10.0"
   },
   "devDependencies": {
     "@mdi/font": "^4.1.95",

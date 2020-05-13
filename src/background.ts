@@ -179,11 +179,11 @@ app.on("window-all-closed", () => {
     }
 })
 
-app.on("activate", () => {
+app.on("activate", async() => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (win === null) {
-        createWindow()
+        await createWindow();
     }
 })
 
@@ -205,7 +205,7 @@ app.on("ready", async() => {
         }
 
     }
-    await createWindow()
+    await createWindow();
 })
 
 // Exit cleanly on request from parent process in development mode.
