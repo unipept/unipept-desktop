@@ -110,9 +110,7 @@ export default class AssayProcessor {
     }
 
     private setProgress(value: number) {
-        console.log("Start of set progress for " + value);
         if (this.progressListener) {
-            console.log("Set progress " + value);
             this.progressListener.onProgressUpdate(value);
         }
     }

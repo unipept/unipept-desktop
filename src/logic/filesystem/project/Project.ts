@@ -401,7 +401,6 @@ export default class Project {
         try {
             const assayProcessor = new AssayProcessor(this.db, this.projectPath + ProjectManager.DB_FILE_NAME, assay, {
                 onProgressUpdate: (progress: number) => {
-                    console.log("Setting progress " + progress);
                     processedItem.progress = progress
                 }
             });
