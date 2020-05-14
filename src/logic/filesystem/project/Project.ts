@@ -25,6 +25,7 @@ import PeptideTrust from "unipept-web-components/src/business/processors/raw/Pep
 import AssayProcessor from "@/logic/communication/AssayProcessor";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
+import Vue from "vue";
 
 
 /**
@@ -187,13 +188,15 @@ export default class Project {
         assay: Assay
     ): { progress: number, countTable: CountTable<Peptide>, errorStatus: string, trust: PeptideTrust, communicators: CommunicationSource } {
         if (!(assay.getId() in this.processedAssays)) {
-            this.processedAssays[assay.getId()] = {
+            // Need to explicitly set this property using the Vue.set-method to allow for other components to listen
+            // to changes to this object.
+            Vue.set(this.processedAssays, assay.getId(), {
                 progress: 0,
                 countTable: undefined,
                 errorStatus: undefined,
                 trust: undefined,
                 communicators: undefined
-            }
+            });
         }
 
         return this.processedAssays[assay.getId()];
@@ -390,7 +393,6 @@ export default class Project {
     }
 
     public async processAssay(assay: ProteomicsAssay): Promise<void> {
-        console.log("Process: " + assay.getName() + " with id " + assay.getId());
         const processedItem = this.getProcessingResults(assay);
         processedItem.errorStatus = undefined;
         processedItem.progress = 0;
@@ -418,7 +420,7 @@ export default class Project {
             if (!this.activeAssay) {
                 this.activeAssay = assay;
             }
-            processedItem.errorStatus = err;
+            processedItem.errorStatus = err.toString();
         }
 
         this.resetActiveAssay();

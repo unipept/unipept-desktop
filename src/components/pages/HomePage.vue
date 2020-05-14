@@ -90,12 +90,19 @@ export default class HomePage extends Vue {
     // this event).
     private downloadingDatabase: boolean = false;
     private downloadDatabaseProgress: number = 0;
+    private static downloadCheckPerformed: boolean = false;
 
     async mounted() {
         this.loadingApplication = true;
-        this.version = app.getVersion();
-        const shouldUpdate: boolean = await this.checkStaticDatabaseUpdate();
-        console.log(shouldUpdate);
+        let shouldUpdate: boolean = false;
+
+        // Only check if we need to update the database once (at start of application).
+        if (!HomePage.downloadCheckPerformed) {
+            HomePage.downloadCheckPerformed = true;
+            this.version = app.getVersion();
+            shouldUpdate = await this.checkStaticDatabaseUpdate();
+        }
+
         this.loadingApplication = false;
         if (shouldUpdate) {
             this.downloadingDatabase = true;

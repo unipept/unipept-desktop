@@ -126,7 +126,7 @@ const { Menu, MenuItem } = remote;
         },
         errorStatus: {
             get(): boolean {
-                return this.project.getProcessingResults(this.assay).errorStatus;
+                return this.project.getProcessingResults(this.assay).errorStatus !== undefined;
             }
         }
     }
