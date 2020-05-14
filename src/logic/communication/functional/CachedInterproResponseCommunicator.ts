@@ -1,22 +1,59 @@
-import CachedFunctionalResponseCommunicator
-    from "@/logic/communication/functional/CachedFunctionalResponseCommunicator";
 import { InterproCode } from "unipept-web-components/src/business/ontology/functional/interpro/InterproDefinition";
 import InterproResponse from "unipept-web-components/src/business/communication/functional/interpro/InterproResponse";
 import InterproResponseCommunicator from "unipept-web-components/src/business/communication/functional/interpro/InterproResponseCommunicator";
+import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
+import { spawn, Worker } from "threads/dist";
 
-export default class CachedInterproResponseCommunicator extends CachedFunctionalResponseCommunicator<InterproCode, InterproResponse> {
+export default class CachedInterproResponseCommunicator extends InterproResponseCommunicator {
+    private static codeToResponses: Map<InterproCode, InterproResponse> = new Map<InterproCode, InterproResponse>();
+    private static processing: Promise<Map<InterproCode, InterproResponse>>;
+    private readonly dbFile: string;
+
     constructor() {
-        super(new InterproResponseCommunicator(), "SELECT * FROM interpro_entries WHERE `code` = ?", "IPR:");
+        super();
+        try {
+            const staticDatabaseManager = new StaticDatabaseManager();
+            staticDatabaseManager.getDatabase();
+            this.dbFile = staticDatabaseManager.getDatabasePath();
+        } catch (err) {
+            console.warn("Gracefully falling back to online communicators...");
+            this.dbFile = "";
+        }
     }
 
-    protected convertToResponse(row: any): InterproResponse {
-        if (row) {
-            return {
-                code: "IPR:" + row.code,
-                name: row.name,
-                category: row.category
-            }
+    public async process(codes: InterproCode[]): Promise<void> {
+        if (!this.dbFile) {
+            return super.process(codes);
         }
-        return undefined;
+
+        while (CachedInterproResponseCommunicator.processing) {
+            await CachedInterproResponseCommunicator.processing;
+        }
+
+        const worker = await spawn(new Worker("./CachedInterproResponseCommunicator.worker.ts"));
+        CachedInterproResponseCommunicator.processing = worker.process(
+            this.dbFile,
+            codes,
+            CachedInterproResponseCommunicator.codeToResponses
+        );
+
+        CachedInterproResponseCommunicator.codeToResponses = await CachedInterproResponseCommunicator.processing;
+        CachedInterproResponseCommunicator.processing = undefined;
+    }
+
+    public getResponse(code: InterproCode): InterproResponse {
+        if (!this.dbFile) {
+            return super.getResponse(code);
+        }
+
+        return CachedInterproResponseCommunicator.codeToResponses.get(code);
+    }
+
+    public getResponseMap(): Map<InterproCode, InterproResponse> {
+        if (!this.dbFile) {
+            return super.getResponseMap();
+        }
+
+        return CachedInterproResponseCommunicator.codeToResponses;
     }
 }

@@ -109,7 +109,7 @@ export default class PeptideSummaryTable extends Vue {
 
             const lcaOntology = await (new NcbiOntologyProcessor(this.communicationSource)).getOntologyByIds(lcaIds);
 
-            this.items.push(...this.peptideCountTable.getOntologyIds().map((peptide) => {
+            for (const peptide of this.peptideCountTable.getOntologyIds()) {
                 const response = pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
                 let lcaName: string = "N/A";
                 let matched: boolean = false;
@@ -119,14 +119,13 @@ export default class PeptideSummaryTable extends Vue {
                     const lcaDefinition = lcaOntology.getDefinition(response.lca);
                     lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
                 }
-
-                return {
+                this.items.push({
                     peptide: peptide,
                     count: this.peptideCountTable.getCounts(peptide),
                     lca: lcaName,
                     matched: matched
-                }
-            }));
+                });
+            }
             this.loading = false;
         }
     }

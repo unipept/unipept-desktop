@@ -1,21 +1,59 @@
-import CachedFunctionalResponseCommunicator
-    from "@/logic/communication/functional/CachedFunctionalResponseCommunicator";
 import { EcResponse } from "unipept-web-components/src/business/communication/functional/ec/EcResponse";
 import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
 import EcResponseCommunicator from "unipept-web-components/src/business/communication/functional/ec/EcResponseCommunicator";
+import { spawn, Worker } from "threads/dist";
+import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 
-export default class CachedEcResponseCommunicator extends CachedFunctionalResponseCommunicator<EcCode, EcResponse> {
+export default class CachedEcResponseCommunicator extends EcResponseCommunicator {
+    private static codeToResponses: Map<EcCode, EcResponse> = new Map<EcCode, EcResponse>();
+    private static processing: Promise<Map<EcCode, EcResponse>>;
+    private readonly dbFile: string;
+
     constructor() {
-        super(new EcResponseCommunicator(), "SELECT * FROM ec_numbers WHERE `code` = ?", "EC:");
+        super();
+        try {
+            const staticDatabaseManager = new StaticDatabaseManager();
+            staticDatabaseManager.getDatabase();
+            this.dbFile = staticDatabaseManager.getDatabasePath();
+        } catch (err) {
+            console.warn("Gracefully falling back to online communicators...");
+            this.dbFile = "";
+        }
     }
 
-    protected convertToResponse(row: any): EcResponse {
-        if (row) {
-            return {
-                code: "EC:" + row.code,
-                name: row.name
-            }
+    public async process(codes: EcCode[]): Promise<void> {
+        if (!this.dbFile) {
+            return super.process(codes);
         }
-        return undefined;
+
+        while (CachedEcResponseCommunicator.processing) {
+            await CachedEcResponseCommunicator.processing;
+        }
+
+        const worker = await spawn(new Worker("./CachedEcResponseCommunicator.worker.ts"));
+        CachedEcResponseCommunicator.processing = worker.process(
+            this.dbFile,
+            codes,
+            CachedEcResponseCommunicator.codeToResponses
+        );
+
+        CachedEcResponseCommunicator.codeToResponses = await CachedEcResponseCommunicator.processing;
+        CachedEcResponseCommunicator.processing = undefined;
+    }
+
+    public getResponse(code: EcCode): EcResponse {
+        if (!this.dbFile) {
+            return super.getResponse(code);
+        }
+
+        return CachedEcResponseCommunicator.codeToResponses.get(code);
+    }
+
+    public getResponseMap(): Map<EcCode, EcResponse> {
+        if (!this.dbFile) {
+            return super.getResponseMap();
+        }
+
+        return CachedEcResponseCommunicator.codeToResponses;
     }
 }

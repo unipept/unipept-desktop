@@ -4,21 +4,20 @@ import NcbiResponse from "unipept-web-components/src/business/communication/taxo
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import { Database, Statement } from "better-sqlite3";
 import { NcbiRank } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiRank";
+import { spawn, Worker } from "threads/dist";
 
 export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunicator {
     private readonly database: Database;
     private fallbackCommunicator: NcbiResponseCommunicator;
     private readonly extractStmt: Statement;
-    private readonly codesToProcess: Set<NcbiId> = new Set<NcbiId>();
+    private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
+    private static processing: Promise<Map<NcbiId, NcbiResponse>>;
 
     constructor() {
         super();
         const staticDatabaseManager = new StaticDatabaseManager();
         try {
             this.database = staticDatabaseManager.getDatabase();
-            this.extractStmt = this.database.prepare(
-                "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
-            );
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
             this.database = null;
@@ -30,9 +29,20 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         if (!this.database) {
             await this.fallbackCommunicator.process(codes);
         } else {
-            for (const code of codes) {
-                this.codesToProcess.add(code);
+            while (CachedNcbiResponseCommunicator.processing) {
+                await CachedNcbiResponseCommunicator.processing;
             }
+
+            const staticDatabaseManager = new StaticDatabaseManager();
+
+            const spawnedProcess = await spawn(new Worker("./CachedNcbiResponseCommunicator.worker.ts"));
+            CachedNcbiResponseCommunicator.processing = spawnedProcess.process(
+                staticDatabaseManager.getDatabasePath(),
+                codes,
+                CachedNcbiResponseCommunicator.codesProcessed
+            );
+            CachedNcbiResponseCommunicator.codesProcessed = await CachedNcbiResponseCommunicator.processing;
+            CachedNcbiResponseCommunicator.processing = undefined;
         }
     }
 
@@ -40,21 +50,11 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         if (!this.database) {
             return this.fallbackCommunicator.getResponse(id);
         } else {
-            const row = this.extractStmt.get(id);
-            if (row) {
-                const lineage = Object.values(NcbiRank).map(rank => row[rank]).map(el => el === "\\N" ? null : el);
-                return {
-                    id: row.id,
-                    name: row.name,
-                    rank: row.rank,
-                    lineage: lineage
-                }
-            }
-            return undefined;
+            return CachedNcbiResponseCommunicator.codesProcessed.get(id);
         }
     }
 
     public getResponseMap(): Map<NcbiId, NcbiResponse> {
-        return super.getResponseMap();
+        return CachedNcbiResponseCommunicator.codesProcessed;
     }
 }

@@ -179,7 +179,7 @@ export default class StaticDatabaseManager {
         return db;
     }
 
-    private getDatabasePath(): string {
+    public getDatabasePath(): string {
         const configurationFolder = app.getPath("userData");
         return path.join(configurationFolder, "static-database.db");
     }

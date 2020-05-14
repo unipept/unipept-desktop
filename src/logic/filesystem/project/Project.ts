@@ -17,8 +17,6 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import StudyVisitor from "unipept-web-components/src/business/entities/study/StudyVisitor";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
-import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
@@ -275,6 +273,7 @@ export default class Project {
                     new Date()
                 );
 
+                console.log("In file added...");
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     this.projectPath + studyName,
                     this.db,
@@ -336,6 +335,7 @@ export default class Project {
                 return;
             }
 
+            console.log("In file changed...");
             const dataReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(path.dirname(filePath), this.db);
             await assay.accept(dataReader);
         });

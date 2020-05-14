@@ -1,0 +1,31 @@
+import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
+import NcbiResponse from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponse";
+import { expose } from "threads/worker";
+import { NcbiRank } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiRank";
+import Database from "better-sqlite3";
+
+expose({ process })
+
+export default function process(dbPath: string, ncbiIds: NcbiId[], output: Map<NcbiId, NcbiResponse>): Map<NcbiId, NcbiResponse> {
+    const database = new Database(dbPath);
+    database.pragma("journal_mode = WAL");
+
+    const extractStmt = database.prepare(
+        "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
+    );
+
+    for (const id of ncbiIds) {
+        const row = extractStmt.get(id);
+        if (row) {
+            const lineage = Object.values(NcbiRank).map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+            output.set(id, {
+                id: row.id,
+                name: row.name,
+                rank: row.rank,
+                lineage: lineage
+            });
+        }
+    }
+
+    return output;
+}

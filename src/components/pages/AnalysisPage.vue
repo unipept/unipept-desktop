@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid v-if="!errorStatus">
+    <v-container fluid v-if="!errorStatus && $store.getters.getProject.getAllAssays().length > 0">
         <v-row>
             <v-col>
                 <analysis-summary
@@ -13,30 +13,30 @@
         </v-row>
         <v-row>
             <v-col>
-                <single-dataset-visualizations-card
-                    :peptide-count-table="activeCountTable"
-                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
-                    :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
-                    :communication-source="activeCommunicationSource"
-                    v-on:update-selected-term="onUpdateSelectedTerm"
-                    v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
-                </single-dataset-visualizations-card>
+<!--                <single-dataset-visualizations-card-->
+<!--                    :peptide-count-table="activeCountTable"-->
+<!--                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"-->
+<!--                    :analysisInProgress="true"-->
+<!--                    :communication-source="activeCommunicationSource"-->
+<!--                    v-on:update-selected-term="onUpdateSelectedTerm"-->
+<!--                    v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">-->
+<!--                </single-dataset-visualizations-card>-->
             </v-col>
         </v-row>
         <v-row>
             <v-col>
-                <functional-summary-card
-                    :peptide-count-table="activeCountTable"
-                    :communication-source="activeCommunicationSource"
-                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
-                    :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
-                    :selectedTaxonId="$store.getters.getSelectedTaxonId">
-                </functional-summary-card>
+<!--                <functional-summary-card-->
+<!--                    :peptide-count-table="activeCountTable"-->
+<!--                    :communication-source="activeCommunicationSource"-->
+<!--                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"-->
+<!--                    :analysisInProgress="true"-->
+<!--                    :selectedTaxonId="$store.getters.getSelectedTaxonId">-->
+<!--                </functional-summary-card>-->
             </v-col>
         </v-row>
     </v-container>
-    <v-container fluid v-else class="error-container">
-        <div class="network-error">
+    <v-container fluid v-else class="status-container">
+        <div class="inner-status-container" v-if="errorStatus">
             <v-icon x-large>
                 mdi-wifi-strength-4-alert
             </v-icon>
@@ -44,6 +44,14 @@
                 A network communication error occurred while processing this assay. Please check that you
                 are connected to the internet, or that your Unipept API-endpoint is correctly set and
                 <a @click="reanalyse()">try again.</a>
+            </p>
+        </div>
+        <div class="inner-status-container" v-else-if="$store.getters.getProject.getAllAssays().length === 0">
+            <v-icon x-large>
+                mdi-flask-empty-plus-outline
+            </v-icon>
+            <p>
+                Please add at least one study with one assay to this project.
             </p>
         </div>
     </v-container>
@@ -135,7 +143,7 @@ export default class AnalysisPage extends Vue {
         overflow-y: auto;
     }
 
-    .network-error {
+    .inner-status-container {
         max-width: 600px;
         display: flex;
         justify-content: center;
@@ -143,7 +151,7 @@ export default class AnalysisPage extends Vue {
         text-align: center;
     }
 
-    .error-container {
+    .status-container {
         width: 100%;
         height: 100%;
         display: flex;
