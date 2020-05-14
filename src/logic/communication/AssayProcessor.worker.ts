@@ -8,30 +8,48 @@ import { GoCode } from "unipept-web-components/src/business/ontology/functional/
 import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
 import { InterproCode } from "unipept-web-components/src/business/ontology/functional/interpro/InterproDefinition";
 import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
+import { Observable } from "observable-fns"
 
 expose({ readPept2Data, writePept2Data, extractAnnotations });
 
 export function readPept2Data(dbFile: string, assayId: string): [Map<Peptide, PeptideDataResponse>, PeptideTrust] {
-    const start = new Date().getTime();
+    // @ts-ignore
+    return new Observable(async(observer) => {
+        observer.next({
+            type: "progress",
+            value: 0.0
+        });
 
-    const db = new Database(dbFile);
-    db.pragma("journal_mode = WAL");
-    const pept2DataMap = new Map<Peptide, PeptideDataResponse>();
-    for (const row of db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").all(assayId)) {
-        pept2DataMap.set(row.peptide, JSON.parse(row.response));
-    }
+        const db = new Database(dbFile);
+        db.pragma("journal_mode = WAL");
 
-    const trustRow = db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assayId);
-    const peptideTrust = new PeptideTrust(
-        JSON.parse(trustRow.missed_peptides),
-        trustRow.matched_peptides,
-        trustRow.searched_peptides
-    );
+        const pept2DataMap = new Map<Peptide, PeptideDataResponse>();
+        let rowsProcessed: number = 0;
+        const rows = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").all(assayId);
+        for (const row of rows) {
+            pept2DataMap.set(row.peptide, JSON.parse(row.response));
+            if (rowsProcessed % 25000 === 0) {
+                observer.next({
+                    type: "progress",
+                    value: rowsProcessed / rows.length
+                });
+            }
+            rowsProcessed++;
+        }
 
-    const end = new Date().getTime();
-    console.log("Read from db took " + (end - start) / 1000 + "s");
 
-    return [pept2DataMap, peptideTrust];
+        const trustRow = db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assayId);
+        const peptideTrust = new PeptideTrust(
+            JSON.parse(trustRow.missed_peptides),
+            trustRow.matched_peptides,
+            trustRow.searched_peptides
+        );
+
+        observer.next({
+            type: "result",
+            value: [pept2DataMap, peptideTrust]
+        });
+    });
 }
 
 export function writePept2Data(

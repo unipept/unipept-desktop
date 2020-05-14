@@ -10,6 +10,7 @@ import { Database } from "better-sqlite3";
 import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import { spawn, Worker } from "threads/dist";
+import { Observable } from "observable-fns";
 
 export default class AssayProcessor {
     constructor(
@@ -95,7 +96,17 @@ export default class AssayProcessor {
 
     private async readPept2Data(): Promise<[Map<Peptide, PeptideDataResponse>, PeptideTrust]> {
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
-        return await worker.readPept2Data(this.dbFile, this.assay.getId());
+        const obs: Observable<{ type: string, value: any }> = worker.readPept2Data(this.dbFile, this.assay.getId());
+
+        return new Promise<[Map<Peptide, PeptideDataResponse>, PeptideTrust]>((resolve, reject) => {
+            obs.subscribe(message => {
+                if (message.type === "progress") {
+                    this.setProgress(message.value);
+                } else {
+                    resolve(message.value);
+                }
+            })
+        });
     }
 
     private async writePept2Data(peptideCounts: CountTable<Peptide>, pept2DataResponses: Map<Peptide, PeptideDataResponse>, peptideTrust: PeptideTrust) {

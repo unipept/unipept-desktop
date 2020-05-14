@@ -15,6 +15,7 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
             const readerWorker = await spawn(new Worker("./AssayFileSystemDataReader.worker.ts"));
             const splitted = await readerWorker(peptidesString);
             mpAssay.setPeptides(splitted, this.fireChange);
+            console.log("Done setting peptides");
         } catch (err) {
             // The file does not exist, just return empty data
             return;
