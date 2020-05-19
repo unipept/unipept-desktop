@@ -1,20 +1,25 @@
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-// import Database from "better-sqlite3";
 import { expose } from "threads";
 import Database from "better-sqlite3";
-import { GoCode } from "unipept-web-components/src/business/ontology/functional/go/GoDefinition";
-import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
-import { InterproCode } from "unipept-web-components/src/business/ontology/functional/interpro/InterproDefinition";
-import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
-import { Observable } from "observable-fns"
+import { Transfer } from "threads/worker";
+import { TransferDescriptor } from "threads/dist";
+import ShareableMap from "unipept-web-components/src/business/datastructures/ShareableMap";
+import { Observable } from "threads/observable";
 
-expose({ readPept2Data, writePept2Data, extractAnnotations });
+expose({ readPept2Data, writePept2Data });
 
-export function readPept2Data(dbFile: string, assayId: string): [Map<Peptide, PeptideDataResponse>, PeptideTrust] {
+export type ReadResult = {
+    type: "progress",
+    value: number
+} | {
+    type: "result",
+    value: [TransferDescriptor, TransferDescriptor, PeptideTrust]
+};
+
+export function readPept2Data(dbFile: string, assayId: string): Observable<ReadResult> {
     // @ts-ignore
-    return new Observable(async(observer) => {
+    return new Observable((observer) => {
         observer.next({
             type: "progress",
             value: 0.0
@@ -23,11 +28,14 @@ export function readPept2Data(dbFile: string, assayId: string): [Map<Peptide, Pe
         const db = new Database(dbFile);
         db.pragma("journal_mode = WAL");
 
-        const pept2DataMap = new Map<Peptide, PeptideDataResponse>();
         let rowsProcessed: number = 0;
         const rows = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").all(assayId);
+        const pept2DataMap = new ShareableMap<Peptide, string>(rows.length);
         for (const row of rows) {
-            pept2DataMap.set(row.peptide, JSON.parse(row.response));
+            if (row.response) {
+                pept2DataMap.set(row.peptide, row.response);
+            }
+
             if (rowsProcessed % 25000 === 0) {
                 observer.next({
                     type: "progress",
@@ -37,7 +45,6 @@ export function readPept2Data(dbFile: string, assayId: string): [Map<Peptide, Pe
             rowsProcessed++;
         }
 
-
         const trustRow = db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assayId);
         const peptideTrust = new PeptideTrust(
             JSON.parse(trustRow.missed_peptides),
@@ -45,21 +52,29 @@ export function readPept2Data(dbFile: string, assayId: string): [Map<Peptide, Pe
             trustRow.searched_peptides
         );
 
+        const buffers = pept2DataMap.getBuffers();
         observer.next({
             type: "result",
-            value: [pept2DataMap, peptideTrust]
+            value: [Transfer(buffers[0]), Transfer(buffers[1]), peptideTrust]
         });
+
+        observer.complete();
     });
 }
 
 export function writePept2Data(
     peptideCounts: Map<Peptide, number>,
-    pept2DataResponses: Map<Peptide, PeptideDataResponse>,
+    peptDataIndexBuffer: TransferDescriptor,
+    peptDataDataBuffer: TransferDescriptor,
     peptideTrust: PeptideTrust,
     assayId: string,
     dbFile: string
 ) {
-    const start = new Date().getTime();
+    const pept2DataResponses = new ShareableMap(0, 0);
+    pept2DataResponses.setBuffers(
+        peptDataIndexBuffer.transferables[0] as SharedArrayBuffer,
+        peptDataDataBuffer.transferables[0] as SharedArrayBuffer
+    );
 
     const db = new Database(dbFile);
 
@@ -70,7 +85,7 @@ export function writePept2Data(
     const insert = db.prepare("INSERT INTO pept2data VALUES (?, ?, ?)");
     const insertMany = db.transaction((data) => {
         for (const peptide of data) {
-            insert.run(assayId, peptide, JSON.stringify(pept2DataResponses.get(peptide)))
+            insert.run(assayId, peptide, pept2DataResponses.get(peptide))
         }
     });
     insertMany(peptideCounts.keys());
@@ -82,41 +97,4 @@ export function writePept2Data(
         peptideTrust.matchedPeptides,
         peptideTrust.searchedPeptides
     );
-
-    const end = new Date().getTime();
-    console.log("Write to db took " + (end - start) / 1000 + "s");
-}
-
-/**
- * Extract all functional and taxonomic annotations from a given set of peptide responses.
- *
- * @param peptideCounts Mapping between peptide and it's frequency.
- * @param pept2DataResponses Maps each peptide onto a valid response that was returned by the Unipept endpoint.
- */
-export function extractAnnotations(
-    peptideCounts: Map<Peptide, number>,
-    pept2DataResponses: Map<Peptide, PeptideDataResponse>
-): [GoCode[], EcCode[], InterproCode[], NcbiId[]] {
-    const start = new Date().getTime();
-    const gos = new Set<GoCode>();
-    const ecs = new Set<EcCode>();
-    const iprs = new Set<InterproCode>();
-    const ncbis = new Set<NcbiId>();
-
-    for (const peptide of peptideCounts.keys()) {
-        const response = pept2DataResponses.get(peptide);
-        if (response) {
-            Object.keys(response.fa.data).filter(x => x.startsWith("GO:")).map(x => gos.add(x));
-            Object.keys(response.fa.data).filter(x => x.startsWith("EC:")).map(x => ecs.add(x));
-            Object.keys(response.fa.data).filter(x => x.startsWith("IPR:")).map(x => iprs.add(x));
-            ncbis.add(response.lca);
-            response.lineage.filter(l => l).map(x => ncbis.add(x));
-        }
-    }
-
-    const out = [Array.from(gos), Array.from(ecs), Array.from(iprs), Array.from(ncbis)];
-    const end = new Date().getTime();
-    console.log("In extract annotations worker " + (end - start) / 1000 + "s");
-    //@ts-ignore
-    return out;
 }

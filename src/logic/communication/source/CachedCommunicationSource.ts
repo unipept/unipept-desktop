@@ -22,7 +22,7 @@ export default class CachedCommunicationSource implements CommunicationSource {
     private readonly pept2DataCommunicator: Pept2DataCommunicator;
 
     constructor(
-        peptToResponseMap: Map<Peptide, PeptideDataResponse>,
+        peptToResponseMap: Map<Peptide, string>,
         peptideTrust: PeptideTrust,
         initialConfiguration: SearchConfiguration
     ) {

@@ -7,10 +7,11 @@ import PeptideCountTableProcessor from "unipept-web-components/src/business/proc
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import { Database } from "better-sqlite3";
-import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import { spawn, Worker } from "threads/dist";
-import { Observable } from "observable-fns";
+import { spawn, Transfer, Worker } from "threads/dist";
+import ShareableMap from "unipept-web-components/src/business/datastructures/ShareableMap";
+import { Observable } from "threads/observable";
+import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
 
 export default class AssayProcessor {
     constructor(
@@ -59,7 +60,7 @@ export default class AssayProcessor {
         }
     }
 
-    private async getPept2Data(peptideCountTable: CountTable<Peptide>): Promise<[Map<Peptide, PeptideDataResponse>, PeptideTrust]> {
+    private async getPept2Data(peptideCountTable: CountTable<Peptide>): Promise<[Map<Peptide, string>, PeptideTrust]> {
         // Read storage metadata from db to check if a cache is present, and if is valid or not.
         const row = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
@@ -94,26 +95,38 @@ export default class AssayProcessor {
         }
     }
 
-    private async readPept2Data(): Promise<[Map<Peptide, PeptideDataResponse>, PeptideTrust]> {
+    private async readPept2Data(): Promise<[Map<Peptide, string>, PeptideTrust]> {
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
-        const obs: Observable<{ type: string, value: any }> = worker.readPept2Data(this.dbFile, this.assay.getId());
+        const obs: Observable<ReadResult> = worker.readPept2Data(this.dbFile, this.assay.getId());
 
-        return new Promise<[Map<Peptide, PeptideDataResponse>, PeptideTrust]>((resolve, reject) => {
+        return new Promise<[ShareableMap<Peptide, string>, PeptideTrust]>((resolve, reject) => {
             obs.subscribe(message => {
                 if (message.type === "progress") {
                     this.setProgress(message.value);
                 } else {
-                    resolve(message.value);
+                    const [indexBuffer, dataBuffer, peptideTrust] = message.value;
+                    const sharedMap = new ShareableMap<string, string>(0);
+                    sharedMap.setBuffers(
+                        indexBuffer.transferables[0] as SharedArrayBuffer,
+                        dataBuffer.transferables[0] as SharedArrayBuffer
+                    );
+                    resolve([sharedMap, peptideTrust]);
                 }
             })
         });
     }
 
-    private async writePept2Data(peptideCounts: CountTable<Peptide>, pept2DataResponses: Map<Peptide, PeptideDataResponse>, peptideTrust: PeptideTrust) {
+    private async writePept2Data(
+        peptideCounts: CountTable<Peptide>,
+        pept2DataResponses: ShareableMap<Peptide, string>,
+        peptideTrust: PeptideTrust
+    ) {
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
+        const buffers = pept2DataResponses.getBuffers();
         await worker.writePept2Data(
             peptideCounts.toMap(),
-            pept2DataResponses,
+            buffers[0],
+            buffers[1],
             peptideTrust,
             this.assay.getId(),
             this.dbFile

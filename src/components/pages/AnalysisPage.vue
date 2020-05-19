@@ -13,25 +13,25 @@
         </v-row>
         <v-row>
             <v-col>
-<!--                <single-dataset-visualizations-card-->
-<!--                    :peptide-count-table="activeCountTable"-->
-<!--                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"-->
-<!--                    :analysisInProgress="true"-->
-<!--                    :communication-source="activeCommunicationSource"-->
-<!--                    v-on:update-selected-term="onUpdateSelectedTerm"-->
-<!--                    v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">-->
-<!--                </single-dataset-visualizations-card>-->
+                <single-dataset-visualizations-card
+                    :peptide-count-table="activeCountTable"
+                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
+                    :analysisInProgress="true"
+                    :communication-source="activeCommunicationSource"
+                    v-on:update-selected-term="onUpdateSelectedTerm"
+                    v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
+                </single-dataset-visualizations-card>
             </v-col>
         </v-row>
         <v-row>
             <v-col>
-<!--                <functional-summary-card-->
-<!--                    :peptide-count-table="activeCountTable"-->
-<!--                    :communication-source="activeCommunicationSource"-->
-<!--                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"-->
-<!--                    :analysisInProgress="true"-->
-<!--                    :selectedTaxonId="$store.getters.getSelectedTaxonId">-->
-<!--                </functional-summary-card>-->
+                <functional-summary-card
+                    :peptide-count-table="activeCountTable"
+                    :communication-source="activeCommunicationSource"
+                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
+                    :analysisInProgress="true"
+                    :selectedTaxonId="$store.getters.getSelectedTaxonId">
+                </functional-summary-card>
             </v-col>
         </v-row>
     </v-container>

@@ -75,7 +75,6 @@ export default class StudyFileSystemReader extends FileSystemStudyVisitor {
                 }
 
                 // Also read in any data related to this assay.
-                console.log("Read from study...");
                 const dataReader: AssayVisitor = new AssayFileSystemDataReader(
                     this.studyPath,
                     this.project.db,

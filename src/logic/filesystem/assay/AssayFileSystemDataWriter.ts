@@ -10,7 +10,6 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
  */
 export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
-        console.log("Write to assay...");
         await fs.writeFile(
             `${this.directoryPath}${mpAssay.getName()}.pep`,
             mpAssay.getPeptides().join("\n"),

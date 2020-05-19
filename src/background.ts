@@ -10,7 +10,7 @@ import log from "electron-log";
 const isDevelopment = process.env.NODE_ENV !== "production"
 
 // Increase memory limit for Chromium, must be called before the app is ready.
-app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096");
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

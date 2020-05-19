@@ -273,7 +273,6 @@ export default class Project {
                     new Date()
                 );
 
-                console.log("In file added...");
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     this.projectPath + studyName,
                     this.db,
@@ -335,7 +334,6 @@ export default class Project {
                 return;
             }
 
-            console.log("In file changed...");
             const dataReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(path.dirname(filePath), this.db);
             await assay.accept(dataReader);
         });
