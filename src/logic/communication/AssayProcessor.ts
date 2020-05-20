@@ -9,9 +9,9 @@ import CachedCommunicationSource from "@/logic/communication/source/CachedCommun
 import { Database } from "better-sqlite3";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import { spawn, Transfer, Worker } from "threads/dist";
-import ShareableMap from "unipept-web-components/src/business/datastructures/ShareableMap";
 import { Observable } from "threads/observable";
 import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
+import { ShareableMap } from "shared-memory-datastructures";
 
 export default class AssayProcessor {
     constructor(

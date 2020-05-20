@@ -4,8 +4,8 @@ import { expose } from "threads";
 import Database from "better-sqlite3";
 import { Transfer } from "threads/worker";
 import { TransferDescriptor } from "threads/dist";
-import ShareableMap from "unipept-web-components/src/business/datastructures/ShareableMap";
 import { Observable } from "threads/observable";
+import { ShareableMap } from "shared-memory-datastructures";
 
 expose({ readPept2Data, writePept2Data });
 
@@ -64,16 +64,16 @@ export function readPept2Data(dbFile: string, assayId: string): Observable<ReadR
 
 export function writePept2Data(
     peptideCounts: Map<Peptide, number>,
-    peptDataIndexBuffer: TransferDescriptor,
-    peptDataDataBuffer: TransferDescriptor,
+    peptDataIndexBuffer: SharedArrayBuffer,
+    peptDataDataBuffer: SharedArrayBuffer,
     peptideTrust: PeptideTrust,
     assayId: string,
     dbFile: string
 ) {
     const pept2DataResponses = new ShareableMap(0, 0);
     pept2DataResponses.setBuffers(
-        peptDataIndexBuffer.transferables[0] as SharedArrayBuffer,
-        peptDataDataBuffer.transferables[0] as SharedArrayBuffer
+        peptDataIndexBuffer,
+        peptDataDataBuffer
     );
 
     const db = new Database(dbFile);

@@ -5,7 +5,7 @@ import SearchConfiguration from "unipept-web-components/src/business/configurati
 import ProgressListener from "unipept-web-components/src/business/progress/ProgressListener";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
-import ShareableMap from "unipept-web-components/src/business/datastructures/ShareableMap";
+import { ShareableMap } from "shared-memory-datastructures";
 
 /**
  * A cached variant of the Pept2DataCommunicator that persistently stores the results in the SQLite-database associated
