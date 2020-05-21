@@ -24,8 +24,8 @@ async function createWindow() {
     let config = await configManager.readConfiguration();
     // Create the browser window.
     let options: Electron.BrowserWindowConstructorOptions = {
-        width: 800,
-        height: 600,
+        width: 1200,
+        height: 1000,
         webPreferences: { nodeIntegration: true, nodeIntegrationInWorker: true },
         show: false
     };

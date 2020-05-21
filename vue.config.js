@@ -14,6 +14,7 @@ module.exports = {
     },
     pluginOptions: {
         electronBuilder: {
+            externals: ['better-sqlite3'],
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop"
                 // Disable code signing for now.

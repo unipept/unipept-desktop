@@ -12,6 +12,7 @@ import { spawn, Transfer, Worker } from "threads/dist";
 import { Observable } from "threads/observable";
 import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
 import { ShareableMap } from "shared-memory-datastructures";
+import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 
 export default class AssayProcessor {
     constructor(
@@ -65,7 +66,23 @@ export default class AssayProcessor {
         const row = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
         );
-        let valid: boolean = row !== undefined;
+
+        let valid: boolean;
+
+        if (row) {
+            const searchConfigRow = this.db.prepare(
+                "SELECT * FROM search_configuration WHERE `id` = ?"
+            ).get(row.configuration_id)
+            const config = new SearchConfiguration(
+                searchConfigRow.equate_il === 1,
+                searchConfigRow.filter_duplicates === 1,
+                searchConfigRow.missing_cleavage_handling === 1
+            );
+
+            valid = config.toString() === this.assay.getSearchConfiguration().toString();
+        } else {
+            valid = false;
+        }
 
         if (valid) {
             // Read previous results from DB
