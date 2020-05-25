@@ -81,8 +81,6 @@ export default class StaticDatabaseManager {
                     }
                 );
             });
-        } catch (err) {
-            throw err;
         } finally {
             zippedWriter.close();
         }
