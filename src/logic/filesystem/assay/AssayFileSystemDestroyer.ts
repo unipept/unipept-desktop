@@ -2,6 +2,7 @@ import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
 import fs from "fs";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
 
 /**
  * Removes both the metadata and raw data for an assay.
@@ -16,6 +17,9 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
             if (fs.existsSync(path)) {
                 fs.unlinkSync(`${this.directoryPath}${assay.getName()}.pep`);
             }
+
+            const configDestroyer = new SearchConfigFileSystemDestroyer(this.db);
+            configDestroyer.visitSearchConfiguration(assay.getSearchConfiguration());
 
             // Also remove all metadata from the db
             this.db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assay.getId());

@@ -6,13 +6,14 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
 import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
-import { Database } from "better-sqlite3";
+import { Database, RunResult } from "better-sqlite3";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import { spawn, Transfer, Worker } from "threads/dist";
 import { Observable } from "threads/observable";
 import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
 
 export default class AssayProcessor {
     constructor(
@@ -43,28 +44,34 @@ export default class AssayProcessor {
     }
 
     private async updateStorageMetadata(): Promise<void> {
-        const assayRow = this.db.prepare("SELECT * FROM assays WHERE `id` = ?").get(this.assay.getId());
         const metadataRow = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
         );
+
+        const existingConfig = this.assay.getSearchConfiguration();
+        const searchConfiguration = new SearchConfiguration(
+            existingConfig.equateIl,
+            existingConfig.filterDuplicates,
+            existingConfig.enableMissingCleavageHandling
+        );
+
+        const searchConfigWriter = new SearchConfigFileSystemWriter(this.db);
+        searchConfigWriter.visitSearchConfiguration(searchConfiguration);
 
         // Is there already metadata present in the DB?
         if (metadataRow) {
             // Update the db
             const update = this.db.prepare("UPDATE storage_metadata SET configuration_id = ? WHERE `assay_id` = ?");
-            update.run(assayRow.configuration_id, this.assay.getId());
+            update.run(searchConfiguration.id, this.assay.getId());
         } else {
             // Insert new metadata in the db
             const insert = this.db.prepare("INSERT INTO storage_metadata VALUES (?, ? , ?, ?)");
             // TODO endpoint and db version are empty for the time being...
-            insert.run(this.assay.getId(), assayRow.configuration_id, "", "");
+            insert.run(this.assay.getId(), searchConfiguration.id, "", "");
         }
     }
 
     private async getPept2Data(peptideCountTable: CountTable<Peptide>): Promise<[Map<Peptide, string>, PeptideTrust]> {
-        const installationDir = __dirname;
-        console.log(installationDir);
-
         // Read storage metadata from db to check if a cache is present, and if is valid or not.
         const row = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
@@ -116,10 +123,8 @@ export default class AssayProcessor {
     }
 
     private async readPept2Data(): Promise<[Map<Peptide, string>, PeptideTrust]> {
-        const installationDir = __dirname;
-
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
-        const obs: Observable<ReadResult> = worker.readPept2Data(installationDir, this.dbFile, this.assay.getId());
+        const obs: Observable<ReadResult> = worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
 
         return new Promise<[ShareableMap<Peptide, string>, PeptideTrust]>((resolve, reject) => {
             obs.subscribe(message => {
@@ -143,12 +148,10 @@ export default class AssayProcessor {
         pept2DataResponses: ShareableMap<Peptide, string>,
         peptideTrust: PeptideTrust
     ) {
-        const installationDir = __dirname;
-
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
         const buffers = pept2DataResponses.getBuffers();
         await worker.writePept2Data(
-            installationDir,
+            __dirname,
             peptideCounts.toMap(),
             buffers[0],
             buffers[1],
