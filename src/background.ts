@@ -9,6 +9,9 @@ import log from "electron-log";
 
 const isDevelopment = process.env.NODE_ENV !== "production"
 
+// Increase memory limit for Chromium, must be called before the app is ready.
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win: BrowserWindow | null
@@ -21,9 +24,9 @@ async function createWindow() {
     let config = await configManager.readConfiguration();
     // Create the browser window.
     let options: Electron.BrowserWindowConstructorOptions = {
-        width: 800,
-        height: 600,
-        webPreferences: { nodeIntegration: true },
+        width: 1200,
+        height: 1000,
+        webPreferences: { nodeIntegration: true, nodeIntegrationInWorker: true },
         show: false
     };
 
@@ -179,11 +182,11 @@ app.on("window-all-closed", () => {
     }
 })
 
-app.on("activate", () => {
+app.on("activate", async() => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (win === null) {
-        createWindow()
+        await createWindow();
     }
 })
 
@@ -205,7 +208,7 @@ app.on("ready", async() => {
         }
 
     }
-    await createWindow()
+    await createWindow();
 })
 
 // Exit cleanly on request from parent process in development mode.

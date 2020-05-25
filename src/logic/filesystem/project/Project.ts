@@ -17,11 +17,13 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import StudyVisitor from "unipept-web-components/src/business/entities/study/StudyVisitor";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
-import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
+import AssayProcessor from "@/logic/communication/AssayProcessor";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import ProjectManager from "@/logic/filesystem/project/ProjectManager";
+import Vue from "vue";
 
 
 /**
@@ -180,14 +182,19 @@ export default class Project {
         this.activeAssay = assay;
     }
 
-    public getProcessingResults(assay: Assay): { progress: number, countTable: CountTable<Peptide>, errorStatus: string, trust: PeptideTrust } {
+    public getProcessingResults(
+        assay: Assay
+    ): { progress: number, countTable: CountTable<Peptide>, errorStatus: string, trust: PeptideTrust, communicators: CommunicationSource } {
         if (!(assay.getId() in this.processedAssays)) {
-            this.processedAssays[assay.getId()] = {
+            // Need to explicitly set this property using the Vue.set-method to allow for other components to listen
+            // to changes to this object.
+            Vue.set(this.processedAssays, assay.getId(), {
                 progress: 0,
                 countTable: undefined,
                 errorStatus: undefined,
-                trust: undefined
-            }
+                trust: undefined,
+                communicators: undefined
+            });
         }
 
         return this.processedAssays[assay.getId()];
@@ -268,7 +275,8 @@ export default class Project {
 
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     this.projectPath + studyName,
-                    this.db
+                    this.db,
+                    false
                 );
                 await assay.accept(assayReader);
                 study.addAssay(assay);
@@ -388,27 +396,30 @@ export default class Project {
         processedItem.progress = 0;
         processedItem.countTable = undefined;
         processedItem.trust = undefined;
-
-        const countTableProcessor = new PeptideCountTableProcessor();
-        const countTable = await countTableProcessor.getPeptideCountTable(
-            assay.getPeptides(),
-            assay.getSearchConfiguration()
-        );
+        processedItem.communicators = undefined;
 
         try {
-            await Pept2DataCommunicator.process(countTable, assay.getSearchConfiguration(), {
-                onProgressUpdate: (progress: number) => processedItem.progress = progress
+            const assayProcessor = new AssayProcessor(this.db, this.projectPath + ProjectManager.DB_FILE_NAME, assay, {
+                onProgressUpdate: (progress: number) => {
+                    processedItem.progress = progress
+                }
             });
+
+            const [countTable, communicators] = await assayProcessor.processAssay();
+
+            processedItem.communicators = communicators;
+            processedItem.countTable = countTable;
+            processedItem.trust = await communicators.getPept2DataCommunicator().getPeptideTrust(
+                countTable,
+                assay.getSearchConfiguration()
+            );
         } catch (err) {
             console.warn(err);
             if (!this.activeAssay) {
                 this.activeAssay = assay;
             }
-            processedItem.errorStatus = err;
+            processedItem.errorStatus = err.toString();
         }
-
-        processedItem.countTable = countTable;
-        processedItem.trust = await Pept2DataCommunicator.getPeptideTrust(countTable, assay.getSearchConfiguration());
 
         this.resetActiveAssay();
     }

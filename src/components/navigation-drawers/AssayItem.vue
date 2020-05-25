@@ -10,12 +10,17 @@
             }">
             <div
                 v-if="isValidAssayName && !errorStatus">
-                <v-progress-circular
-                    v-if="progress !== 1"
-                    :rotate="-90" :size="16"
-                    :value="progress * 100"
-                    color="primary">
-                </v-progress-circular>
+                <v-tooltip bottom v-if="progress !== 1">
+                    <template v-slot:activator="{ on }">
+                        <v-progress-circular
+                            :rotate="-90" :size="16"
+                            :value="progress * 100"
+                            v-on="on"
+                            color="primary">
+                        </v-progress-circular>
+                    </template>
+                    <span>{{ Math.round(progress * 100) }}%</span>
+                </v-tooltip>
                 <v-icon
                     v-else
                     color="#424242"
@@ -101,6 +106,9 @@ import PeptideCountTableProcessor from "unipept-web-components/src/business/proc
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import Project from "@/logic/filesystem/project/Project";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -118,7 +126,7 @@ const { Menu, MenuItem } = remote;
         },
         errorStatus: {
             get(): boolean {
-                return this.project.getProcessingResults(this.assay).errorStatus;
+                return this.project.getProcessingResults(this.assay).errorStatus !== undefined;
             }
         }
     }
@@ -206,20 +214,25 @@ export default class AssayItem extends Vue {
     }
 
     @Watch("assay")
+    @Watch("progress")
     private async onAssayChanged() {
         this.assayName = this.assay.getName();
         this.peptideTrust = await this.computePeptideTrust();
     }
 
     private async computePeptideTrust(): Promise<PeptideTrust> {
-        const peptideProcessor = new PeptideCountTableProcessor();
-        const peptideCounts = await peptideProcessor.getPeptideCountTable(
-            this.assay.getPeptides(),
-            this.assay.getSearchConfiguration()
-        );
+        if (this.assay) {
+            const processingResults = this.project.getProcessingResults(this.assay);
+            const communicators = processingResults.communicators;
+            const peptideCounts = processingResults.countTable;
 
-        await Pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
-        return await Pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+            if (communicators && peptideCounts) {
+                const pept2DataCommunicator = communicators.getPept2DataCommunicator();
+                await pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
+                return await pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+            }
+        }
+        return undefined;
     }
 
     private reanalyse() {

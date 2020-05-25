@@ -11,7 +11,7 @@ import Study from "unipept-web-components/src/business/entities/study/Study";
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
 
 export default class ProjectManager  {
-    public readonly DB_FILE_NAME: string = "metadata.sqlite";
+    public static readonly DB_FILE_NAME: string = "metadata.sqlite";
 
     /**
      * @param projectLocation The main directory of the project on disk.
@@ -23,13 +23,12 @@ export default class ProjectManager  {
             projectLocation += "/";
         }
 
-        if (!fs.existsSync(projectLocation + this.DB_FILE_NAME)) {
+        if (!fs.existsSync(projectLocation + ProjectManager.DB_FILE_NAME)) {
             throw new InvalidProjectException("Project metadata file was not found!");
         }
 
-        const db = new Database(projectLocation + this.DB_FILE_NAME, {
-            verbose: (mess) => console.warn(mess)
-        });
+        const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
+        db.pragma("journal_mode = WAL");
         const project: Project = new Project(projectLocation, db);
 
         // Check all subdirectories of the given project and try to load the studies.
@@ -55,9 +54,8 @@ export default class ProjectManager  {
             projectLocation += "/";
         }
 
-        const db = new Database(projectLocation + this.DB_FILE_NAME, {
-            verbose: (mess) => console.warn(mess)
-        });
+        const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
+        db.pragma("journal_mode = WAL");
         db.exec(schema_v1);
 
         await this.addToRecentProjects(projectLocation);

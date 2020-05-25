@@ -19,4 +19,29 @@ CREATE TABLE search_configuration (
     missing_cleavage_handling INT NOT NULL
 );
 
+CREATE TABLE pept2data (
+    assay_id TEXT NOT NULL,
+    peptide TEXT NOT NULL,
+    response TEXT,
+    FOREIGN KEY(assay_id) REFERENCES assays(id),
+    PRIMARY KEY(assay_id, peptide)
+);
 
+CREATE TABLE peptide_trust (
+    assay_id TEXT NOT NULL,
+    missed_peptides TEXT NOT NULL,
+    matched_peptides INT NOT NULL,
+    searched_peptides INT NOT NULL,
+    FOREIGN KEY(assay_id) REFERENCES assays(id),
+    PRIMARY KEY(assay_id)
+);
+
+CREATE TABLE storage_metadata (
+    assay_id TEXT NOT NULL,
+    configuration_id INT NOT NULL,
+    endpoint TEXT,
+    db_version TEXT,
+    FOREIGN KEY(assay_id) REFERENCES assays(id),
+    FOREIGN KEY(configuration_id) REFERENCES search_configuration(id),
+    PRIMARY KEY(assay_id)
+);

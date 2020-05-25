@@ -1,12 +1,13 @@
 <template>
-    <v-container fluid v-if="!errorStatus">
+    <v-container fluid v-if="!errorStatus && $store.getters.getProject.getAllAssays().length > 0">
         <v-row>
             <v-col>
                 <analysis-summary
                     :assay="activeAssay"
                     :peptide-count-table="activeCountTable"
                     :project="$store.getters.getProject"
-                    :peptide-trust="activeTrust">
+                    :peptide-trust="activeTrust"
+                    :communication-source="activeCommunicationSource">
                 </analysis-summary>
             </v-col>
         </v-row>
@@ -15,7 +16,8 @@
                 <single-dataset-visualizations-card
                     :peptide-count-table="activeCountTable"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
-                    :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
+                    :analysisInProgress="true"
+                    :communication-source="activeCommunicationSource"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -25,15 +27,16 @@
             <v-col>
                 <functional-summary-card
                     :peptide-count-table="activeCountTable"
+                    :communication-source="activeCommunicationSource"
                     :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
-                    :analysisInProgress="$store.getters.getProject.getAllAssays().length > 0"
+                    :analysisInProgress="true"
                     :selectedTaxonId="$store.getters.getSelectedTaxonId">
                 </functional-summary-card>
             </v-col>
         </v-row>
     </v-container>
-    <v-container fluid v-else class="error-container">
-        <div class="network-error">
+    <v-container fluid v-else class="status-container">
+        <div class="inner-status-container" v-if="errorStatus">
             <v-icon x-large>
                 mdi-wifi-strength-4-alert
             </v-icon>
@@ -41,6 +44,14 @@
                 A network communication error occurred while processing this assay. Please check that you
                 are connected to the internet, or that your Unipept API-endpoint is correctly set and
                 <a @click="reanalyse()">try again.</a>
+            </p>
+        </div>
+        <div class="inner-status-container" v-else-if="$store.getters.getProject.getAllAssays().length === 0">
+            <v-icon x-large>
+                mdi-flask-empty-plus-outline
+            </v-icon>
+            <p>
+                Please add at least one study with one assay to this project.
             </p>
         </div>
     </v-container>
@@ -57,6 +68,9 @@ import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptid
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+
 
 @Component({
     components: {
@@ -74,18 +88,24 @@ import PeptideTrust from "unipept-web-components/src/business/processors/raw/Pep
             get(): CountTable<Peptide> {
                 if (this.activeAssay) {
                     return this.$store.getters.getProject.getProcessingResults(this.activeAssay).countTable;
-                } else {
-                    return undefined;
                 }
+                return undefined;
             }
         },
         activeTrust: {
             get(): PeptideTrust {
                 if (this.activeAssay) {
                     return this.$store.getters.getProject.getProcessingResults(this.activeAssay).trust;
-                } else {
-                    return undefined;
                 }
+                return undefined;
+            }
+        },
+        activeCommunicationSource: {
+            get(): CommunicationSource {
+                if (this.activeAssay) {
+                    return this.$store.getters.getProject.getProcessingResults(this.activeAssay).communicators;
+                }
+                return undefined;
             }
         },
         errorStatus: {
@@ -93,7 +113,6 @@ import PeptideTrust from "unipept-web-components/src/business/processors/raw/Pep
                 if (!this.activeAssay) {
                     return false;
                 }
-
                 return this.$store.getters.getProject.getProcessingResults(this.activeAssay).errorStatus !== undefined;
             }
         }
@@ -124,7 +143,7 @@ export default class AnalysisPage extends Vue {
         overflow-y: auto;
     }
 
-    .network-error {
+    .inner-status-container {
         max-width: 600px;
         display: flex;
         justify-content: center;
@@ -132,7 +151,7 @@ export default class AnalysisPage extends Vue {
         text-align: center;
     }
 
-    .error-container {
+    .status-container {
         width: 100%;
         height: 100%;
         display: flex;

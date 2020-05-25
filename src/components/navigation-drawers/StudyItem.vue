@@ -40,7 +40,7 @@
                     </template>
                     <span>{{ nameError }}</span>
                 </v-tooltip>
-                <v-menu>
+                <v-menu v-if="assaysInProgress.length === 0">
                     <template v-slot:activator="{ on: menu }">
                         <v-tooltip bottom>
                             <template v-slot:activator="{ on: tooltip }">
@@ -63,6 +63,7 @@
                         </v-list-item>
                     </v-list>
                 </v-menu>
+                <v-progress-circular v-else indeterminate :size="16" color="primary"></v-progress-circular>
             </div>
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
@@ -111,6 +112,7 @@ const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
 const fs = require("fs").promises;
 import path from "path";
+import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -148,6 +150,7 @@ export default class StudyItem extends Vue {
     private isValidStudyName: boolean = true;
 
     private nameError: string = "";
+    private assaysInProgress = [];
 
     mounted() {
         this.onStudyChanged();
@@ -180,6 +183,21 @@ export default class StudyItem extends Vue {
     @Watch("study")
     private onStudyChanged() {
         this.studyName = this.study.getName();
+    }
+
+    @Watch("study.assays")
+    private onAssaysChanged() {
+        const toRemove = [];
+        for (const assay of this.study.getAssays()) {
+            if (this.assaysInProgress.includes(assay.getName())) {
+                toRemove.push(assay.getName());
+            }
+        }
+
+        for (const remove of toRemove) {
+            const idx = this.assaysInProgress.indexOf(remove);
+            this.assaysInProgress.splice(idx, 1);
+        }
     }
 
     private enableStudyEdit() {
@@ -231,7 +249,25 @@ export default class StudyItem extends Vue {
         });
 
         if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
-            const assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
+            let assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
+
+            // Check if assay with same name already exists in the list of assays for this study. If so, change the name
+            // to make it unique.
+            let otherAssayWithName = this.study.getAssays().find(a => a.getName() === assayName);
+            if (otherAssayWithName) {
+                // Append a number to the assay to make it unique. An assay with this name might again already exist, which
+                // is why we need to check for uniqueness in a loop.
+                let counter = 1;
+                let newName;
+                while (otherAssayWithName) {
+                    newName = `${assayName} (${counter})`;
+                    otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
+                    counter++;
+                }
+                assayName = newName;
+            }
+            this.assaysInProgress.push(assayName);
+
             await fs.copyFile(chosenPath["filePaths"][0], this.project.projectPath + this.study.getName() + "/" + assayName + ".pep");
         }
     }

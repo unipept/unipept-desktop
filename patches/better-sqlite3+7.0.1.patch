@@ -1,0 +1,57 @@
+diff --git a/node_modules/better-sqlite3/lib/database.js b/node_modules/better-sqlite3/lib/database.js
+index 19851cf..5b5cdea 100644
+--- a/node_modules/better-sqlite3/lib/database.js
++++ b/node_modules/better-sqlite3/lib/database.js
+@@ -3,13 +3,33 @@ const fs = require('fs');
+ const path = require('path');
+ const util = require('./util');
+
+-const {
+-	Database: CPPDatabase,
+-	setErrorConstructor,
+-} = require('bindings')('better_sqlite3.node');
++let CPPDatabase;
++let setErrorConstructor;
+
+-function Database(filenameGiven, options) {
+-	if (filenameGiven == null) filenameGiven = '';
++function initDatabase(installationDir) {
++    let required;
++    if (!installationDir || installationDir.includes("electron.asar")) {
++        required = require('bindings')('better_sqlite3.node');
++    } else {
++        var requireFunc = typeof __webpack_require__ === 'function' ? __non_webpack_require__ : require;
++        required = requireFunc(path.join(installationDir, "node_modules/better-sqlite3/build/Release/better_sqlite3.node"));
++    }
++
++    CPPDatabase = required.Database;
++    setErrorConstructor = required.setErrorConstructor;
++    setErrorConstructor(require('./sqlite-error'));
++    util.wrap(CPPDatabase, 'pragma', require('./pragma'));
++    util.wrap(CPPDatabase, 'function', require('./function'));
++    util.wrap(CPPDatabase, 'aggregate', require('./aggregate'));
++    util.wrap(CPPDatabase, 'backup', require('./backup'));
++    CPPDatabase.prototype.transaction = require('./transaction');
++    CPPDatabase.prototype.constructor = Database;
++    Database.prototype = CPPDatabase.prototype;
++}
++
++function Database(filenameGiven, options, installationDir) {
++    if (!CPPDatabase) initDatabase(installationDir);
++    if (filenameGiven == null) filenameGiven = '';
+ 	if (options == null) options = {};
+ 	if (typeof filenameGiven !== 'string') throw new TypeError('Expected first argument to be a string');
+ 	if (typeof options !== 'object') throw new TypeError('Expected second argument to be an options object');
+@@ -34,12 +54,4 @@ function Database(filenameGiven, options) {
+ 	return new CPPDatabase(filename, filenameGiven, anonymous, readonly, fileMustExist, timeout, verbose || null);
+ }
+
+-setErrorConstructor(require('./sqlite-error'));
+-util.wrap(CPPDatabase, 'pragma', require('./pragma'));
+-util.wrap(CPPDatabase, 'function', require('./function'));
+-util.wrap(CPPDatabase, 'aggregate', require('./aggregate'));
+-util.wrap(CPPDatabase, 'backup', require('./backup'));
+-CPPDatabase.prototype.transaction = require('./transaction');
+-CPPDatabase.prototype.constructor = Database;
+-Database.prototype = CPPDatabase.prototype;
+ module.exports = Database;
