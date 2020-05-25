@@ -72,6 +72,8 @@ export function writePept2Data(
     assayId: string,
     dbFile: string
 ) {
+    console.log(assayId);
+
     const pept2DataResponses = new ShareableMap(0, 0);
     pept2DataResponses.setBuffers(
         peptDataIndexBuffer,
