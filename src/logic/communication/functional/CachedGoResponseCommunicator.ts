@@ -32,6 +32,7 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
 
         const worker = await spawn(new Worker("./CachedGoResponseCommunicator.worker.ts"));
         CachedGoResponseCommunicator.processing = worker.process(
+            __dirname,
             this.dbFile,
             codes,
             CachedGoResponseCommunicator.codeToResponses

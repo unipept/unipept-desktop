@@ -8,11 +8,13 @@ import InterproResponse from "unipept-web-components/src/business/communication/
 expose({ process })
 
 export default function process(
+    installationDir: string,
     dbPath: string,
     codes: InterproCode[],
     output: Map<InterproCode, InterproResponse>
 ): Map<EcCode, EcResponse> {
-    const db = new Database(dbPath);
+    // @ts-ignore
+    const db = new Database(dbPath, {}, installationDir);
     db.pragma("journal_mode = WAL");
 
     const stmt = db.prepare("SELECT * FROM interpro_entries WHERE `code` = ?");

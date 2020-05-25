@@ -17,7 +17,7 @@ export type ReadResult = {
     value: [TransferDescriptor, TransferDescriptor, PeptideTrust]
 };
 
-export function readPept2Data(dbFile: string, assayId: string): Observable<ReadResult> {
+export function readPept2Data(installationDir: string, dbFile: string, assayId: string): Observable<ReadResult> {
     // @ts-ignore
     return new Observable((observer) => {
         observer.next({
@@ -25,7 +25,8 @@ export function readPept2Data(dbFile: string, assayId: string): Observable<ReadR
             value: 0.0
         });
 
-        const db = new Database(dbFile);
+        //@ts-ignore
+        const db = new Database(dbFile, {}, installationDir);
         db.pragma("journal_mode = WAL");
 
         let rowsProcessed: number = 0;
@@ -63,6 +64,7 @@ export function readPept2Data(dbFile: string, assayId: string): Observable<ReadR
 }
 
 export function writePept2Data(
+    installationDir: string,
     peptideCounts: Map<Peptide, number>,
     peptDataIndexBuffer: SharedArrayBuffer,
     peptDataDataBuffer: SharedArrayBuffer,
@@ -76,7 +78,8 @@ export function writePept2Data(
         peptDataDataBuffer
     );
 
-    const db = new Database(dbFile);
+    //@ts-ignore
+    const db = new Database(dbFile, {}, installationDir);
 
     // First delete all existing rows for this assay;
     db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);

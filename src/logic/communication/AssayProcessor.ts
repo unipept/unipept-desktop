@@ -62,6 +62,9 @@ export default class AssayProcessor {
     }
 
     private async getPept2Data(peptideCountTable: CountTable<Peptide>): Promise<[Map<Peptide, string>, PeptideTrust]> {
+        const installationDir = __dirname;
+        console.log(installationDir);
+
         // Read storage metadata from db to check if a cache is present, and if is valid or not.
         const row = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
@@ -113,8 +116,10 @@ export default class AssayProcessor {
     }
 
     private async readPept2Data(): Promise<[Map<Peptide, string>, PeptideTrust]> {
+        const installationDir = __dirname;
+
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
-        const obs: Observable<ReadResult> = worker.readPept2Data(this.dbFile, this.assay.getId());
+        const obs: Observable<ReadResult> = worker.readPept2Data(installationDir, this.dbFile, this.assay.getId());
 
         return new Promise<[ShareableMap<Peptide, string>, PeptideTrust]>((resolve, reject) => {
             obs.subscribe(message => {
@@ -138,9 +143,12 @@ export default class AssayProcessor {
         pept2DataResponses: ShareableMap<Peptide, string>,
         peptideTrust: PeptideTrust
     ) {
+        const installationDir = __dirname;
+
         const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
         const buffers = pept2DataResponses.getBuffers();
         await worker.writePept2Data(
+            installationDir,
             peptideCounts.toMap(),
             buffers[0],
             buffers[1],

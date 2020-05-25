@@ -37,6 +37,7 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
 
             const spawnedProcess = await spawn(new Worker("./CachedNcbiResponseCommunicator.worker.ts"));
             CachedNcbiResponseCommunicator.processing = spawnedProcess.process(
+                __dirname,
                 staticDatabaseManager.getDatabasePath(),
                 codes,
                 CachedNcbiResponseCommunicator.codesProcessed

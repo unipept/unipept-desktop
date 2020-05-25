@@ -32,6 +32,7 @@ export default class CachedInterproResponseCommunicator extends InterproResponse
 
         const worker = await spawn(new Worker("./CachedInterproResponseCommunicator.worker.ts"));
         CachedInterproResponseCommunicator.processing = worker.process(
+            __dirname,
             this.dbFile,
             codes,
             CachedInterproResponseCommunicator.codeToResponses

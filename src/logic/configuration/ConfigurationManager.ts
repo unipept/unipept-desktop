@@ -11,7 +11,7 @@ export default class ConfigurationManager {
     // This is the default configuration object that's used as a fallback for inconsistent/inavailable configuration
     // values.
     private static readonly DEFAULT_CONFIG: Configuration = {
-        apiSource: "http://localhost:3000",
+        apiSource: "https://unipept.ugent.be",
         useNativeTitlebar: false
     };
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
@@ -19,7 +19,7 @@ export default class ConfigurationManager {
     private static currentConfiguration: Configuration = null;
 
     // Contains a function for every field of a Configuration object that checks whether it's valid or not.
-    private configurationRequirements: ((x: Configuration) => boolean)[] = [ 
+    private configurationRequirements: ((x: Configuration) => boolean)[] = [
         (config: Configuration) => this.isUrl(config.apiSource)
     ]
 
@@ -33,7 +33,7 @@ export default class ConfigurationManager {
      * Reads the currently used configuration from the user data folder for this application. This method guarantees
      * that no invalid configuration settings are set in the resulting object. If an invalid setting is found or the
      * configuration file could not be read, the default value will be used instead.
-     * 
+     *
      * @return A valid Configuration object with the most recent settings found on disk.
      */
     public async readConfiguration(): Promise<Configuration> {
@@ -58,7 +58,7 @@ export default class ConfigurationManager {
     /**
      * Write a valid Configuration object to disk. This function also checks the given object for validity. A
      * static, predefined location will be used to store this Configuration.
-     * 
+     *
      * @param config The Configuration object that should be stored to disk.
      * @throws InvalidConfigurationException when the given config is invalid.
      * @throws IOException when something went wrong during write of this file to disk.
@@ -79,7 +79,7 @@ export default class ConfigurationManager {
     /**
      * Checks whether all fields of the given Configuration object adhere to the required formats. Returns true if this
      * is a valid object, false otherwise.
-     * 
+     *
      * @param config A Configuration object that should be checked for validity.
      * @return True if the given Configuration is valid.
      */
@@ -94,7 +94,7 @@ export default class ConfigurationManager {
 
     /**
      * Tests if the given string is a valid URL.
-     * 
+     *
      * @param url The string for which should be checked if it is a valid URL.
      * @return True if the given string is a valid URL.
      */
@@ -118,5 +118,5 @@ export default class ConfigurationManager {
         // Get a reference to the user data folder in which configuration data will be stored.
         const configurationFolder = this.app.getPath("userData");
         return configurationFolder + "/" + ConfigurationManager.CONFIG_FILE_NAME;
-    } 
+    }
 }

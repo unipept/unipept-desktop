@@ -6,11 +6,13 @@ import { GoCode } from "unipept-web-components/src/business/ontology/functional/
 expose({ process })
 
 export default function process(
+    installationDir: string,
     dbPath: string,
     codes: GoCode[],
     output: Map<GoCode, GoResponse>
 ): Map<GoCode, GoResponse> {
-    const db = new Database(dbPath);
+    // @ts-ignore
+    const db = new Database(dbPath, {}, installationDir);
     db.pragma("journal_mode = WAL");
 
     const stmt = db.prepare("SELECT * FROM go_terms WHERE `code` = ?");

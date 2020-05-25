@@ -6,11 +6,13 @@ import Database from "better-sqlite3";
 expose({ process })
 
 export default function process(
+    installationDir: string,
     dbPath: string,
     codes: EcCode[],
     output: Map<EcCode, EcResponse>
 ): Map<EcCode, EcResponse> {
-    const db = new Database(dbPath);
+    // @ts-ignore
+    const db = new Database(dbPath, {}, installationDir);
     db.pragma("journal_mode = WAL");
 
     const stmt = db.prepare("SELECT * FROM ec_numbers WHERE `code` = ?");

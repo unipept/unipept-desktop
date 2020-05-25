@@ -16,7 +16,8 @@ module.exports = {
         electronBuilder: {
             externals: ['better-sqlite3'],
             builderOptions: {
-                "appId": "be.ugent.unipept.desktop"
+                "appId": "be.ugent.unipept.desktop",
+                "asar": true
                 // Disable code signing for now.
                 // "mac": {
                 //     "hardenedRuntime": true,

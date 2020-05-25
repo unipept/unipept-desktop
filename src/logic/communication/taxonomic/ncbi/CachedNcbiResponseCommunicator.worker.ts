@@ -6,8 +6,9 @@ import Database from "better-sqlite3";
 
 expose({ process })
 
-export default function process(dbPath: string, ncbiIds: NcbiId[], output: Map<NcbiId, NcbiResponse>): Map<NcbiId, NcbiResponse> {
-    const database = new Database(dbPath);
+export default function process(installationDir: string, dbPath: string, ncbiIds: NcbiId[], output: Map<NcbiId, NcbiResponse>): Map<NcbiId, NcbiResponse> {
+    // @ts-ignore
+    const database = new Database(dbPath, {}, installationDir);
     database.pragma("journal_mode = WAL");
 
     const extractStmt = database.prepare(

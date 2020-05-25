@@ -32,6 +32,7 @@ export default class CachedEcResponseCommunicator extends EcResponseCommunicator
 
         const worker = await spawn(new Worker("./CachedEcResponseCommunicator.worker.ts"));
         CachedEcResponseCommunicator.processing = worker.process(
+            __dirname,
             this.dbFile,
             codes,
             CachedEcResponseCommunicator.codeToResponses
