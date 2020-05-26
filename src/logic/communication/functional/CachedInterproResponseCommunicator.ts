@@ -7,6 +7,7 @@ import { spawn, Worker } from "threads/dist";
 export default class CachedInterproResponseCommunicator extends InterproResponseCommunicator {
     private static codeToResponses: Map<InterproCode, InterproResponse> = new Map<InterproCode, InterproResponse>();
     private static processing: Promise<Map<InterproCode, InterproResponse>>;
+    private static worker;
     private readonly dbFile: string;
 
     constructor() {
@@ -30,8 +31,12 @@ export default class CachedInterproResponseCommunicator extends InterproResponse
             await CachedInterproResponseCommunicator.processing;
         }
 
-        const worker = await spawn(new Worker("./CachedInterproResponseCommunicator.worker.ts"));
-        CachedInterproResponseCommunicator.processing = worker.process(
+        if (!CachedInterproResponseCommunicator.worker) {
+            CachedInterproResponseCommunicator.worker = await spawn(
+                new Worker("./CachedInterproResponseCommunicator.worker.ts")
+            );
+        }
+        CachedInterproResponseCommunicator.processing = CachedInterproResponseCommunicator.worker.process(
             __dirname,
             this.dbFile,
             codes,

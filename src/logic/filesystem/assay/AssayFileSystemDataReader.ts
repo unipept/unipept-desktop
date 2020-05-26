@@ -4,6 +4,8 @@ import { promises as fs } from "fs";
 import { spawn, Worker } from "threads"
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
+    private static worker;
+
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
         const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;
 
@@ -12,8 +14,11 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
                 encoding: "utf-8"
             });
 
-            const readerWorker = await spawn(new Worker("./AssayFileSystemDataReader.worker.ts"));
-            const splitted = await readerWorker(peptidesString);
+            if (!AssayFileSystemDataReader.worker) {
+                AssayFileSystemDataReader.worker = await spawn(new Worker("./AssayFileSystemDataReader.worker.ts"));
+            }
+
+            const splitted = await AssayFileSystemDataReader.worker(peptidesString);
             mpAssay.setPeptides(splitted, this.fireChange);
         } catch (err) {
             // The file does not exist, just return empty data

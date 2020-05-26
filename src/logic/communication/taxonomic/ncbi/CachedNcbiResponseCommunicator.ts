@@ -12,6 +12,7 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
     private readonly extractStmt: Statement;
     private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
     private static processing: Promise<Map<NcbiId, NcbiResponse>>;
+    private static worker;
 
     constructor() {
         super();
@@ -35,8 +36,12 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
 
             const staticDatabaseManager = new StaticDatabaseManager();
 
-            const spawnedProcess = await spawn(new Worker("./CachedNcbiResponseCommunicator.worker.ts"));
-            CachedNcbiResponseCommunicator.processing = spawnedProcess.process(
+            if (!CachedNcbiResponseCommunicator.worker) {
+                CachedNcbiResponseCommunicator.worker = await spawn(
+                    new Worker("./CachedNcbiResponseCommunicator.worker.ts")
+                );
+            }
+            CachedNcbiResponseCommunicator.processing = CachedNcbiResponseCommunicator.worker.process(
                 __dirname,
                 staticDatabaseManager.getDatabasePath(),
                 codes,

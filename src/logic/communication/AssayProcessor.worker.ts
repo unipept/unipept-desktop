@@ -27,7 +27,6 @@ export function readPept2Data(installationDir: string, dbFile: string, assayId: 
 
         //@ts-ignore
         const db = new Database(dbFile, {}, installationDir);
-        db.pragma("journal_mode = WAL");
 
         let rowsProcessed: number = 0;
         const rows = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").all(assayId);
@@ -72,13 +71,13 @@ export function writePept2Data(
     assayId: string,
     dbFile: string
 ) {
-    console.log(assayId);
-
     const pept2DataResponses = new ShareableMap(0, 0);
     pept2DataResponses.setBuffers(
         peptDataIndexBuffer,
         peptDataDataBuffer
     );
+
+    console.log(dbFile);
 
     //@ts-ignore
     const db = new Database(dbFile, {}, installationDir);

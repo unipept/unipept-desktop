@@ -1,16 +1,16 @@
 "use strict"
 
-import { app, protocol, BrowserWindow, Menu, shell, ipcMain, netLog } from "electron"
+import { app, protocol, BrowserWindow, Menu, shell, ipcMain, netLog, crashReporter } from "electron"
 import { createProtocol, installVueDevtools } from "vue-cli-plugin-electron-builder/lib"
 import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
+import path from "path";
+
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096");
 
 const isDevelopment = process.env.NODE_ENV !== "production"
-
-// Increase memory limit for Chromium, must be called before the app is ready.
-app.commandLine.appendSwitch("js-flags", "--max-old-space-size=8192");
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -22,8 +22,9 @@ protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: tru
 async function createWindow() {
     let configManager = new ConfigurationManager(app);
     let config = await configManager.readConfiguration();
+
     // Create the browser window.
-    let options: Electron.BrowserWindowConstructorOptions = {
+    let options = {
         width: 1200,
         height: 1000,
         webPreferences: { nodeIntegration: true, nodeIntegrationInWorker: true },
@@ -194,6 +195,7 @@ app.on("activate", async() => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", async() => {
+    console.log("READY IS FIRED...");
     if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     // Devtools extensions are broken in Electron 6.0.0 and greater

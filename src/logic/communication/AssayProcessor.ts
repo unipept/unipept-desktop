@@ -14,8 +14,11 @@ import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
+import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
 
 export default class AssayProcessor {
+    private static worker;
+
     constructor(
         private readonly db: Database,
         private readonly dbFile: string,
@@ -24,6 +27,10 @@ export default class AssayProcessor {
     ) {}
 
     public async processAssay(): Promise<[CountTable<Peptide>, CommunicationSource]> {
+        if (!AssayProcessor.worker) {
+            AssayProcessor.worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
+        }
+
         const peptideCountTableProcessor = new PeptideCountTableProcessor();
         const peptideCountTable = await peptideCountTableProcessor.getPeptideCountTable(
             this.assay.getPeptides(),
@@ -80,16 +87,16 @@ export default class AssayProcessor {
         let valid: boolean;
 
         if (row) {
-            const searchConfigRow = this.db.prepare(
-                "SELECT * FROM search_configuration WHERE `id` = ?"
-            ).get(row.configuration_id)
-            const config = new SearchConfiguration(
-                searchConfigRow.equate_il === 1,
-                searchConfigRow.filter_duplicates === 1,
-                searchConfigRow.missing_cleavage_handling === 1
+            const configReader = new SearchConfigFileSystemReader(this.db);
+            const searchConfiguration = new SearchConfiguration(
+                true,
+                true,
+                false,
+                row.configuration_id
             );
+            configReader.visitSearchConfiguration(searchConfiguration);
 
-            valid = config.toString() === this.assay.getSearchConfiguration().toString();
+            valid = searchConfiguration.toString() === this.assay.getSearchConfiguration().toString();
         } else {
             valid = false;
         }
@@ -123,8 +130,7 @@ export default class AssayProcessor {
     }
 
     private async readPept2Data(): Promise<[Map<Peptide, string>, PeptideTrust]> {
-        const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
-        const obs: Observable<ReadResult> = worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
+        const obs: Observable<ReadResult> = AssayProcessor.worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
 
         return new Promise<[ShareableMap<Peptide, string>, PeptideTrust]>((resolve, reject) => {
             obs.subscribe(message => {
@@ -148,9 +154,8 @@ export default class AssayProcessor {
         pept2DataResponses: ShareableMap<Peptide, string>,
         peptideTrust: PeptideTrust
     ) {
-        const worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
         const buffers = pept2DataResponses.getBuffers();
-        await worker.writePept2Data(
+        await AssayProcessor.worker.writePept2Data(
             __dirname,
             peptideCounts.toMap(),
             buffers[0],

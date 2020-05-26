@@ -15,8 +15,6 @@ export default function process(
 ): Map<EcCode, EcResponse> {
     // @ts-ignore
     const db = new Database(dbPath, {}, installationDir);
-    db.pragma("journal_mode = WAL");
-
     const stmt = db.prepare("SELECT * FROM interpro_entries WHERE `code` = ?");
 
     for (const code of codes) {

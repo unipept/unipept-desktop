@@ -7,6 +7,7 @@ import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseMa
 export default class CachedEcResponseCommunicator extends EcResponseCommunicator {
     private static codeToResponses: Map<EcCode, EcResponse> = new Map<EcCode, EcResponse>();
     private static processing: Promise<Map<EcCode, EcResponse>>;
+    private static worker;
     private readonly dbFile: string;
 
     constructor() {
@@ -30,8 +31,12 @@ export default class CachedEcResponseCommunicator extends EcResponseCommunicator
             await CachedEcResponseCommunicator.processing;
         }
 
-        const worker = await spawn(new Worker("./CachedEcResponseCommunicator.worker.ts"));
-        CachedEcResponseCommunicator.processing = worker.process(
+        if (!CachedEcResponseCommunicator.worker) {
+            CachedEcResponseCommunicator.worker = await spawn(
+                new Worker("./CachedEcResponseCommunicator.worker.ts")
+            );
+        }
+        CachedEcResponseCommunicator.processing = CachedEcResponseCommunicator.worker.process(
             __dirname,
             this.dbFile,
             codes,

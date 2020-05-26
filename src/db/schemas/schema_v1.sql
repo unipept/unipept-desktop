@@ -23,7 +23,6 @@ CREATE TABLE pept2data (
     assay_id TEXT NOT NULL,
     peptide TEXT NOT NULL,
     response TEXT,
-    FOREIGN KEY(assay_id) REFERENCES assays(id),
     PRIMARY KEY(assay_id, peptide)
 );
 
@@ -32,7 +31,6 @@ CREATE TABLE peptide_trust (
     missed_peptides TEXT NOT NULL,
     matched_peptides INT NOT NULL,
     searched_peptides INT NOT NULL,
-    FOREIGN KEY(assay_id) REFERENCES assays(id),
     PRIMARY KEY(assay_id)
 );
 
@@ -41,7 +39,5 @@ CREATE TABLE storage_metadata (
     configuration_id INT NOT NULL,
     endpoint TEXT,
     db_version TEXT,
-    FOREIGN KEY(assay_id) REFERENCES assays(id),
-    FOREIGN KEY(configuration_id) REFERENCES search_configuration(id),
     PRIMARY KEY(assay_id)
 );
