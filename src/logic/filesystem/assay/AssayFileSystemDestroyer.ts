@@ -18,14 +18,14 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
                 fs.unlinkSync(`${this.directoryPath}${assay.getName()}.pep`);
             }
 
-            const configDestroyer = new SearchConfigFileSystemDestroyer(this.db);
-            configDestroyer.visitSearchConfiguration(assay.getSearchConfiguration());
-
             // Also remove all metadata from the db
             this.db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assay.getId());
             this.db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assay.getId());
             this.db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assay.getId());
             this.db.prepare("DELETE FROM assays WHERE `id` = ?").run(assay.getId());
+
+            const configDestroyer = new SearchConfigFileSystemDestroyer(this.db);
+            configDestroyer.visitSearchConfiguration(assay.getSearchConfiguration());
         } catch (e) {
             throw new IOException(e);
         }

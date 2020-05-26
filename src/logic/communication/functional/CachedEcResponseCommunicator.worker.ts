@@ -13,8 +13,6 @@ export default function process(
 ): Map<EcCode, EcResponse> {
     // @ts-ignore
     const db = new Database(dbPath, {}, installationDir);
-    db.pragma("journal_mode = WAL");
-
     const stmt = db.prepare("SELECT * FROM ec_numbers WHERE `code` = ?");
 
     for (const code of codes) {

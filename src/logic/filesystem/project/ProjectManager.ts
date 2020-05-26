@@ -28,7 +28,6 @@ export default class ProjectManager  {
         }
 
         const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
-        db.pragma("journal_mode = WAL");
         const project: Project = new Project(projectLocation, db);
 
         // Check all subdirectories of the given project and try to load the studies.
@@ -55,7 +54,6 @@ export default class ProjectManager  {
         }
 
         const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
-        db.pragma("journal_mode = WAL");
         db.exec(schema_v1);
 
         await this.addToRecentProjects(projectLocation);

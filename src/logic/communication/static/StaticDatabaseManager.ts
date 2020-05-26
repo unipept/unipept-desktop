@@ -172,9 +172,7 @@ export default class StaticDatabaseManager {
      * database file seems not to be present.
      */
     public getDatabase(): DatabaseType {
-        const db = new Database(this.getDatabasePath(), { fileMustExist: true });
-        db.pragma("journal_mode = WAL");
-        return db;
+        return new Database(this.getDatabasePath(), { fileMustExist: true });
     }
 
     public getDatabasePath(): string {

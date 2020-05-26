@@ -7,6 +7,7 @@ import { GoCode } from "unipept-web-components/src/business/ontology/functional/
 export default class CachedGoResponseCommunicator extends GoResponseCommunicator {
     private static codeToResponses: Map<GoCode, GoResponse> = new Map<GoCode, GoResponse>();
     private static processing: Promise<Map<GoCode, GoResponse>>;
+    private static worker;
     private readonly dbFile: string;
 
     constructor() {
@@ -30,8 +31,12 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
             await CachedGoResponseCommunicator.processing;
         }
 
-        const worker = await spawn(new Worker("./CachedGoResponseCommunicator.worker.ts"));
-        CachedGoResponseCommunicator.processing = worker.process(
+        if (!CachedGoResponseCommunicator.worker) {
+            CachedGoResponseCommunicator.worker = await spawn(
+                new Worker("./CachedGoResponseCommunicator.worker.ts")
+            );
+        }
+        CachedGoResponseCommunicator.processing = CachedGoResponseCommunicator.worker.process(
             __dirname,
             this.dbFile,
             codes,

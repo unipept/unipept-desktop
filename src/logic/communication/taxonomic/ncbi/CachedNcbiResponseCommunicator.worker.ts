@@ -9,7 +9,6 @@ expose({ process })
 export default function process(installationDir: string, dbPath: string, ncbiIds: NcbiId[], output: Map<NcbiId, NcbiResponse>): Map<NcbiId, NcbiResponse> {
     // @ts-ignore
     const database = new Database(dbPath, {}, installationDir);
-    database.pragma("journal_mode = WAL");
 
     const extractStmt = database.prepare(
         "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
