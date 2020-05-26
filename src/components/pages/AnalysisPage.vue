@@ -2,13 +2,13 @@
     <v-container fluid v-if="!errorStatus && $store.getters.getProject.getAllAssays().length > 0">
         <v-row>
             <v-col>
-<!--                <analysis-summary-->
-<!--                    :assay="activeAssay"-->
-<!--                    :peptide-count-table="activeCountTable"-->
-<!--                    :project="$store.getters.getProject"-->
-<!--                    :peptide-trust="activeTrust"-->
-<!--                    :communication-source="activeCommunicationSource">-->
-<!--                </analysis-summary>-->
+                <analysis-summary
+                    :assay="activeAssay"
+                    :peptide-count-table="activeCountTable"
+                    :project="$store.getters.getProject"
+                    :peptide-trust="activeTrust"
+                    :communication-source="activeCommunicationSource">
+                </analysis-summary>
             </v-col>
         </v-row>
         <v-row>
