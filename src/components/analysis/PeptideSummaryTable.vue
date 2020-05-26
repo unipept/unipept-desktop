@@ -3,6 +3,8 @@
         :headers="headers"
         :items="items"
         :items-per-page="5"
+        :server-items-length="totalItems"
+        :options.sync="options"
         :loading="loading || progress !== 1">
         <template v-slot:item.matched="{ item }">
             <v-tooltip v-if="item.matched" bottom>
@@ -32,6 +34,8 @@ import Pept2DataCommunicator from "unipept-web-components/src/business/communica
 import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
 import Project from "@/logic/filesystem/project/Project";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import { spawn, Worker } from "threads";
+import { DataOptions } from "vuetify";
 
 @Component({
     computed: {
@@ -56,7 +60,13 @@ export default class PeptideSummaryTable extends Vue {
     @Prop({ required: true })
     private communicationSource: CommunicationSource;
 
+    // This worker keeps track of the data for this table and computes it on demand.
+    private static worker;
+
+    private totalItems: number = 0;
     private items = [];
+
+    private options = {};
 
     private loading: boolean = false;
 
@@ -86,7 +96,15 @@ export default class PeptideSummaryTable extends Vue {
     ]
 
     private async mounted() {
+        PeptideSummaryTable.worker = await spawn(new Worker("./PeptideSummaryTable.worker.ts"));
         await this.computeItems();
+    }
+
+    @Watch("options", { deep: true })
+    private async onOptionsChanged(newOptions: DataOptions) {
+        if (PeptideSummaryTable.worker) {
+            this.items = await PeptideSummaryTable.worker.getItems(newOptions);
+        }
     }
 
     @Watch("assay")
@@ -96,36 +114,31 @@ export default class PeptideSummaryTable extends Vue {
 
         if (this.peptideCountTable) {
             this.loading = true;
+
+            this.totalItems = this.peptideCountTable.getOntologyIds().length;
             const pept2DataCommunicator = this.communicationSource.getPept2DataCommunicator();
             await pept2DataCommunicator.process(this.peptideCountTable, this.assay.getSearchConfiguration());
-            const lcaIds = [];
+            const buffers = pept2DataCommunicator.getPeptideResponseMap(this.assay.getSearchConfiguration()).getBuffers();
 
-            this.peptideCountTable.getOntologyIds().map((peptide) => {
-                const response = pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
-                if (response) {
-                    lcaIds.push(response.lca);
-                }
+            await PeptideSummaryTable.worker.setPept2DataMap(buffers[0], buffers[1]);
+            await PeptideSummaryTable.worker.setPeptideCountTable(this.peptideCountTable.toMap());
+
+            const lcaOntology = await (new NcbiOntologyProcessor(this.communicationSource)).getOntologyByIds(
+                await PeptideSummaryTable.worker.getLcaIds()
+            );
+            await PeptideSummaryTable.worker.setLcaOntology(lcaOntology);
+
+            await this.onOptionsChanged({
+                page: 1,
+                itemsPerPage: 5,
+                sortBy: [],
+                sortDesc: [],
+                multiSort: false,
+                mustSort: false,
+                groupBy: [],
+                groupDesc: []
             });
 
-            const lcaOntology = await (new NcbiOntologyProcessor(this.communicationSource)).getOntologyByIds(lcaIds);
-
-            for (const peptide of this.peptideCountTable.getOntologyIds()) {
-                const response = pept2DataCommunicator.getPeptideResponse(peptide, this.assay.getSearchConfiguration());
-                let lcaName: string = "N/A";
-                let matched: boolean = false;
-
-                if (response) {
-                    matched = true;
-                    const lcaDefinition = lcaOntology.getDefinition(response.lca);
-                    lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
-                }
-                this.items.push({
-                    peptide: peptide,
-                    count: this.peptideCountTable.getCounts(peptide),
-                    lca: lcaName,
-                    matched: matched
-                });
-            }
             this.loading = false;
         }
     }

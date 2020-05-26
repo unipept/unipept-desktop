@@ -77,8 +77,6 @@ export function writePept2Data(
         peptDataDataBuffer
     );
 
-    console.log(dbFile);
-
     //@ts-ignore
     const db = new Database(dbFile, {}, installationDir);
 
