@@ -128,6 +128,8 @@ export default class PeptideSummaryTable extends Vue {
             );
             await PeptideSummaryTable.worker.setLcaOntology(lcaOntology);
 
+            await PeptideSummaryTable.worker.computeItems();
+
             await this.onOptionsChanged({
                 page: 1,
                 itemsPerPage: 5,
