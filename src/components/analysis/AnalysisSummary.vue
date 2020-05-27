@@ -20,7 +20,6 @@
                                 <div class="subtitle-2">Last analysed on May 5 at 13:28</div>
                                 <div>UniProt 2020.01</div>
                                 <div>https://unipept.ugent.be</div>
-
                             </div>
                         </div>
                         <search-settings-form

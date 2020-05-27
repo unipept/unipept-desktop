@@ -17,9 +17,9 @@ export default class SearchConfigFileSystemReader implements SearchConfiguration
         if (config.id) {
             const result = this.db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
             if (result) {
-                config.equateIl = result.equate_il === 1;
-                config.filterDuplicates = result.filter_duplicates === 1;
-                config.enableMissingCleavageHandling = result.missing_cleavage_handling === 1;
+                config.equateIl = (result.equate_il === 1);
+                config.filterDuplicates = (result.filter_duplicates === 1);
+                config.enableMissingCleavageHandling = (result.missing_cleavage_handling === 1);
             }
         }
     }

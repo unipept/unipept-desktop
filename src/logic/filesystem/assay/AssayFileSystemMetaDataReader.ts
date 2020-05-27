@@ -9,7 +9,7 @@ export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisito
         const row = this.db.prepare("SELECT * FROM assays WHERE assays.id = ?").get(mpAssay.getId());
 
         if (row) {
-            const configuration = new SearchConfiguration();
+            const configuration = new SearchConfiguration(true, true, false, row.configuration_id);
             const configReader = new SearchConfigFileSystemReader(this.db);
             configReader.visitSearchConfiguration(configuration);
             mpAssay.setSearchConfiguration(configuration);
