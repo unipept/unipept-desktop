@@ -5,6 +5,7 @@ import NcbiTaxon from "unipept-web-components/src/business/ontology/taxonomic/nc
 import { Ontology } from "unipept-web-components/src/business/ontology/Ontology";
 import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
 import { DataOptions } from "vuetify";
+import { Observable } from "observable-fns";
 
 type ItemType = {
     peptide: string,
@@ -49,33 +50,49 @@ function setLcaOntology(ontology: Ontology<number, NcbiTaxon>) {
     lcaOntology = ontology;
 }
 
-function computeItems() {
-    const output = [];
+function computeItems(): Observable<number> {
+    return new Observable((obs) => {
+        const output = [];
 
-    for (const peptide of peptides) {
-        const response = pept2DataMap.get(peptide);
-        let lcaName: string = "N/A";
-        let matched: boolean = false;
+        obs.next(0);
 
-        if (response) {
-            matched = true;
-            // @ts-ignore
-            const lcaDefinition = lcaOntology.definitions.get(JSON.parse(response).lca);
-            lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
+        const totalPeptides: number = peptides.length;
+        let processedPeptides: number = 0;
+
+        for (const peptide of peptides) {
+            const response = pept2DataMap.get(peptide);
+            let lcaName: string = "N/A";
+            let matched: boolean = false;
+
+            if (response) {
+                matched = true;
+                // @ts-ignore
+                const lcaDefinition = lcaOntology.definitions.get(JSON.parse(response).lca);
+                lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
+            }
+
+            output.push({
+                peptide: peptide,
+                count: peptideCountTable.get(peptide),
+                lca: lcaName,
+                matched: matched
+            });
+
+            processedPeptides++;
+
+            if (processedPeptides % 5000 === 0) {
+                obs.next(processedPeptides / totalPeptides);
+            }
         }
 
-        output.push({
-            peptide: peptide,
-            count: peptideCountTable.get(peptide),
-            lca: lcaName,
-            matched: matched
-        })
-    }
+        items = output;
 
-    items = output;
+        obs.complete();
+    });
 }
 
 function getItems(options: DataOptions): ItemType[] {
+    const startTime = new Date().getTime();
     if (!items) {
         return [];
     }
@@ -101,5 +118,6 @@ function getItems(options: DataOptions): ItemType[] {
         return value;
     })
 
+    console.log("getItems took " + (new Date().getTime() - startTime) / 1000 + "s");
     return items.slice(start, end);
 }

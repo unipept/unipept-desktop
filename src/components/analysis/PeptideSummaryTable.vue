@@ -5,7 +5,11 @@
         :items-per-page="5"
         :server-items-length="totalItems"
         :options.sync="options"
-        :loading="loading || progress !== 1">
+        :loading="loading || progress !== 1"
+        :loading-text="'Loading items: ' + Math.round(computeProgress * 100) + '%'">
+        <template v-slot:progress>
+            <v-progress-linear :value="computeProgress * 100" height="2"></v-progress-linear>
+        </template>
         <template v-slot:item.matched="{ item }">
             <v-tooltip v-if="item.matched" bottom>
                 <template v-slot:activator="{ on }">
@@ -30,12 +34,12 @@ import { Prop, Watch } from "vue-property-decorator";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
 import Project from "@/logic/filesystem/project/Project";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import { spawn, Worker } from "threads";
 import { DataOptions } from "vuetify";
+import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 
 @Component({
     computed: {
@@ -69,6 +73,7 @@ export default class PeptideSummaryTable extends Vue {
     private options = {};
 
     private loading: boolean = false;
+    private computeProgress: number = 0;
 
     private headers = [
         {
@@ -81,7 +86,7 @@ export default class PeptideSummaryTable extends Vue {
             text: "Occurrence",
             align: "start",
             value: "count",
-            width: "30%"
+            width: "20%"
         }, {
             text: "Lowest common ancestor",
             align: "start",
@@ -91,7 +96,7 @@ export default class PeptideSummaryTable extends Vue {
             text: "Matched?",
             align: "center",
             value: "matched",
-            width: "10%"
+            width: "20%"
         }
     ]
 
@@ -107,8 +112,22 @@ export default class PeptideSummaryTable extends Vue {
         }
     }
 
-    @Watch("assay")
+    @Watch("assay.searchConfiguration")
+    private async onSearchConfigChanged(oldConfig: SearchConfiguration, newConfig: SearchConfiguration) {
+        if (
+            oldConfig.equateIl !== newConfig.equateIl ||
+            oldConfig.filterDuplicates !== newConfig.filterDuplicates ||
+            oldConfig.enableMissingCleavageHandling !== newConfig.enableMissingCleavageHandling
+        ) {
+            await this.computeItems();
+        }
+    }
+
     @Watch("peptideCountTable")
+    private async onPeptideCountTableChanged() {
+        await this.computeItems();
+    }
+
     private async computeItems() {
         this.items.splice(0, this.items.length);
 
@@ -128,7 +147,14 @@ export default class PeptideSummaryTable extends Vue {
             );
             await PeptideSummaryTable.worker.setLcaOntology(lcaOntology);
 
-            await PeptideSummaryTable.worker.computeItems();
+            const obs = PeptideSummaryTable.worker.computeItems();
+            await new Promise((resolve, reject) => {
+                obs.subscribe(
+                    (val) => this.computeProgress = val,
+                    (err) => reject(err),
+                    () => resolve(),
+                );
+            });
 
             await this.onOptionsChanged({
                 page: 1,
