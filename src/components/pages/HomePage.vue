@@ -172,10 +172,12 @@ export default class HomePage extends Vue {
     private async onOpenProject(path: string) {
         this.loadingProject = true;
         try {
-            const projectManager: ProjectManager = new ProjectManager();
-            const project: Project = await projectManager.loadExistingProject(path);
-            await project.initialize();
-            await this.$store.dispatch("setProject", project);
+            if (!this.$store.getters.getProject || this.$store.getters.getProject.projectPath !== path) {
+                const projectManager: ProjectManager = new ProjectManager();
+                const project: Project = await projectManager.loadExistingProject(path);
+                await project.initialize();
+                await this.$store.dispatch("setProject", project);
+            }
             await this.$router.push("/analysis/single");
         } catch (err) {
             if (err instanceof InvalidProjectException) {

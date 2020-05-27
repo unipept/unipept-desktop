@@ -101,7 +101,9 @@ export default class PeptideSummaryTable extends Vue {
     ]
 
     private async mounted() {
-        PeptideSummaryTable.worker = await spawn(new Worker("./PeptideSummaryTable.worker.ts"));
+        if (!PeptideSummaryTable.worker) {
+            PeptideSummaryTable.worker = await spawn(new Worker("./PeptideSummaryTable.worker.ts"));
+        }
         await this.computeItems();
     }
 

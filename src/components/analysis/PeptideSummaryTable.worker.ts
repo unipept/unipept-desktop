@@ -92,7 +92,6 @@ function computeItems(): Observable<number> {
 }
 
 function getItems(options: DataOptions): ItemType[] {
-    const startTime = new Date().getTime();
     if (!items) {
         return [];
     }
@@ -118,6 +117,5 @@ function getItems(options: DataOptions): ItemType[] {
         return value;
     })
 
-    console.log("getItems took " + (new Date().getTime() - startTime) / 1000 + "s");
     return items.slice(start, end);
 }
