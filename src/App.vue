@@ -292,6 +292,10 @@ export default class App extends Vue implements ErrorListener {
         padding-bottom: 0 !important;
     }
 
+    .v-progress-circular__overlay {
+        transition: none !important;
+    }
+
     //   .container-after-titlebar .v-app-bar {
     //     margin-top: 30px !important;
     //   }
