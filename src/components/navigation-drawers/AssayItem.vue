@@ -102,12 +102,10 @@ import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import Study from "unipept-web-components/src/business/entities/study/Study";
-import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import Project from "@/logic/filesystem/project/Project";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
-import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
+import { promises as fs } from "fs";
 
 
 const { remote } = require("electron");
@@ -179,7 +177,7 @@ export default class AssayItem extends Vue {
         menu.append(new MenuItem({
             label: "Duplicate",
             click: () => {
-
+                this.duplicateAssay();
             }
         }));
         menu.append(new MenuItem({
@@ -243,8 +241,38 @@ export default class AssayItem extends Vue {
         this.$emit("select-assay", this.assay);
     }
 
-    private removeAssay() {
-        this.$emit("remove-assay", this.assay);
+    private async duplicateAssay() {
+        let assayName = this.assay.getName();
+
+        // Check if assay with same name already exists in the list of assays for this study. If so, change the name
+        // to make it unique.
+        let otherAssayWithName = this.study.getAssays().find(a => a.getName() === assayName);
+        if (otherAssayWithName) {
+            // Append a number to the assay to make it unique. An assay with this name might again already exist, which
+            // is why we need to check for uniqueness in a loop.
+            let counter = 1;
+            let newName;
+            while (otherAssayWithName) {
+                newName = `${assayName} (${counter})`;
+                otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
+                counter++;
+            }
+            assayName = newName;
+        }
+
+        await fs.copyFile(
+            `${this.project.projectPath}${this.study.getName()}/${this.assay.getName()}.pep`,
+            `${this.project.projectPath}${this.study.getName()}/${assayName}.pep`,
+        );
+    }
+
+    private async removeAssay() {
+        this.removeConfirmationActive = false;
+        const assayDestroyer = new AssayFileSystemDestroyer(
+            `${this.project.projectPath}${this.study.getName()}`,
+            this.project.db
+        );
+        await this.assay.accept(assayDestroyer);
     }
 }
 </script>

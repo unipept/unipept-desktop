@@ -74,8 +74,7 @@
                 :project="project"
                 v-bind:key="assay.id"
                 :active-assay="project.activeAssay"
-                v-on:select-assay="onSelectAssay"
-                v-on:remove-assay="onRemoveAssay">
+                v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
         <v-dialog v-model="showCreateAssayDialog" max-width="800" v-if="study">
@@ -113,6 +112,7 @@ const { Menu, MenuItem } = remote;
 const fs = require("fs").promises;
 import path from "path";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -239,8 +239,13 @@ export default class StudyItem extends Vue {
         return true;
     }
 
-    private removeStudy() {
-        this.project.removeStudy(this.study);
+    private async removeStudy(): Promise<void> {
+        // Completely destroy this study and wait for the file system watcher to pick the change up.
+        const studyDestroyer = new StudyFileSystemRemover(
+            `${this.project.projectPath}${this.study.getName()}`,
+            this.project.db
+        );
+        await this.study.accept(studyDestroyer);
     }
 
     private async createFromFile() {
@@ -278,10 +283,6 @@ export default class StudyItem extends Vue {
 
     private async onSelectAssay(assay: Assay) {
         this.project.activateAssay(assay);
-    }
-
-    private async onRemoveAssay(assay: Assay) {
-        await this.study.removeAssay(assay);
     }
 }
 </script>

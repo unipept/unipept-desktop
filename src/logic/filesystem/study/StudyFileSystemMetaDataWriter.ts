@@ -8,18 +8,21 @@ import IOException from "unipept-web-components/src/business/exceptions/IOExcept
 /**
  * Class that's able to fully serialize a Study-object to the local filesystem.
  */
-export default class StudyFileSystemWriter extends FileSystemStudyVisitor {
+export default class StudyFileSystemMetaDataWriter extends FileSystemStudyVisitor {
     public async visitStudy(study: Study): Promise<void> {
         try {
             // Make study directory if it does not exist yet...
             await mkdirp(`${this.studyPath}`);
 
-            if (this.project.db.prepare("SELECT * FROM studies WHERE `id`=?").get(study.getId())) {
-                this.project.db.prepare("UPDATE studies SET `name`=? WHERE `id`=?").run(study.getName(), study.getId());
+            if (this.db.prepare("SELECT * FROM studies WHERE `id`=?").get(study.getId())) {
+                this.db.prepare("UPDATE studies SET `name`=? WHERE `id`=?").run(study.getName(), study.getId());
             } else {
-                this.project.db.prepare(
+                this.db.prepare(
                     "INSERT INTO studies (id, name) VALUES (?, ?)"
-                ).run(study.getId(), study.getName());
+                ).run(
+                    study.getId(),
+                    study.getName()
+                );
             }
         } catch (err) {
             throw new IOException(err);

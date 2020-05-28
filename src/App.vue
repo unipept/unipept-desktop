@@ -202,7 +202,7 @@ export default class App extends Vue implements ErrorListener {
     private onProjectChanged() {
         const project: Project = this.$store.getters.getProject;
         if (project) {
-            project.addErrorListener(this);
+            project.watcher.addErrorListener(this);
         }
     }
 

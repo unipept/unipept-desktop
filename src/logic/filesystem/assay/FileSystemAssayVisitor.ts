@@ -13,9 +13,8 @@ export default abstract class FileSystemAssayVisitor implements AssayVisitor {
     /**
      * @param directoryPath path to the parent directory of this assay.
      * @param db The database-object that keeps track of metadata for the assays.
-     * @param fireChange Should the assay's change listener by notified after updating it?
      */
-    constructor(directoryPath: string, db: Database, protected fireChange: boolean = true) {
+    constructor(directoryPath: string, db: Database) {
         if (!directoryPath.endsWith("/")) {
             directoryPath += "/";
         }

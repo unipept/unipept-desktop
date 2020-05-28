@@ -25,6 +25,7 @@ import Project from "@/logic/filesystem/project/Project";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import StudyItem from "./StudyItem.vue";
 import Study from "unipept-web-components/src/business/entities/study/Study";
+import mkdirp from "mkdirp";
 
 @Component({
     components: {
@@ -58,7 +59,10 @@ export default class SingleAnalysisToolbar extends Vue {
             if (unknowns.length > 0) {
                 studyName += ` (${Math.max(...unknowns) + 1})`
             }
-            this.project.createStudy(studyName);
+
+            // Write a new directory to the file system with this name, the file system watcher will then automatically
+            // pick this up.
+            mkdirp(`${this.project.projectPath}${studyName}`);
         }
     }
 }
