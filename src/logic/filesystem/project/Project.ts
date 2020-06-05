@@ -12,6 +12,17 @@ import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import Vue from "vue";
 import FileSystemWatcher from "@/logic/filesystem/project/FileSystemWatcher";
 
+export type ProcessingResult = {
+    progress: number,
+    countTable: CountTable<Peptide>,
+    errorStatus: string,
+    trust: PeptideTrust,
+    communicators: CommunicationSource,
+    // When did the last chunk of data come in? (In milliseconds since epoch)
+    startProcessingTime: number,
+    // Estimate of total remaining processing time (in seconds)
+    eta: number
+};
 
 /**
  * A project is a collection of studies. Every project is associated with a specific directory on the user's local
@@ -74,7 +85,7 @@ export default class Project {
 
     public getProcessingResults(
         assay: Assay
-    ): { progress: number, countTable: CountTable<Peptide>, errorStatus: string, trust: PeptideTrust, communicators: CommunicationSource } {
+    ): ProcessingResult {
         if (!(assay.getId() in this.processedAssays)) {
             // Need to explicitly set this property using the Vue.set-method to allow for other components to listen
             // to changes to this object.
@@ -83,7 +94,9 @@ export default class Project {
                 countTable: undefined,
                 errorStatus: undefined,
                 trust: undefined,
-                communicators: undefined
+                communicators: undefined,
+                lastChunkStart: undefined,
+                eta: undefined
             });
         }
 
@@ -122,13 +135,33 @@ export default class Project {
         processedItem.countTable = undefined;
         processedItem.trust = undefined;
         processedItem.communicators = undefined;
+        processedItem.startProcessingTime = undefined;
 
         try {
-            const assayProcessor = new AssayProcessor(this.db, this.projectPath + ProjectManager.DB_FILE_NAME, assay, {
-                onProgressUpdate: (progress: number) => {
-                    processedItem.progress = progress
+            const assayProcessor = new AssayProcessor(
+                this.db,
+                this.projectPath + ProjectManager.DB_FILE_NAME,
+                assay,
+                {
+                    onProgressUpdate: (progress: number) => {
+                        if (!processedItem.startProcessingTime) {
+                            console.log("Update start time...");
+                            processedItem.startProcessingTime = new Date().getTime();
+                        }
+
+                        processedItem.progress = progress
+
+                        const elapsedTime = new Date().getTime() - processedItem.startProcessingTime;
+
+                        if (elapsedTime > 500) {
+                            const progressToDo = 1 - progress;
+                            // Divide by 1000 to convert to seconds
+                            const multiplier = progressToDo / progress;
+                            processedItem.eta = (elapsedTime * multiplier) / 1000;
+                        }
+                    }
                 }
-            });
+            );
 
             const [countTable, communicators] = await assayProcessor.processAssay();
 
