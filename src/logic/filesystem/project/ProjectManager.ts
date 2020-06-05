@@ -26,6 +26,7 @@ export default class ProjectManager  {
      * @throws {InvalidProjectException} When the given directory does not contain all required project files.
      */
     public async loadExistingProject(projectLocation: string): Promise<Project> {
+        console.log("Start loading: " + new Date().getTime());
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }

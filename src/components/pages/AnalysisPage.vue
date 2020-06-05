@@ -1,5 +1,8 @@
 <template>
-    <v-container fluid v-if="!errorStatus && $store.getters.getProject.getAllAssays().length > 0">
+    <v-container fluid v-if="
+        !errorStatus &&
+        $store.getters.getProject.getAllAssays().length > 0 &&
+        (maxProgress === 1 && activeProgress === 1)">
         <v-row>
             <v-col>
                 <analysis-summary
@@ -54,6 +57,23 @@
                 Please add at least one study with one assay to this project.
             </p>
         </div>
+        <div class="inner-status-container game-container" v-else-if="maxProgress < 1 || activeProgress < 1" >
+            <v-progress-circular
+                :size="100"
+                :rotate="-90"
+                :width="15"
+                :value="(activeAssay ? activeProgress : maxProgress) * 100"
+                color="primary"
+                class="mt-12">
+                {{ Math.round((activeAssay ? activeProgress : maxProgress) * 100) }}%
+            </v-progress-circular>
+            <p class="mt-4">
+                {{ activeEta ? secondsToTimeString(activeEta) : secondsToTimeString(minEta) }}
+            </p>
+            <div class="mt-12">
+                <snake></snake>
+            </div>
+        </div>
     </v-container>
 </template>
 
@@ -69,14 +89,15 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
-import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
+import Snake from "./../games/Snake.vue";
 
 
 @Component({
     components: {
         AnalysisSummary,
         SingleDatasetVisualizationsCard,
-        FunctionalSummaryCard
+        FunctionalSummaryCard,
+        Snake
     },
     computed: {
         activeAssay: {
@@ -115,6 +136,44 @@ import DefaultCommunicationSource from "unipept-web-components/src/business/comm
                 }
                 return this.$store.getters.getProject.getProcessingResults(this.activeAssay).errorStatus !== undefined;
             }
+        },
+        maxProgress: {
+            get(): number {
+                return this.$store.getters.getProject.getAllAssays().reduce((acc, curr) => {
+                    const progressResult = this.$store.getters.getProject.getProcessingResults(curr).progress;
+                    if (progressResult && progressResult > acc) {
+                        return progressResult;
+                    } else {
+                        return acc;
+                    }
+                }, 0);
+            }
+        },
+        minEta: {
+            get(): number {
+                return this.$store.getters.getProject.getAllAssays().reduce((acc, curr) => {
+                    const eta = this.$store.getters.getProject.getProcessingResults(curr).eta;
+                    if (eta < acc) {
+                        return eta;
+                    }
+                }, Infinity);
+            }
+        },
+        activeProgress: {
+            get(): number {
+                if (!this.activeAssay) {
+                    return 0;
+                }
+                return this.$store.getters.getProject.getProcessingResults(this.activeAssay).progress;
+            }
+        },
+        activeEta: {
+            get(): number {
+                if (!this.activeAssay) {
+                    return 0;
+                }
+                return this.$store.getters.getProject.getProcessingResults(this.activeAssay).eta;
+            }
         }
     }
 })
@@ -133,6 +192,23 @@ export default class AnalysisPage extends Vue {
             this.$store.getters.getProject.processAssay(activeAssay);
         }
     }
+
+    private secondsToTimeString(time: number): string {
+        if (time && !isNaN(time) && time !== Infinity) {
+            const date = new Date(time * 1000);
+            let timeString = "";
+            if (date.getHours() - 1 > 0) {
+                timeString = `${date.getHours() - 1} hours, ${date.getMinutes()} minutes and ${date.getSeconds()} seconds`;
+            } else if (date.getMinutes() > 0) {
+                timeString = `${date.getMinutes()} minutes and ${date.getSeconds()} seconds`;
+            } else {
+                timeString = `${date.getSeconds()} seconds`;
+            }
+            return `Approximately ${timeString} remaining...`;
+        } else {
+            return "Computing estimated time remaining...";
+        }
+    }
 }
 </script>
 
@@ -149,6 +225,11 @@ export default class AnalysisPage extends Vue {
         justify-content: center;
         flex-direction: column;
         text-align: center;
+        align-items: center;
+    }
+
+    .game-container {
+        justify-content: flex-start;
     }
 
     .status-container {
@@ -156,6 +237,6 @@ export default class AnalysisPage extends Vue {
         height: 100%;
         display: flex;
         justify-content: center;
-        align-items: center;
+        /*align-items: center;*/
     }
 </style>
