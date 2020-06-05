@@ -35,12 +35,12 @@ export default class CreateAssay extends Vue {
     private name: string;
 
     private async createAssay() {
-        const assay: Assay = this.project.createMetaProteomicsAssay(
-            this.name,
-            this.peptides.split(/\r?\n/),
-            this.study
-        );
-        this.$emit("create-assay", assay);
+        // const assay: Assay = this.project.createMetaProteomicsAssay(
+        //     this.name,
+        //     this.peptides.split(/\r?\n/),
+        //     this.study
+        // );
+        // this.$emit("create-assay", assay);
     }
 }
 </script>

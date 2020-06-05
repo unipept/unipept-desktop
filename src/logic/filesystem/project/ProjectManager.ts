@@ -1,14 +1,21 @@
 import Project from "./Project";
-import Database from "better-sqlite3";
 import * as fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import * as path from "path";
+
 // @ts-ignore
 import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
-import StudyFileSystemReader from "@/logic/filesystem/study/StudyFileSystemReader";
+import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import Database, { Database as DatabaseType } from "better-sqlite3";
+import { v4 as uuidv4 } from "uuid";
+import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSystemMetaDataWriter";
+import FileSystemWatcher from "./FileSystemWatcher";
+import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
+import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
+
 
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";
@@ -28,18 +35,29 @@ export default class ProjectManager  {
         }
 
         const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
-        const project: Project = new Project(projectLocation, db);
 
         // Check all subdirectories of the given project and try to load the studies.
         const subDirectories: string[] = fs.readdirSync(projectLocation, { withFileTypes: true })
             .filter(dirEntry => dirEntry.isDirectory())
             .map(dirEntry => dirEntry.name);
 
+        const studies = [];
+
         for (const directory of subDirectories) {
-            await this.loadStudy(`${projectLocation}${directory}`, project);
+            studies.push(await this.loadStudy(`${projectLocation}${directory}`, db));
         }
 
         await this.addToRecentProjects(projectLocation);
+
+        const project = new Project(projectLocation, db, studies);
+        project.setWatcher(new FileSystemWatcher(project));
+
+        for (const study of studies) {
+            for (const assay of study.getAssays()) {
+                assay.addChangeListener(new FileSystemAssayChangeListener(project, study));
+            }
+            study.addChangeListener(new FileSystemStudyChangeListener(project));
+        }
 
         return project;
     }
@@ -58,10 +76,12 @@ export default class ProjectManager  {
 
         await this.addToRecentProjects(projectLocation);
 
-        return new Project(projectLocation, db);
+        const project = new Project(projectLocation, db);
+        project.setWatcher(new FileSystemWatcher(project));
+        return project;
     }
 
-    private async loadStudy(directory: string, project: Project): Promise<void> {
+    private async loadStudy(directory: string, db: DatabaseType): Promise<Study> {
         if (!directory.endsWith("/")) {
             directory += "/";
         }
@@ -70,16 +90,24 @@ export default class ProjectManager  {
         let study: Study;
 
         // Check if the given study name is present in the database. If not, add the study with a new ID.
-        const row = project.db.prepare("SELECT * FROM studies WHERE `name`=?").get(studyName);
+        const row = db.prepare("SELECT * FROM studies WHERE `name`=?").get(studyName);
+
         if (row) {
-            // Retrieve study-id.
-            study = project.createStudy(studyName, row.id);
+            study = new Study(row.id);
         } else {
-            study = project.createStudy(studyName);
+            study = new Study(uuidv4())
         }
 
-        const studyReader = new StudyFileSystemReader(directory, project);
+        study.setName(studyName);
+
+        const studyWriter = new StudyFileSystemMetaDataWriter(directory, db);
+        await study.accept(studyWriter);
+
+        // Read all assays from this study
+        const studyReader = new StudyFileSystemDataReader(directory, db);
         await study.accept(studyReader);
+
+        return study;
     }
 
     private async addToRecentProjects(path: string) {

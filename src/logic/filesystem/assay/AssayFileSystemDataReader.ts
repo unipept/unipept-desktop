@@ -2,6 +2,7 @@ import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisi
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { promises as fs } from "fs";
 import { spawn, Worker } from "threads"
+import IOException from "unipept-web-components/src/business/exceptions/IOException";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     private static worker;
@@ -19,10 +20,10 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
             }
 
             const splitted = await AssayFileSystemDataReader.worker(peptidesString);
-            mpAssay.setPeptides(splitted, this.fireChange);
+            mpAssay.setPeptides(splitted);
         } catch (err) {
-            // The file does not exist, just return empty data
-            return;
+            // The file does not exist (yet), throw an exception
+            throw new IOException(err);
         }
     }
 }
