@@ -49,22 +49,43 @@
                 <a @click="reanalyse()">try again.</a>
             </p>
         </div>
-        <div class="inner-status-container" v-else-if="$store.getters.getProject.getAllAssays().length === 0">
-            <v-icon x-large>
-                mdi-flask-empty-plus-outline
-            </v-icon>
+        <div class="d-flex flex-column mt-12" style="max-width: 1000px;" v-else-if="$store.getters.getProject.getAllAssays().length === 0">
+            <h2>Empty project</h2>
             <p>
-                Please add at least one study with one assay to this project.
+                You have created an empty project. If this is the first time you're using this application, you can use
+                the following steps as a guide to get started.
+            </p>
+            <h3>1. Create a new study</h3>
+            <p class="font-italic font-weight-light">
+                A study is a central concept that contains information about the subject that's under investigation.
+                It's a collection of assays with extra contextual information about these assays.
+            </p>
+            <p class="font-weight-medium">
+                Click the "Create assay" button in the sidebar to the left to create a new study. This is the big blue
+                button situated at the bottom of the sidebar.
+            </p>
+            <h3>2. Add an assay to your study</h3>
+            <p class="font-italic font-weight-light">
+                An assay corresponds to one experiment executed on a piece of material or a dataset. In the case of
+                metaproteomics, an assay corresponds to a list of peptides with a specific search configuration that
+                can directly be processed by this application.
+            </p>
+            <p class="font-weight-medium">
+                After you've created a new study, you need to import a list of peptides that you want to process. Click
+                the <v-icon small style="position: relative; bottom: 1px;" color="grey darken-3">
+                mdi-file-plus-outline</v-icon> button next to the study to which your new assay should belong.
+            </p>
+            <p class="font-italic">
+                Tip: you can create as many studies and assays as you'd like.
             </p>
         </div>
-        <div class="inner-status-container game-container" v-else-if="maxProgress < 1 || activeProgress < 1" >
+        <div class="inner-status-container game-container mt-12" v-else-if="maxProgress < 1 || activeProgress < 1" >
             <v-progress-circular
                 :size="100"
                 :rotate="-90"
                 :width="15"
                 :value="(activeAssay ? activeProgress : maxProgress) * 100"
-                color="primary"
-                class="mt-12">
+                color="primary">
                 {{ Math.round((activeAssay ? activeProgress : maxProgress) * 100) }}%
             </v-progress-circular>
             <p class="mt-4">
