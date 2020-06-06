@@ -22,6 +22,15 @@
                 </v-list-item>
             </v-list>
         </div>
+        <div v-else class="ml-12 mr-12">
+            <h2>No recent projects</h2>
+            <p class="font-weight-medium">
+                Click the button below to open a previously created project or chose one of the options on the right.
+                You can create a new, empty project by selecting the "Create new project" button. If you want to
+                import an existing project from an external model (for example ISA-tab), you need to click the "Import
+                project" button.
+            </p>
+        </div>
         <tooltip message="Select a previously created project to open." position="bottom">
             <div class="open-project-button" @click="openProject()">
                 <v-icon>mdi-folder-open-outline</v-icon>
