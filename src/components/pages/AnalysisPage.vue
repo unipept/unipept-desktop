@@ -61,7 +61,7 @@
                 It's a collection of assays with extra contextual information about these assays.
             </p>
             <p class="font-weight-medium">
-                Click the "Create assay" button in the sidebar to the left to create a new study. This is the big blue
+                Click the "Create study" button in the sidebar to the left to create a new study. This is the big blue
                 button situated at the bottom of the sidebar.
             </p>
             <h3>2. Add an assay to your study</h3>
