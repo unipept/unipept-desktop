@@ -23,14 +23,14 @@
                         <div class="project-actions">
                             <tooltip message="Select an empty folder and create a new project." position="bottom">
                                 <div @click="createProject()">
-                                    <v-icon>mdi-folder-plus-outline</v-icon>
-                                    <span>Create new project</span>
+                                    <v-icon large>mdi-folder-plus-outline</v-icon>
+                                    <span style="font-size: 24px;">Create new project</span>
                                 </div>
                             </tooltip>
                             <tooltip message="Import a project from an external model." position="bottom">
                                 <div>
-                                    <v-icon>mdi-folder-download-outline</v-icon>
-                                    <span>Import project</span>
+                                    <v-icon large>mdi-folder-download-outline</v-icon>
+                                    <span style="font-size: 24px;">Import project</span>
                                 </div>
                             </tooltip>
                         </div>

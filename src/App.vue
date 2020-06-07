@@ -11,8 +11,6 @@
             <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on
                  the left side -->
             <Toolbar
-                :open.sync="rightNavDrawer"
-                :mini.sync="rightNavMini"
                 v-on:activate-dataset="onActivateDataset"
                 v-on:update:toolbar-width="onToolbarWidthUpdated">
             </Toolbar>
@@ -20,9 +18,9 @@
             <v-content
                 :style="{
                     'min-height': '100%',
-                    'max-width': rightNavMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
+                    'max-width': isMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
                     'position': 'relative',
-                    'left': rightNavMini ? '55px' : (toolbarWidth + 55) + 'px'
+                    'left': isMini ? '55px' : (toolbarWidth + 55) + 'px'
                 }">
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
@@ -103,13 +101,16 @@ const BrowserWindow = electron.BrowserWindow;
             get(): Project {
                 return this.$store.getters.getProject
             }
+        },
+        isMini: {
+            get(): boolean {
+                return ! ["/analysis/single", "/analysis/multi"].includes(this.$route.path);
+            }
         }
     }
 })
 export default class App extends Vue implements ErrorListener {
     private navDrawer: boolean = false;
-    private rightNavDrawer: boolean = true;
-    private rightNavMini: boolean = true;
     private loading: boolean = true;
 
     private updatingSnackbar: boolean = false;
@@ -131,7 +132,6 @@ export default class App extends Vue implements ErrorListener {
         // should pass through the Vue app.
         ipcRenderer.on("navigate", (sender, location) => {
             if (location !== this.$route.path) {
-                this.rightNavMini = true;
                 this.$router.push(location);
             }
         });

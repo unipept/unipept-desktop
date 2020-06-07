@@ -1,7 +1,6 @@
 <template>
     <div class="toolbar">
         <v-navigation-drawer
-            v-model="isOpen"
             :mini-variant="true"
             fixed :class="{'toolbar-navigation-drawer': !isMini}"
             permanent>
@@ -10,7 +9,7 @@
                     <v-list-item
                         :class="{'v-list-item--active': $route.path === '/'}"
                         link
-                        @click="navigateAndCloseSideBar('/')">
+                        @click="navigate('/', false)">
                         <v-list-item-icon>
                             <v-icon>mdi-home</v-icon>
                         </v-list-item-icon>
@@ -23,7 +22,7 @@
                         :disabled="$store.getters.getProject === null"
                         :class="{'v-list-item--active': $route.path === '/analysis/single'}"
                         link
-                        @click="navigateAndToggleExpand('/analysis/single')">
+                        @click="navigate('/analysis/single', true)">
                         <v-list-item-icon>
                             <v-icon>mdi-bacteria</v-icon>
                         </v-list-item-icon>
@@ -36,7 +35,7 @@
                         :disabled="$store.getters.getProject === null"
                         :class="{'v-list-item--active': $route.path === '/analysis/multi'}"
                         link
-                        @click="navigateAndToggleExpand('/analysis/multi')">
+                        @click="navigate('/analysis/multi', true)">
                         <v-list-item-icon>
                             <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
@@ -80,66 +79,26 @@ import ToolbarExplorer from "./ToolbarExplorer.vue";
         ComparativeAnalysisToolbar,
         Tooltip,
         SingleAnalysisToolbar
+    },
+    computed: {
+        isMini: {
+            get(): boolean {
+                return ! ["/analysis/single", "/analysis/multi"].includes(this.$route.path);
+            }
+        }
     }
 })
 export default class Toolbar extends Vue {
-    @Prop({ required: false, default: false })
-    private open: boolean;
-    @Prop({ required: false, default: true })
-    private mini: boolean;
-
-    // These are the models that will be used internally by this component to sync the current state.
-    private isOpen: boolean = false;
-    private isMini: boolean = true;
-
     private minToolbarWidth: number = 169;
     private originalToolbarWidth: number = 210;
     private toolbarWidth: number = this.originalToolbarWidth;
 
     mounted() {
-        this.isOpen = this.open;
-        this.isMini = this.mini;
         this.setupDraggableToolbar();
     }
 
-    @Watch("open")
-    private onOpenChanged() {
-        this.isOpen = this.open;
-    }
-
-    @Watch("mini")
-    private onMiniChanged() {
-        this.isMini = this.mini;
-    }
-
-    @Watch("isOpen")
-    private onIsOpenChanged() {
-        this.$emit("update:open", this.isOpen);
-    }
-
-    @Watch("isMini")
-    private onIsMiniChanged() {
-        this.$emit("update:mini", this.isMini);
-    }
-
-    /**
-     * The visibility of the sidebar should only toggle when the current route is the same as the route that a
-     * component click should lead to.
-     */
-    private navigateAndToggleExpand(routeToGo: string) {
-        if (this.$route.path === routeToGo) {
-            // The toolbar content is only expanded when the current page is already activated. (The toolbar does
-            // not expand when navigation takes place).
-            this.isMini = !this.isMini;
-        } else {
-            // If the user does wan't to navigate, we change the current path.
-            this.$router.replace(routeToGo);
-        }
-    }
-
-    private navigateAndCloseSideBar(routeToGo: string) {
+    private navigate(routeToGo: string, activateSidebar: boolean) {
         if (this.$route.path !== routeToGo) {
-            this.isMini = true;
             this.$router.replace(routeToGo);
         }
     }
