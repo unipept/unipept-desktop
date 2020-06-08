@@ -106,6 +106,8 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import Project from "@/logic/filesystem/project/Project";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import { promises as fs } from "fs";
+import { v4 as uuidv4 } from "uuid";
+import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 
 
 const { remote } = require("electron");
@@ -259,6 +261,17 @@ export default class AssayItem extends Vue {
             }
             assayName = newName;
         }
+
+        // Also copy configuration for this assay.
+        const newAssay = new ProteomicsAssay(uuidv4());
+        newAssay.setName(assayName);
+        newAssay.setSearchConfiguration(this.assay.getSearchConfiguration());
+        const metadataWriter = new AssayFileSystemMetaDataWriter(
+            `${this.project.projectPath}${this.study.getName()}`,
+            this.project.db,
+            this.study
+        );
+        await newAssay.accept(metadataWriter);
 
         await fs.copyFile(
             `${this.project.projectPath}${this.study.getName()}/${this.assay.getName()}.pep`,

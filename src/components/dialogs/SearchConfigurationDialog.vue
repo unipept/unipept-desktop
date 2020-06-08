@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="dialogActive" max-width="600">
+    <v-dialog v-model="dialogActive" max-width="600" persistent>
         <v-card>
             <v-card-title>
                 Search configuration
@@ -49,7 +49,7 @@ export default class SearchConfigurationDialog extends Vue {
      * What function should be executed after the user clicked OK?
      */
     @Prop({ required: false, default: async() => {
-        return; 
+        return;
     } })
     private callback: () => Promise<void>;
 
