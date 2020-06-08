@@ -38,7 +38,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
         );
 
         await mkdirp(`${this.getAssayDirectory()}`);
-        console.log("Renaming file to: " + `${this.getAssayDirectory()}${newName}.pep`);
+
         // Rename metadata file
         fs.renameSync(
             `${this.getAssayDirectory()}${oldName}.pep`,

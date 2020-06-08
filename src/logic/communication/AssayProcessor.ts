@@ -43,7 +43,6 @@ export default class AssayProcessor {
         await this.updateStorageMetadata();
 
         this.setProgress(1);
-        console.log("Done loading: " + new Date().getTime());
         return [peptideCountTable, new CachedCommunicationSource(
             pept2DataResponses,
             peptideTrust,
