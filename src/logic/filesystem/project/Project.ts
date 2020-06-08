@@ -2,7 +2,6 @@ import { Database } from "better-sqlite3";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";

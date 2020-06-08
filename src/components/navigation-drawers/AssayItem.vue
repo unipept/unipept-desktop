@@ -62,7 +62,12 @@
                 v-on:keyup.enter="disableAssayEdit()"
                 :class="{ 'error-item': !isValidAssayName }"
                 type="text"/>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;">
+            <div style="display: flex; flex-direction: row; margin-left: auto; height: 32px;" v-if="selectable">
+                <tooltip message="Add assay to comparative analysis." position="bottom">
+                    <v-checkbox v-model="selected" dense @click.native.stop :disabled="progress !== 1"></v-checkbox>
+                </tooltip>
+            </div>
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
                         :disabled="project.getProcessingResults(assay).progress !== 1"
@@ -134,12 +139,26 @@ const { Menu, MenuItem } = remote;
 export default class AssayItem extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
-    @Prop({ required: true })
+    /**
+     * What assay is currently selected by the user? If this is not set, this assay will never be highlighted in the
+     * sidebar.
+     */
+    @Prop({ required: false, default: null })
     private activeAssay: ProteomicsAssay;
     @Prop({ required: true })
     private study: Study;
     @Prop({ required: true })
     private project: Project;
+    /**
+     * Can the assay be selected for a comparative analysis?
+     */
+    @Prop({ required: false, default: false })
+    private selectable: boolean;
+    /**
+     * Is the assay currently selected or not?
+     */
+    @Prop({ required: false, default: false })
+    private value: boolean;
 
     private peptideTrust: PeptideTrust = null;
     private experimentSummaryActive: boolean = false;
@@ -147,12 +166,16 @@ export default class AssayItem extends Vue {
     private isEditingAssayName: boolean = false;
     private isValidAssayName: boolean = true;
 
+    // Is this assay currently selected for a comparative analysis?
+    private selected: boolean = false;
+
     private assayName: string = "";
 
     private nameError: string = "";
 
     mounted() {
         this.onAssayChanged();
+        this.onValueChanged();
     }
 
     private enableAssayEdit() {
@@ -213,6 +236,16 @@ export default class AssayItem extends Vue {
         return true;
     }
 
+    @Watch("value")
+    private onValueChanged() {
+        this.selected = this.value;
+    }
+
+    @Watch("selected")
+    private onSelectedChanged() {
+        this.$emit("input", this.selected);
+    }
+
     @Watch("assay")
     @Watch("progress")
     private async onAssayChanged() {
@@ -240,7 +273,11 @@ export default class AssayItem extends Vue {
     }
 
     private selectAssay() {
-        this.$emit("select-assay", this.assay);
+        if (this.selectable) {
+            this.selected = !this.selected;
+        } else {
+            this.$emit("select-assay", this.assay);
+        }
     }
 
     private async duplicateAssay() {

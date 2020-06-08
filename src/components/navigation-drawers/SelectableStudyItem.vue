@@ -28,15 +28,16 @@
             </div>
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
-            <selectable-assay-item
+            <assay-item
                 v-for="assay of sortedAssays"
+                :selectable="true"
                 :assay="assay"
                 :study="study"
                 :project="project"
                 v-bind:key="assay.id"
                 :value="assayInComparison(assay)"
                 v-on:input="toggleAssayComparison(assay)">
-            </selectable-assay-item>
+            </assay-item>
         </div>
     </div>
 </template>
@@ -44,15 +45,15 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import SelectableAssayItem from "@/components/navigation-drawers/SelectableAssayItem.vue";
 import { Prop, Watch } from "vue-property-decorator";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import Project from "@/logic/filesystem/project/Project";
+import AssayItem from "@/components/navigation-drawers/AssayItem.vue";
 
 @Component({
     components: {
-        SelectableAssayItem
+        AssayItem
     },
     computed: {
         sortedAssays: {
