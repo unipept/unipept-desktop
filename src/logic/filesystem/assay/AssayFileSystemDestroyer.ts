@@ -1,5 +1,5 @@
 import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
-import fs from "fs";
+import { promises as fs } from "fs";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
 import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
@@ -14,8 +14,11 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
     public async visitProteomicsAssay(assay: ProteomicsAssay): Promise<void> {
         try {
             const path: string = `${this.directoryPath}${assay.getName()}.pep`;
-            if (fs.existsSync(path)) {
-                fs.unlinkSync(`${this.directoryPath}${assay.getName()}.pep`);
+
+            try {
+                await fs.unlink(path);
+            } catch (err) {
+                // File does no longer exist, which is not an issue here.
             }
 
             // Also remove all metadata from the db
