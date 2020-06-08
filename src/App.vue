@@ -27,13 +27,13 @@
                     <v-card>
                         <v-card-title>Synchronization error</v-card-title>
                         <v-card-text>
-                            Could not synchronize your latest changes with the local disk. Please retry or restart the
-                            application if this problem persists.
+                            Could not synchronize your latest changes with the local disk. Please restart the
+                            application if the problem persists.
                         </v-card-text>
                         <v-card-actions>
                             <v-spacer></v-spacer>
-                            <v-btn color="error" text @click="errorDialog = false">Exit application</v-btn>
-                            <v-btn color="primary" text @click="errorDialog = false">Retry</v-btn>
+                            <v-btn color="error" text @click="closeApplication">Exit application</v-btn>
+                            <v-btn color="primary" text @click="errorDialog = false">Ignore</v-btn>
                         </v-card-actions>
                     </v-card>
                 </v-dialog>
@@ -222,6 +222,11 @@ export default class App extends Vue implements ErrorListener {
             console.error(err)
         }
         this.loading = false;
+    }
+
+    private async closeApplication() {
+        let w = electron.remote.getCurrentWindow();
+        w.close();
     }
 
     private onToolbarWidthUpdated(newValue: number) {

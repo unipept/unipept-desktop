@@ -145,7 +145,6 @@ export default class Project {
                 {
                     onProgressUpdate: (progress: number) => {
                         if (!processedItem.startProcessingTime) {
-                            console.log("Update start time...");
                             processedItem.startProcessingTime = new Date().getTime();
                         }
 

@@ -87,6 +87,11 @@
                 </v-card-text>
             </v-card>
         </v-dialog>
+        <search-configuration-dialog
+                v-model="showSearchConfigDialog"
+                :assay="searchConfigAssay"
+                :callback="searchConfigCallback">
+        </search-configuration-dialog>
         <confirm-deletion-dialog
             v-model="removeConfirmationActive"
             :action="() => removeStudy()"
@@ -111,14 +116,19 @@ const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
 const fs = require("fs").promises;
 import path from "path";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import { v4 as uuidv4 } from "uuid";
+import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
 
 @Component({
     components: {
+        SearchConfigurationDialog,
         ConfirmDeletionDialog,
         CreateDatasetCard,
         CreateAssay,
@@ -145,6 +155,11 @@ export default class StudyItem extends Vue {
     private studyName: string = "";
     private showCreateAssayDialog: boolean = false;
     private removeConfirmationActive: boolean = false;
+    private showSearchConfigDialog: boolean = false;
+    private searchConfigCallback: () => Promise<void> = async() => {
+        return; 
+    };
+    private searchConfigAssay: ProteomicsAssay = null;
 
     private isEditingStudyName: boolean = false;
     private isValidStudyName: boolean = true;
@@ -273,12 +288,57 @@ export default class StudyItem extends Vue {
             }
             this.assaysInProgress.push(assayName);
 
-            await fs.copyFile(chosenPath["filePaths"][0], this.project.projectPath + this.study.getName() + "/" + assayName + ".pep");
+            // First ask the user for the desired search configuration that should be applied for this assay and write
+            // it to the db.
+            const assay = new ProteomicsAssay(uuidv4());
+            assay.setName(assayName);
+            this.requestSearchSettings(assay, async() => {
+                // Write metadata to disk
+                const metaDataWriter = new AssayFileSystemMetaDataWriter(
+                    `${this.project.projectPath}${this.study.getName()}`,
+                    this.project.db,
+                    this.study
+                );
+
+                await assay.accept(metaDataWriter);
+
+                await fs.copyFile(
+                    chosenPath["filePaths"][0],
+                    this.project.projectPath + this.study.getName() + "/" + assayName + ".pep"
+                )
+            });
         }
     }
 
-    private async onCreateAssay(assay: Assay) {
+    private onCreateAssay(assay: ProteomicsAssay) {
         this.showCreateAssayDialog = false;
+
+        // First ask the user for the desired search configuration that should be applied for this assay and write it to
+        // the db.
+        this.requestSearchSettings(assay, async() => {
+            // Write metadata to disk
+            const metaDataWriter = new AssayFileSystemMetaDataWriter(
+                `${this.project.projectPath}${this.study.getName()}`,
+                this.project.db,
+                this.study
+            );
+
+            await assay.accept(metaDataWriter);
+
+            // Write the assay to disk. It will automatically be picket up by the file system watchers
+            const assaySerializer = new AssayFileSystemDataWriter(
+                `${this.project.projectPath}${this.study.getName()}`,
+                this.project.db
+            );
+
+            await assay.accept(assaySerializer);
+        })
+    }
+
+    private requestSearchSettings(assay: ProteomicsAssay, callback: () => Promise<void>) {
+        this.searchConfigAssay = assay;
+        this.searchConfigCallback = callback;
+        this.showSearchConfigDialog = true;
     }
 
     private async onSelectAssay(assay: Assay) {

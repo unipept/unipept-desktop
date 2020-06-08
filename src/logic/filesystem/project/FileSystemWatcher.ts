@@ -15,6 +15,7 @@ import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemD
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
+import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 
 /**
  * The FileSystemWatcher is responsible for the synchronization of a project with the disk. It watches the filesystem
@@ -51,7 +52,7 @@ export default class FileSystemWatcher {
     }
 
     /**
-     * This function must be invoked whenever a file was added to the local file system. TWe
+     * This function must be invoked whenever a file was added to the local file system.
      * @param filePath
      */
     private async fileAdded(filePath: string) {
@@ -81,6 +82,14 @@ export default class FileSystemWatcher {
                 );
                 assay.setName(assayName);
 
+                // Read metadata from disk if it exists.
+                const assayMetaReader = new AssayFileSystemMetaDataReader(
+                    this.project.projectPath + studyName,
+                    this.project.db,
+                    study
+                );
+                await assay.accept(assayMetaReader);
+
                 // Read peptides from disk for this assay
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     this.project.projectPath + studyName,
@@ -97,8 +106,8 @@ export default class FileSystemWatcher {
                 );
 
                 await assay.accept(assayWriter);
-                // This study should already have a change listener, which takes care of processing the assay as soon as it
-                // is added to the study.
+                // This study should already have a change listener, which takes care of processing the assay as soon as
+                // it is added to the study.
                 study.addAssay(assay);
             }
         } catch (err) {

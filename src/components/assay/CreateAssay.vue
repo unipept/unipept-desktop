@@ -20,6 +20,9 @@ import DatasetForm from "unipept-web-components/src/components/dataset/DatasetFo
 import Project from "@/logic/filesystem/project/Project";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import { v4 as uuidv4 } from "uuid";
 
 @Component({
     components: {
@@ -35,12 +38,11 @@ export default class CreateAssay extends Vue {
     private name: string;
 
     private async createAssay() {
-        // const assay: Assay = this.project.createMetaProteomicsAssay(
-        //     this.name,
-        //     this.peptides.split(/\r?\n/),
-        //     this.study
-        // );
-        // this.$emit("create-assay", assay);
+        const assay: ProteomicsAssay = new ProteomicsAssay(uuidv4());
+        assay.setName(this.name);
+        assay.setPeptides(this.peptides.split(/\r?\n/));
+
+        this.$emit("create-assay", assay);
     }
 }
 </script>
