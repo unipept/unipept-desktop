@@ -5,7 +5,10 @@
                 <v-btn icon @click.stop="navDrawer = !navDrawer">
                     <v-icon>mdi-menu</v-icon>
                 </v-btn>
-                <v-toolbar-title>{{ $route.meta.title }}</v-toolbar-title>
+                <v-toolbar-title v-if="$store.getters.getProject">
+                    {{ $store.getters.getProject.name }} - {{ $route.meta.title }}
+                </v-toolbar-title>
+                <v-toolbar-title v-else>{{ $route.meta.title }}</v-toolbar-title>
             </v-app-bar>
 
             <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on

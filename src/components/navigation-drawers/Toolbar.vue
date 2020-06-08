@@ -27,7 +27,7 @@
                             <v-icon>mdi-bacteria</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
-                            <v-list-item-title>Analyse</v-list-item-title>
+                            <v-list-item-title>Single assay analysis</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
 
@@ -40,7 +40,7 @@
                             <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
-                            <v-list-item-title>Comparison</v-list-item-title>
+                            <v-list-item-title>Comparative analysis</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
                 </v-list>

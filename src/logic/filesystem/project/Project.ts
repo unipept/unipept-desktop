@@ -11,6 +11,7 @@ import CommunicationSource from "unipept-web-components/src/business/communicati
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import Vue from "vue";
 import FileSystemWatcher from "@/logic/filesystem/project/FileSystemWatcher";
+import path from "path";
 
 export type ProcessingResult = {
     progress: number,
@@ -36,6 +37,8 @@ export type ProcessingResult = {
  * @author Pieter Verschaffelt
  */
 export default class Project {
+    public readonly name: string;
+
     // The assay that's currently selected by the user as the active one. Will be null if no assay is currently active.
     public activeAssay: Assay = null;
     public watcher: FileSystemWatcher;
@@ -53,6 +56,8 @@ export default class Project {
         if (!this.projectPath.endsWith("/")) {
             this.projectPath += "/"
         }
+
+        this.name = path.basename(this.projectPath);
 
         for (const assay of this.getAllAssays()) {
             this.processAssay(assay);

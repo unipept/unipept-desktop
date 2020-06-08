@@ -41,7 +41,7 @@ const routes = [
         path: "/analysis/single",
         component: AnalysisPage,
         meta: {
-            title: "Analyse"
+            title: "Single assay analysis"
         }
     },
     {
