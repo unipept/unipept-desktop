@@ -33,7 +33,6 @@
                             <v-btn :disabled="progress !== 1" color="primary" @click="update()">Update</v-btn>
                         </div>
                     </v-col>
-                    <v-divider vertical></v-divider>
                     <v-col>
                         <peptide-summary-table
                             :assay="assay"

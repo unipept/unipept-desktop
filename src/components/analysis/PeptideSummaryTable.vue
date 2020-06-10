@@ -1,5 +1,6 @@
 <template>
     <v-data-table
+        class="peptide-summary-table"
         :headers="headers"
         :items="items"
         :items-per-page="5"
@@ -9,6 +10,9 @@
         :loading-text="'Loading items: ' + Math.round(computeProgress * 100) + '%'">
         <template v-slot:progress>
             <v-progress-linear :value="computeProgress * 100" height="2"></v-progress-linear>
+        </template>
+        <template v-slot:item.peptide="{ item }">
+            <div class="sequence-value" :title="item.peptide">{{ item.peptide }}</div>
         </template>
         <template v-slot:item.matched="{ item }">
             <v-tooltip v-if="item.matched" bottom>
@@ -51,6 +55,34 @@ import SearchConfiguration from "unipept-web-components/src/business/configurati
                     return 0;
                 }
             }
+        },
+        headers: {
+            get() {
+                return [
+                    {
+                        text: "Peptide",
+                        align: "start",
+                        value: "peptide",
+                        width: "30%"
+                    },
+                    {
+                        text: "Occurrence",
+                        align: "start",
+                        value: "count",
+                        width: "20%"
+                    }, {
+                        text: "Lowest common ancestor",
+                        align: "start",
+                        value: "lca",
+                        width: "30%"
+                    }, {
+                        text: "Matched?",
+                        align: "center",
+                        value: "matched",
+                        width: "20%"
+                    }
+                ];
+            }
         }
     }
 })
@@ -75,30 +107,30 @@ export default class PeptideSummaryTable extends Vue {
     private loading: boolean = false;
     private computeProgress: number = 0;
 
-    private headers = [
-        {
-            text: "Peptide",
-            align: "start",
-            value: "peptide",
-            width: "30%"
-        },
-        {
-            text: "Occurrence",
-            align: "start",
-            value: "count",
-            width: "20%"
-        }, {
-            text: "Lowest common ancestor",
-            align: "start",
-            value: "lca",
-            width: "30%"
-        }, {
-            text: "Matched?",
-            align: "center",
-            value: "matched",
-            width: "20%"
-        }
-    ]
+    // private headers = [
+    //     {
+    //         text: "Peptide",
+    //         align: "start",
+    //         value: "peptide",
+    //         width: 0.3
+    //     },
+    //     {
+    //         text: "Occurrence",
+    //         align: "start",
+    //         value: "count",
+    //         width: 0.2
+    //     }, {
+    //         text: "Lowest common ancestor",
+    //         align: "start",
+    //         value: "lca",
+    //         width: 0.3
+    //     }, {
+    //         text: "Matched?",
+    //         align: "center",
+    //         value: "matched",
+    //         width: 0.2
+    //     }
+    // ]
 
     private async mounted() {
         if (!PeptideSummaryTable.worker) {
@@ -176,5 +208,10 @@ export default class PeptideSummaryTable extends Vue {
 </script>
 
 <style scoped>
-
+    .sequence-value {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 </style>
