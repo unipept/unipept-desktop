@@ -14,20 +14,6 @@
         <template v-slot:item.peptide="{ item }">
             <div class="sequence-value" :title="item.peptide">{{ item.peptide }}</div>
         </template>
-        <template v-slot:item.matched="{ item }">
-            <v-tooltip v-if="item.matched" bottom>
-                <template v-slot:activator="{ on }">
-                    <v-icon v-on="on">mdi-check</v-icon>
-                </template>
-                <span>This peptide was matched with at least one protein.</span>
-            </v-tooltip>
-            <v-tooltip v-else bottom>
-                <template v-slot:activator="{ on }">
-                    <v-icon>mdi-close</v-icon>
-                </template>
-                <span>We were unable to match this peptide with a protein.</span>
-            </v-tooltip>
-        </template>
     </v-data-table>
 </template>
 
@@ -69,16 +55,16 @@ import SearchConfiguration from "unipept-web-components/src/business/configurati
                         text: "Occurrence",
                         align: "start",
                         value: "count",
-                        width: "20%"
+                        width: "15%"
                     }, {
                         text: "Lowest common ancestor",
                         align: "start",
                         value: "lca",
-                        width: "30%"
+                        width: "35%"
                     }, {
-                        text: "Matched?",
-                        align: "center",
-                        value: "matched",
+                        text: "Rank",
+                        align: "start",
+                        value: "rank",
                         width: "20%"
                     }
                 ];
@@ -106,31 +92,6 @@ export default class PeptideSummaryTable extends Vue {
 
     private loading: boolean = false;
     private computeProgress: number = 0;
-
-    // private headers = [
-    //     {
-    //         text: "Peptide",
-    //         align: "start",
-    //         value: "peptide",
-    //         width: 0.3
-    //     },
-    //     {
-    //         text: "Occurrence",
-    //         align: "start",
-    //         value: "count",
-    //         width: 0.2
-    //     }, {
-    //         text: "Lowest common ancestor",
-    //         align: "start",
-    //         value: "lca",
-    //         width: 0.3
-    //     }, {
-    //         text: "Matched?",
-    //         align: "center",
-    //         value: "matched",
-    //         width: 0.2
-    //     }
-    // ]
 
     private async mounted() {
         if (!PeptideSummaryTable.worker) {

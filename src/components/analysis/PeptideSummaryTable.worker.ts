@@ -62,20 +62,20 @@ function computeItems(): Observable<number> {
         for (const peptide of peptides) {
             const response = pept2DataMap.get(peptide);
             let lcaName: string = "N/A";
-            let matched: boolean = false;
+            let rank: string = "N/A";
 
             if (response) {
-                matched = true;
                 // @ts-ignore
                 const lcaDefinition = lcaOntology.definitions.get(JSON.parse(response).lca);
                 lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
+                rank = lcaDefinition ? lcaDefinition.rank : rank;
             }
 
             output.push({
                 peptide: peptide,
                 count: peptideCountTable.get(peptide),
                 lca: lcaName,
-                matched: matched
+                rank: rank
             });
 
             processedPeptides++;
