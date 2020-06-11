@@ -228,8 +228,7 @@ export default class App extends Vue implements ErrorListener {
     }
 
     private async closeApplication() {
-        let w = electron.remote.getCurrentWindow();
-        w.close();
+        electron.remote.app.quit();
     }
 
     private onToolbarWidthUpdated(newValue: number) {

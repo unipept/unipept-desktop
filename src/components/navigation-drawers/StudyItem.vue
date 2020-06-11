@@ -157,7 +157,7 @@ export default class StudyItem extends Vue {
     private removeConfirmationActive: boolean = false;
     private showSearchConfigDialog: boolean = false;
     private searchConfigCallback: () => Promise<void> = async() => {
-        return; 
+        return;
     };
     private searchConfigAssay: ProteomicsAssay = null;
 
@@ -179,13 +179,7 @@ export default class StudyItem extends Vue {
                 this.enableStudyEdit();
             }
         }));
-        menu.append(new MenuItem({ type: "separator" }))
-        menu.append(new MenuItem({
-            label: "Duplicate",
-            click: () => {
-
-            }
-        }));
+        menu.append(new MenuItem({ type: "separator" }));
         menu.append(new MenuItem({
             label: "Delete",
             click: () => {
