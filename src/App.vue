@@ -304,6 +304,10 @@ export default class App extends Vue implements ErrorListener {
         transition: none !important;
     }
 
+    .tip {
+        font-family: "Roboto", sans-serif;
+    }
+
     //   .container-after-titlebar .v-app-bar {
     //     margin-top: 30px !important;
     //   }
