@@ -1,5 +1,5 @@
-import Project from "./../project/Project";
 import * as fs from "fs";
+import { store } from "./../../../main";
 import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSystemMetaDataWriter";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
@@ -12,8 +12,6 @@ import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 
 export default class FileSystemStudyChangeListener implements ChangeListener<Study> {
-    constructor(private readonly project: Project) {}
-
     public async onChange(object: Study, field: string, oldValue: any, newValue: any) {
         if (field === "name") {
             await this.renameStudyFile(object, oldValue, newValue);
@@ -30,14 +28,14 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
         }
 
         fs.renameSync(
-            `${this.project.projectPath}${oldName}`,
-            `${this.project.projectPath}${newName}`
+            `${store.getters.projectLocation}${oldName}`,
+            `${store.getters.projectLocation}${newName}`
         );
 
         // Also write this information to the database...
         const studyWriter: FileSystemStudyVisitor = new StudyFileSystemMetaDataWriter(
-            `${this.project.projectPath}${newName}`,
-            this.project.db
+            `${store.getters.projectLocation}${newName}`,
+            store.getters.database
         );
 
         await study.accept(studyWriter);
@@ -45,21 +43,22 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
 
     private async removeAssay(study: Study, assay: Assay): Promise<void> {
         const assayRemover: FileSystemAssayVisitor = new AssayFileSystemDestroyer(
-            `${this.project.projectPath}${study.getName()}`,
-            this.project.db
+            `${store.getters.projectLocation}${study.getName()}`,
+            store.getters.database
         );
 
         await assay.accept(assayRemover);
     }
 
     private async createAssay(study: Study, assay: Assay): Promise<void> {
-        const path: string = `${this.project.projectPath}${study.getName()}/`;
-        const metaDataWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(path, this.project.db, study);
-        const dataWriter: FileSystemAssayVisitor = new AssayFileSystemDataWriter(path, this.project.db);
+        const path: string = `${store.getters.projectLocation}${study.getName()}/`;
+        const metaDataWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(path, store.getters.database, study);
+        const dataWriter: FileSystemAssayVisitor = new AssayFileSystemDataWriter(path, store.getters.database);
 
         await assay.accept(metaDataWriter);
         await assay.accept(dataWriter);
 
-        await this.project.processAssay(assay as ProteomicsAssay);
+        // TODO
+        // await this.project.processAssay(assay as ProteomicsAssay);
     }
 }

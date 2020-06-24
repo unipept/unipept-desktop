@@ -1,6 +1,7 @@
 import chokidar from "chokidar";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { store } from "./../../../main";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
@@ -13,7 +14,6 @@ import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
-import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 
@@ -26,10 +26,8 @@ import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSys
 export default class FileSystemWatcher {
     private readonly errorListeners: ErrorListener[] = [];
 
-    constructor(
-        private readonly project
-    ) {
-        const watcher = chokidar.watch(this.project.projectPath, {
+    constructor() {
+        const watcher = chokidar.watch(store.getters.projectLocation, {
             ignoreInitial: true,
             // Ignore hidden files and metadata changes
             ignored: /^\..*$|metadata.sqlite/,
@@ -61,7 +59,7 @@ export default class FileSystemWatcher {
                 const studyName: string = path.basename(path.dirname(filePath));
 
                 // Does the associated study already exist?
-                const study: Study = this.project.studies.find(study => study.getName() === studyName);
+                const study: Study = store.getters.studies.find(study => study.getName() === studyName);
 
                 if (!study) {
                     // possible new assays will be created by "directoryAdded" when creating a new study.
@@ -84,24 +82,24 @@ export default class FileSystemWatcher {
 
                 // Read metadata from disk if it exists.
                 const assayMetaReader = new AssayFileSystemMetaDataReader(
-                    this.project.projectPath + studyName,
-                    this.project.db,
+                    store.getters.projectLocation + studyName,
+                    store.getters.database,
                     study
                 );
                 await assay.accept(assayMetaReader);
 
                 // Read peptides from disk for this assay
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
-                    this.project.projectPath + studyName,
-                    this.project.db
+                    store.getters.projectLocation + studyName,
+                    store.getters.database
                 );
 
                 await assay.accept(assayReader);
 
                 // Write metadata for this assay to disk
                 const assayWriter = new AssayFileSystemMetaDataWriter(
-                    this.project.projectPath + studyName,
-                    this.project.db,
+                    store.getters.projectPath + studyName,
+                    store.getters.database,
                     study
                 );
 
@@ -109,6 +107,8 @@ export default class FileSystemWatcher {
                 // This study should already have a change listener, which takes care of processing the assay as soon as
                 // it is added to the study.
                 study.addAssay(assay);
+                await store.dispatch("addAssay", assay);
+                store.dispatch("processAssay", assay);
             }
         } catch (err) {
             this.reportError(err);
@@ -123,7 +123,7 @@ export default class FileSystemWatcher {
 
             const studyName: string = path.basename(directoryPath);
 
-            if (this.project.studies.find(study => study.getName() === studyName)) {
+            if (store.getters.studies.find(study => study.getName() === studyName)) {
                 // Study exists already, nothing needs to be done.
                 return;
             }
@@ -131,23 +131,23 @@ export default class FileSystemWatcher {
             const study: Study = new Study(uuidv4());
             study.setName(studyName);
 
-            const studyWriter: FileSystemStudyVisitor = new StudyFileSystemMetaDataWriter(directoryPath, this.project.db);
+            const studyWriter: FileSystemStudyVisitor = new StudyFileSystemMetaDataWriter(directoryPath, store.getters.database);
             await study.accept(studyWriter);
 
             // This reader directly reads all assays associated with this study from disk.
-            const studyReader = new StudyFileSystemDataReader(directoryPath, this.project.db);
+            const studyReader = new StudyFileSystemDataReader(directoryPath, store.getters.database);
             await study.accept(studyReader);
 
-            this.project.studies.push(study);
+            await store.dispatch("addStudy", study);
 
             // Now we should launch the processing for every assay of this study.
             for (const assay of study.getAssays()) {
+                await store.dispatch("addAssay", assay);
                 // noinspection ES6MissingAwait
-                this.project.processAssay(assay);
-                assay.addChangeListener(new FileSystemAssayChangeListener(this.project, study));
+                store.dispatch("processAssay", assay);
             }
 
-            study.addChangeListener(new FileSystemStudyChangeListener(this.project));
+            study.addChangeListener(new FileSystemStudyChangeListener());
         } catch (err) {
             this.reportError(err);
         }
@@ -157,7 +157,7 @@ export default class FileSystemWatcher {
         try {
             const studyName: string = path.basename(path.dirname(filePath));
 
-            const study: Study = this.project.studies.find(study => study.getName() === studyName);
+            const study: Study = store.getters.studies.find(study => study.getName() === studyName);
 
             if (!study) {
                 return;
@@ -174,7 +174,7 @@ export default class FileSystemWatcher {
 
             const dataReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                 path.dirname(filePath),
-                this.project.db
+                store.getters.database
             );
 
             // This assay's change listener should be active at this point and should reprocess automatically.
@@ -190,7 +190,7 @@ export default class FileSystemWatcher {
             const studyName: string = path.basename(path.dirname(filePath));
 
             if (filePath.endsWith(".pep")) {
-                const study: Study = this.project.studies.find(study => study.getName() === studyName);
+                const study: Study = store.getters.studies.find(study => study.getName() === studyName);
 
                 if (!study) {
                     return;
@@ -202,13 +202,13 @@ export default class FileSystemWatcher {
                 if (assay) {
                     await study.removeAssay(assay);
                     const assayDestroyer = new AssayFileSystemDestroyer(
-                        this.project.projectPath + studyName,
-                        this.project.db
+                        store.getters.projectLocation + studyName,
+                        store.getters.database
                     );
 
                     await assay.accept(assayDestroyer);
 
-                    this.project.resetActiveAssay();
+                    // this.project.resetActiveAssay();
                 }
             }
         } catch (err) {
@@ -219,17 +219,17 @@ export default class FileSystemWatcher {
     private async directoryDeleted(directoryPath: string) {
         try {
             const studyName: string = path.basename(directoryPath);
-            const studyIdx: number = this.project.studies.findIndex(study => study.getName() === studyName);
+            const studyIdx: number = store.getters.studies.findIndex(study => study.getName() === studyName);
 
             if (studyIdx === -1) {
                 return;
             }
 
-            const study = this.project.studies[studyIdx];
+            const study = store.getters.studies[studyIdx];
 
             const assayDestroyer = new AssayFileSystemDestroyer(
-                this.project.projectPath + studyName,
-                this.project.db
+                store.getters.projectLocation + studyName,
+                store.getters.database
             );
 
             for (const assay of study.getAssays()) {
@@ -237,15 +237,15 @@ export default class FileSystemWatcher {
             }
 
             const studyDestroyer = new StudyFileSystemRemover(
-                this.project.projectPath + studyName,
-                this.project.db
+                store.getters.projectLocation + studyName,
+                store.getters.database
             );
 
             await study.accept(studyDestroyer);
 
-            this.project.studies.splice(studyIdx, 1);
+            await store.dispatch("removeStudy", study);
 
-            this.project.resetActiveAssay();
+            // this.project.resetActiveAssay();
         } catch (err) {
             this.reportError(err);
         }

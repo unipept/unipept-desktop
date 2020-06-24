@@ -71,9 +71,7 @@
                 v-for="assay of sortedAssays"
                 :assay="assay"
                 :study="study"
-                :project="project"
                 v-bind:key="assay.id"
-                :active-assay="project.activeAssay"
                 v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
@@ -83,7 +81,7 @@
                     Create assay
                 </v-card-title>
                 <v-card-text>
-                    <create-assay :project="project" :study="study" v-on:create-assay="onCreateAssay"></create-assay>
+                    <create-assay :study="study" v-on:create-assay="onCreateAssay"></create-assay>
                 </v-card-text>
             </v-card>
         </v-dialog>
@@ -107,7 +105,6 @@ import { Prop, Watch } from "vue-property-decorator";
 import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
 import CreateAssay from "./../assay/CreateAssay.vue";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import Project from "@/logic/filesystem/project/Project";
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
@@ -148,8 +145,6 @@ const { dialog } = electron.remote;
 export default class StudyItem extends Vue {
     @Prop({ required: true })
     private study: Study;
-    @Prop({ required: true })
-    private project: Project;
 
     private collapsed: boolean = false;
     private studyName: string = "";
@@ -234,7 +229,7 @@ export default class StudyItem extends Vue {
             return false;
         }
 
-        const nameExists: boolean = this.project.getStudies()
+        const nameExists: boolean = this.$store.getters.studies
             .map(s => s.getName().toLocaleLowerCase())
             .indexOf(this.studyName.toLocaleLowerCase()) !== -1;
 
@@ -251,8 +246,8 @@ export default class StudyItem extends Vue {
     private async removeStudy(): Promise<void> {
         // Completely destroy this study and wait for the file system watcher to pick the change up.
         const studyDestroyer = new StudyFileSystemRemover(
-            `${this.project.projectPath}${this.study.getName()}`,
-            this.project.db
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.database
         );
         await this.study.accept(studyDestroyer);
     }
@@ -289,8 +284,8 @@ export default class StudyItem extends Vue {
             this.requestSearchSettings(assay, async() => {
                 // Write metadata to disk
                 const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                    `${this.project.projectPath}${this.study.getName()}`,
-                    this.project.db,
+                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                    this.$store.getters.database,
                     this.study
                 );
 
@@ -298,7 +293,7 @@ export default class StudyItem extends Vue {
 
                 await fs.copyFile(
                     chosenPath["filePaths"][0],
-                    this.project.projectPath + this.study.getName() + "/" + assayName + ".pep"
+                    this.$store.getters.projectLocation + this.study.getName() + "/" + assayName + ".pep"
                 )
             });
         }
@@ -312,17 +307,17 @@ export default class StudyItem extends Vue {
         this.requestSearchSettings(assay, async() => {
             // Write metadata to disk
             const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                `${this.project.projectPath}${this.study.getName()}`,
-                this.project.db,
+                `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                this.$store.getters.database,
                 this.study
             );
 
             await assay.accept(metaDataWriter);
 
-            // Write the assay to disk. It will automatically be picket up by the file system watchers
+            // Write the assay to disk. It will automatically be picked up by the file system watchers
             const assaySerializer = new AssayFileSystemDataWriter(
-                `${this.project.projectPath}${this.study.getName()}`,
-                this.project.db
+                `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                this.$store.getters.database
             );
 
             await assay.accept(assaySerializer);
@@ -336,7 +331,7 @@ export default class StudyItem extends Vue {
     }
 
     private async onSelectAssay(assay: Assay) {
-        this.project.activateAssay(assay);
+        await this.$store.dispatch("activateAssay", assay);
     }
 }
 </script>

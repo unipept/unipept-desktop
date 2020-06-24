@@ -6,7 +6,7 @@
         :items-per-page="5"
         :server-items-length="totalItems"
         :options.sync="options"
-        :loading="loading || progress !== 1"
+        :loading="isLoading || progress !== 1"
         :loading-text="'Loading items: ' + Math.round(computeProgress * 100) + '%'">
         <template v-slot:progress>
             <v-progress-linear :value="computeProgress * 100" height="2"></v-progress-linear>
@@ -22,24 +22,22 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
-import Project from "@/logic/filesystem/project/Project";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import { spawn, Worker } from "threads";
 import { DataOptions } from "vuetify";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import { AssayData } from "unipept-web-components/src/state/AssayStore";
+import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
+import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
+import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
+import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
+import NcbiTaxon from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
+import { Ontology } from "unipept-web-components/src/business/ontology/Ontology";
 
 @Component({
     computed: {
         progress: {
             get(): number {
-                if (this.project) {
-                    return this.project.getProcessingResults(this.assay).progress;
-                } else {
-                    return 0;
-                }
+                const assayData: AssayData = this.$store.getters.assayData(this.assay);
+                return assayData ? assayData.analysisMetaData.progress : 0;
             }
         },
         headers: {
@@ -75,12 +73,6 @@ import SearchConfiguration from "unipept-web-components/src/business/configurati
 export default class PeptideSummaryTable extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
-    @Prop({ required: true })
-    private project: Project;
-    @Prop({ required: true })
-    private peptideCountTable: CountTable<Peptide>;
-    @Prop({ required: true })
-    private communicationSource: CommunicationSource;
 
     // This worker keeps track of the data for this table and computes it on demand.
     private static worker;
@@ -100,6 +92,22 @@ export default class PeptideSummaryTable extends Vue {
         await this.computeItems();
     }
 
+    get peptideCountTable(): CountTable<Peptide> {
+        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    }
+
+    get pept2dataCommunicator(): Pept2DataCommunicator {
+        return this.$store.getters.assayData(this.assay)?.pept2dataCommunicator;
+    }
+
+    get lcaOntology(): Ontology<NcbiId, NcbiTaxon> {
+        return this.$store.getters["ncbi/ontology"](this.assay);
+    }
+
+    get isLoading(): boolean {
+        return this.lcaOntology === undefined || this.pept2dataCommunicator === undefined || this.loading;
+    }
+
     @Watch("options", { deep: true })
     private async onOptionsChanged(newOptions: DataOptions) {
         if (PeptideSummaryTable.worker) {
@@ -107,39 +115,28 @@ export default class PeptideSummaryTable extends Vue {
         }
     }
 
-    @Watch("assay.searchConfiguration")
-    private async onSearchConfigChanged(oldConfig: SearchConfiguration, newConfig: SearchConfiguration) {
-        if (
-            oldConfig.equateIl !== newConfig.equateIl ||
-            oldConfig.filterDuplicates !== newConfig.filterDuplicates ||
-            oldConfig.enableMissingCleavageHandling !== newConfig.enableMissingCleavageHandling
-        ) {
-            await this.computeItems();
-        }
-    }
-
+    @Watch("assay")
     @Watch("peptideCountTable")
-    private async onPeptideCountTableChanged() {
-        await this.computeItems();
-    }
-
+    @Watch("lcaOntology")
+    @Watch("pept2dataCommunicator")
     private async computeItems() {
         this.items.splice(0, this.items.length);
 
-        if (this.peptideCountTable) {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+
+        if (assayData && assayData.peptideCountTable && this.lcaOntology && this.pept2dataCommunicator) {
             this.loading = true;
 
-            this.totalItems = this.peptideCountTable.getOntologyIds().length;
-            const pept2DataCommunicator = this.communicationSource.getPept2DataCommunicator();
-            await pept2DataCommunicator.process(this.peptideCountTable, this.assay.getSearchConfiguration());
+            const peptideCountTable = assayData.peptideCountTable;
+
+            this.totalItems = peptideCountTable.getOntologyIds().length;
+            const pept2DataCommunicator = assayData.pept2dataCommunicator;
             const buffers = pept2DataCommunicator.getPeptideResponseMap(this.assay.getSearchConfiguration()).getBuffers();
 
             await PeptideSummaryTable.worker.setPept2DataMap(buffers[0], buffers[1]);
-            await PeptideSummaryTable.worker.setPeptideCountTable(this.peptideCountTable.toMap());
+            await PeptideSummaryTable.worker.setPeptideCountTable(peptideCountTable.toMap());
 
-            const lcaOntology = await (new NcbiOntologyProcessor(this.communicationSource)).getOntologyByIds(
-                await PeptideSummaryTable.worker.getLcaIds()
-            );
+            const lcaOntology = this.$store.getters["ncbi/ontology"](this.assay);
             await PeptideSummaryTable.worker.setLcaOntology(lcaOntology);
 
             const obs = PeptideSummaryTable.worker.computeItems();

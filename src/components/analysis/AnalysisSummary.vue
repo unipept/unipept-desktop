@@ -34,11 +34,7 @@
                         </div>
                     </v-col>
                     <v-col>
-                        <peptide-summary-table
-                            :assay="assay"
-                            :peptide-count-table="peptideCountTable"
-                            :communication-source="communicationSource"
-                            :project="project">
+                        <peptide-summary-table :assay="assay">
                         </peptide-summary-table>
                     </v-col>
                 </v-row>
@@ -65,35 +61,34 @@ import Project from "@/logic/filesystem/project/Project";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
+import { AssayData } from "unipept-web-components/src/state/AssayStore";
+import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 
 @Component({
-    components: { PeptideSummaryTable, SearchSettingsForm },
-    computed: {
-        progress: {
-            get(): number {
-                return this.project.getProcessingResults(this.assay).progress;
-            }
-        }
-    }
+    components: { PeptideSummaryTable, SearchSettingsForm }
 })
 export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
-    @Prop({ required: true })
-    private peptideCountTable: CountTable<Peptide>;
-    @Prop({ required: true })
-    private peptideTrust: PeptideTrust;
-    @Prop({ required: true })
-    private project: Project;
-    @Prop({ required: true })
-    private communicationSource: CommunicationSource;
 
     private equateIl: boolean = true;
     private filterDuplicates: boolean = true;
     private missedCleavage: boolean = false;
 
+    private peptideTrust: PeptideTrust = null;
+
     mounted() {
         this.onAssayChanged();
+        this.onPeptideCountTableChanged();
+    }
+
+    get peptideCountTable(): CountTable<Peptide> {
+        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    }
+
+    get progress(): number {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData ? assayData.analysisMetaData.progress : 0;
     }
 
     @Watch("assay")
@@ -106,10 +101,18 @@ export default class AnalysisSummary extends Vue {
         }
     }
 
+    @Watch("peptideCountTable")
+    private async onPeptideCountTableChanged() {
+        if (this.peptideCountTable) {
+            const communicator: Pept2DataCommunicator = this.$store.getters.assayData(this.assay)?.pept2dataCommunicator;
+            this.peptideTrust = await communicator?.getPeptideTrust(this.peptideCountTable, this.assay.getSearchConfiguration());
+        }
+    }
+
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
         this.assay.setSearchConfiguration(config);
-        this.project.processAssay(this.assay);
+        this.$store.dispatch("processAssay", this.assay);
     }
 }
 </script>

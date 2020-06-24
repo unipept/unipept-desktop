@@ -32,8 +32,6 @@ import { v4 as uuidv4 } from "uuid";
 export default class CreateAssay extends Vue {
     @Prop({ required: true })
     private study: Study;
-    @Prop({ required: true })
-    private project: Project;
     private peptides: string;
     private name: string;
 

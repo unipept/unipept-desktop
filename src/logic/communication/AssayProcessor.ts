@@ -6,9 +6,9 @@ import { CountTable } from "unipept-web-components/src/business/counts/CountTabl
 import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
-import { Database, RunResult } from "better-sqlite3";
+import { Database } from "better-sqlite3";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import { spawn, Transfer, Worker } from "threads/dist";
+import { spawn, Worker } from "threads/dist";
 import { Observable } from "threads/observable";
 import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
 import { ShareableMap } from "shared-memory-datastructures";
@@ -18,6 +18,8 @@ import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/Searc
 
 export default class AssayProcessor {
     private static worker;
+    private pept2DataCommunicator;
+    private cancelled: boolean = false;
 
     constructor(
         private readonly db: Database,
@@ -48,6 +50,13 @@ export default class AssayProcessor {
             peptideTrust,
             this.assay.getSearchConfiguration()
         )];
+    }
+
+    public cancel() {
+        this.cancelled = true;
+        if (this.pept2DataCommunicator) {
+            this.pept2DataCommunicator.cancel();
+        }
     }
 
     private async updateStorageMetadata(): Promise<void> {
@@ -101,6 +110,10 @@ export default class AssayProcessor {
             valid = false;
         }
 
+        if (this.cancelled) {
+            return;
+        }
+
         if (valid) {
             // Read previous results from DB
             return await this.readPept2Data();
@@ -110,22 +123,26 @@ export default class AssayProcessor {
                 onProgressUpdate: (val: number) => this.setProgress(val)
             }
 
-            const pept2DataCommunicator = new Pept2DataCommunicator();
-            await pept2DataCommunicator.process(
+            this.pept2DataCommunicator = new Pept2DataCommunicator();
+            await this.pept2DataCommunicator.process(
                 peptideCountTable,
                 this.assay.getSearchConfiguration(),
                 pept2DataProgressNotifier
             );
 
-            const pept2ResponseMap = pept2DataCommunicator.getPeptideResponseMap(this.assay.getSearchConfiguration());
-            const trust = await pept2DataCommunicator.getPeptideTrust(peptideCountTable, this.assay.getSearchConfiguration());
+            if (!this.cancelled) {
+                const pept2ResponseMap = this.pept2DataCommunicator.getPeptideResponseMap(this.assay.getSearchConfiguration());
+                const trust = await this.pept2DataCommunicator.getPeptideTrust(peptideCountTable, this.assay.getSearchConfiguration());
 
-            await this.writePept2Data(peptideCountTable, pept2ResponseMap, trust);
+                await this.writePept2Data(peptideCountTable, pept2ResponseMap, trust);
 
-            return [
-                pept2ResponseMap,
-                trust
-            ]
+                return [
+                    pept2ResponseMap,
+                    trust
+                ];
+            } else {
+                return [undefined, undefined];
+            }
         }
     }
 

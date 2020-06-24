@@ -1,26 +1,18 @@
 <template>
     <v-container fluid v-if="
         !errorStatus &&
-        $store.getters.getProject.getAllAssays().length > 0 &&
+        $store.getters.assays.length > 0 &&
         (maxProgress === 1 && activeProgress === 1)">
         <v-row>
             <v-col>
-                <analysis-summary
-                    :assay="activeAssay"
-                    :peptide-count-table="activeCountTable"
-                    :project="$store.getters.getProject"
-                    :peptide-trust="activeTrust"
-                    :communication-source="activeCommunicationSource">
-                </analysis-summary>
+                <analysis-summary :assay="activeAssay"></analysis-summary>
             </v-col>
         </v-row>
         <v-row>
             <v-col>
                 <single-dataset-visualizations-card
-                    :peptide-count-table="activeCountTable"
-                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
+                    :assay="activeAssay"
                     :analysisInProgress="true"
-                    :communication-source="activeCommunicationSource"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -29,11 +21,8 @@
         <v-row>
             <v-col>
                 <functional-summary-card
-                    :peptide-count-table="activeCountTable"
-                    :communication-source="activeCommunicationSource"
-                    :search-configuration="activeAssay ? activeAssay.getSearchConfiguration() : undefined"
-                    :analysisInProgress="true"
-                    :selectedTaxonId="$store.getters.getSelectedTaxonId">
+                    :assay="activeAssay"
+                    :analysisInProgress="true">
                 </functional-summary-card>
             </v-col>
         </v-row>
@@ -49,7 +38,7 @@
                 <a @click="reanalyse()">try again.</a>
             </p>
         </div>
-        <div class="d-flex flex-column mt-12" style="max-width: 1000px;" v-else-if="$store.getters.getProject.getAllAssays().length === 0">
+        <div class="d-flex flex-column mt-12" style="max-width: 1000px;" v-else-if="$store.getters.assays.length === 0">
             <h2>Empty project</h2>
             <p>
                 You have created an empty project. If this is the first time you're using this application, you can use
@@ -111,6 +100,7 @@ import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import Snake from "./../games/Snake.vue";
+import { AssayData } from "unipept-web-components/src/state/AssayStore";
 
 
 @Component({
@@ -119,86 +109,54 @@ import Snake from "./../games/Snake.vue";
         SingleDatasetVisualizationsCard,
         FunctionalSummaryCard,
         Snake
-    },
-    computed: {
-        activeAssay: {
-            get(): ProteomicsAssay {
-                return this.$store.getters.getProject.activeAssay;
-            }
-        },
-        activeCountTable: {
-            get(): CountTable<Peptide> {
-                if (this.activeAssay) {
-                    return this.$store.getters.getProject.getProcessingResults(this.activeAssay).countTable;
-                }
-                return undefined;
-            }
-        },
-        activeTrust: {
-            get(): PeptideTrust {
-                if (this.activeAssay) {
-                    return this.$store.getters.getProject.getProcessingResults(this.activeAssay).trust;
-                }
-                return undefined;
-            }
-        },
-        activeCommunicationSource: {
-            get(): CommunicationSource {
-                if (this.activeAssay) {
-                    return this.$store.getters.getProject.getProcessingResults(this.activeAssay).communicators;
-                }
-                return undefined;
-            }
-        },
-        errorStatus: {
-            get(): boolean {
-                if (!this.activeAssay) {
-                    return false;
-                }
-                return this.$store.getters.getProject.getProcessingResults(this.activeAssay).errorStatus !== undefined;
-            }
-        },
-        maxProgress: {
-            get(): number {
-                return this.$store.getters.getProject.getAllAssays().reduce((acc, curr) => {
-                    const progressResult = this.$store.getters.getProject.getProcessingResults(curr).progress;
-                    if (progressResult && progressResult > acc) {
-                        return progressResult;
-                    } else {
-                        return acc;
-                    }
-                }, 0);
-            }
-        },
-        minEta: {
-            get(): number {
-                return this.$store.getters.getProject.getAllAssays().reduce((acc, curr) => {
-                    const eta = this.$store.getters.getProject.getProcessingResults(curr).eta;
-                    if (eta < acc) {
-                        return eta;
-                    }
-                }, Infinity);
-            }
-        },
-        activeProgress: {
-            get(): number {
-                if (!this.activeAssay) {
-                    return 0;
-                }
-                return this.$store.getters.getProject.getProcessingResults(this.activeAssay).progress;
-            }
-        },
-        activeEta: {
-            get(): number {
-                if (!this.activeAssay) {
-                    return 0;
-                }
-                return this.$store.getters.getProject.getProcessingResults(this.activeAssay).eta;
-            }
-        }
     }
 })
 export default class AnalysisPage extends Vue {
+    get activeAssay(): ProteomicsAssay {
+        return this.$store.getters.activeAssay;
+    }
+
+    get errorStatus(): boolean {
+        if (!this.activeAssay) {
+            return false;
+        }
+        return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.status === "error";
+    }
+
+    get maxProgress(): number {
+        return this.$store.getters.assays.reduce((acc, curr) => {
+            const progressResult = curr.analysisMetaData.progress;
+            if (progressResult && progressResult > acc) {
+                return progressResult;
+            } else {
+                return acc;
+            }
+        }, 0);
+    }
+
+    get activeProgress(): number {
+        if (!this.activeAssay) {
+            return 0;
+        }
+        return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.progress;
+    }
+
+    get minEta(): number {
+        return this.$store.getters.assays.reduce((acc, curr) => {
+            const eta = curr.analysisMetaData.eta;
+            if (eta < acc) {
+                return eta;
+            }
+        }, Infinity);
+    }
+
+    get activeEta(): number {
+        if (!this.activeAssay) {
+            return 0;
+        }
+        return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.eta;
+    }
+
     private onUpdateSelectedTaxonId(id: number) {
         this.$store.dispatch("setSelectedTaxonId", id);
     }
@@ -208,9 +166,8 @@ export default class AnalysisPage extends Vue {
     }
 
     private reanalyse() {
-        const activeAssay = this.$store.getters.getProject.activeAssay;
-        if (activeAssay) {
-            this.$store.getters.getProject.processAssay(activeAssay);
+        if (this.activeAssay) {
+            this.$store.dispatch("processAssay", this.activeAssay);
         }
     }
 

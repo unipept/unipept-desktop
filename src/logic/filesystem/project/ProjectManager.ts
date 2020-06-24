@@ -2,7 +2,7 @@ import Project from "./Project";
 import * as fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import * as path from "path";
-
+import { store } from "./../../../main";
 // @ts-ignore
 import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
 import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
@@ -25,7 +25,7 @@ export default class ProjectManager  {
      * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
      * @throws {InvalidProjectException} When the given directory does not contain all required project files.
      */
-    public async loadExistingProject(projectLocation: string): Promise<Project> {
+    public async loadExistingProject(projectLocation: string): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
@@ -49,24 +49,21 @@ export default class ProjectManager  {
 
         await this.addToRecentProjects(projectLocation);
 
-        const project = new Project(projectLocation, db, studies);
-        project.setWatcher(new FileSystemWatcher(project));
+        await store.dispatch("initializeProject", [projectLocation, db, studies]);
 
         for (const study of studies) {
             for (const assay of study.getAssays()) {
-                assay.addChangeListener(new FileSystemAssayChangeListener(project, study));
+                assay.addChangeListener(new FileSystemAssayChangeListener(study));
             }
-            study.addChangeListener(new FileSystemStudyChangeListener(project));
+            study.addChangeListener(new FileSystemStudyChangeListener());
         }
-
-        return project;
     }
 
     /**
      * Create a new project and correctly initialize all required files in the given directory.
      * @param projectLocation Path to root directory of project.
      */
-    public async initializeProject(projectLocation: string): Promise<Project> {
+    public async initializeProject(projectLocation: string): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
@@ -76,9 +73,7 @@ export default class ProjectManager  {
 
         await this.addToRecentProjects(projectLocation);
 
-        const project = new Project(projectLocation, db);
-        project.setWatcher(new FileSystemWatcher(project));
-        return project;
+        await store.dispatch("initializeProject", [projectLocation, db, []]);
     }
 
     private async loadStudy(directory: string, db: DatabaseType): Promise<Study> {

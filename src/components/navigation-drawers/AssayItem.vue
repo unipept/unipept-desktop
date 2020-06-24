@@ -67,14 +67,23 @@
                     <v-checkbox v-model="selected" dense @click.native.stop :disabled="progress !== 1"></v-checkbox>
                 </tooltip>
             </div>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else-if="progress === 1">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
-                        :disabled="project.getProcessingResults(assay).progress !== 1"
                         @click="experimentSummaryActive = true"
                         v-on:click.stop color="#424242"
                         size="20">
                         mdi-information-outline
+                    </v-icon>
+                </tooltip>
+            </div>
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
+                <tooltip message="Cancel analysis" position="bottom">
+                    <v-icon
+                        @click="cancelAnalysis()"
+                        v-on:click.stop color="#424242"
+                        size="20">
+                        mdi-cancel
                     </v-icon>
                 </tooltip>
             </div>
@@ -108,12 +117,15 @@ import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import Project from "@/logic/filesystem/project/Project";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
+import { AssayData } from "unipept-web-components/src/state/AssayStore";
+import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
+import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 
 
 const { remote } = require("electron");
@@ -123,33 +135,13 @@ const { Menu, MenuItem } = remote;
     components: {
         Tooltip,
         ExperimentSummaryDialog
-    },
-    computed: {
-        progress: {
-            get(): number {
-                return this.project.getProcessingResults(this.assay).progress;
-            }
-        },
-        errorStatus: {
-            get(): boolean {
-                return this.project.getProcessingResults(this.assay).errorStatus !== undefined;
-            }
-        }
     }
 })
 export default class AssayItem extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
-    /**
-     * What assay is currently selected by the user? If this is not set, this assay will never be highlighted in the
-     * sidebar.
-     */
-    @Prop({ required: false, default: null })
-    private activeAssay: ProteomicsAssay;
     @Prop({ required: true })
     private study: Study;
-    @Prop({ required: true })
-    private project: Project;
     /**
      * Can the assay be selected for a comparative analysis?
      */
@@ -177,6 +169,28 @@ export default class AssayItem extends Vue {
     mounted() {
         this.onAssayChanged();
         this.onValueChanged();
+    }
+
+    get activeAssay(): ProteomicsAssay {
+        return this.$store.getters.activeAssay;
+    }
+
+    get progress(): number {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData ? assayData.analysisMetaData.progress : 0;
+    }
+
+    get peptideCountTable(): CountTable<Peptide> {
+        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    }
+
+    get errorStatus(): boolean {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData?.analysisMetaData.status === "error";
+    }
+
+    private cancelAnalysis() {
+        this.$store.getters.dispatch("cancelAnalysis", this.assay);
     }
 
     private enableAssayEdit() {
@@ -248,7 +262,7 @@ export default class AssayItem extends Vue {
     }
 
     @Watch("assay")
-    @Watch("progress")
+    @Watch("peptideCountTable")
     private async onAssayChanged() {
         this.assayName = this.assay.getName();
         this.peptideTrust = await this.computePeptideTrust();
@@ -256,21 +270,19 @@ export default class AssayItem extends Vue {
 
     private async computePeptideTrust(): Promise<PeptideTrust> {
         if (this.assay) {
-            const processingResults = this.project.getProcessingResults(this.assay);
-            const communicators = processingResults.communicators;
-            const peptideCounts = processingResults.countTable;
+            const processingResult = this.$store.getters.assayData(this.assay);
+            const pept2DataCommunicator: Pept2DataCommunicator = processingResult?.pept2dataCommunicator;
+            const countTable = processingResult?.peptideCountTable;
 
-            if (communicators && peptideCounts) {
-                const pept2DataCommunicator = communicators.getPept2DataCommunicator();
-                await pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
-                return await pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
+            if (pept2DataCommunicator) {
+                return await pept2DataCommunicator.getPeptideTrust(countTable, this.assay.getSearchConfiguration());
             }
         }
         return undefined;
     }
 
     private reanalyse() {
-        this.project.processAssay(this.assay);
+        this.$store.dispatch("processAssay", this.assay);
     }
 
     private selectAssay() {
@@ -311,23 +323,23 @@ export default class AssayItem extends Vue {
         );
         newAssay.setSearchConfiguration(searchConfiguration);
         const metadataWriter = new AssayFileSystemMetaDataWriter(
-            `${this.project.projectPath}${this.study.getName()}`,
-            this.project.db,
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.database,
             this.study
         );
         await newAssay.accept(metadataWriter);
 
         await fs.copyFile(
-            `${this.project.projectPath}${this.study.getName()}/${this.assay.getName()}.pep`,
-            `${this.project.projectPath}${this.study.getName()}/${assayName}.pep`,
+            `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,
+            `${this.$store.getters.projectLocation}${this.study.getName()}/${assayName}.pep`,
         );
     }
 
     private async removeAssay() {
         this.removeConfirmationActive = false;
         const assayDestroyer = new AssayFileSystemDestroyer(
-            `${this.project.projectPath}${this.study.getName()}`,
-            this.project.db
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.database
         );
         await this.assay.accept(assayDestroyer);
     }

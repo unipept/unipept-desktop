@@ -44,6 +44,8 @@ export default class Project {
 
     // Maps assays to their processed counterparts. TODO: should be updated to a map, once we are using Vue 3.
     private processedAssays: {} = {};
+    // Maps assays to the AssayProcessors that are currently analysis the assay.
+    private processors: {} = {};
 
     constructor(
         public readonly projectPath: string,
@@ -132,6 +134,12 @@ export default class Project {
         }
     }
 
+    public cancelAssay(assay: ProteomicsAssay): void {
+        if (assay.getId() in this.processors) {
+            this.processors[assay.getId()].cancel();
+        }
+    }
+
     public async processAssay(assay: ProteomicsAssay): Promise<void> {
         const processedItem = this.getProcessingResults(assay);
         processedItem.errorStatus = undefined;
@@ -166,14 +174,18 @@ export default class Project {
                 }
             );
 
+            this.processors[assay.getId()] = assayProcessor;
+
             const [countTable, communicators] = await assayProcessor.processAssay();
 
-            processedItem.communicators = communicators;
-            processedItem.countTable = countTable;
-            processedItem.trust = await communicators.getPept2DataCommunicator().getPeptideTrust(
-                countTable,
-                assay.getSearchConfiguration()
-            );
+            if (processedItem.progress === 1) {
+                processedItem.communicators = communicators;
+                processedItem.countTable = countTable;
+                processedItem.trust = await communicators.getPept2DataCommunicator().getPeptideTrust(
+                    countTable,
+                    assay.getSearchConfiguration()
+                );
+            }
         } catch (err) {
             console.warn(err);
             if (!this.activeAssay) {

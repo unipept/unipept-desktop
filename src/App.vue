@@ -18,7 +18,7 @@
                 v-on:update:toolbar-width="onToolbarWidthUpdated">
             </Toolbar>
 
-            <v-content
+            <v-main
                 :style="{
                     'min-height': '100%',
                     'max-width': isMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
@@ -42,7 +42,7 @@
                 </v-dialog>
                 <!-- Snackbar that's shown while the update to the application is running -->
                 <div class="updating-snackbar-container">
-                    <v-snackbar v-model="updatingSnackbar" color="info" :timeout="0">
+                    <v-snackbar v-model="updatingSnackbar" color="info" :timeout="-1">
                         <div class="updating-snackbar-content">
                             <v-progress-linear color="white" :value="updatingProgress"></v-progress-linear>
                             <div class="updating-snackbar-text">
@@ -52,11 +52,11 @@
                     </v-snackbar>
                 </div>
                 <!-- Snackbar that's shown after the application has successfully been updated -->
-                <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="0">
+                <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
                     {{ updateMessage }}
                     <v-btn text dark @click="updatedSnackbar = false">Close</v-btn>
                 </v-snackbar>
-            </v-content>
+            </v-main>
         </v-app>
     </div>
 </template>

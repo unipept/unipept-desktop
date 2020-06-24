@@ -37,7 +37,7 @@
                     </div>
                 </v-col>
             </v-row>
-            <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="0" color="error">
+            <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
                 {{ errorMessage }}
                 <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
             </v-snackbar>
@@ -154,9 +154,7 @@ export default class HomePage extends Vue {
 
             try {
                 const projectManager: ProjectManager = new ProjectManager();
-                const project: Project = await projectManager.initializeProject(chosenPath[0]);
-
-                await this.$store.dispatch("setProject", project);
+                await projectManager.initializeProject(chosenPath[0]);
                 await this.$router.push("/analysis/single");
             } catch (err) {
                 console.error(err);
@@ -173,8 +171,7 @@ export default class HomePage extends Vue {
         try {
             if (!this.$store.getters.getProject || this.$store.getters.getProject.projectPath !== path) {
                 const projectManager: ProjectManager = new ProjectManager();
-                const project: Project = await projectManager.loadExistingProject(path);
-                await this.$store.dispatch("setProject", project);
+                await projectManager.loadExistingProject(path);
             }
             await this.$router.push("/analysis/single");
         } catch (err) {
