@@ -7,6 +7,7 @@ import { FilterStore } from "unipept-web-components/src/state/FilterStore";
 import { ConfigurationStore } from "unipept-web-components/src/state/ConfigurationStore";
 import { DesktopConfigurationStore } from "./state/DesktopConfigurationStore";
 import { projectStore } from "./state/ProjectStore";
+import { summaryStore } from "@/state/PeptideSummaryStore";
 import Vuex, { ActionContext } from "vuex";
 import vueFullscreen from "vue-fullscreen";
 import VueRouter from "vue-router";
@@ -23,7 +24,6 @@ import EcCountTableProcessor from "unipept-web-components/src/business/processor
 import GoCountTableProcessor from "unipept-web-components/src/business/processors/functional/go/GoCountTableProcessor";
 import InterproCountTableProcessor from "unipept-web-components/src/business/processors/functional/interpro/InterproCountTableProcessor";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
-import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import EcOntologyProcessor from "unipept-web-components/src/business/ontology/functional/ec/EcOntologyProcessor";
@@ -77,7 +77,8 @@ export const store = new Vuex.Store({
         go: goStore,
         interpro: iprStore,
         ncbi: lcaOntologyStore,
-        project: projectStore
+        project: projectStore,
+        peptideSummary: summaryStore
     }
 });
 

@@ -27,9 +27,8 @@ export function readPept2Data(installationDir: string, dbFile: string, assayId: 
         });
 
         //@ts-ignore
-        const db = new Database(dbFile, {}, installationDir, {
-            timeout: ProjectManager.DB_TIMEOUT
-        });
+        const db = new Database(dbFile, { timeout: 15000 }, installationDir);
+        db.pragma("journal_mode = WAL");
 
         const start = new Date().getTime();
         let rowsProcessed: number = 0;
@@ -84,9 +83,8 @@ export function writePept2Data(
     );
 
     //@ts-ignore
-    const db = new Database(dbFile, {}, installationDir, {
-        timeout: ProjectManager.DB_TIMEOUT
-    });
+    const db = new Database(dbFile, { timeout: 15000 }, installationDir);
+    db.pragma("journal_mode = WAL");
 
     // First delete all existing rows for this assay;
     db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);
