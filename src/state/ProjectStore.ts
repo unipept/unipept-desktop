@@ -35,6 +35,10 @@ const projectGetters: GetterTree<ProjectState, any> = {
 
     database(state: ProjectState): Database {
         return state.database;
+    },
+
+    databaseFile(state: ProjectState): string {
+        return state.projectLocation + "metadata.sqlite";
     }
 };
 

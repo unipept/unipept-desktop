@@ -3,7 +3,6 @@ import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptid
 import { expose } from "threads";
 import NcbiTaxon from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
 import { Ontology } from "unipept-web-components/src/business/ontology/Ontology";
-import NcbiOntologyProcessor from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiOntologyProcessor";
 import { DataOptions } from "vuetify";
 import { Observable } from "observable-fns";
 
@@ -59,6 +58,8 @@ function computeItems(): Observable<number> {
         const totalPeptides: number = peptides.length;
         let processedPeptides: number = 0;
 
+        const start = new Date().getTime();
+
         for (const peptide of peptides) {
             const response = pept2DataMap.get(peptide);
             let lcaName: string = "N/A";
@@ -84,6 +85,9 @@ function computeItems(): Observable<number> {
                 obs.next(processedPeptides / totalPeptides);
             }
         }
+
+        const end = new Date().getTime();
+        console.log("Peptide summary took: " + (end - start) / 1000 + "s");
 
         items = output;
 

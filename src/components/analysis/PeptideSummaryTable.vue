@@ -97,7 +97,7 @@ export default class PeptideSummaryTable extends Vue {
     }
 
     get pept2dataCommunicator(): Pept2DataCommunicator {
-        return this.$store.getters.assayData(this.assay)?.pept2dataCommunicator;
+        return this.$store.getters.assayData(this.assay)?.communicationSource.getPept2DataCommunicator();
     }
 
     get lcaOntology(): Ontology<NcbiId, NcbiTaxon> {
@@ -115,7 +115,6 @@ export default class PeptideSummaryTable extends Vue {
         }
     }
 
-    @Watch("assay")
     @Watch("peptideCountTable")
     @Watch("lcaOntology")
     @Watch("pept2dataCommunicator")
@@ -130,7 +129,7 @@ export default class PeptideSummaryTable extends Vue {
             const peptideCountTable = assayData.peptideCountTable;
 
             this.totalItems = peptideCountTable.getOntologyIds().length;
-            const pept2DataCommunicator = assayData.pept2dataCommunicator;
+            const pept2DataCommunicator = assayData.communicationSource.getPept2DataCommunicator();
             const buffers = pept2DataCommunicator.getPeptideResponseMap(this.assay.getSearchConfiguration()).getBuffers();
 
             await PeptideSummaryTable.worker.setPept2DataMap(buffers[0], buffers[1]);

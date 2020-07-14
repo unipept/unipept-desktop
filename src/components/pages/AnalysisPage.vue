@@ -68,6 +68,13 @@
                 Tip: you can create as many studies and assays as you'd like.
             </p>
         </div>
+        <div class="inner-status-container mt-12" v-else-if="cancelled">
+            <v-icon x-large>mdi-cancel</v-icon>
+            <p>
+                You chose to cancel the analysis of this assay. <a @click="reanalyse">Click here</a> to restart this
+                assay's analysis.
+            </p>
+        </div>
         <div class="inner-status-container game-container mt-12" v-else-if="maxProgress < 1 || activeProgress < 1" >
             <v-progress-circular
                 :size="100"
@@ -121,6 +128,10 @@ export default class AnalysisPage extends Vue {
             return false;
         }
         return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.status === "error";
+    }
+
+    get cancelled(): boolean {
+        return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.status === "cancelled";
     }
 
     get maxProgress(): number {

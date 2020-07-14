@@ -68,7 +68,6 @@ import { Prop, Watch } from "vue-property-decorator";
 import Toolbar from "./components/navigation-drawers/Toolbar.vue";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
-import Project from "@/logic/filesystem/project/Project";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 const electron = require("electron");
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";

@@ -21,7 +21,6 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Project from "@/logic/filesystem/project/Project";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import StudyItem from "./StudyItem.vue";
 import Study from "unipept-web-components/src/business/entities/study/Study";

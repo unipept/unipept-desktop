@@ -1,13 +1,13 @@
 import Vue from "vue"
 import App from "./App.vue"
 import vuetify from "./plugins/vuetify";
-import { createAssayStore } from "unipept-web-components/src/state/AssayStore";
+import { createAssayStore, AssayState } from "unipept-web-components/src/state/AssayStore";
 import { lcaOntologyStore } from "unipept-web-components/src/state/LcaOntologyStore";
 import { FilterStore } from "unipept-web-components/src/state/FilterStore";
 import { ConfigurationStore } from "unipept-web-components/src/state/ConfigurationStore";
 import { DesktopConfigurationStore } from "./state/DesktopConfigurationStore";
 import { projectStore } from "./state/ProjectStore";
-import Vuex from "vuex";
+import Vuex, { ActionContext } from "vuex";
 import vueFullscreen from "vue-fullscreen";
 import VueRouter from "vue-router";
 import HomePage from "./components/pages/HomePage.vue";
@@ -29,6 +29,8 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import EcOntologyProcessor from "unipept-web-components/src/business/ontology/functional/ec/EcOntologyProcessor";
 import GoOntologyProcessor from "unipept-web-components/src/business/ontology/functional/go/GoOntologyProcessor";
 import InterproOntologyProcessor from "unipept-web-components/src/business/ontology/functional/interpro/InterproOntologyProcessor";
+import ProgressListener from "unipept-web-components/src/business/progress/ProgressListener";
+import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -60,13 +62,8 @@ const iprStore = functionalStoreFactory.createOntologyStore(
     communicationSource => new InterproOntologyProcessor(communicationSource)
 );
 
-const assayStore = createAssayStore(async(p2dCommunicator, assay: ProteomicsAssay, countTable: CountTable<Peptide>) => {
-    const searchConfig = assay.getSearchConfiguration();
-    return new CachedCommunicationSource(
-        p2dCommunicator.getPeptideResponseMap(searchConfig),
-        await p2dCommunicator.getPeptideTrust(countTable, searchConfig),
-        searchConfig
-    );
+const assayStore = createAssayStore((store: ActionContext<AssayState, any>, assay: ProteomicsAssay, progressListener: ProgressListener) => {
+    return new DesktopAssayProcessor(store.getters["database"], store.getters["databaseFile"], assay, progressListener);
 });
 
 export const store = new Vuex.Store({

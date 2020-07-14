@@ -62,7 +62,6 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import Project from "@/logic/filesystem/project/Project";
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
@@ -169,7 +168,7 @@ export default class HomePage extends Vue {
     private async onOpenProject(path: string) {
         this.loadingProject = true;
         try {
-            if (!this.$store.getters.getProject || this.$store.getters.getProject.projectPath !== path) {
+            if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {
                 const projectManager: ProjectManager = new ProjectManager();
                 await projectManager.loadExistingProject(path);
             }

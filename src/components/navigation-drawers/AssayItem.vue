@@ -5,15 +5,14 @@
             @contextmenu="showContextMenu()"
             :class="{
                 'assay-item': true,
-                'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
+                'assay-item--selected': !selectable && activeAssay && activeAssay.getId() === assay.getId(),
                 'assay-item--error': !isValidAssayName || errorStatus
             }">
-            <div
-                v-if="isValidAssayName && !errorStatus">
+            <div v-if="isValidAssayName && !errorStatus && !cancelStatus">
                 <v-tooltip bottom v-if="progress !== 1">
                     <template v-slot:activator="{ on }">
                         <v-progress-circular
-                            :rotate="-90" :size="16"
+                            :rotate="-90" :size="18"
                             :value="progress * 100"
                             v-on="on"
                             color="primary">
@@ -50,6 +49,16 @@
                     mdi-restart-alert
                 </v-icon>
             </tooltip>
+            <tooltip
+                v-if="cancelStatus"
+                message="The analysis for this assay has been cancelled. Click here to restart the analysis."
+                position="bottom">
+                <v-icon
+                    @click="reanalyse()"
+                    size="20">
+                    mdi-cancel
+                </v-icon>
+            </tooltip>
             <span
                 v-if="!isEditingAssayName"
                 v-on:dblclick="enableAssayEdit()">
@@ -71,11 +80,20 @@
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
                         @click="experimentSummaryActive = true"
-                        v-on:click.stop color="#424242"
+                        v-on:click.stop
+                        color="#424242"
                         size="20">
                         mdi-information-outline
                     </v-icon>
                 </tooltip>
+            </div>
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else-if="cancelStatus">
+                <v-icon
+                    color="#424242"
+                    size="20"
+                    disabled>
+                    mdi-close
+                </v-icon>
             </div>
             <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
                 <tooltip message="Cancel analysis" position="bottom">
@@ -83,7 +101,7 @@
                         @click="cancelAnalysis()"
                         v-on:click.stop color="#424242"
                         size="20">
-                        mdi-cancel
+                        mdi-stop-circle-outline
                     </v-icon>
                 </tooltip>
             </div>
@@ -189,8 +207,13 @@ export default class AssayItem extends Vue {
         return assayData?.analysisMetaData.status === "error";
     }
 
+    get cancelStatus(): boolean {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData?.analysisMetaData.status === "cancelled";
+    }
+
     private cancelAnalysis() {
-        this.$store.getters.dispatch("cancelAnalysis", this.assay);
+        this.$store.dispatch("cancelAnalysis", this.assay);
     }
 
     private enableAssayEdit() {

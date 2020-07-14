@@ -1,4 +1,3 @@
-import Project from "./Project";
 import * as fs from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import * as path from "path";
@@ -12,13 +11,16 @@ import IOException from "unipept-web-components/src/business/exceptions/IOExcept
 import Database, { Database as DatabaseType } from "better-sqlite3";
 import { v4 as uuidv4 } from "uuid";
 import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSystemMetaDataWriter";
-import FileSystemWatcher from "./FileSystemWatcher";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 
 
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";
+    // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
+    // a "SQLBusyException" to b§e thrown. By increasing the timeout to a value, larger than the time it should take
+    // to execute these transactions, these errors can be avoided.
+    public static readonly DB_TIMEOUT: number = 15000;
 
     /**
      * @param projectLocation The main directory of the project on disk.
@@ -34,7 +36,9 @@ export default class ProjectManager  {
             throw new InvalidProjectException("Project metadata file was not found!");
         }
 
-        const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
+        const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME, {
+            timeout: ProjectManager.DB_TIMEOUT
+        });
 
         // Check all subdirectories of the given project and try to load the studies.
         const subDirectories: string[] = fs.readdirSync(projectLocation, { withFileTypes: true })
@@ -68,7 +72,9 @@ export default class ProjectManager  {
             projectLocation += "/";
         }
 
-        const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME);
+        const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME, {
+            timeout: ProjectManager.DB_TIMEOUT
+        });
         db.exec(schema_v1);
 
         await this.addToRecentProjects(projectLocation);

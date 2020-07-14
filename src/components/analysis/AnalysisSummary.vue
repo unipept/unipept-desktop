@@ -57,7 +57,6 @@ import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import SearchSettingsForm from "unipept-web-components/src/components/analysis/SearchSettingsForm.vue";
-import Project from "@/logic/filesystem/project/Project";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
@@ -104,7 +103,7 @@ export default class AnalysisSummary extends Vue {
     @Watch("peptideCountTable")
     private async onPeptideCountTableChanged() {
         if (this.peptideCountTable) {
-            const communicator: Pept2DataCommunicator = this.$store.getters.assayData(this.assay)?.pept2dataCommunicator;
+            const communicator: Pept2DataCommunicator = this.$store.getters.assayData(this.assay)?.communicationSource.getPept2DataCommunicator();
             this.peptideTrust = await communicator?.getPeptideTrust(this.peptideCountTable, this.assay.getSearchConfiguration());
         }
     }

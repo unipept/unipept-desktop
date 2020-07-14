@@ -33,7 +33,6 @@
                 :selectable="true"
                 :assay="assay"
                 :study="study"
-                :project="project"
                 v-bind:key="assay.id"
                 :value="assayInComparison(assay)"
                 v-on:input="toggleAssayComparison(assay)">
@@ -48,7 +47,6 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import Project from "@/logic/filesystem/project/Project";
 import AssayItem from "@/components/navigation-drawers/AssayItem.vue";
 
 @Component({
@@ -65,7 +63,7 @@ import AssayItem from "@/components/navigation-drawers/AssayItem.vue";
         },
         isProcessing: {
             get(): boolean {
-                return this.study.getAssays().some(a => this.project.getProcessingResults(a).progress !== 1);
+                return this.study.getAssays().some(a => this.$store.getters["assayData"](a).analysisMetaData.progress !== 1);
             }
         }
     }
@@ -75,8 +73,6 @@ export default class SelectableStudyItem extends Vue {
     private study: Study;
     @Prop({ required: true })
     private assaysInComparison: Assay[];
-    @Prop({ required: true })
-    private project: Project;
 
     private collapsed: boolean = false;
 

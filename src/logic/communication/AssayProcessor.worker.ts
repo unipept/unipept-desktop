@@ -6,6 +6,7 @@ import { Transfer } from "threads/worker";
 import { TransferDescriptor } from "threads/dist";
 import { Observable } from "threads/observable";
 import { ShareableMap } from "shared-memory-datastructures";
+import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 
 expose({ readPept2Data, writePept2Data });
 
@@ -26,10 +27,15 @@ export function readPept2Data(installationDir: string, dbFile: string, assayId: 
         });
 
         //@ts-ignore
-        const db = new Database(dbFile, {}, installationDir);
+        const db = new Database(dbFile, {}, installationDir, {
+            timeout: ProjectManager.DB_TIMEOUT
+        });
 
+        const start = new Date().getTime();
         let rowsProcessed: number = 0;
         const rows = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").all(assayId);
+        const end = new Date().getTime();
+        console.log("Read transaction took: " + (end - start) / 1000 + "s");
         const pept2DataMap = new ShareableMap<Peptide, string>(rows.length);
         for (const row of rows) {
             if (row.response) {
@@ -78,12 +84,15 @@ export function writePept2Data(
     );
 
     //@ts-ignore
-    const db = new Database(dbFile, {}, installationDir);
+    const db = new Database(dbFile, {}, installationDir, {
+        timeout: ProjectManager.DB_TIMEOUT
+    });
 
     // First delete all existing rows for this assay;
     db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);
     db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assayId);
 
+    const start = new Date().getTime();
     const insert = db.prepare("INSERT INTO pept2data VALUES (?, ?, ?)");
     const insertMany = db.transaction((data) => {
         for (const peptide of data) {
@@ -91,6 +100,8 @@ export function writePept2Data(
         }
     });
     insertMany(peptideCounts.keys());
+    const end = new Date().getTime();
+    console.log("Write transaction took: " + (end - start) / 1000 + "s");
 
     const insertTrust = db.prepare("INSERT INTO peptide_trust VALUES (?, ?, ?, ?)");
     insertTrust.run(

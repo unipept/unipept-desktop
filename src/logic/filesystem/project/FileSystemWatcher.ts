@@ -207,8 +207,8 @@ export default class FileSystemWatcher {
                     );
 
                     await assay.accept(assayDestroyer);
-
-                    // this.project.resetActiveAssay();
+                    store.dispatch("removeAssay", assay);
+                    store.dispatch("resetActiveAssay");
                 }
             }
         } catch (err) {
@@ -244,8 +244,7 @@ export default class FileSystemWatcher {
             await study.accept(studyDestroyer);
 
             await store.dispatch("removeStudy", study);
-
-            // this.project.resetActiveAssay();
+            store.dispatch("resetActiveAssay");
         } catch (err) {
             this.reportError(err);
         }

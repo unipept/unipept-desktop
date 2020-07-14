@@ -2,16 +2,15 @@
     <div>
         <div
             class="sample-list-placeholder"
-            v-if="!project || project.getStudies().length === 0">
+            v-if="$store.getters.studies.length === 0">
             No studies present.
         </div>
         <div
             v-else
-            v-for="study of project.getStudies()"
+            v-for="study of $store.getters.studies"
             :key="study.getId()">
             <selectable-study-item
                 :study="study"
-                :project="project"
                 :assays-in-comparison="$store.getters.getSelectedAssays"
                 v-on:select-assay="selectAssay"
                 v-on:deselect-assay="deselectAssay">
@@ -24,7 +23,6 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Project from "@/logic/filesystem/project/Project";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import SelectableStudyItem from "@/components/navigation-drawers/SelectableStudyItem.vue";

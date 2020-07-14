@@ -17,7 +17,6 @@ import Vue from "vue";
 import { Prop } from "vue-property-decorator";
 import Component from "vue-class-component";
 import DatasetForm from "unipept-web-components/src/components/dataset/DatasetForm.vue";
-import Project from "@/logic/filesystem/project/Project";
 import Study from "unipept-web-components/src/business/entities/study/Study";
 import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";

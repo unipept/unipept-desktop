@@ -15,10 +15,11 @@ import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
 import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
+import AssayProcessor from "unipept-web-components/src/business/processors/AssayProcessor";
 
-export default class AssayProcessor {
+export default class DesktopAssayProcessor implements AssayProcessor {
     private static worker;
-    private pept2DataCommunicator;
+    private pept2DataCommunicator: Pept2DataCommunicator;
     private cancelled: boolean = false;
 
     constructor(
@@ -28,28 +29,26 @@ export default class AssayProcessor {
         private readonly progressListener?: ProgressListener
     ) {}
 
-    public async processAssay(): Promise<[CountTable<Peptide>, CommunicationSource]> {
-        if (!AssayProcessor.worker) {
-            AssayProcessor.worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
+    public async processAssay(countTable: CountTable<Peptide>): Promise<CommunicationSource> {
+        if (!DesktopAssayProcessor.worker) {
+            DesktopAssayProcessor.worker = await spawn(new Worker("./AssayProcessor.worker.ts"));
         }
 
-        const peptideCountTableProcessor = new PeptideCountTableProcessor();
-        const peptideCountTable = await peptideCountTableProcessor.getPeptideCountTable(
-            this.assay.getPeptides(),
-            this.assay.getSearchConfiguration()
-        );
+        const [pept2DataResponses, peptideTrust] = await this.getPept2Data(countTable);
 
-        const [pept2DataResponses, peptideTrust] = await this.getPept2Data(peptideCountTable);
+        if (!this.isCancelled()) {
+            // Now update the storage metadata in the db
+            await this.updateStorageMetadata();
 
-        // Now update the storage metadata in the db
-        await this.updateStorageMetadata();
-
-        this.setProgress(1);
-        return [peptideCountTable, new CachedCommunicationSource(
-            pept2DataResponses,
-            peptideTrust,
-            this.assay.getSearchConfiguration()
-        )];
+            this.setProgress(1);
+            return new CachedCommunicationSource(
+                pept2DataResponses,
+                peptideTrust,
+                this.assay.getSearchConfiguration()
+            );
+        } else {
+            return undefined;
+        }
     }
 
     public cancel() {
@@ -57,6 +56,10 @@ export default class AssayProcessor {
         if (this.pept2DataCommunicator) {
             this.pept2DataCommunicator.cancel();
         }
+    }
+
+    public isCancelled(): boolean {
+        return this.cancelled;
     }
 
     private async updateStorageMetadata(): Promise<void> {
@@ -147,7 +150,7 @@ export default class AssayProcessor {
     }
 
     private async readPept2Data(): Promise<[Map<Peptide, string>, PeptideTrust]> {
-        const obs: Observable<ReadResult> = AssayProcessor.worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
+        const obs: Observable<ReadResult> = DesktopAssayProcessor.worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
 
         return new Promise<[ShareableMap<Peptide, string>, PeptideTrust]>((resolve, reject) => {
             obs.subscribe(message => {
@@ -172,7 +175,7 @@ export default class AssayProcessor {
         peptideTrust: PeptideTrust
     ) {
         const buffers = pept2DataResponses.getBuffers();
-        await AssayProcessor.worker.writePept2Data(
+        await DesktopAssayProcessor.worker.writePept2Data(
             __dirname,
             peptideCounts.toMap(),
             buffers[0],
