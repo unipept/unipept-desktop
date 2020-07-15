@@ -41,10 +41,12 @@ const comparativeMutations: MutationTree<ComparativeState> = {
 
 const comparativeActions: ActionTree<ComparativeState, any> = {
     addSelectedAssay(store: ActionContext<ComparativeState, any>, assay: Assay) {
+        // console.log("Add assay --> " + assay.getName());
         store.commit("ADD_SELECTED_ASSAY", assay);
     },
 
     removeSelectedAssay(store: ActionContext<ComparativeState, any>, assay: Assay) {
+        // console.log("Remove assay --> " + assay.getName());
         store.commit("REMOVE_SELECTED_ASSAY", assay);
     }
 }

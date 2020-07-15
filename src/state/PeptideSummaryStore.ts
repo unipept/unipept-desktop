@@ -73,6 +73,12 @@ const summaryActions: ActionTree<PeptideSummaryState, any> = {
             }
 
             const assayData = store.rootGetters["assayData"](assay);
+
+            if (!assayData) {
+                // The assay no longer exists...
+                return;
+            }
+
             const communicationSource = assayData.communicationSource;
             const countTable: CountTable<Peptide> = assayData.peptideCountTable;
             const pept2DataCommunicator = communicationSource.getPept2DataCommunicator();

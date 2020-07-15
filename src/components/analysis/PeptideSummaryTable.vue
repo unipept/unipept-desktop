@@ -6,7 +6,7 @@
         :items-per-page="5"
         :server-items-length="totalItems"
         :options.sync="options"
-        :loading="computeProgress !== 1"
+        :loading="loading || computeProgress !== 1"
         :loading-text="'Loading items: ' + Math.round(computeProgress * 100) + '%'">
         <template v-slot:progress>
             <v-progress-linear :value="computeProgress * 100" height="2"></v-progress-linear>
@@ -69,12 +69,10 @@ export default class PeptideSummaryTable extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
 
-    // This worker keeps track of the data for this table and computes it on demand.
-    private static worker;
-
     private items = [];
-
     private options = {};
+
+    private loading: boolean = false;
 
     get computeProgress(): number {
         return this.$store.getters["peptideSummary/getProgress"](this.assay);
@@ -90,10 +88,11 @@ export default class PeptideSummaryTable extends Vue {
 
     @Watch("options", { deep: true })
     private async onOptionsChanged(newOptions: DataOptions) {
+        this.loading = true;
         if (this.computeProgress === 1) {
-            this.items.splice(0, this.items.length);
-            this.items.push(...await this.$store.getters["peptideSummary/getSummaryItems"](this.assay, newOptions));
+            this.items = await this.$store.getters["peptideSummary/getSummaryItems"](this.assay, newOptions);
         }
+        this.loading = false;
     }
 
     @Watch("computeProgress")
@@ -115,53 +114,6 @@ export default class PeptideSummaryTable extends Vue {
             this.items.splice(0, this.items.length);
         }
     }
-    //
-    // @Watch("peptideCountTable")
-    // @Watch("lcaOntology")
-    // @Watch("pept2dataCommunicator")
-    // private async computeItems() {
-    //     this.items.splice(0, this.items.length);
-    //
-    //     const assayData: AssayData = this.$store.getters.assayData(this.assay);
-    //
-    //     if (assayData && assayData.peptideCountTable && this.lcaOntology && this.pept2dataCommunicator) {
-    //         this.loading = true;
-    //
-    //         const peptideCountTable = assayData.peptideCountTable;
-    //
-    //         this.totalItems = peptideCountTable.getOntologyIds().length;
-    //         const pept2DataCommunicator = assayData.communicationSource.getPept2DataCommunicator();
-    //         const buffers = pept2DataCommunicator.getPeptideResponseMap(this.assay.getSearchConfiguration()).getBuffers();
-    //
-    //         await PeptideSummaryTable.worker.setPept2DataMap(buffers[0], buffers[1]);
-    //         await PeptideSummaryTable.worker.setPeptideCountTable(peptideCountTable.toMap());
-    //
-    //         const lcaOntology = this.$store.getters["ncbi/ontology"](this.assay);
-    //         await PeptideSummaryTable.worker.setLcaOntology(lcaOntology);
-    //
-    //         const obs = PeptideSummaryTable.worker.computeItems();
-    //         await new Promise((resolve, reject) => {
-    //             obs.subscribe(
-    //                 (val) => this.computeProgress = val,
-    //                 (err) => reject(err),
-    //                 () => resolve(),
-    //             );
-    //         });
-    //
-    //         await this.onOptionsChanged({
-    //             page: 1,
-    //             itemsPerPage: 5,
-    //             sortBy: [],
-    //             sortDesc: [],
-    //             multiSort: false,
-    //             mustSort: false,
-    //             groupBy: [],
-    //             groupDesc: []
-    //         });
-    //
-    //         this.loading = false;
-    //     }
-    // }
 }
 </script>
 

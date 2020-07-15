@@ -87,6 +87,10 @@
             <p class="mt-4">
                 {{ activeEta ? secondsToTimeString(activeEta) : secondsToTimeString(minEta) }}
             </p>
+            <p>
+                Note that assays are processed sequentially and that the estimated time is only computed once the
+                analysis for this assay has been started.
+            </p>
             <div class="mt-12">
                 <snake></snake>
             </div>
