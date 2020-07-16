@@ -95,9 +95,11 @@ export default class PeptideSummaryTable extends Vue {
         this.loading = false;
     }
 
+    @Watch("assay")
+    @Watch("peptideCountTable", { immediate: true })
     @Watch("computeProgress")
-    private async onProgressChanged(progress: number) {
-        if (progress === 1) {
+    private async onProgressChanged() {
+        if (this.computeProgress === 1) {
             await this.onOptionsChanged({
                 page: 1,
                 itemsPerPage: 5,
@@ -110,7 +112,7 @@ export default class PeptideSummaryTable extends Vue {
             });
         }
 
-        if (progress === 0) {
+        if (this.computeProgress === 0) {
             this.items.splice(0, this.items.length);
         }
     }

@@ -18,6 +18,7 @@ export interface PeptideSummaryState {
     summaryData: SummaryData[]
 }
 
+let inProgress: Promise<void>;
 let summaryWorker;
 
 const summaryState: PeptideSummaryState = {
@@ -68,31 +69,42 @@ const summaryActions: ActionTree<PeptideSummaryState, any> = {
         ) {
             store.commit("INIT_ASSAY_DATA", assay);
 
-            if (!summaryWorker) {
-                summaryWorker = await spawn(new Worker("./PeptideSummaryTable.worker.ts"));
+            while (inProgress) {
+                await inProgress;
             }
 
-            const assayData = store.rootGetters["assayData"](assay);
+            inProgress = new Promise<void>(async(resolve, reject) => {
+                if (!summaryWorker) {
+                    summaryWorker = await spawn(new Worker("./PeptideSummaryTable.worker.ts"));
+                }
 
-            if (!assayData) {
-                // The assay no longer exists...
-                return;
-            }
+                const assayData = store.rootGetters["assayData"](assay);
 
-            const communicationSource = assayData.communicationSource;
-            const countTable: CountTable<Peptide> = assayData.peptideCountTable;
-            const pept2DataCommunicator = communicationSource.getPept2DataCommunicator();
-            const responseMap = pept2DataCommunicator.getPeptideResponseMap(assay.getSearchConfiguration());
-            const [indexBuffer, dataBuffer] = responseMap.getBuffers();
+                if (!assayData) {
+                    // The assay no longer exists...
+                    resolve();
+                    return;
+                }
 
-            const obs = summaryWorker.computeItems(assay.getId(), indexBuffer, dataBuffer, countTable.toMap(), ontology);
-            await new Promise((resolve, reject) => {
-                obs.subscribe(
-                    (val) => store.commit("SET_PROGRESS", [assay, val]),
-                    (err) => reject(err),
-                    () => resolve(),
-                );
+                const communicationSource = assayData.communicationSource;
+                const countTable: CountTable<Peptide> = assayData.peptideCountTable;
+                const pept2DataCommunicator = communicationSource.getPept2DataCommunicator();
+                const responseMap = pept2DataCommunicator.getPeptideResponseMap(assay.getSearchConfiguration());
+                const [indexBuffer, dataBuffer] = responseMap.getBuffers();
+
+                const obs = summaryWorker.computeItems(assay.getId(), indexBuffer, dataBuffer, countTable.toMap(), ontology);
+                await new Promise((resolve, reject) => {
+                    obs.subscribe(
+                        (val) => store.commit("SET_PROGRESS", [assay, val]),
+                        (err) => reject(err),
+                        () => resolve(),
+                    );
+                });
+                resolve();
             });
+
+            await inProgress;
+            inProgress = undefined;
         }
     }
 }

@@ -65,10 +65,9 @@ function computeItems(
         }
 
         const end = new Date().getTime();
-        console.log("Peptide summary took: " + (end - start) / 1000 + "s");
+        console.log("Peptide summary took: " + (end - start) / 1000 + "s for --> " + assayId);
 
         itemsPerAssay.set(assayId, output);
-
         obs.next(1);
         obs.complete();
     });
