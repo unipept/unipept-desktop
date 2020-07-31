@@ -5,6 +5,8 @@ import { DataOptions } from "vuetify";
 import { Observable } from "observable-fns";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { Ontology } from "unipept-web-components/src/business/ontology/Ontology";
+import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
+import PeptideDataSerializer from "unipept-web-components/src/business/communication/peptides/PeptideDataSerializer";
 
 export type ItemType = {
     peptide: string,
@@ -30,7 +32,11 @@ function computeItems(
 
         obs.next(0);
 
-        const pept2DataMap: ShareableMap<Peptide, string> = new ShareableMap(0, 0);
+        const pept2DataMap: ShareableMap<Peptide, PeptideData> = new ShareableMap(
+            0,
+            0,
+            new PeptideDataSerializer()
+        );
         pept2DataMap.setBuffers(indexBuffer, dataBuffer);
 
         const totalPeptides: number = countTable.size;
@@ -39,13 +45,13 @@ function computeItems(
         const start = new Date().getTime();
 
         for (const peptide of countTable.keys()) {
-            const response = pept2DataMap.get(peptide);
+            const response: PeptideData = pept2DataMap.get(peptide);
             let lcaName: string = "N/A";
             let rank: string = "N/A";
 
             if (response) {
                 // @ts-ignore
-                const lcaDefinition = lcaOntology.definitions.get(JSON.parse(response).lca);
+                const lcaDefinition = lcaOntology.definitions.get(response.lca);
                 lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
                 rank = lcaDefinition ? lcaDefinition.rank : rank;
             }

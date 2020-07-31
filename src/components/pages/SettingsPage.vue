@@ -1,6 +1,6 @@
 <template>
     <v-container fluid v-if="this.configuration">
-        <v-form ref="form">
+        <v-form ref="form" @submit.prevent>
             <v-alert v-if="errorVisible" type="error">
                 An error occurred: {{ errorMessage }}
             </v-alert>

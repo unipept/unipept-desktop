@@ -6,6 +6,7 @@ import ProgressListener from "unipept-web-components/src/business/progress/Progr
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
 import { ShareableMap } from "shared-memory-datastructures";
+import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
 
 /**
  * A cached variant of the Pept2DataCommunicator that persistently stores the results in the SQLite-database associated
@@ -42,7 +43,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         return this.peptideTrust;
     }
 
-    public getPeptideResponse(peptide: string, configuration: SearchConfiguration): PeptideDataResponse {
+    public getPeptideResponse(peptide: string, configuration: SearchConfiguration): PeptideData  {
         if (configuration.toString() != this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
         }
@@ -53,7 +54,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         return JSON.parse(data);
     }
 
-    public getPeptideResponseMap(configuration: SearchConfiguration): ShareableMap<Peptide, string> {
+    public getPeptideResponseMap(configuration: SearchConfiguration): ShareableMap<Peptide, PeptideData> {
         if (configuration.toString() != this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
         }

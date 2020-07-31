@@ -3,6 +3,7 @@ import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/
 import { promises as fs } from "fs";
 import { spawn, Worker } from "threads"
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { Database } from "better-sqlite3";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     private static worker;
@@ -11,6 +12,7 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
         const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;
 
         try {
+            const start = new Date().getTime();
             const peptidesString: string = await fs.readFile(path, {
                 encoding: "utf-8"
             });
@@ -20,6 +22,8 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
             }
 
             const splitted = await AssayFileSystemDataReader.worker(peptidesString);
+            const end = new Date().getTime();
+            console.log("Reading in peptides from file: " + (end - start) / 1000 + "s");
             mpAssay.setPeptides(splitted);
         } catch (err) {
             // The file does not exist (yet), throw an exception

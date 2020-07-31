@@ -65,6 +65,7 @@ import Component from "vue-class-component";
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
+import { promises as fsPromises } from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";

@@ -203,7 +203,8 @@ export default class FileSystemWatcher {
                     await study.removeAssay(assay);
                     const assayDestroyer = new AssayFileSystemDestroyer(
                         store.getters.projectLocation + studyName,
-                        store.getters.database
+                        store.getters.database,
+                        store.getters.databaseFile
                     );
 
                     await assay.accept(assayDestroyer);
@@ -229,7 +230,8 @@ export default class FileSystemWatcher {
 
             const assayDestroyer = new AssayFileSystemDestroyer(
                 store.getters.projectLocation + studyName,
-                store.getters.database
+                store.getters.database,
+                store.getters.databaseFile
             );
 
             for (const assay of study.getAssays()) {

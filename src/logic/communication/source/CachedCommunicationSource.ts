@@ -13,6 +13,7 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 import CachedEcResponseCommunicator from "@/logic/communication/functional/CachedEcResponseCommunicator";
 import CachedGoResponseCommunicator from "@/logic/communication/functional/CachedGoResponseCommunicator";
 import CachedInterproResponseCommunicator from "@/logic/communication/functional/CachedInterproResponseCommunicator";
+import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
 
 export default class CachedCommunicationSource implements CommunicationSource {
     private readonly ecCommunicator: EcResponseCommunicator;
@@ -22,7 +23,7 @@ export default class CachedCommunicationSource implements CommunicationSource {
     private readonly pept2DataCommunicator: Pept2DataCommunicator;
 
     constructor(
-        peptToResponseMap: Map<Peptide, string>,
+        peptToResponseMap: Map<Peptide, PeptideData>,
         peptideTrust: PeptideTrust,
         initialConfiguration: SearchConfiguration
     ) {

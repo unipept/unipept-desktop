@@ -6,7 +6,8 @@ import { Transfer } from "threads/worker";
 import { TransferDescriptor } from "threads/dist";
 import { Observable } from "threads/observable";
 import { ShareableMap } from "shared-memory-datastructures";
-import ProjectManager from "@/logic/filesystem/project/ProjectManager";
+import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
+import PeptideDataSerializer from "unipept-web-components/src/business/communication/peptides/PeptideDataSerializer";
 
 expose({ readPept2Data, writePept2Data });
 
@@ -34,11 +35,19 @@ export function readPept2Data(installationDir: string, dbFile: string, assayId: 
         let rowsProcessed: number = 0;
         const rows = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").all(assayId);
         const end = new Date().getTime();
-        console.log("Read transaction took: " + (end - start) / 1000 + "s");
-        const pept2DataMap = new ShareableMap<Peptide, string>(rows.length);
+        const pept2DataMap = new ShareableMap<Peptide, PeptideData>(
+            rows.length,
+            undefined,
+            new PeptideDataSerializer()
+        );
+
         for (const row of rows) {
             if (row.response) {
-                pept2DataMap.set(row.peptide, row.response);
+                // console.log("Deserialize:");
+                // console.log(row.response);
+                // console.log(bufferToArrayBuffer(row.response));
+                // console.log(new PeptideData(bufferToArrayBuffer(row.response)));
+                pept2DataMap.set(row.peptide, new PeptideData(bufferToArrayBuffer(row.response)));
             }
 
             if (rowsProcessed % 25000 === 0) {
@@ -76,7 +85,7 @@ export function writePept2Data(
     assayId: string,
     dbFile: string
 ) {
-    const pept2DataResponses = new ShareableMap(0, 0);
+    const pept2DataResponses = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
     pept2DataResponses.setBuffers(
         peptDataIndexBuffer,
         peptDataDataBuffer
@@ -94,7 +103,16 @@ export function writePept2Data(
     const insert = db.prepare("INSERT INTO pept2data VALUES (?, ?, ?)");
     const insertMany = db.transaction((data) => {
         for (const peptide of data) {
-            insert.run(assayId, peptide, pept2DataResponses.get(peptide))
+            const response = pept2DataResponses.get(peptide);
+            // console.log("Serialize:");
+            // console.log(arrayBufferToBuffer(response.buffer));
+            // console.log(response.buffer);
+            // console.log(response);
+            if (response) {
+                insert.run(assayId, peptide, arrayBufferToBuffer(response.buffer));
+            } else {
+                insert.run(assayId, peptide, null);
+            }
         }
     });
     insertMany(peptideCounts.keys());
@@ -108,4 +126,17 @@ export function writePept2Data(
         peptideTrust.matchedPeptides,
         peptideTrust.searchedPeptides
     );
+}
+
+function arrayBufferToBuffer(buffer: ArrayBuffer): Buffer {
+    return new Buffer(buffer);
+}
+
+function bufferToArrayBuffer(buf: Buffer): ArrayBuffer {
+    const ab = new ArrayBuffer(buf.length);
+    const view = new Uint8Array(ab);
+    for (let i = 0; i < buf.length; ++i) {
+        view[i] = buf[i];
+    }
+    return ab;
 }

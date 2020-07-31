@@ -362,7 +362,8 @@ export default class AssayItem extends Vue {
         this.removeConfirmationActive = false;
         const assayDestroyer = new AssayFileSystemDestroyer(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
-            this.$store.getters.database
+            this.$store.getters.database,
+            this.$store.getters.databaseFile
         );
         await this.assay.accept(assayDestroyer);
     }

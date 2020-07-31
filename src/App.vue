@@ -74,6 +74,7 @@ import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
+import { AssayData } from "unipept-web-components/src/state/AssayStore";
 
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
@@ -90,18 +91,9 @@ const BrowserWindow = electron.BrowserWindow;
         },
         assaysInProgress: {
             get(): Assay[] {
-                if (this.$store.getters.getProject) {
-                    return this.$store.getters.getProject.getAllAssays()
-                        .filter((a: Assay) => this.$store.getters.getProject.getProcessingResults(a).progress < 1)
-                        .reduce((acc, current) => acc.concat(current), []);
-                } else {
-                    return [];
-                }
-            }
-        },
-        watchableProject: {
-            get(): Project {
-                return this.$store.getters.getProject
+                return this.$store.getters.assays
+                    .filter((a: AssayData) => a.analysisMetaData.progress < 1)
+                    .map((a: AssayData) => a.assay);
             }
         },
         isMini: {
@@ -172,13 +164,11 @@ export default class App extends Vue implements ErrorListener {
 
     @Watch("assaysInProgress")
     private assaysInProgressChanged(assays: Assay[]) {
-        const project: Project = this.$store.getters.getProject;
-
         if (!assays || assays.length === 0) {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev += project.getProcessingResults(currentAssay).progress, 0
+                (prev: number, currentAssay: Assay) => prev + this.$store.getters.assayData(currentAssay).analysisMetaData.progress, 0
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }
@@ -198,14 +188,6 @@ export default class App extends Vue implements ErrorListener {
 
         //   }
         //   App.previouslyInitialized = true;
-    }
-
-    @Watch("watchableProject")
-    private onProjectChanged() {
-        const project: Project = this.$store.getters.getProject;
-        if (project) {
-            project.watcher.addErrorListener(this);
-        }
     }
 
     /**

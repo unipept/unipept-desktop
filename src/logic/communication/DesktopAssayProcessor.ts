@@ -3,7 +3,6 @@ import CommunicationSource from "unipept-web-components/src/business/communicati
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
-import PeptideCountTableProcessor from "unipept-web-components/src/business/processors/raw/PeptideCountTableProcessor";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import { Database } from "better-sqlite3";
@@ -16,6 +15,8 @@ import SearchConfiguration from "unipept-web-components/src/business/configurati
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
 import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
 import AssayProcessor from "unipept-web-components/src/business/processors/AssayProcessor";
+import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
+import PeptideDataSerializer from "unipept-web-components/src/business/communication/peptides/PeptideDataSerializer";
 
 export default class DesktopAssayProcessor implements AssayProcessor {
     private static worker;
@@ -63,6 +64,7 @@ export default class DesktopAssayProcessor implements AssayProcessor {
     }
 
     private async updateStorageMetadata(): Promise<void> {
+        console.log("Update storage metadata...");
         const metadataRow = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
         );
@@ -90,8 +92,8 @@ export default class DesktopAssayProcessor implements AssayProcessor {
         }
     }
 
-    private async getPept2Data(peptideCountTable: CountTable<Peptide>): Promise<[Map<Peptide, string>, PeptideTrust]> {
-        // Read storage metadata from db to check if a cache is present, and if is valid or not.
+    private async getPept2Data(peptideCountTable: CountTable<Peptide>): Promise<[Map<Peptide, PeptideData>, PeptideTrust]> {
+        // Read storage metadata from db to check if a cache is present, and if it is valid or not.
         const row = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
         );
@@ -149,16 +151,16 @@ export default class DesktopAssayProcessor implements AssayProcessor {
         }
     }
 
-    private async readPept2Data(): Promise<[Map<Peptide, string>, PeptideTrust]> {
+    private async readPept2Data(): Promise<[Map<Peptide, PeptideData>, PeptideTrust]> {
         const obs: Observable<ReadResult> = DesktopAssayProcessor.worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
 
-        return new Promise<[ShareableMap<Peptide, string>, PeptideTrust]>((resolve, reject) => {
+        return new Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]>((resolve, reject) => {
             obs.subscribe(message => {
                 if (message.type === "progress") {
                     this.setProgress(message.value);
                 } else {
                     const [indexBuffer, dataBuffer, peptideTrust] = message.value;
-                    const sharedMap = new ShareableMap<string, string>(0);
+                    const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
                     sharedMap.setBuffers(
                         indexBuffer.transferables[0] as SharedArrayBuffer,
                         dataBuffer.transferables[0] as SharedArrayBuffer
@@ -171,7 +173,7 @@ export default class DesktopAssayProcessor implements AssayProcessor {
 
     private async writePept2Data(
         peptideCounts: CountTable<Peptide>,
-        pept2DataResponses: ShareableMap<Peptide, string>,
+        pept2DataResponses: ShareableMap<Peptide, PeptideData>,
         peptideTrust: PeptideTrust
     ) {
         const buffers = pept2DataResponses.getBuffers();

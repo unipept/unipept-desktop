@@ -44,7 +44,8 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
     private async removeAssay(study: Study, assay: Assay): Promise<void> {
         const assayRemover: FileSystemAssayVisitor = new AssayFileSystemDestroyer(
             `${store.getters.projectLocation}${study.getName()}`,
-            store.getters.database
+            store.getters.database,
+            store.getters.databaseFile
         );
 
         await assay.accept(assayRemover);

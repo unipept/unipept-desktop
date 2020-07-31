@@ -3,11 +3,24 @@ import { promises as fs } from "fs";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import IOException from "unipept-web-components/src/business/exceptions/IOException";
 import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
+import { spawn, Worker } from "threads/dist";
+import { Database } from "better-sqlite3";
 
 /**
  * Removes both the metadata and raw data for an assay.
  */
 export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
+    private static worker;
+
+    constructor(
+        directoryPath: string,
+        db: Database,
+        private readonly dbFile: string
+    ) {
+        super(directoryPath, db);
+    }
+
+
     /**
      * @throws {IOException}
      */
@@ -21,11 +34,11 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
                 // File does no longer exist, which is not an issue here.
             }
 
-            // Also remove all metadata from the db
-            this.db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assay.getId());
-            this.db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assay.getId());
-            this.db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assay.getId());
-            this.db.prepare("DELETE FROM assays WHERE `id` = ?").run(assay.getId());
+            if (!AssayFileSystemDestroyer.worker) {
+                AssayFileSystemDestroyer.worker = await spawn(new Worker("./AssayFileSystemDestroyer.worker.ts"));
+            }
+
+            await AssayFileSystemDestroyer.worker(assay.getId(), this.dbFile, __dirname);
 
             const configDestroyer = new SearchConfigFileSystemDestroyer(this.db);
             configDestroyer.visitSearchConfiguration(assay.getSearchConfiguration());

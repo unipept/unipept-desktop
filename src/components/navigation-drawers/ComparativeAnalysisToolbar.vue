@@ -44,9 +44,6 @@ import Assay from "unipept-web-components/src/business/entities/assay/Assay";
     }
 })
 export default class ComparativeAnalysisToolbar extends Vue {
-    @Prop({ required: true })
-    private project: Project;
-
     private selectAssay(assay: Assay) {
         this.$store.dispatch("addSelectedAssay", assay);
     }

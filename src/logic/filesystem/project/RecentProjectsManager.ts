@@ -23,8 +23,9 @@ export default class RecentProjectsManager {
                 encoding: "utf-8"
             });
 
-            return JSON.parse(projectData)
+            const recentProjects = JSON.parse(projectData)
                 .map(obj => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened))));
+            return recentProjects.filter(rp => fs.existsSync(rp.path));
         } catch (err) {
             throw new IOException(err);
         }

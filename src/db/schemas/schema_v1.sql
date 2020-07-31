@@ -22,7 +22,7 @@ CREATE TABLE search_configuration (
 CREATE TABLE pept2data (
     assay_id TEXT NOT NULL,
     peptide TEXT NOT NULL,
-    response TEXT,
+    response BLOB,
     PRIMARY KEY(assay_id, peptide)
 );
 
