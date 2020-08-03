@@ -21,9 +21,9 @@ CREATE TABLE search_configuration (
 
 CREATE TABLE pept2data (
     assay_id TEXT NOT NULL,
-    peptide TEXT NOT NULL,
-    response BLOB,
-    PRIMARY KEY(assay_id, peptide)
+    index_buffer BLOB NOT NULL,
+    data_buffer BLOB NOT NULL,
+    PRIMARY KEY(assay_id)
 );
 
 CREATE TABLE peptide_trust (

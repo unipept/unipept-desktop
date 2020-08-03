@@ -8,8 +8,6 @@ import CachedCommunicationSource from "@/logic/communication/source/CachedCommun
 import { Database } from "better-sqlite3";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import { spawn, Worker } from "threads/dist";
-import { Observable } from "threads/observable";
-import { ReadResult } from "@/logic/communication/AssayProcessor.worker";
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
@@ -152,23 +150,21 @@ export default class DesktopAssayProcessor implements AssayProcessor {
     }
 
     private async readPept2Data(): Promise<[Map<Peptide, PeptideData>, PeptideTrust]> {
-        const obs: Observable<ReadResult> = DesktopAssayProcessor.worker.readPept2Data(__dirname, this.dbFile, this.assay.getId());
+        const start = new Date().getTime();
+        const [indexBuffer, dataBuffer, peptideTrust] = await DesktopAssayProcessor.worker.readPept2Data(
+            __dirname,
+            this.dbFile,
+            this.assay.getId()
+        );
 
-        return new Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]>((resolve, reject) => {
-            obs.subscribe(message => {
-                if (message.type === "progress") {
-                    this.setProgress(message.value);
-                } else {
-                    const [indexBuffer, dataBuffer, peptideTrust] = message.value;
-                    const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
-                    sharedMap.setBuffers(
-                        indexBuffer.transferables[0] as SharedArrayBuffer,
-                        dataBuffer.transferables[0] as SharedArrayBuffer
-                    );
-                    resolve([sharedMap, peptideTrust]);
-                }
-            })
-        });
+        console.log("Received buffers: " + new Date().getTime());
+        const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
+        sharedMap.setBuffers(
+            indexBuffer.transferables[0] as SharedArrayBuffer,
+            dataBuffer.transferables[0] as SharedArrayBuffer
+        );
+        console.log("Reading worker total was: " + (new Date().getTime() - start) / 1000 + "s");
+        return [sharedMap, peptideTrust];
     }
 
     private async writePept2Data(
