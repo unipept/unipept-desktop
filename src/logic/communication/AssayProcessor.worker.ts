@@ -4,20 +4,8 @@ import { expose } from "threads";
 import Database from "better-sqlite3";
 import { Transfer } from "threads/worker";
 import { TransferDescriptor } from "threads/dist";
-import { Observable } from "threads/observable";
-import { ShareableMap } from "shared-memory-datastructures";
-import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
-import PeptideDataSerializer from "unipept-web-components/src/business/communication/peptides/PeptideDataSerializer";
 
 expose({ readPept2Data, writePept2Data });
-
-export type ReadResult = {
-    type: "progress",
-    value: number
-} | {
-    type: "result",
-    value: [TransferDescriptor, TransferDescriptor, PeptideTrust]
-};
 
 export function readPept2Data(installationDir: string, dbFile: string, assayId: string): [TransferDescriptor, TransferDescriptor, PeptideTrust] {
     // @ts-ignore
@@ -31,15 +19,6 @@ export function readPept2Data(installationDir: string, dbFile: string, assayId: 
 
     const end1 = new Date().getTime();
     console.log("Reading from db: " + (end1 - start1) / 1000 + "s");
-
-    // const start = new Date().getTime();
-    // for (const row of rows) {
-    //     if (row.response) {
-    //         pept2DataMap.set(row.peptide, new PeptideData(bufferToArrayBuffer(row.response)));
-    //     }
-    // }
-    // const end = new Date().getTime();
-    // console.log("Setting values in map: " + (end - start) / 1000 + "s");
 
     const trustRow = db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assayId);
     const peptideTrust = new PeptideTrust(
@@ -60,12 +39,6 @@ export function writePept2Data(
     assayId: string,
     dbFile: string
 ) {
-    // const pept2DataResponses = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
-    // pept2DataResponses.setBuffers(
-    //     peptDataIndexBuffer,
-    //     peptDataDataBuffer
-    // );
-
     //@ts-ignore
     const db = new Database(dbFile, { timeout: 15000 }, installationDir);
     db.pragma("journal_mode = WAL");
@@ -80,17 +53,6 @@ export function writePept2Data(
         arrayBufferToBuffer(peptDataIndexBuffer),
         arrayBufferToBuffer(peptDataDataBuffer)
     );
-    // const insertMany = db.transaction((data) => {
-    //     for (const peptide of data) {
-    //         const response = pept2DataResponses.get(peptide);
-    //         if (response) {
-    //             insert.run(assayId, peptide, arrayBufferToBuffer(response.buffer));
-    //         } else {
-    //             insert.run(assayId, peptide, null);
-    //         }
-    //     }
-    // });
-    // insertMany(peptideCounts.keys());
     const end = new Date().getTime();
     console.log("Write transaction took: " + (end - start) / 1000 + "s");
 

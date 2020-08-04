@@ -44,6 +44,10 @@ const projectGetters: GetterTree<ProjectState, any> = {
 
 const projectMutations: MutationTree<ProjectState> = {
     SET_FILE_SYSTEM_WATCHER(state: ProjectState, watcher: FileSystemWatcher) {
+        // Make sure to close the previous watcher!
+        if (state.fileSystemWatcher) {
+            state.fileSystemWatcher.closeWatcher();
+        }
         state.fileSystemWatcher = watcher;
     },
 

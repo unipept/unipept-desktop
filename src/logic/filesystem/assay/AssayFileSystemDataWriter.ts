@@ -12,7 +12,7 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
         await fs.writeFile(
             `${this.directoryPath}${mpAssay.getName()}.pep`,
-            mpAssay.getPeptides().join("\n"),
+            mpAssay.getPeptides().join("\n") + "\n",
             {
                 encoding: "utf-8"
             });

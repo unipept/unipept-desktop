@@ -47,11 +47,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         if (configuration.toString() != this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
         }
-        const data = this.peptideToResponse.get(peptide);
-        if (!data) {
-            return;
-        }
-        return JSON.parse(data);
+        return this.peptideToResponse.get(peptide);
     }
 
     public getPeptideResponseMap(configuration: SearchConfiguration): ShareableMap<Peptide, PeptideData> {

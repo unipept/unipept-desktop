@@ -62,7 +62,6 @@ export default class DesktopAssayProcessor implements AssayProcessor {
     }
 
     private async updateStorageMetadata(): Promise<void> {
-        console.log("Update storage metadata...");
         const metadataRow = this.db.prepare("SELECT * FROM storage_metadata WHERE `assay_id` = ?").get(
             this.assay.getId()
         );

@@ -137,7 +137,7 @@ const { dialog } = electron.remote;
             get(): Assay[] {
                 return this.study.getAssays().sort(
                     (a: Assay, b: Assay) => a.getName().localeCompare(b.getName())
-                )
+                );
             }
         }
     }

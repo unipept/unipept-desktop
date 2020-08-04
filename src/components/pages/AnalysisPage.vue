@@ -124,6 +124,7 @@ import { AssayData } from "unipept-web-components/src/state/AssayStore";
 })
 export default class AnalysisPage extends Vue {
     get activeAssay(): ProteomicsAssay {
+        console.log(this.$store.getters.activeAssay);
         return this.$store.getters.activeAssay;
     }
 

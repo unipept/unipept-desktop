@@ -25,9 +25,10 @@ import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSys
  */
 export default class FileSystemWatcher {
     private readonly errorListeners: ErrorListener[] = [];
+    private watcher: chokidar.FSWatcher;
 
     constructor() {
-        const watcher = chokidar.watch(store.getters.projectLocation, {
+        this.watcher = chokidar.watch(store.getters.projectLocation, {
             ignoreInitial: true,
             // Ignore hidden files and metadata changes
             ignored: /^\..*$|metadata.sqlite/,
@@ -37,12 +38,19 @@ export default class FileSystemWatcher {
             }
         });
 
-        watcher
+        this.watcher
             .on("add", (path: string) => this.fileAdded(path))
             .on("change", (path: string) => this.fileChanged(path))
             .on("unlink", (path: string) => this.fileDeleted(path))
             .on("addDir", (path: string) => this.directoryAdded(path))
             .on("unlinkDir", (path: string) => this.directoryDeleted(path));
+    }
+
+    public async closeWatcher() {
+        if (this.watcher) {
+            this.watcher.removeAllListeners();
+            this.watcher.close();
+        }
     }
 
     public addErrorListener(listener: ErrorListener) {
@@ -54,6 +62,7 @@ export default class FileSystemWatcher {
      * @param filePath
      */
     private async fileAdded(filePath: string) {
+        console.log("File added: " + filePath);
         try {
             if (filePath.endsWith(".pep")) {
                 const studyName: string = path.basename(path.dirname(filePath));

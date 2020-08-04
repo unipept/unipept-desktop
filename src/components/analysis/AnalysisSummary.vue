@@ -30,7 +30,10 @@
                         </search-settings-form>
 
                         <div class="d-flex justify-center align-center mt-4">
-                            <v-btn :disabled="progress !== 1" color="primary" @click="update()">Update</v-btn>
+                            <v-btn :disabled="progress !== 1" color="primary" @click="update()" class="mr-2">
+                                Update
+                            </v-btn>
+                            <export-results-button :assay="assay" button-text="Export results"></export-results-button>
                         </div>
                     </v-col>
                     <v-col>
@@ -59,12 +62,12 @@ import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptid
 import SearchSettingsForm from "unipept-web-components/src/components/analysis/SearchSettingsForm.vue";
 import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import { AssayData } from "unipept-web-components/src/state/AssayStore";
 import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
+import ExportResultsButton from "unipept-web-components/src/components/analysis/statistics/ExportResultsButton.vue";
 
 @Component({
-    components: { PeptideSummaryTable, SearchSettingsForm }
+    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton }
 })
 export default class AnalysisSummary extends Vue {
     @Prop({ required: true })

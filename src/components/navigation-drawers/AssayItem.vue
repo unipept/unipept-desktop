@@ -212,6 +212,11 @@ export default class AssayItem extends Vue {
         return assayData?.analysisMetaData.status === "cancelled";
     }
 
+    get pept2dataCommunicator(): Pept2DataCommunicator {
+        const processingResult = this.$store.getters.assayData(this.assay);
+        return processingResult?.communicationSource?.getPept2DataCommunicator();
+    }
+
     private cancelAnalysis() {
         this.$store.dispatch("cancelAnalysis", this.assay);
     }
@@ -284,24 +289,21 @@ export default class AssayItem extends Vue {
         this.$emit("input", this.selected);
     }
 
-    @Watch("assay")
-    @Watch("peptideCountTable")
+    @Watch("assay", { immediate: true })
     private async onAssayChanged() {
         this.assayName = this.assay.getName();
-        this.peptideTrust = await this.computePeptideTrust();
     }
 
-    private async computePeptideTrust(): Promise<PeptideTrust> {
-        if (this.assay) {
+    @Watch("pept2dataCommunicator", { immediate: true })
+    private async computePeptideTrust(): Promise<void> {
+        if (this.assay && this.pept2dataCommunicator) {
             const processingResult = this.$store.getters.assayData(this.assay);
-            const pept2DataCommunicator: Pept2DataCommunicator = processingResult?.pept2dataCommunicator;
             const countTable = processingResult?.peptideCountTable;
-
-            if (pept2DataCommunicator) {
-                return await pept2DataCommunicator.getPeptideTrust(countTable, this.assay.getSearchConfiguration());
-            }
+            this.peptideTrust = await this.pept2dataCommunicator.getPeptideTrust(
+                countTable,
+                this.assay.getSearchConfiguration()
+            );
         }
-        return undefined;
     }
 
     private reanalyse() {
