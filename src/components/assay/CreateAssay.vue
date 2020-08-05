@@ -3,8 +3,7 @@
         <dataset-form
             :showSave="false"
             v-on:peptide-change="peptides = $event"
-            v-on:name-change="name = $event"
-        >
+            v-on:name-change="name = $event">
         </dataset-form>
         <div style="display: flex; justify-content: center;">
             <v-btn color="primary" @click="createAssay">Create assay</v-btn>

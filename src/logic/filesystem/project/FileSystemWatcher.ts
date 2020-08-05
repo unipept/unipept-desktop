@@ -62,7 +62,6 @@ export default class FileSystemWatcher {
      * @param filePath
      */
     private async fileAdded(filePath: string) {
-        console.log("File added: " + filePath);
         try {
             if (filePath.endsWith(".pep")) {
                 const studyName: string = path.basename(path.dirname(filePath));

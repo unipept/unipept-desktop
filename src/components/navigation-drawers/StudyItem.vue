@@ -259,22 +259,8 @@ export default class StudyItem extends Vue {
 
         if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
             let assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
+            assayName = this.generateUniqueAssayName(assayName);
 
-            // Check if assay with same name already exists in the list of assays for this study. If so, change the name
-            // to make it unique.
-            let otherAssayWithName = this.study.getAssays().find(a => a.getName() === assayName);
-            if (otherAssayWithName) {
-                // Append a number to the assay to make it unique. An assay with this name might again already exist, which
-                // is why we need to check for uniqueness in a loop.
-                let counter = 1;
-                let newName;
-                while (otherAssayWithName) {
-                    newName = `${assayName} (${counter})`;
-                    otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
-                    counter++;
-                }
-                assayName = newName;
-            }
             this.assaysInProgress.push(assayName);
 
             // First ask the user for the desired search configuration that should be applied for this assay and write
@@ -305,6 +291,14 @@ export default class StudyItem extends Vue {
         // First ask the user for the desired search configuration that should be applied for this assay and write it to
         // the db.
         this.requestSearchSettings(assay, async() => {
+            let assayName = assay.getName();
+            if (assayName === "") {
+                assayName = "Unknown";
+            }
+
+            assayName = this.generateUniqueAssayName(assayName);
+            assay.setName(assayName);
+
             // Write metadata to disk
             const metaDataWriter = new AssayFileSystemMetaDataWriter(
                 `${this.$store.getters.projectLocation}${this.study.getName()}`,
@@ -332,6 +326,32 @@ export default class StudyItem extends Vue {
 
     private async onSelectAssay(assay: Assay) {
         await this.$store.dispatch("activateAssay", assay);
+    }
+
+    /**
+     * Check to see if an assay with the requested name already exists for this study. If this is the case, a counter
+     * will be added to the requestedName making it unique. The counter will be incremented until the name is completely
+     * unique.
+     *
+     * @param requestedName Assay name that we are trying to make unique by adding a counter.
+     */
+    private generateUniqueAssayName(requestedName: string): string {
+        // Check if assay with same name already exists in the list of assays for this study. If so, change the name
+        // to make it unique.
+        let otherAssayWithName = this.study.getAssays().find(a => a.getName() === requestedName);
+        if (otherAssayWithName) {
+            // Append a number to the assay to make it unique. An assay with this name might again already exist, which
+            // is why we need to check for uniqueness in a loop.
+            let counter = 1;
+            let newName;
+            while (otherAssayWithName) {
+                newName = `${requestedName} (${counter})`;
+                otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
+                counter++;
+            }
+            requestedName = newName;
+        }
+        return requestedName;
     }
 }
 </script>

@@ -9,7 +9,7 @@ CREATE TABLE assays (
     study_id TEXT NOT NULL,
     configuration_id INT NOT NULL,
     FOREIGN KEY(study_id) REFERENCES studies(id),
-    FOREIGN KEY(configuration_id) REFERENCES search_configuration(id)
+    FOREIGN KEY(configuration_id) REFERENCES search_configuration(id) ON DELETE CASCADE
 );
 
 CREATE TABLE search_configuration (

@@ -10,7 +10,6 @@ expose({ readPept2Data, writePept2Data });
 export function readPept2Data(installationDir: string, dbFile: string, assayId: string): [TransferDescriptor, TransferDescriptor, PeptideTrust] {
     // @ts-ignore
     const db = new Database(dbFile, { timeout: 15000 }, installationDir);
-    db.pragma("journal_mode = WAL");
 
     const start1 = new Date().getTime();
     const row = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").get(assayId);
@@ -41,7 +40,6 @@ export function writePept2Data(
 ) {
     //@ts-ignore
     const db = new Database(dbFile, { timeout: 15000 }, installationDir);
-    db.pragma("journal_mode = WAL");
 
     // First delete all existing rows for this assay;
     db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);

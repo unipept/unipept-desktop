@@ -47,7 +47,7 @@ export default class SingleAnalysisToolbar extends Vue {
             .map(s => s.getName())
             .filter(s => s.startsWith("Unknown"))
             .map(s => s.replace(/[^0-9]/g, ""))
-            .map(s => s === "" ? 0 : parseInt(s))
+            .map(s => s === "" ? 0 : parseInt(s));
 
         let studyName: string = "Unknown";
         if (unknowns.length > 0) {
