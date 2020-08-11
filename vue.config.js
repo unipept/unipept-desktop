@@ -14,6 +14,7 @@ module.exports = {
     },
     pluginOptions: {
         electronBuilder: {
+            nodeIntegration: true,
             externals: ['better-sqlite3'],
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop",
