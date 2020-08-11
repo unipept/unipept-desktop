@@ -63,7 +63,7 @@ export default class RecentProjects extends Vue {
     }
 
     private async openProject() {
-        const chosenPath: string | undefined = dialog.showOpenDialogSync({
+        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
             properties: ["openDirectory"]
         });
 

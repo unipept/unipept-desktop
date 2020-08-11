@@ -253,7 +253,7 @@ export default class StudyItem extends Vue {
     }
 
     private async createFromFile() {
-        const chosenPath: string | undefined = await dialog.showOpenDialog({
+        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
             properties: ["openFile"]
         });
 

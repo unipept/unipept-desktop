@@ -142,7 +142,7 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string | undefined = dialog.showOpenDialogSync({
+        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
             properties: ["openDirectory"]
         });
 

@@ -1,12 +1,12 @@
 "use strict"
 
 import { app, protocol, BrowserWindow, Menu, shell, ipcMain, netLog, crashReporter } from "electron"
-import { createProtocol, installVueDevtools } from "vue-cli-plugin-electron-builder/lib"
+import { createProtocol } from "vue-cli-plugin-electron-builder/lib"
 import Utils from "./logic/Utils";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
-import path from "path";
+import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer"
 
 app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096");
 
@@ -197,7 +197,7 @@ app.on("ready", async() => {
     // If you are not using Windows 10 dark mode, you may uncomment these lines
     // In addition, if the linked issue is closed, you can upgrade electron and uncomment these lines
         try {
-            await installVueDevtools()
+            await installExtension(VUEJS_DEVTOOLS);
         } catch (e) {
             console.error("Vue Devtools failed to install:", e.toString())
         }
