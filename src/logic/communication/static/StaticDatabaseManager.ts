@@ -2,9 +2,10 @@ import { promises as fsPromises } from "fs";
 import fs from "fs";
 import { https } from "follow-redirects";
 import path from "path";
-import ProgressListener from "unipept-web-components/src/business/progress/ProgressListener";
-import yauzl from "yauzl";
+import { ProgressListener } from "unipept-web-components";
+import yauzl, { Entry, ZipFile } from "yauzl";
 import Database, { Database as DatabaseType } from "better-sqlite3";
+import { Readable } from "stream";
 
 const { app } = require("electron").remote;
 
@@ -63,7 +64,7 @@ export default class StaticDatabaseManager {
             await new Promise<void>((resolve, reject) => {
                 https.get(
                     databaseUrl,
-                    (resp) => {
+                    (resp: any) => {
                         const totalLength = parseInt(resp.headers["content-length"]);
                         let processedLength = 0;
 
@@ -71,7 +72,7 @@ export default class StaticDatabaseManager {
 
                         pipe.on("error", reject)
                         resp.on("end", resolve);
-                        resp.on("data", function(chunk) {
+                        resp.on("data", function(chunk: any) {
                             processedLength += chunk.length;
 
                             if (listener) {
@@ -92,15 +93,15 @@ export default class StaticDatabaseManager {
         const unzippedWriter = fs.createWriteStream(databasePath);
 
         await new Promise<void>((resolve, reject) => {
-            yauzl.open(zippedDbPath, { lazyEntries: true }, (err, zipFile) => {
+            yauzl.open(zippedDbPath, { lazyEntries: true }, (err: Error, zipFile: ZipFile) => {
                 if (err) {
                     reject(err);
                 }
 
                 zipFile.readEntry();
-                zipFile.on("entry", (entry) => {
+                zipFile.on("entry", (entry: Entry) => {
                     // file entry
-                    zipFile.openReadStream(entry, (err, readStream) => {
+                    zipFile.openReadStream(entry, (err: Error, readStream: Readable) => {
                         if (err) {
                             reject(err);
                         }
@@ -138,9 +139,9 @@ export default class StaticDatabaseManager {
      */
     public async getMostRecentVersion(): Promise<Date> {
         const data = await new Promise<string>((resolve, reject) => {
-            https.get(StaticDatabaseManager.STATIC_DB_VERSION_POINTER, (resp) => {
+            https.get(StaticDatabaseManager.STATIC_DB_VERSION_POINTER, (resp: any) => {
                 let contents: string = "";
-                resp.on("data", (chunk) => {
+                resp.on("data", (chunk: any) => {
                     contents += chunk;
                 });
 

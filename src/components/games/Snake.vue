@@ -51,17 +51,22 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Watch } from "vue-property-decorator";
 
+export type CellType = {
+    x: number,
+    y: number
+}
+
 @Component
 export default class Snake extends Vue {
     private snakeActive: boolean = false;
 
     private canvas: HTMLCanvasElement;
-    private context;
+    private context: CanvasRenderingContext2D;
 
     private grid = 16;
     private count = 0;
 
-    private snake = {
+    private snake: {x: number, y: number, dx: number, dy: number, cells: CellType[], maxCells: number} = {
         x: 160,
         y: 160,
 
@@ -108,7 +113,7 @@ export default class Snake extends Vue {
 
     // get random whole numbers in a specific range
     // @see https://stackoverflow.com/a/1527820/2124254
-    private getRandomInt(min, max) {
+    private getRandomInt(min: number, max: number) {
         return Math.floor(Math.random() * (max - min)) + min;
     }
 

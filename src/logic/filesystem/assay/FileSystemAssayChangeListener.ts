@@ -4,9 +4,7 @@ import * as fs from "fs";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import Study from "unipept-web-components/src/business/entities/study/Study";
+import { ChangeListener, ProteomicsAssay, Study } from "unipept-web-components";
 
 export default class FileSystemAssayChangeListener implements ChangeListener<ProteomicsAssay> {
     constructor(
@@ -16,7 +14,9 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     }
 
     public async onChange(object: ProteomicsAssay, field: string, oldValue: any, newValue: any): Promise<void> {
-        if (["date", "searchConfiguration"].indexOf(field) !== -1) {
+        console.log("Update assay...");
+        console.log("HUPLA...");
+        if (["date", "searchConfiguration", "endpoint", "databaseVersion"].indexOf(field) !== -1) {
             // Only update metadata in this case
             await this.serializeMetaData(object);
         } else if (field == "name") {

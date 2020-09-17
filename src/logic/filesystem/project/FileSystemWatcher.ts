@@ -6,11 +6,9 @@ import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisi
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSystemMetaDataWriter";
-import Study from "unipept-web-components/src/business/entities/study/Study";
+import { Study, ProteomicsAssay, Assay } from "unipept-web-components";
 import ErrorListener from "../ErrorListener";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
@@ -67,7 +65,7 @@ export default class FileSystemWatcher {
                 const studyName: string = path.basename(path.dirname(filePath));
 
                 // Does the associated study already exist?
-                const study: Study = store.getters.studies.find(study => study.getName() === studyName);
+                const study: Study = store.getters.studies.find((study: Study) => study.getName() === studyName);
 
                 if (!study) {
                     // possible new assays will be created by "directoryAdded" when creating a new study.
@@ -131,7 +129,7 @@ export default class FileSystemWatcher {
 
             const studyName: string = path.basename(directoryPath);
 
-            if (store.getters.studies.find(study => study.getName() === studyName)) {
+            if (store.getters.studies.find((study: Study) => study.getName() === studyName)) {
                 // Study exists already, nothing needs to be done.
                 return;
             }
@@ -165,7 +163,7 @@ export default class FileSystemWatcher {
         try {
             const studyName: string = path.basename(path.dirname(filePath));
 
-            const study: Study = store.getters.studies.find(study => study.getName() === studyName);
+            const study: Study = store.getters.studies.find((study: Study) => study.getName() === studyName);
 
             if (!study) {
                 return;
@@ -198,7 +196,7 @@ export default class FileSystemWatcher {
             const studyName: string = path.basename(path.dirname(filePath));
 
             if (filePath.endsWith(".pep")) {
-                const study: Study = store.getters.studies.find(study => study.getName() === studyName);
+                const study: Study = store.getters.studies.find((study: Study) => study.getName() === studyName);
 
                 if (!study) {
                     return;
@@ -228,7 +226,7 @@ export default class FileSystemWatcher {
     private async directoryDeleted(directoryPath: string) {
         try {
             const studyName: string = path.basename(directoryPath);
-            const studyIdx: number = store.getters.studies.findIndex(study => study.getName() === studyName);
+            const studyIdx: number = store.getters.studies.findIndex((study: Study) => study.getName() === studyName);
 
             if (studyIdx === -1) {
                 return;
@@ -260,7 +258,7 @@ export default class FileSystemWatcher {
         }
     }
 
-    private reportError(error): void {
+    private reportError(error: Error): void {
         for (const listener of this.errorListeners) {
             listener.handleError(error);
         }

@@ -66,13 +66,9 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import Study from "unipept-web-components/src/business/entities/study/Study";
+import { Tooltip } from "unipept-web-components";
 import SingleAnalysisToolbar from "./SingleAnalysisToolbar.vue";
 import ComparativeAnalysisToolbar from "@/components/navigation-drawers/ComparativeAnalysisToolbar.vue";
-import ToolbarExplorer from "./ToolbarExplorer.vue";
-
 
 @Component({
     components: {

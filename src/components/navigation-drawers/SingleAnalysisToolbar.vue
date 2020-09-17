@@ -20,9 +20,8 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import { Tooltip, Study } from "unipept-web-components";
 import StudyItem from "./StudyItem.vue";
-import Study from "unipept-web-components/src/business/entities/study/Study";
 import mkdirp from "mkdirp";
 
 @Component({
@@ -43,11 +42,11 @@ import mkdirp from "mkdirp";
 export default class SingleAnalysisToolbar extends Vue {
     private createStudy() {
         // Check which studies already exist, and make sure there isn't one with the same name.
-        const unknowns = this.$store.getters.studies
-            .map(s => s.getName())
-            .filter(s => s.startsWith("Unknown"))
-            .map(s => s.replace(/[^0-9]/g, ""))
-            .map(s => s === "" ? 0 : parseInt(s));
+        const unknowns: number[] = this.$store.getters.studies
+            .map((s: Study) => s.getName())
+            .filter((s: string) => s.startsWith("Unknown"))
+            .map((s: string) => s.replace(/[^0-9]/g, ""))
+            .map((s: string) => s === "" ? 0 : parseInt(s));
 
         let studyName: string = "Unknown";
         if (unknowns.length > 0) {

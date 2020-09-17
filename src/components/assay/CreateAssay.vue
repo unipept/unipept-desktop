@@ -15,11 +15,7 @@
 import Vue from "vue";
 import { Prop } from "vue-property-decorator";
 import Component from "vue-class-component";
-import DatasetForm from "unipept-web-components/src/components/dataset/DatasetForm.vue";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import { DatasetForm, Study, ProteomicsAssay } from "unipept-web-components";
 import { v4 as uuidv4 } from "uuid";
 
 @Component({

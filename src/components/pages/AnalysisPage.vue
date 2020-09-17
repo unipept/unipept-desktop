@@ -101,17 +101,14 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import SingleDatasetVisualizationsCard
-    from "unipept-web-components/src/components/visualizations/SingleDatasetVisualizationsCard.vue";
-import FunctionalSummaryCard from "unipept-web-components/src/components/analysis/functional/FunctionalSummaryCard.vue";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
+import {
+    SingleDatasetVisualizationsCard,
+    FunctionalSummaryCard,
+    ProteomicsAssay,
+    AssayData
+} from "unipept-web-components";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 import Snake from "./../games/Snake.vue";
-import { AssayData } from "unipept-web-components/src/state/AssayStore";
 
 
 @Component({
@@ -124,7 +121,6 @@ import { AssayData } from "unipept-web-components/src/state/AssayStore";
 })
 export default class AnalysisPage extends Vue {
     get activeAssay(): ProteomicsAssay {
-        console.log(this.$store.getters.activeAssay);
         return this.$store.getters.activeAssay;
     }
 
@@ -140,7 +136,7 @@ export default class AnalysisPage extends Vue {
     }
 
     get maxProgress(): number {
-        return this.$store.getters.assays.reduce((acc, curr) => {
+        return this.$store.getters.assays.reduce((acc: number, curr: AssayData) => {
             const progressResult = curr.analysisMetaData.progress;
             if (progressResult && progressResult > acc) {
                 return progressResult;
@@ -158,7 +154,7 @@ export default class AnalysisPage extends Vue {
     }
 
     get minEta(): number {
-        return this.$store.getters.assays.reduce((acc, curr) => {
+        return this.$store.getters.assays.reduce((acc: number, curr: AssayData) => {
             const eta = curr.analysisMetaData.eta;
             if (eta < acc) {
                 return eta;

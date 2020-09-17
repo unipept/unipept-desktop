@@ -1,5 +1,5 @@
 import { Database } from "better-sqlite3";
-import Study from "unipept-web-components/src/business/entities/study/Study";
+import { Study } from "unipept-web-components";
 import { ActionContext, ActionTree, GetterTree, MutationTree } from "vuex";
 import FileSystemWatcher from "@/logic/filesystem/project/FileSystemWatcher";
 import path from "path";

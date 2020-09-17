@@ -6,8 +6,7 @@ import { store } from "./../../../main";
 import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
 import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { Study, IOException } from "unipept-web-components";
 import Database, { Database as DatabaseType } from "better-sqlite3";
 import { v4 as uuidv4 } from "uuid";
 import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSystemMetaDataWriter";
@@ -37,7 +36,8 @@ export default class ProjectManager  {
         }
 
         const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME, {
-            timeout: ProjectManager.DB_TIMEOUT
+            timeout: ProjectManager.DB_TIMEOUT,
+            verbose: console.warn
         });
 
         // Check all subdirectories of the given project and try to load the studies.
@@ -73,7 +73,8 @@ export default class ProjectManager  {
         }
 
         const db = new Database(projectLocation + ProjectManager.DB_FILE_NAME, {
-            timeout: ProjectManager.DB_TIMEOUT
+            timeout: ProjectManager.DB_TIMEOUT,
+            verbose: console.warn
         });
         db.exec(schema_v1);
 

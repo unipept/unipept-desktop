@@ -1,12 +1,15 @@
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
-import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
-import ProgressListener from "unipept-web-components/src/business/progress/ProgressListener";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
+import {
+    CountTable,
+    Peptide,
+    SearchConfiguration,
+    ProgressListener,
+    PeptideTrust,
+    Pept2DataCommunicator,
+    PeptideData
+} from "unipept-web-components";
+
 import { ShareableMap } from "shared-memory-datastructures";
-import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
+
 
 /**
  * A cached variant of the Pept2DataCommunicator that persistently stores the results in the SQLite-database associated
@@ -17,9 +20,9 @@ import PeptideData from "unipept-web-components/src/business/communication/pepti
  */
 export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
     constructor(
-        private readonly peptideToResponse,
-        private readonly peptideTrust,
-        private readonly initialConfiguration
+        private readonly peptideToResponse: ShareableMap<string, PeptideData>,
+        private readonly peptideTrust: PeptideTrust,
+        private readonly initialConfiguration: SearchConfiguration
     ) {
         super();
     }
@@ -37,21 +40,21 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         countTable: CountTable<Peptide>,
         configuration: SearchConfiguration
     ): Promise<PeptideTrust> {
-        if (configuration.toString() != this.initialConfiguration.toString()) {
+        if (configuration.toString() !== this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
         }
         return this.peptideTrust;
     }
 
     public getPeptideResponse(peptide: string, configuration: SearchConfiguration): PeptideData  {
-        if (configuration.toString() != this.initialConfiguration.toString()) {
+        if (configuration.toString() !== this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
         }
         return this.peptideToResponse.get(peptide);
     }
 
     public getPeptideResponseMap(configuration: SearchConfiguration): ShareableMap<Peptide, PeptideData> {
-        if (configuration.toString() != this.initialConfiguration.toString()) {
+        if (configuration.toString() !== this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
         }
         return this.peptideToResponse;

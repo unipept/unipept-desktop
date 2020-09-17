@@ -1,10 +1,28 @@
 import Vue from "vue"
 import App from "./App.vue"
 import vuetify from "./plugins/vuetify";
-import { createAssayStore, AssayState } from "unipept-web-components/src/state/AssayStore";
-import { lcaOntologyStore } from "unipept-web-components/src/state/LcaOntologyStore";
-import { FilterStore } from "unipept-web-components/src/state/FilterStore";
-import { ConfigurationStore } from "unipept-web-components/src/state/ConfigurationStore";
+
+import {
+    createAssayStore,
+    AssayState,
+    lcaOntologyStore,
+    FilterStore,
+    ConfigurationStore,
+    CountTable,
+    Peptide,
+    EcCountTableProcessor,
+    GoCountTableProcessor,
+    InterproCountTableProcessor,
+    SearchConfiguration,
+    CommunicationSource,
+    ProteomicsAssay,
+    EcOntologyProcessor,
+    GoOntologyProcessor,
+    InterproOntologyProcessor,
+    ProgressListener,
+    FunctionalOntologyStoreFactory
+} from "unipept-web-components";
+
 import { DesktopConfigurationStore } from "./state/DesktopConfigurationStore";
 import { projectStore } from "./state/ProjectStore";
 import { summaryStore } from "@/state/PeptideSummaryStore";
@@ -17,19 +35,6 @@ import SettingsPage from "./components/pages/SettingsPage.vue";
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.vue";
 import { ComparativeStore } from "@/state/ComparativeStore";
-import FunctionalOntologyStoreFactory from "unipept-web-components/src/state/FunctionalOntologyStoreFactory";
-import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import EcCountTableProcessor from "unipept-web-components/src/business/processors/functional/ec/EcCountTableProcessor";
-import GoCountTableProcessor from "unipept-web-components/src/business/processors/functional/go/GoCountTableProcessor";
-import InterproCountTableProcessor from "unipept-web-components/src/business/processors/functional/interpro/InterproCountTableProcessor";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import EcOntologyProcessor from "unipept-web-components/src/business/ontology/functional/ec/EcOntologyProcessor";
-import GoOntologyProcessor from "unipept-web-components/src/business/ontology/functional/go/GoOntologyProcessor";
-import InterproOntologyProcessor from "unipept-web-components/src/business/ontology/functional/interpro/InterproOntologyProcessor";
-import ProgressListener from "unipept-web-components/src/business/progress/ProgressListener";
 import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
 Vue.use(VueRouter);
@@ -43,7 +48,7 @@ const ecStore = functionalStoreFactory.createOntologyStore(
         configuration: SearchConfiguration,
         communicationSource: CommunicationSource
     ) => new EcCountTableProcessor(x, configuration, communicationSource),
-    communicationSource => new EcOntologyProcessor(communicationSource)
+    (communicationSource: CommunicationSource) => new EcOntologyProcessor(communicationSource)
 );
 const goStore = functionalStoreFactory.createOntologyStore(
     (
@@ -51,7 +56,7 @@ const goStore = functionalStoreFactory.createOntologyStore(
         configuration: SearchConfiguration,
         communicationSource: CommunicationSource
     ) => new GoCountTableProcessor(x, configuration, communicationSource),
-    communicationSource => new GoOntologyProcessor(communicationSource)
+    (communicationSource: CommunicationSource) => new GoOntologyProcessor(communicationSource)
 );
 const iprStore = functionalStoreFactory.createOntologyStore(
     (
@@ -59,12 +64,17 @@ const iprStore = functionalStoreFactory.createOntologyStore(
         configuration: SearchConfiguration,
         communicationSource: CommunicationSource
     ) => new InterproCountTableProcessor(x, configuration, communicationSource),
-    communicationSource => new InterproOntologyProcessor(communicationSource)
+    (communicationSource: CommunicationSource) => new InterproOntologyProcessor(communicationSource)
 );
 
-const assayStore = createAssayStore((store: ActionContext<AssayState, any>, assay: ProteomicsAssay, progressListener: ProgressListener) => {
+const assayStore = createAssayStore((
+    store: ActionContext<AssayState, any>,
+    assay: ProteomicsAssay,
+    progressListener: ProgressListener
+) => {
     return new DesktopAssayProcessor(store.getters["database"], store.getters["databaseFile"], assay, progressListener);
 });
+
 
 export const store = new Vuex.Store({
     modules: {

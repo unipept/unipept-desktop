@@ -1,5 +1,5 @@
 import { GetterTree, MutationTree, ActionTree, ActionContext, Store } from "vuex";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import { Assay } from "unipept-web-components";
 
 /**
  * The AssayState keeps track of which assays are currently selected by the user for analysis, and which assays are
@@ -41,12 +41,10 @@ const comparativeMutations: MutationTree<ComparativeState> = {
 
 const comparativeActions: ActionTree<ComparativeState, any> = {
     addSelectedAssay(store: ActionContext<ComparativeState, any>, assay: Assay) {
-        // console.log("Add assay --> " + assay.getName());
         store.commit("ADD_SELECTED_ASSAY", assay);
     },
 
     removeSelectedAssay(store: ActionContext<ComparativeState, any>, assay: Assay) {
-        // console.log("Remove assay --> " + assay.getName());
         store.commit("REMOVE_SELECTED_ASSAY", assay);
     }
 }

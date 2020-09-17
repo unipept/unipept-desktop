@@ -67,7 +67,7 @@ import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
 import { promises as fsPromises } from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 
 const electron = require("electron");

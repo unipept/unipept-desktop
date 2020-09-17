@@ -1,5 +1,5 @@
-const ThreadsPlugin = require('threads-plugin')
-const NodeTargetPlugin = require('webpack/lib/node/NodeTargetPlugin');
+const ThreadsPlugin = require("threads-plugin")
+const NodeTargetPlugin = require("webpack/lib/node/NodeTargetPlugin");
 
 module.exports = {
     chainWebpack: config => {
@@ -11,11 +11,12 @@ module.exports = {
                 "better-sqlite3": "require('better-sqlite3')"
             }
         ]);
+        config.output.globalObject("this");
     },
     pluginOptions: {
         electronBuilder: {
             nodeIntegration: true,
-            externals: ['better-sqlite3'],
+            externals: ["better-sqlite3"],
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop",
                 "asar": true
@@ -33,12 +34,15 @@ module.exports = {
             },
         }
     },
-    configureWebpack: {
+    configureWebpack:{
         plugins: [
             new ThreadsPlugin({
                 plugins: [new NodeTargetPlugin()]
             })
             // new ThreadsPlugin()
-        ]
+        ],
+        output: {
+            globalObject: "this"
+        }
     }
 }

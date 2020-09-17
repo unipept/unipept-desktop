@@ -21,11 +21,9 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import { ProteomicsAssay, CountTable, Peptide, AssayData } from "unipept-web-components";
 import { DataOptions } from "vuetify";
-import { AssayData } from "unipept-web-components/src/state/AssayStore";
-import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
+import { ItemType } from "@/state/PeptideSummaryTable.worker";
 
 @Component({
     computed: {
@@ -69,7 +67,7 @@ export default class PeptideSummaryTable extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
 
-    private items = [];
+    private items: ItemType[] = [];
     private options = {};
 
     private loading: boolean = false;

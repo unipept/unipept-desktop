@@ -1,8 +1,6 @@
 import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
-import fs from "fs";
 import mkdirp from "mkdirp";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { Study, IOException } from "unipept-web-components";
 
 
 /**

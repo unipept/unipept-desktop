@@ -1,13 +1,11 @@
-import { EcResponse } from "unipept-web-components/src/business/communication/functional/ec/EcResponse";
-import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
-import EcResponseCommunicator from "unipept-web-components/src/business/communication/functional/ec/EcResponseCommunicator";
+import { EcCode, EcResponseCommunicator, EcResponse } from "unipept-web-components";
 import { spawn, Worker } from "threads/dist";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 
 export default class CachedEcResponseCommunicator extends EcResponseCommunicator {
     private static codeToResponses: Map<EcCode, EcResponse> = new Map<EcCode, EcResponse>();
     private static processing: Promise<Map<EcCode, EcResponse>>;
-    private static worker;
+    private static worker: any;
     private readonly dbFile: string;
 
     constructor() {

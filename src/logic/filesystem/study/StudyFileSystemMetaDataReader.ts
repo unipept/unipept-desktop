@@ -1,6 +1,5 @@
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { Study, IOException } from "unipept-web-components";
 
 export default class StudyFileSystemMetaDataReader extends FileSystemStudyVisitor {
     public async visitStudy(study: Study): Promise<void> {

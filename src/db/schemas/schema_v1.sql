@@ -8,6 +8,8 @@ CREATE TABLE assays (
     name TEXT NOT NULL,
     study_id TEXT NOT NULL,
     configuration_id INT NOT NULL,
+    endpoint TEXT,
+    db_version TEXT,
     FOREIGN KEY(study_id) REFERENCES studies(id),
     FOREIGN KEY(configuration_id) REFERENCES search_configuration(id) ON DELETE CASCADE
 );

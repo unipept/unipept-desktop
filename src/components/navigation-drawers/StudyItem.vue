@@ -102,23 +102,21 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
+import { CreateDatasetCard, Tooltip, Assay, Study, ProteomicsAssay } from "unipept-web-components";
 import CreateAssay from "./../assay/CreateAssay.vue";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-const { remote } = require("electron");
-const { Menu, MenuItem } = remote;
-const fs = require("fs").promises;
-import path from "path";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import path from "path";
+
+
+const { remote } = require("electron");
+const { Menu, MenuItem } = remote;
+const fs = require("fs").promises;
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -160,7 +158,8 @@ export default class StudyItem extends Vue {
     private isValidStudyName: boolean = true;
 
     private nameError: string = "";
-    private assaysInProgress = [];
+    // Keep track of the names of the assays that we are currently processing.
+    private assaysInProgress: string[] = [];
 
     mounted() {
         this.onStudyChanged();
@@ -230,7 +229,7 @@ export default class StudyItem extends Vue {
         }
 
         const nameExists: boolean = this.$store.getters.studies
-            .map(s => s.getName().toLocaleLowerCase())
+            .map((s: Study) => s.getName().toLocaleLowerCase())
             .indexOf(this.studyName.toLocaleLowerCase()) !== -1;
 
         if ((nameExists && this.study.getName() !== this.studyName)) {
@@ -343,10 +342,10 @@ export default class StudyItem extends Vue {
             // Append a number to the assay to make it unique. An assay with this name might again already exist, which
             // is why we need to check for uniqueness in a loop.
             let counter = 1;
-            let newName;
+            let newName: string;
             while (otherAssayWithName) {
                 newName = `${requestedName} (${counter})`;
-                otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
+                otherAssayWithName = this.study.getAssays().find((a: ProteomicsAssay) => a.getName() === newName);
                 counter++;
             }
             requestedName = newName;

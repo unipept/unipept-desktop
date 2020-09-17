@@ -46,8 +46,7 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
+import { Study, Assay } from "unipept-web-components";
 import AssayItem from "@/components/navigation-drawers/AssayItem.vue";
 
 @Component({
@@ -64,7 +63,7 @@ import AssayItem from "@/components/navigation-drawers/AssayItem.vue";
         },
         isProcessing: {
             get(): boolean {
-                return this.study.getAssays().some(a => this.$store.getters["assayData"](a).analysisMetaData.progress !== 1);
+                return this.study.getAssays().some((a: Assay) => this.$store.getters["assayData"](a).analysisMetaData.progress !== 1);
             }
         }
     }

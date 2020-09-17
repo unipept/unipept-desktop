@@ -1,5 +1,4 @@
-import SearchConfigurationVisitor from "unipept-web-components/src/business/configuration/SearchConfigurationVisitor";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import { SearchConfigurationVisitor, SearchConfiguration } from "unipept-web-components";
 import { Database } from "better-sqlite3";
 
 /**
@@ -13,7 +12,7 @@ export default class SearchConfigFileSystemReader implements SearchConfiguration
         private readonly db: Database
     ) {}
 
-    public visitSearchConfiguration(config: SearchConfiguration) {
+    public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
         if (config.id) {
             const result = this.db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
             if (result) {

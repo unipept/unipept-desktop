@@ -43,7 +43,7 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import { Tooltip } from "unipept-web-components";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager.ts";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 import RecentProject from "@/logic/filesystem/project/RecentProject";

@@ -71,11 +71,7 @@ import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 const electron = require("electron");
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
-import ProjectManager from "@/logic/filesystem/project/ProjectManager";
-import { AssayData } from "unipept-web-components/src/state/AssayStore";
+import { Assay, ProteomicsAssay, NetworkConfiguration, AssayData } from "unipept-web-components";
 
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;

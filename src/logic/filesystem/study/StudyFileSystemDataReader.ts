@@ -4,11 +4,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import AssayVisitor from "unipept-web-components/src/business/entities/assay/AssayVisitor";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException } from "unipept-web-components";
 import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 
 

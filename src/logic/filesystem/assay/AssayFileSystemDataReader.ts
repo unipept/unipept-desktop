@@ -1,12 +1,11 @@
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import { ProteomicsAssay, IOException } from "unipept-web-components";
 import { promises as fs } from "fs";
 import { spawn, Worker } from "threads"
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
 import { Database } from "better-sqlite3";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
-    private static worker;
+    private static worker: any;
 
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
         const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;

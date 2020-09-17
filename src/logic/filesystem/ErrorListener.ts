@@ -1,3 +1,3 @@
 export default interface ErrorListener {
-    handleError(err: Error);
+    handleError(err: Error): void;
 }

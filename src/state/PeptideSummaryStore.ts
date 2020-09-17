@@ -19,7 +19,7 @@ export interface PeptideSummaryState {
 }
 
 let inProgress: Promise<void>;
-let summaryWorker;
+let summaryWorker: any;
 
 const summaryState: PeptideSummaryState = {
     summaryData: []
@@ -92,14 +92,18 @@ const summaryActions: ActionTree<PeptideSummaryState, any> = {
                 const responseMap = pept2DataCommunicator.getPeptideResponseMap(assay.getSearchConfiguration());
                 const [indexBuffer, dataBuffer] = responseMap.getBuffers();
 
-                const obs = summaryWorker.computeItems(assay.getId(), indexBuffer, dataBuffer, countTable.toMap(), ontology);
+                const obs = summaryWorker.computeItems(
+                    assay.getId(), indexBuffer, dataBuffer, countTable.toMap(), ontology
+                );
+
                 await new Promise((resolve, reject) => {
                     obs.subscribe(
-                        (val) => store.commit("SET_PROGRESS", [assay, val]),
-                        (err) => reject(err),
+                        (val: number) => store.commit("SET_PROGRESS", [assay, val]),
+                        (err: Error) => reject(err),
                         () => resolve(),
                     );
                 });
+
                 resolve();
             });
 

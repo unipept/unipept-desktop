@@ -70,7 +70,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
 import VForm from "vuetify";
 import Utils from "@/logic/Utils";
-import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
+import { NetworkConfiguration } from "unipept-web-components";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -109,7 +109,7 @@ export default class SettingsPage extends Vue {
         this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
     }
 
-    private async updateStore(method, value) {
+    private async updateStore(method: string, value: any) {
         this.errorVisible = false;
         if (this.configuration != null && this.$refs.form && this.$refs.form.validate()) {
             try {

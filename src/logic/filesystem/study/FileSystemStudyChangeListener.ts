@@ -6,10 +6,7 @@ import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemD
 import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisitor";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import { ChangeListener, Study, Assay, ProteomicsAssay  } from "unipept-web-components";
 
 export default class FileSystemStudyChangeListener implements ChangeListener<Study> {
     public async onChange(object: Study, field: string, oldValue: any, newValue: any) {

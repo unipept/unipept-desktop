@@ -30,9 +30,7 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import SearchSettingsForm from "unipept-web-components/src/components/analysis/SearchSettingsForm.vue";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
+import { ProteomicsAssay, SearchSettingsForm, SearchConfiguration  } from "unipept-web-components";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 
 @Component({

@@ -1,18 +1,18 @@
 import { ShareableMap } from "shared-memory-datastructures";
 import { expose } from "threads";
 import NcbiTaxon from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
-import { DataOptions } from "vuetify";
-import { Observable } from "observable-fns";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { Ontology } from "unipept-web-components/src/business/ontology/Ontology";
 import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
 import PeptideDataSerializer from "unipept-web-components/src/business/communication/peptides/PeptideDataSerializer";
+import { DataOptions } from "vuetify";
+import { Observable } from "observable-fns";
 
 export type ItemType = {
     peptide: string,
     count: number,
     lca: string,
-    matched: boolean
+    rank: string
 };
 
 // Maps an assay's id onto a list of all peptide summary items for this assay.
@@ -100,6 +100,7 @@ function getItems(assayId: string, options: DataOptions): ItemType[] {
     }
 
     itemsForAssay.sort((a: ItemType, b: ItemType) => {
+        // @ts-ignore
         let value: number = a[sortKey] > b[sortKey] ? 1 : -1;
         if (options.sortDesc.length > 0 && options.sortDesc[0]) {
             value *= -1;

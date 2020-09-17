@@ -1,7 +1,6 @@
 import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
 import { promises as fs } from "fs";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { ProteomicsAssay, IOException } from "unipept-web-components";
 import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
 import { spawn, Worker } from "threads/dist";
 import { Database } from "better-sqlite3";
@@ -10,7 +9,7 @@ import { Database } from "better-sqlite3";
  * Removes both the metadata and raw data for an assay.
  */
 export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
-    private static worker;
+    private static worker: any;
 
     constructor(
         directoryPath: string,

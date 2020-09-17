@@ -76,7 +76,9 @@
                     <v-checkbox v-model="selected" dense @click.native.stop :disabled="progress !== 1"></v-checkbox>
                 </tooltip>
             </div>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else-if="progress === 1">
+            <div
+                style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;"
+                v-else-if="progress === 1">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
                         @click="experimentSummaryActive = true"
@@ -87,7 +89,9 @@
                     </v-icon>
                 </tooltip>
             </div>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else-if="cancelStatus">
+            <div
+                style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;"
+                v-else-if="cancelStatus">
                 <v-icon
                     color="#424242"
                     size="20"
@@ -130,21 +134,24 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import {
+    Tooltip,
+    PeptideTrust,
+    Study,
+    ProteomicsAssay,
+    SearchConfiguration,
+    Pept2DataCommunicator,
+    CountTable,
+    Peptide,
+    Assay,
+    AssayData
+} from "unipept-web-components";
+
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
-import { AssayData } from "unipept-web-components/src/state/AssayStore";
-import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -328,10 +335,10 @@ export default class AssayItem extends Vue {
             // Append a number to the assay to make it unique. An assay with this name might again already exist, which
             // is why we need to check for uniqueness in a loop.
             let counter = 1;
-            let newName;
+            let newName: string;
             while (otherAssayWithName) {
                 newName = `${assayName} (${counter})`;
-                otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
+                otherAssayWithName = this.study.getAssays().find((a: Assay) => a.getName() === newName);
                 counter++;
             }
             assayName = newName;
