@@ -19,7 +19,7 @@
                     </v-list-item>
 
                     <v-list-item
-                        :disabled="$store.getters.getProject === null"
+                        :disabled="$store.getters.projectLocation === ''"
                         :class="{'v-list-item--active': $route.path === '/analysis/single'}"
                         link
                         @click="navigate('/analysis/single', true)">
@@ -32,7 +32,7 @@
                     </v-list-item>
 
                     <v-list-item
-                        :disabled="$store.getters.getProject === null"
+                        :disabled="$store.getters.projectLocation === ''"
                         :class="{'v-list-item--active': $route.path === '/analysis/multi'}"
                         link
                         @click="navigate('/analysis/multi', true)">
@@ -49,11 +49,11 @@
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
                 <single-analysis-toolbar
-                    :project="$store.getters.getProject"
+                    :project="$store.getters.projectLocation === ''"
                     v-if="$route.path === '/analysis/single'">
                 </single-analysis-toolbar>
                 <comparative-analysis-toolbar
-                    :project="$store.getters.getProject"
+                    :project="$store.getters.projectLocation === ''"
                     v-if="$route.path === '/analysis/multi'">
                 </comparative-analysis-toolbar>
             </div>
@@ -66,13 +66,9 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import Study from "unipept-web-components/src/business/entities/study/Study";
+import { Tooltip } from "unipept-web-components";
 import SingleAnalysisToolbar from "./SingleAnalysisToolbar.vue";
 import ComparativeAnalysisToolbar from "@/components/navigation-drawers/ComparativeAnalysisToolbar.vue";
-import ToolbarExplorer from "./ToolbarExplorer.vue";
-
 
 @Component({
     components: {

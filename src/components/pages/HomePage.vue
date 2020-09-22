@@ -37,7 +37,7 @@
                     </div>
                 </v-col>
             </v-row>
-            <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="0" color="error">
+            <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
                 {{ errorMessage }}
                 <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
             </v-snackbar>
@@ -62,12 +62,12 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import Project from "@/logic/filesystem/project/Project";
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
+import { promises as fsPromises } from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 
 const electron = require("electron");
@@ -142,7 +142,7 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string | undefined = dialog.showOpenDialogSync({
+        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
             properties: ["openDirectory"]
         });
 
@@ -154,9 +154,7 @@ export default class HomePage extends Vue {
 
             try {
                 const projectManager: ProjectManager = new ProjectManager();
-                const project: Project = await projectManager.initializeProject(chosenPath[0]);
-
-                await this.$store.dispatch("setProject", project);
+                await projectManager.initializeProject(chosenPath[0]);
                 await this.$router.push("/analysis/single");
             } catch (err) {
                 console.error(err);
@@ -171,10 +169,9 @@ export default class HomePage extends Vue {
     private async onOpenProject(path: string) {
         this.loadingProject = true;
         try {
-            if (!this.$store.getters.getProject || this.$store.getters.getProject.projectPath !== path) {
+            if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {
                 const projectManager: ProjectManager = new ProjectManager();
-                const project: Project = await projectManager.loadExistingProject(path);
-                await this.$store.dispatch("setProject", project);
+                await projectManager.loadExistingProject(path);
             }
             await this.$router.push("/analysis/single");
         } catch (err) {

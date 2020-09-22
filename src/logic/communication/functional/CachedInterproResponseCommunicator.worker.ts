@@ -1,9 +1,9 @@
-import { EcResponse } from "unipept-web-components/src/business/communication/functional/ec/EcResponse";
-import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
 import { expose } from "threads/worker";
 import Database from "better-sqlite3";
-import { InterproCode } from "unipept-web-components/src/business/ontology/functional/interpro/InterproDefinition";
 import InterproResponse from "unipept-web-components/src/business/communication/functional/interpro/InterproResponse";
+import { InterproCode } from "unipept-web-components/src/business/ontology/functional/interpro/InterproDefinition";
+import { EcResponse } from "unipept-web-components/src/business/communication/functional/ec/EcResponse";
+import { EcCode } from "unipept-web-components/src/business/ontology/functional/ec/EcDefinition";
 
 expose({ process })
 

@@ -5,8 +5,8 @@
                 <v-btn icon @click.stop="navDrawer = !navDrawer">
                     <v-icon>mdi-menu</v-icon>
                 </v-btn>
-                <v-toolbar-title v-if="$store.getters.getProject">
-                    {{ $store.getters.getProject.name }} - {{ $route.meta.title }}
+                <v-toolbar-title v-if="$store.getters.projectLocation">
+                    {{ $store.getters.projectName }} - {{ $route.meta.title }}
                 </v-toolbar-title>
                 <v-toolbar-title v-else>{{ $route.meta.title }}</v-toolbar-title>
             </v-app-bar>
@@ -18,7 +18,7 @@
                 v-on:update:toolbar-width="onToolbarWidthUpdated">
             </Toolbar>
 
-            <v-content
+            <v-main
                 :style="{
                     'min-height': '100%',
                     'max-width': isMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
@@ -42,7 +42,7 @@
                 </v-dialog>
                 <!-- Snackbar that's shown while the update to the application is running -->
                 <div class="updating-snackbar-container">
-                    <v-snackbar v-model="updatingSnackbar" color="info" :timeout="0">
+                    <v-snackbar v-model="updatingSnackbar" color="info" :timeout="-1">
                         <div class="updating-snackbar-content">
                             <v-progress-linear color="white" :value="updatingProgress"></v-progress-linear>
                             <div class="updating-snackbar-text">
@@ -52,11 +52,12 @@
                     </v-snackbar>
                 </div>
                 <!-- Snackbar that's shown after the application has successfully been updated -->
-                <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="0">
+                <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
                     {{ updateMessage }}
                     <v-btn text dark @click="updatedSnackbar = false">Close</v-btn>
+                    <v-btn text dark color="white" @click="restartApplication">Restart app</v-btn>
                 </v-snackbar>
-            </v-content>
+            </v-main>
         </v-app>
     </div>
 </template>
@@ -68,13 +69,9 @@ import { Prop, Watch } from "vue-property-decorator";
 import Toolbar from "./components/navigation-drawers/Toolbar.vue";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
-import Project from "@/logic/filesystem/project/Project";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 const electron = require("electron");
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import NetworkConfiguration from "unipept-web-components/src/business/communication/NetworkConfiguration";
-import ProjectManager from "@/logic/filesystem/project/ProjectManager";
+import { Assay, ProteomicsAssay, NetworkConfiguration, AssayData } from "unipept-web-components";
 
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
@@ -91,18 +88,9 @@ const BrowserWindow = electron.BrowserWindow;
         },
         assaysInProgress: {
             get(): Assay[] {
-                if (this.$store.getters.getProject) {
-                    return this.$store.getters.getProject.getAllAssays()
-                        .filter((a: Assay) => this.$store.getters.getProject.getProcessingResults(a).progress < 1)
-                        .reduce((acc, current) => acc.concat(current), []);
-                } else {
-                    return [];
-                }
-            }
-        },
-        watchableProject: {
-            get(): Project {
-                return this.$store.getters.getProject
+                return this.$store.getters.assays
+                    .filter((a: AssayData) => a.analysisMetaData.progress < 1)
+                    .map((a: AssayData) => a.assay);
             }
         },
         isMini: {
@@ -173,13 +161,11 @@ export default class App extends Vue implements ErrorListener {
 
     @Watch("assaysInProgress")
     private assaysInProgressChanged(assays: Assay[]) {
-        const project: Project = this.$store.getters.getProject;
-
         if (!assays || assays.length === 0) {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev += project.getProcessingResults(currentAssay).progress, 0
+                (prev: number, currentAssay: Assay) => prev + this.$store.getters.assayData(currentAssay).analysisMetaData.progress, 0
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }
@@ -199,14 +185,6 @@ export default class App extends Vue implements ErrorListener {
 
         //   }
         //   App.previouslyInitialized = true;
-    }
-
-    @Watch("watchableProject")
-    private onProjectChanged() {
-        const project: Project = this.$store.getters.getProject;
-        if (project) {
-            project.watcher.addErrorListener(this);
-        }
     }
 
     /**
@@ -231,6 +209,11 @@ export default class App extends Vue implements ErrorListener {
         electron.remote.app.quit();
     }
 
+    private async restartApplication() {
+        electron.remote.app.relaunch();
+        electron.remote.app.quit();
+    }
+
     private onToolbarWidthUpdated(newValue: number) {
         this.toolbarWidth = newValue;
     }
@@ -242,6 +225,8 @@ export default class App extends Vue implements ErrorListener {
 </script>
 
 <style lang="less">
+    @import "~unipept-web-components/dist/unipept-web-components.css";
+
     #app {
         font-family: 'Avenir', Helvetica, Arial, sans-serif;
         -webkit-font-smoothing: antialiased;

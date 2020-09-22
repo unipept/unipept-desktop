@@ -23,8 +23,7 @@
 <script lang="ts">
 import Vue from "vue";
 import { Prop, Component, Watch } from "vue-property-decorator";
-import MissingPeptidesList from "unipept-web-components/src/components/analysis/statistics/MissingPeptidesList.vue";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
+import { MissingPeptidesList, PeptideTrust } from "unipept-web-components";
 
 @Component({
     components: {

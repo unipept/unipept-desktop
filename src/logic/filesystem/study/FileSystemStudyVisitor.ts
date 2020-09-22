@@ -1,4 +1,4 @@
-import StudyVisitor from "unipept-web-components/src/business/entities/study/StudyVisitor";
+import { StudyVisitor } from "unipept-web-components";
 import { Database } from "better-sqlite3";
 
 /**

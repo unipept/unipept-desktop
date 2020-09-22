@@ -1,13 +1,11 @@
-import { GoResponse } from "unipept-web-components/src/business/communication/functional/go/GoResponse";
-import GoResponseCommunicator from "unipept-web-components/src/business/communication/functional/go/GoResponseCommunicator";
+import { GoResponse, GoResponseCommunicator, GoCode } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import { spawn, Worker } from "threads/dist";
-import { GoCode } from "unipept-web-components/src/business/ontology/functional/go/GoDefinition";
 
 export default class CachedGoResponseCommunicator extends GoResponseCommunicator {
     private static codeToResponses: Map<GoCode, GoResponse> = new Map<GoCode, GoResponse>();
     private static processing: Promise<Map<GoCode, GoResponse>>;
-    private static worker;
+    private static worker: any;
     private readonly dbFile: string;
 
     constructor() {
@@ -22,7 +20,7 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
         }
     }
 
-    public async process(codes: GoCode[]): Promise<void> {
+    public async process(codes: string[]): Promise<void> {
         if (!this.dbFile) {
             return super.process(codes);
         }
@@ -47,7 +45,7 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
         CachedGoResponseCommunicator.processing = undefined;
     }
 
-    public getResponse(code: GoCode): GoResponse {
+    public getResponse(code: string): GoResponse {
         if (!this.dbFile) {
             return super.getResponse(code);
         }

@@ -71,9 +71,7 @@
                 v-for="assay of sortedAssays"
                 :assay="assay"
                 :study="study"
-                :project="project"
                 v-bind:key="assay.id"
-                :active-assay="project.activeAssay"
                 v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
@@ -83,7 +81,7 @@
                     Create assay
                 </v-card-title>
                 <v-card-text>
-                    <create-assay :project="project" :study="study" v-on:create-assay="onCreateAssay"></create-assay>
+                    <create-assay :study="study" v-on:create-assay="onCreateAssay"></create-assay>
                 </v-card-text>
             </v-card>
         </v-dialog>
@@ -104,24 +102,21 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import CreateDatasetCard from "unipept-web-components/src/components/dataset/CreateDatasetCard.vue";
+import { CreateDatasetCard, Tooltip, Assay, Study, ProteomicsAssay } from "unipept-web-components";
 import CreateAssay from "./../assay/CreateAssay.vue";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
-import Project from "@/logic/filesystem/project/Project";
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
-import Assay from "unipept-web-components/src/business/entities/assay/Assay";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-const { remote } = require("electron");
-const { Menu, MenuItem } = remote;
-const fs = require("fs").promises;
-import path from "path";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import path from "path";
+
+
+const { remote } = require("electron");
+const { Menu, MenuItem } = remote;
+const fs = require("fs").promises;
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -140,7 +135,7 @@ const { dialog } = electron.remote;
             get(): Assay[] {
                 return this.study.getAssays().sort(
                     (a: Assay, b: Assay) => a.getName().localeCompare(b.getName())
-                )
+                );
             }
         }
     }
@@ -148,8 +143,6 @@ const { dialog } = electron.remote;
 export default class StudyItem extends Vue {
     @Prop({ required: true })
     private study: Study;
-    @Prop({ required: true })
-    private project: Project;
 
     private collapsed: boolean = false;
     private studyName: string = "";
@@ -165,7 +158,8 @@ export default class StudyItem extends Vue {
     private isValidStudyName: boolean = true;
 
     private nameError: string = "";
-    private assaysInProgress = [];
+    // Keep track of the names of the assays that we are currently processing.
+    private assaysInProgress: string[] = [];
 
     mounted() {
         this.onStudyChanged();
@@ -234,8 +228,8 @@ export default class StudyItem extends Vue {
             return false;
         }
 
-        const nameExists: boolean = this.project.getStudies()
-            .map(s => s.getName().toLocaleLowerCase())
+        const nameExists: boolean = this.$store.getters.studies
+            .map((s: Study) => s.getName().toLocaleLowerCase())
             .indexOf(this.studyName.toLocaleLowerCase()) !== -1;
 
         if ((nameExists && this.study.getName() !== this.studyName)) {
@@ -251,35 +245,21 @@ export default class StudyItem extends Vue {
     private async removeStudy(): Promise<void> {
         // Completely destroy this study and wait for the file system watcher to pick the change up.
         const studyDestroyer = new StudyFileSystemRemover(
-            `${this.project.projectPath}${this.study.getName()}`,
-            this.project.db
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.database
         );
         await this.study.accept(studyDestroyer);
     }
 
     private async createFromFile() {
-        const chosenPath: string | undefined = await dialog.showOpenDialog({
+        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
             properties: ["openFile"]
         });
 
         if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
             let assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
+            assayName = this.generateUniqueAssayName(assayName);
 
-            // Check if assay with same name already exists in the list of assays for this study. If so, change the name
-            // to make it unique.
-            let otherAssayWithName = this.study.getAssays().find(a => a.getName() === assayName);
-            if (otherAssayWithName) {
-                // Append a number to the assay to make it unique. An assay with this name might again already exist, which
-                // is why we need to check for uniqueness in a loop.
-                let counter = 1;
-                let newName;
-                while (otherAssayWithName) {
-                    newName = `${assayName} (${counter})`;
-                    otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
-                    counter++;
-                }
-                assayName = newName;
-            }
             this.assaysInProgress.push(assayName);
 
             // First ask the user for the desired search configuration that should be applied for this assay and write
@@ -289,8 +269,8 @@ export default class StudyItem extends Vue {
             this.requestSearchSettings(assay, async() => {
                 // Write metadata to disk
                 const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                    `${this.project.projectPath}${this.study.getName()}`,
-                    this.project.db,
+                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                    this.$store.getters.database,
                     this.study
                 );
 
@@ -298,7 +278,7 @@ export default class StudyItem extends Vue {
 
                 await fs.copyFile(
                     chosenPath["filePaths"][0],
-                    this.project.projectPath + this.study.getName() + "/" + assayName + ".pep"
+                    this.$store.getters.projectLocation + this.study.getName() + "/" + assayName + ".pep"
                 )
             });
         }
@@ -310,19 +290,27 @@ export default class StudyItem extends Vue {
         // First ask the user for the desired search configuration that should be applied for this assay and write it to
         // the db.
         this.requestSearchSettings(assay, async() => {
+            let assayName = assay.getName();
+            if (assayName === "") {
+                assayName = "Unknown";
+            }
+
+            assayName = this.generateUniqueAssayName(assayName);
+            assay.setName(assayName);
+
             // Write metadata to disk
             const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                `${this.project.projectPath}${this.study.getName()}`,
-                this.project.db,
+                `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                this.$store.getters.database,
                 this.study
             );
 
             await assay.accept(metaDataWriter);
 
-            // Write the assay to disk. It will automatically be picket up by the file system watchers
+            // Write the assay to disk. It will automatically be picked up by the file system watchers
             const assaySerializer = new AssayFileSystemDataWriter(
-                `${this.project.projectPath}${this.study.getName()}`,
-                this.project.db
+                `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                this.$store.getters.database
             );
 
             await assay.accept(assaySerializer);
@@ -336,7 +324,33 @@ export default class StudyItem extends Vue {
     }
 
     private async onSelectAssay(assay: Assay) {
-        this.project.activateAssay(assay);
+        await this.$store.dispatch("activateAssay", assay);
+    }
+
+    /**
+     * Check to see if an assay with the requested name already exists for this study. If this is the case, a counter
+     * will be added to the requestedName making it unique. The counter will be incremented until the name is completely
+     * unique.
+     *
+     * @param requestedName Assay name that we are trying to make unique by adding a counter.
+     */
+    private generateUniqueAssayName(requestedName: string): string {
+        // Check if assay with same name already exists in the list of assays for this study. If so, change the name
+        // to make it unique.
+        let otherAssayWithName = this.study.getAssays().find(a => a.getName() === requestedName);
+        if (otherAssayWithName) {
+            // Append a number to the assay to make it unique. An assay with this name might again already exist, which
+            // is why we need to check for uniqueness in a loop.
+            let counter = 1;
+            let newName: string;
+            while (otherAssayWithName) {
+                newName = `${requestedName} (${counter})`;
+                otherAssayWithName = this.study.getAssays().find((a: ProteomicsAssay) => a.getName() === newName);
+                counter++;
+            }
+            requestedName = newName;
+        }
+        return requestedName;
     }
 }
 </script>

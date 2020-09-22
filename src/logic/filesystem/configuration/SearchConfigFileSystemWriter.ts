@@ -1,6 +1,5 @@
-import SearchConfigurationVisitor from "unipept-web-components/src/business/configuration/SearchConfigurationVisitor";
+import { SearchConfigurationVisitor, SearchConfiguration } from "unipept-web-components";
 import { Database, RunResult } from "better-sqlite3";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 
 /**
  * Writes a search configuration to a database. If the configuration's id is undefined, a new config will be created,
@@ -13,7 +12,7 @@ export default class SearchConfigFileSystemWriter implements SearchConfiguration
         private readonly db: Database
     ) {}
 
-    public visitSearchConfiguration(config: SearchConfiguration) {
+    public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
         let insertNew: boolean = true;
 
         // Check if the search configuration already exists in the database.

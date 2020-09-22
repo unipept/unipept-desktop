@@ -5,15 +5,14 @@
             @contextmenu="showContextMenu()"
             :class="{
                 'assay-item': true,
-                'assay-item--selected': activeAssay && activeAssay.getId() === assay.getId(),
+                'assay-item--selected': !selectable && activeAssay && activeAssay.getId() === assay.getId(),
                 'assay-item--error': !isValidAssayName || errorStatus
             }">
-            <div
-                v-if="isValidAssayName && !errorStatus">
+            <div v-if="isValidAssayName && !errorStatus && !cancelStatus">
                 <v-tooltip bottom v-if="progress !== 1">
                     <template v-slot:activator="{ on }">
                         <v-progress-circular
-                            :rotate="-90" :size="16"
+                            :rotate="-90" :size="18"
                             :value="progress * 100"
                             v-on="on"
                             color="primary">
@@ -50,6 +49,16 @@
                     mdi-restart-alert
                 </v-icon>
             </tooltip>
+            <tooltip
+                v-if="cancelStatus"
+                message="The analysis for this assay has been cancelled. Click here to restart the analysis."
+                position="bottom">
+                <v-icon
+                    @click="reanalyse()"
+                    size="20">
+                    mdi-cancel
+                </v-icon>
+            </tooltip>
             <span
                 v-if="!isEditingAssayName"
                 v-on:dblclick="enableAssayEdit()">
@@ -67,14 +76,36 @@
                     <v-checkbox v-model="selected" dense @click.native.stop :disabled="progress !== 1"></v-checkbox>
                 </tooltip>
             </div>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
+            <div
+                style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;"
+                v-else-if="progress === 1">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
-                        :disabled="project.getProcessingResults(assay).progress !== 1"
                         @click="experimentSummaryActive = true"
-                        v-on:click.stop color="#424242"
+                        v-on:click.stop
+                        color="#424242"
                         size="20">
                         mdi-information-outline
+                    </v-icon>
+                </tooltip>
+            </div>
+            <div
+                style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;"
+                v-else-if="cancelStatus">
+                <v-icon
+                    color="#424242"
+                    size="20"
+                    disabled>
+                    mdi-close
+                </v-icon>
+            </div>
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
+                <tooltip message="Cancel analysis" position="bottom">
+                    <v-icon
+                        @click="cancelAnalysis()"
+                        v-on:click.stop color="#424242"
+                        size="20">
+                        mdi-stop-circle-outline
                     </v-icon>
                 </tooltip>
             </div>
@@ -103,18 +134,24 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import Tooltip from "unipept-web-components/src/components/custom/Tooltip.vue";
+import {
+    Tooltip,
+    PeptideTrust,
+    Study,
+    ProteomicsAssay,
+    SearchConfiguration,
+    Pept2DataCommunicator,
+    CountTable,
+    Peptide,
+    Assay,
+    AssayData
+} from "unipept-web-components";
+
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import Study from "unipept-web-components/src/business/entities/study/Study";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import Project from "@/logic/filesystem/project/Project";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
-
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -123,33 +160,13 @@ const { Menu, MenuItem } = remote;
     components: {
         Tooltip,
         ExperimentSummaryDialog
-    },
-    computed: {
-        progress: {
-            get(): number {
-                return this.project.getProcessingResults(this.assay).progress;
-            }
-        },
-        errorStatus: {
-            get(): boolean {
-                return this.project.getProcessingResults(this.assay).errorStatus !== undefined;
-            }
-        }
     }
 })
 export default class AssayItem extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
-    /**
-     * What assay is currently selected by the user? If this is not set, this assay will never be highlighted in the
-     * sidebar.
-     */
-    @Prop({ required: false, default: null })
-    private activeAssay: ProteomicsAssay;
     @Prop({ required: true })
     private study: Study;
-    @Prop({ required: true })
-    private project: Project;
     /**
      * Can the assay be selected for a comparative analysis?
      */
@@ -177,6 +194,38 @@ export default class AssayItem extends Vue {
     mounted() {
         this.onAssayChanged();
         this.onValueChanged();
+    }
+
+    get activeAssay(): ProteomicsAssay {
+        return this.$store.getters.activeAssay;
+    }
+
+    get progress(): number {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData ? assayData.analysisMetaData.progress : 0;
+    }
+
+    get peptideCountTable(): CountTable<Peptide> {
+        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    }
+
+    get errorStatus(): boolean {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData?.analysisMetaData.status === "error";
+    }
+
+    get cancelStatus(): boolean {
+        const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        return assayData?.analysisMetaData.status === "cancelled";
+    }
+
+    get pept2dataCommunicator(): Pept2DataCommunicator {
+        const processingResult = this.$store.getters.assayData(this.assay);
+        return processingResult?.communicationSource?.getPept2DataCommunicator();
+    }
+
+    private cancelAnalysis() {
+        this.$store.dispatch("cancelAnalysis", this.assay);
     }
 
     private enableAssayEdit() {
@@ -247,30 +296,25 @@ export default class AssayItem extends Vue {
         this.$emit("input", this.selected);
     }
 
-    @Watch("assay")
-    @Watch("progress")
+    @Watch("assay", { immediate: true })
     private async onAssayChanged() {
         this.assayName = this.assay.getName();
-        this.peptideTrust = await this.computePeptideTrust();
     }
 
-    private async computePeptideTrust(): Promise<PeptideTrust> {
-        if (this.assay) {
-            const processingResults = this.project.getProcessingResults(this.assay);
-            const communicators = processingResults.communicators;
-            const peptideCounts = processingResults.countTable;
-
-            if (communicators && peptideCounts) {
-                const pept2DataCommunicator = communicators.getPept2DataCommunicator();
-                await pept2DataCommunicator.process(peptideCounts, this.assay.getSearchConfiguration());
-                return await pept2DataCommunicator.getPeptideTrust(peptideCounts, this.assay.getSearchConfiguration());
-            }
+    @Watch("pept2dataCommunicator", { immediate: true })
+    private async computePeptideTrust(): Promise<void> {
+        if (this.assay && this.pept2dataCommunicator) {
+            const processingResult = this.$store.getters.assayData(this.assay);
+            const countTable = processingResult?.peptideCountTable;
+            this.peptideTrust = await this.pept2dataCommunicator.getPeptideTrust(
+                countTable,
+                this.assay.getSearchConfiguration()
+            );
         }
-        return undefined;
     }
 
     private reanalyse() {
-        this.project.processAssay(this.assay);
+        this.$store.dispatch("processAssay", this.assay);
     }
 
     private selectAssay() {
@@ -291,10 +335,10 @@ export default class AssayItem extends Vue {
             // Append a number to the assay to make it unique. An assay with this name might again already exist, which
             // is why we need to check for uniqueness in a loop.
             let counter = 1;
-            let newName;
+            let newName: string;
             while (otherAssayWithName) {
                 newName = `${assayName} (${counter})`;
-                otherAssayWithName = this.study.getAssays().find(a => a.getName() === newName);
+                otherAssayWithName = this.study.getAssays().find((a: Assay) => a.getName() === newName);
                 counter++;
             }
             assayName = newName;
@@ -311,23 +355,24 @@ export default class AssayItem extends Vue {
         );
         newAssay.setSearchConfiguration(searchConfiguration);
         const metadataWriter = new AssayFileSystemMetaDataWriter(
-            `${this.project.projectPath}${this.study.getName()}`,
-            this.project.db,
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.database,
             this.study
         );
         await newAssay.accept(metadataWriter);
 
         await fs.copyFile(
-            `${this.project.projectPath}${this.study.getName()}/${this.assay.getName()}.pep`,
-            `${this.project.projectPath}${this.study.getName()}/${assayName}.pep`,
+            `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,
+            `${this.$store.getters.projectLocation}${this.study.getName()}/${assayName}.pep`,
         );
     }
 
     private async removeAssay() {
         this.removeConfirmationActive = false;
         const assayDestroyer = new AssayFileSystemDestroyer(
-            `${this.project.projectPath}${this.study.getName()}`,
-            this.project.db
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.database,
+            this.$store.getters.databaseFile
         );
         await this.assay.accept(assayDestroyer);
     }

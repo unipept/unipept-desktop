@@ -1,7 +1,7 @@
 import RecentProject from "@/logic/filesystem/project/RecentProject";
 import fs from "fs";
 import path from "path";
-import IOException from "unipept-web-components/src/business/exceptions/IOException";
+import { IOException } from "unipept-web-components";
 
 export default class RecentProjectsManager {
     public static readonly RECENT_PROJECTS_FILE = "recents.json";
@@ -23,8 +23,9 @@ export default class RecentProjectsManager {
                 encoding: "utf-8"
             });
 
-            return JSON.parse(projectData)
-                .map(obj => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened))));
+            const recentProjects: RecentProject[] = JSON.parse(projectData)
+                .map((obj: any) => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened))));
+            return recentProjects.filter(rp => fs.existsSync(rp.path));
         } catch (err) {
             throw new IOException(err);
         }

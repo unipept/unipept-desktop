@@ -1,24 +1,22 @@
-import Project from "@/logic/filesystem/project/Project";
+import { store } from "./../../../main";
 import mkdirp from "mkdirp";
 import * as fs from "fs";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
-import ChangeListener from "unipept-web-components/src/business/entities/ChangeListener";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
-import Study from "unipept-web-components/src/business/entities/study/Study";
+import { ChangeListener, ProteomicsAssay, Study } from "unipept-web-components";
 
 export default class FileSystemAssayChangeListener implements ChangeListener<ProteomicsAssay> {
     constructor(
-        private readonly project: Project,
         private readonly study: Study
     ) {
-        this.project = project;
         this.study = study;
     }
 
     public async onChange(object: ProteomicsAssay, field: string, oldValue: any, newValue: any): Promise<void> {
-        if (["date", "searchConfiguration"].indexOf(field) !== -1) {
+        console.log("Update assay...");
+        console.log("HUPLA...");
+        if (["date", "searchConfiguration", "endpoint", "databaseVersion"].indexOf(field) !== -1) {
             // Only update metadata in this case
             await this.serializeMetaData(object);
         } else if (field == "name") {
@@ -33,7 +31,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     private async renameAssay(assay: ProteomicsAssay, oldName: string, newName: string): Promise<void> {
         const mdWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             this.getAssayDirectory(),
-            this.project.db,
+            store.getters.database,
             this.study
         );
 
@@ -52,7 +50,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     private async serializeMetaData(assay: ProteomicsAssay): Promise<void> {
         const writer: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             this.getAssayDirectory(),
-            this.project.db,
+            store.getters.database,
             this.study
         );
 
@@ -60,15 +58,15 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     }
 
     private async serializeData(assay: ProteomicsAssay): Promise<void> {
-        const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(this.getAssayDirectory(), this.project.db);
+        const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(this.getAssayDirectory(), store.getters.database);
 
         await assay.accept(writer);
 
         // noinspection ES6MissingAwait
-        this.project.processAssay(assay);
+        store.dispatch("processAssay", assay);
     }
 
     private getAssayDirectory(): string {
-        return `${this.project.projectPath}${this.study.getName()}/`;
+        return `${store.getters.projectLocation}${this.study.getName()}/`;
     }
 }

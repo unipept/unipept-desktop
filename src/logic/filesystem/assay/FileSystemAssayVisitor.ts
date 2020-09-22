@@ -1,6 +1,5 @@
 import { Database } from "better-sqlite3";
-import AssayVisitor from "unipept-web-components/src/business/entities/assay/AssayVisitor";
-import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
+import { AssayVisitor, ProteomicsAssay } from "unipept-web-components";
 
 /**
  * A specific kind of visitor for assays that's specifically tailored at storing and reading information from the

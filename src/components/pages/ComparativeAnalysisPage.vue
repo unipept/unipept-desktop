@@ -84,16 +84,19 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import MultiAssayDataSourceItem from "unipept-web-components/src/components/heatmap/MultiAssayDataSourceItem";
-import MultiAssayDataSource from "unipept-web-components/src/components/heatmap/MultiAssayDataSource.vue";
-import HeatmapMultiSample from "unipept-web-components/src/components/heatmap/HeatmapMultiSample.vue";
+import {
+    MultiAssayDataSourceItem,
+    MultiAssayDataSource,
+    HeatmapMultiSample,
+    Normalizer,
+    AllNormalizer,
+    NormalizationSelector,
+    DefaultCommunicationSource,
+    CommunicationSource
+} from "unipept-web-components";
+
 import { Prop, Watch } from "vue-property-decorator";
-import Normalizer from "unipept-web-components/src/business/normalisation/Normalizer";
-import AllNormalizer from "unipept-web-components/src/business/normalisation/AllNormalizer";
-import NormalizationSelector from "unipept-web-components/src/components/heatmap/NormalizationSelector.vue";
 import CollapsableCard from "@/components/pages/CollapsableCard.vue";
-import DefaultCommunicationSource from "unipept-web-components/src/business/communication/source/DefaultCommunicationSource";
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
 
 @Component({
     components: {

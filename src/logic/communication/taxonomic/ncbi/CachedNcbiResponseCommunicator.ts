@@ -1,9 +1,6 @@
-import NcbiResponseCommunicator from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponseCommunicator";
-import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
-import NcbiResponse from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponse";
+import { NcbiResponseCommunicator, NcbiId, NcbiResponse } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import { Database, Statement } from "better-sqlite3";
-import { NcbiRank } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiRank";
 import { spawn, Worker } from "threads/dist";
 
 export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunicator {
@@ -12,7 +9,7 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
     private readonly extractStmt: Statement;
     private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
     private static processing: Promise<Map<NcbiId, NcbiResponse>>;
-    private static worker;
+    private static worker: any;
 
     constructor() {
         super();

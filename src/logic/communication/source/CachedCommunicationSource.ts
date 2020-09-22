@@ -1,18 +1,23 @@
-import CommunicationSource from "unipept-web-components/src/business/communication/source/CommunicationSource";
-import EcResponseCommunicator from "unipept-web-components/src/business/communication/functional/ec/EcResponseCommunicator";
-import GoResponseCommunicator from "unipept-web-components/src/business/communication/functional/go/GoResponseCommunicator";
-import InterproResponseCommunicator from "unipept-web-components/src/business/communication/functional/interpro/InterproResponseCommunicator";
-import NcbiResponseCommunicator from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponseCommunicator";
-import Pept2DataCommunicator from "unipept-web-components/src/business/communication/peptides/Pept2DataCommunicator";
-import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
-import { PeptideDataResponse } from "unipept-web-components/src/business/communication/peptides/PeptideDataResponse";
+import {
+    CommunicationSource ,
+    EcResponseCommunicator,
+    GoResponseCommunicator,
+    InterproResponseCommunicator,
+    Pept2DataCommunicator,
+    Peptide,
+    PeptideTrust,
+    SearchConfiguration,
+    PeptideData,
+    NcbiResponseCommunicator
+} from "unipept-web-components";
+
 import CachedPept2DataCommunicator from "@/logic/communication/raw/CachedPept2DataCommunicator";
-import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
-import SearchConfiguration from "unipept-web-components/src/business/configuration/SearchConfiguration";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import CachedEcResponseCommunicator from "@/logic/communication/functional/CachedEcResponseCommunicator";
 import CachedGoResponseCommunicator from "@/logic/communication/functional/CachedGoResponseCommunicator";
 import CachedInterproResponseCommunicator from "@/logic/communication/functional/CachedInterproResponseCommunicator";
+
+import { ShareableMap } from "shared-memory-datastructures";
 
 export default class CachedCommunicationSource implements CommunicationSource {
     private readonly ecCommunicator: EcResponseCommunicator;
@@ -22,7 +27,7 @@ export default class CachedCommunicationSource implements CommunicationSource {
     private readonly pept2DataCommunicator: Pept2DataCommunicator;
 
     constructor(
-        peptToResponseMap: Map<Peptide, string>,
+        peptToResponseMap: ShareableMap<Peptide, PeptideData>,
         peptideTrust: PeptideTrust,
         initialConfiguration: SearchConfiguration
     ) {
@@ -30,7 +35,11 @@ export default class CachedCommunicationSource implements CommunicationSource {
         this.goCommunicator = new CachedGoResponseCommunicator();
         this.iprCommunicator = new CachedInterproResponseCommunicator();
         this.ncbiCommunicator = new CachedNcbiResponseCommunicator();
-        this.pept2DataCommunicator = new CachedPept2DataCommunicator(peptToResponseMap, peptideTrust, initialConfiguration);
+        this.pept2DataCommunicator = new CachedPept2DataCommunicator(
+            peptToResponseMap,
+            peptideTrust,
+            initialConfiguration
+        );
     }
 
     public getEcCommunicator(): EcResponseCommunicator {
