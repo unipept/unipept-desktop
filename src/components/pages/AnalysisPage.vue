@@ -110,7 +110,6 @@ import {
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 import Snake from "./../games/Snake.vue";
 
-
 @Component({
     components: {
         AnalysisSummary,
@@ -183,6 +182,7 @@ export default class AnalysisPage extends Vue {
         }
     }
 
+    // TODO replace with version of this function from UWC
     private secondsToTimeString(time: number): string {
         if (time && !isNaN(time) && time !== Infinity) {
             const date = new Date(time * 1000);

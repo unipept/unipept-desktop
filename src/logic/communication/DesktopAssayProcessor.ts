@@ -28,8 +28,6 @@ export default class DesktopAssayProcessor implements AssayProcessor {
     ) {}
 
     public async processAssay(countTable: CountTable<Peptide>): Promise<CommunicationSource> {
-        console.log(require("fs"));
-        console.log("Start desktop assay processor...");
         const [pept2DataResponses, peptideTrust] = await this.getPept2Data(countTable);
         this.setProgress(1);
 

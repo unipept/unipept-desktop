@@ -23,19 +23,22 @@ import {
     FunctionalOntologyStoreFactory
 } from "unipept-web-components";
 
-import { DesktopConfigurationStore } from "./state/DesktopConfigurationStore";
-import { projectStore } from "./state/ProjectStore";
-import { summaryStore } from "@/state/PeptideSummaryStore";
 import Vuex, { ActionContext } from "vuex";
-import vueFullscreen from "vue-fullscreen";
 import VueRouter from "vue-router";
-import HomePage from "./components/pages/HomePage.vue";
-import AnalysisPage from "./components/pages/AnalysisPage.vue";
-import SettingsPage from "./components/pages/SettingsPage.vue";
-import "unipept-visualizations/dist/unipept-visualizations.es5.js";
-import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.vue";
+import vueFullscreen from "vue-fullscreen";
+
+import { DesktopConfigurationStore } from "@/state/DesktopConfigurationStore";
+import { projectStore } from "@/state/ProjectStore";
+import { summaryStore } from "@/state/PeptideSummaryStore";
 import { ComparativeStore } from "@/state/ComparativeStore";
+
+import HomePage from "@/components/pages/HomePage.vue";
+import AnalysisPage from "@/components/pages/AnalysisPage.vue";
+import SettingsPage from "@/components/pages/SettingsPage.vue";
+import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.vue";
 import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
+
+import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
