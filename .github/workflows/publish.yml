@@ -18,8 +18,8 @@ jobs:
       - if: matrix.os == 'windows-latest'
         run: |
           cd patches
-          TYPE better-sqlite3+7.0.1.patch | MORE /P better-sqlite3+7.0.1.patch
-          TYPE bindings+1.5.0.patch | MORE /P bindings+1.5.0.patch
+          TYPE better-sqlite3+7.0.1.patch | MORE /P > better-sqlite3+7.0.1.patch
+          TYPE bindings+1.5.0.patch | MORE /P > bindings+1.5.0.patch
           cd ..
         shell: cmd
       - name: Install dependencies
