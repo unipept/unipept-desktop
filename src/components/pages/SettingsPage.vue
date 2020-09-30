@@ -29,6 +29,57 @@
                                 </v-container>
                             </v-card-text>
                         </v-card>
+                        <h2 class="mx-auto settings-category-title">Concurrency</h2>
+                        <v-card>
+                            <v-card-text>
+                                <v-container fluid>
+                                    <v-row>
+                                        <v-col cols="10">
+                                            <div class="settings-title">Long running tasks</div>
+                                            <span class="settings-text">
+                                                How many long running tasks can be computed in parallel? This setting
+                                                controls the max amount of CPU cores that can be used by this
+                                                application. Increasing this value leads to faster analysis, but
+                                                increases both memory and CPU usage of this application.
+                                            </span>
+                                            <span class="settings-text settings-important-text">
+                                                Changing this option requires you to restart the application.
+                                            </span>
+                                        </v-col>
+                                        <v-col cols="2">
+                                            <v-text-field
+                                                label="8"
+                                                single-line filled
+                                                v-model="maxLongRunningTasks"
+                                                type="number"
+                                                :rules="maxTasksRules">
+                                            </v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="10">
+                                            <div class="settings-title">API requests</div>
+                                            <span class="settings-text">
+                                                How many API requests can be performed in parallel? This setting
+                                                controls the max amount of requests to the API server that can be
+                                                performed in parallel. Increasing this value can lead to a faster
+                                                analysis. Setting it too high could however cause stability issues on
+                                                the server side.
+                                            </span>
+                                        </v-col>
+                                        <v-col cols="2">
+                                            <v-text-field
+                                                label="5"
+                                                single-line filled
+                                                type="number"
+                                                v-model="maxParallelRequests"
+                                                :rules="maxRequestRules">
+                                            </v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+                        </v-card>
                         <h2 class="mx-auto settings-category-title">Appearance</h2>
                         <v-card>
                             <v-card-text>
@@ -91,6 +142,19 @@ export default class SettingsPage extends Vue {
         Rules.url
     ];
 
+    private maxTasksRules: ((x: string) => boolean | string)[] = [
+        Rules.required,
+        Rules.integer,
+        Rules.gtZero
+    ]
+
+    private maxRequestRules: ((x: string) => boolean | string)[] = [
+        Rules.required,
+        Rules.integer,
+        Rules.gtZero,
+        Rules.lteTen
+    ]
+
     private mounted() {
         let configManager: ConfigurationManager = new ConfigurationManager();
         configManager.readConfiguration().then((result) => this.configuration = result);
@@ -102,10 +166,29 @@ export default class SettingsPage extends Vue {
         await configurationManager.writeConfiguration(this.configuration);
     }
 
+    set maxLongRunningTasks(val: string) {
+        this.configuration.maxLongRunningTasks = Number.parseInt(val);
+    }
+
+    get maxLongRunningTasks(): string {
+        return this.configuration.maxLongRunningTasks.toString();
+    }
+
+    set maxParallelRequests(val: string) {
+        this.configuration.maxParallelRequests = Number.parseInt(val);
+    }
+
+    get maxParallelRequests(): string {
+        return this.configuration.maxParallelRequests.toString();
+    }
+
     @Watch("configuration.apiSource")
     @Watch("configuration.useNativeTitlebar")
+    @Watch("configuration.maxLongRunningTasks")
+    @Watch("configuration.maxParallelRequests")
     private async saveChanges(): Promise<void> {
         NetworkConfiguration.BASE_URL = this.configuration.apiSource;
+        NetworkConfiguration.PARALLEL_API_REQUESTS = this.configuration.maxParallelRequests;
         this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
     }
 
@@ -144,6 +227,7 @@ export default class SettingsPage extends Vue {
     .settings-important-text {
         font-style: italic;
         font-weight: bold;
+        display: block;
     }
 
     .settings-category-title:not(:first-child) {

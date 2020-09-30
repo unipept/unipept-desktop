@@ -27,7 +27,7 @@ async function createWindow() {
     let options = {
         width: 1200,
         height: 1000,
-        webPreferences: { nodeIntegration: true, nodeIntegrationInWorker: true },
+        webPreferences: { nodeIntegration: true, nodeIntegrationInWorker: true, enableRemoteModule: true },
         show: false
     };
 

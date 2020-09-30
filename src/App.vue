@@ -71,7 +71,13 @@ import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 const electron = require("electron");
-import { Assay, ProteomicsAssay, NetworkConfiguration, AssayData } from "unipept-web-components";
+import {
+    Assay,
+    ProteomicsAssay,
+    NetworkConfiguration,
+    AssayData,
+    QueueManager
+} from "unipept-web-components";
 
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
@@ -197,6 +203,8 @@ export default class App extends Vue implements ErrorListener {
         try {
             let config: Configuration = await configurationManager.readConfiguration();
             NetworkConfiguration.BASE_URL = config.apiSource;
+            NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
+            QueueManager.initializeQueue(config.maxLongRunningTasks);
             await this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
