@@ -10,13 +10,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
       - name: Install dependencies
         run: npm install
+      - if: matrix.os == 'windows-latest'
+        run: Get-ChildItem -File | Foreach {"TYPE $_ | MORE /P > $_" | cmd}
+        shell: powershell
       - name: Patch dependencies
         run: npx patch-package
       - name: Build application for ${{ matrix.os }}
