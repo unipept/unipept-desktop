@@ -21,9 +21,9 @@
                                     {{ peptideTrust.matchedPeptides }} peptides found,
                                     {{ peptideTrust.searchedPeptides }} peptides in assay
                                 </div>
-                                <div class="subtitle-2">Last analysed on May 5 at 13:28</div>
-                                <div>UniProt 2020.01</div>
-                                <div>https://unipept.ugent.be</div>
+                                <div class="subtitle-2">Last analysed on {{ getHumanReadableAssayDate() }}</div>
+                                <div>{{ assay.getDatabaseVersion() }}</div>
+                                <div>{{ assay.getEndpoint() }}</div>
                             </div>
                         </div>
                         <search-settings-form
@@ -34,7 +34,7 @@
                         </search-settings-form>
 
                         <div class="d-flex justify-center align-center mt-4">
-                            <v-btn :disabled="progress !== 1" color="primary" @click="update()" class="mr-2">
+                            <v-btn :disabled="progress !== 1 || !dirty" color="primary" @click="update()" class="mr-2">
                                 Update
                             </v-btn>
                             <export-results-button :assay="assay" button-text="Export results"></export-results-button>
@@ -69,10 +69,11 @@ import {
     PeptideTrust,
     Pept2DataCommunicator,
     ExportResultsButton,
-    AssayData
+    AssayData, NetworkConfiguration
 } from "unipept-web-components";
 
 import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
+import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton }
@@ -86,10 +87,25 @@ export default class AnalysisSummary extends Vue {
     private missedCleavage: boolean = false;
 
     private peptideTrust: PeptideTrust = null;
+    private dbVersion: string = "";
 
-    mounted() {
-        this.onAssayChanged();
-        this.onPeptideCountTableChanged();
+    get dirty(): boolean {
+        const endpoint = NetworkConfiguration.BASE_URL;
+        const currentConfig = this.assay.getSearchConfiguration();
+
+        console.log([
+            this.assay.getDatabaseVersion() !== this.dbVersion,
+            this.assay.getEndpoint() !== endpoint,
+            currentConfig.equateIl !== this.equateIl,
+            currentConfig.filterDuplicates !== this.filterDuplicates,
+            currentConfig.enableMissingCleavageHandling !== this.missedCleavage
+        ]);
+
+        return this.assay.getDatabaseVersion() !== this.dbVersion ||
+            this.assay.getEndpoint() !== endpoint ||
+            currentConfig.equateIl !== this.equateIl ||
+            currentConfig.filterDuplicates !== this.filterDuplicates ||
+            currentConfig.enableMissingCleavageHandling !== this.missedCleavage;
     }
 
     get peptideCountTable(): CountTable<Peptide> {
@@ -99,6 +115,12 @@ export default class AnalysisSummary extends Vue {
     get progress(): number {
         const assayData: AssayData = this.$store.getters.assayData(this.assay);
         return assayData ? assayData.analysisMetaData.progress : 0;
+    }
+
+    private async mounted() {
+        this.dbVersion = await MetadataCommunicator.getRemoteUniprotVersion();
+        this.onAssayChanged();
+        this.onPeptideCountTableChanged();
     }
 
     @Watch("assay")
@@ -127,6 +149,26 @@ export default class AnalysisSummary extends Vue {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
         this.assay.setSearchConfiguration(config);
         this.$store.dispatch("processAssay", this.assay);
+    }
+
+    private getHumanReadableAssayDate(): string {
+        const date = this.assay.getDate();
+        const months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        ]
+
+        return `${months[date.getMonth()]} ${date.getDate()} at ${date.getHours()}:${date.getMinutes()}`;
     }
 }
 </script>

@@ -4,7 +4,7 @@ import {
     SearchConfiguration,
     PeptideTrust,
     PeptideData,
-    PeptideDataSerializer
+    PeptideDataSerializer, NetworkConfiguration, DateUtils
 } from "unipept-web-components";
 
 import ProcessedAssayResult from "@/logic/filesystem/assay/processed/ProcessedAssayResult";
@@ -13,6 +13,8 @@ import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/Searc
 import { spawn, TransferDescriptor, Worker } from "threads/dist";
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
+import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
+import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
 export default class ProcessedAssayManager {
     private static worker: any;
@@ -30,9 +32,7 @@ export default class ProcessedAssayManager {
      */
     public async readProcessingResults(assay: ProteomicsAssay): Promise<ProcessedAssayResult | null> {
         if (!ProcessedAssayManager.worker) {
-            console.log("Spawning processed assay manager...");
             ProcessedAssayManager.worker = await spawn(new Worker("./ProcessedAssayManager.worker.ts"));
-            console.log("Did spawn processed assay manager...");
         }
 
         // Look up whether storage metadata with the given properties is present in the database.
@@ -58,25 +58,26 @@ export default class ProcessedAssayManager {
             serializedSearchConfig.filterDuplicates !== assayConfig.filterDuplicates ||
             serializedSearchConfig.enableMissingCleavageHandling !== assayConfig.enableMissingCleavageHandling
         ) {
-            console.log("Config different!");
             return null;
         }
 
+        const currentStaticDb: string = await MetadataCommunicator.getRemoteUniprotVersion();
+        const currentEndpoint: string = NetworkConfiguration.BASE_URL;
+
         // Check if the database version and endpoint are equal
-        // if (
-        //     assay.getDatabaseVersion() !== row.db_version ||
-        //     assay.getEndpoint() !== row.endpoint
-        // ) {
-        //     console.log("Db or endpoint different");
-        //     console.log("Row: ");
-        //     console.log(row.db_version + " - " + row.endpoint);
-        //     console.log("Assay: ");
-        //     console.log(assay.getDatabaseVersion() + " - " + assay.getEndpoint());
-        //     return null;
-        // }
+        if (
+            currentStaticDb !== row.db_version ||
+            currentEndpoint !== row.endpoint
+        ) {
+            return null;
+        }
 
         // Now try to read the serialized pept2data from the database
-        const result: [TransferDescriptor, TransferDescriptor, PeptideTrust] | null = await ProcessedAssayManager.worker.readPept2Data(
+        const result: [
+            TransferDescriptor,
+            TransferDescriptor,
+            PeptideTrust
+        ] | null = await ProcessedAssayManager.worker.readPept2Data(
             __dirname,
             this.dbFile,
             assay.getId()
@@ -85,8 +86,6 @@ export default class ProcessedAssayManager {
         if (!result) {
             return null;
         }
-
-        console.log(result);
 
         const [indexBuffer, dataBuffer, trust] = result;
         const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
@@ -135,11 +134,12 @@ export default class ProcessedAssayManager {
         const searchConfigWriter = new SearchConfigFileSystemWriter(this.db);
         searchConfigWriter.visitSearchConfiguration(searchConfiguration);
 
-        this.db.prepare("INSERT INTO storage_metadata VALUES (?, ? , ?, ?)").run(
+        this.db.prepare("INSERT INTO storage_metadata VALUES (?, ?, ?, ?, ?)").run(
             assay.getId(),
             searchConfiguration.id,
             assay.getEndpoint(),
-            assay.getDatabaseVersion()
+            assay.getDatabaseVersion(),
+            assay.getDate().toJSON()
         );
     }
 }

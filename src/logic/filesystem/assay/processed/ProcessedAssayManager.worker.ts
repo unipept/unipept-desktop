@@ -39,8 +39,8 @@ export function readPept2Data(
 
 export function writePept2Data(
     installationDir: string,
-    peptDataIndexBuffer: SharedArrayBuffer,
-    peptDataDataBuffer: SharedArrayBuffer,
+    peptDataIndexBuffer: ArrayBuffer,
+    peptDataDataBuffer: ArrayBuffer,
     peptideTrust: PeptideTrust,
     assayId: string,
     dbFile: string

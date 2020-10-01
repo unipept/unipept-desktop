@@ -8,13 +8,16 @@ import {
     PeptideTrust,
     AssayProcessor,
     PeptideData,
-    NetworkConfiguration
+    NetworkConfiguration,
+    DateUtils
 } from "unipept-web-components";
 
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import ProcessedAssayManager from "@/logic/filesystem/assay/processed/ProcessedAssayManager";
 import { Database } from "better-sqlite3";
 import { ShareableMap } from "shared-memory-datastructures";
+import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
+import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
 export default class DesktopAssayProcessor implements AssayProcessor {
     private pept2DataCommunicator: Pept2DataCommunicator;
@@ -85,8 +88,10 @@ export default class DesktopAssayProcessor implements AssayProcessor {
                     this.assay.getSearchConfiguration()
                 );
 
+                const currentDbVersion: string = await MetadataCommunicator.getRemoteUniprotVersion();
+
                 this.assay.setEndpoint(NetworkConfiguration.BASE_URL);
-                this.assay.setDatabaseVersion("N/A");
+                this.assay.setDatabaseVersion(currentDbVersion);
 
                 // Store results and update metadata...
                 await processedAssayManager.storeProcessingResults(this.assay, pept2ResponseMap, trust);

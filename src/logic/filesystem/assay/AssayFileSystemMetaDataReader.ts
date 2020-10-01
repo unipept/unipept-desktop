@@ -26,20 +26,30 @@ export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisito
 
         if (row) {
             mpAssay.id = row.id;
-            console.log("Setting endpoint.");
-            console.log(row);
-            mpAssay.setEndpoint(row.endpoint);
-            mpAssay.setDatabaseVersion(row.db_version);
-            const configuration = new SearchConfiguration(
-                true,
-                true,
-                false,
-                row.configuration_id
-            );
 
-            const configReader = new SearchConfigFileSystemReader(this.db);
-            configReader.visitSearchConfiguration(configuration);
-            mpAssay.setSearchConfiguration(configuration);
+            const metadataRow = this.db.prepare(
+                "SELECT * FROM storage_metadata WHERE assay_id = ?"
+            ).get(mpAssay.getId());
+
+            let config: SearchConfiguration;
+
+            if (metadataRow) {
+                mpAssay.setEndpoint(metadataRow.endpoint);
+                mpAssay.setDatabaseVersion(metadataRow.db_version);
+                mpAssay.setDate(new Date(metadataRow.analysis_date));
+                config = new SearchConfiguration(
+                    true,
+                    true,
+                    false,
+                    metadataRow.configuration_id
+                );
+                const configReader = new SearchConfigFileSystemReader(this.db);
+                configReader.visitSearchConfiguration(config);
+            } else {
+                config = new SearchConfiguration();
+            }
+
+            mpAssay.setSearchConfiguration(config);
         }
     }
 }
