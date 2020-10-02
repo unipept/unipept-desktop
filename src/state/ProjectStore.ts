@@ -107,7 +107,7 @@ const projectActions: ActionTree<ProjectState, any> = {
         for (const study of studies) {
             for (const assay of study.getAssays()) {
                 await store.dispatch("addAssay", assay);
-                store.dispatch("processAssay", assay);
+                store.dispatch("processAssay", [assay, false]);
             }
         }
 

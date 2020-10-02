@@ -16,7 +16,6 @@ import CachedCommunicationSource from "@/logic/communication/source/CachedCommun
 import ProcessedAssayManager from "@/logic/filesystem/assay/processed/ProcessedAssayManager";
 import { Database } from "better-sqlite3";
 import { ShareableMap } from "shared-memory-datastructures";
-import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
 export default class DesktopAssayProcessor implements AssayProcessor {
@@ -30,8 +29,11 @@ export default class DesktopAssayProcessor implements AssayProcessor {
         private readonly progressListener?: ProgressListener
     ) {}
 
-    public async processAssay(countTable: CountTable<Peptide>): Promise<CommunicationSource> {
-        const [pept2DataResponses, peptideTrust] = await this.getPept2Data(countTable);
+    public async processAssay(
+        countTable: CountTable<Peptide>,
+        forceUpdate: boolean = false
+    ): Promise<CommunicationSource> {
+        const [pept2DataResponses, peptideTrust] = await this.getPept2Data(countTable, forceUpdate);
         this.setProgress(1);
 
         if (this.isCancelled()) {
@@ -57,12 +59,13 @@ export default class DesktopAssayProcessor implements AssayProcessor {
     }
 
     private async getPept2Data(
-        peptideCountTable: CountTable<Peptide>
+        peptideCountTable: CountTable<Peptide>,
+        forceUpdate: boolean
     ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
         const processedAssayManager = new ProcessedAssayManager(this.db, this.dbFile);
         const processingResult = await processedAssayManager.readProcessingResults(this.assay);
 
-        if (processingResult !== null) {
+        if (processingResult !== null && !forceUpdate) {
             return [processingResult.pept2DataMap, processingResult.peptideTrust];
         } else {
             // We need to reprocess this assay and store the results in the database.
@@ -70,6 +73,11 @@ export default class DesktopAssayProcessor implements AssayProcessor {
             const pept2DataProgressNotifier: ProgressListener = {
                 onProgressUpdate: (val: number) => this.setProgress(val)
             }
+
+            // It's important that we keep track of the chosen settings before the analysis started. Otherwise the
+            // metadata could be wrong if the user decides to switch endpoint mid-analysis.
+            const currentDbVersion: string = await MetadataCommunicator.getRemoteUniprotVersion();
+            const currentEndpoint: string = NetworkConfiguration.BASE_URL;
 
             this.pept2DataCommunicator = new Pept2DataCommunicator();
 
@@ -88,10 +96,9 @@ export default class DesktopAssayProcessor implements AssayProcessor {
                     this.assay.getSearchConfiguration()
                 );
 
-                const currentDbVersion: string = await MetadataCommunicator.getRemoteUniprotVersion();
-
-                this.assay.setEndpoint(NetworkConfiguration.BASE_URL);
+                this.assay.setEndpoint(currentEndpoint);
                 this.assay.setDatabaseVersion(currentDbVersion);
+                this.assay.setDate(new Date());
 
                 // Store results and update metadata...
                 await processedAssayManager.storeProcessingResults(this.assay, pept2ResponseMap, trust);

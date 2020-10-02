@@ -58,12 +58,15 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     }
 
     private async serializeData(assay: ProteomicsAssay): Promise<void> {
-        const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(this.getAssayDirectory(), store.getters.database);
+        const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(
+            this.getAssayDirectory(),
+            store.getters.database
+        );
 
         await assay.accept(writer);
 
         // noinspection ES6MissingAwait
-        store.dispatch("processAssay", assay);
+        store.dispatch("processAssay", [assay, false]);
     }
 
     private getAssayDirectory(): string {

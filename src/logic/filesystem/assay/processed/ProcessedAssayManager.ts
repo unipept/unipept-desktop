@@ -61,17 +61,6 @@ export default class ProcessedAssayManager {
             return null;
         }
 
-        const currentStaticDb: string = await MetadataCommunicator.getRemoteUniprotVersion();
-        const currentEndpoint: string = NetworkConfiguration.BASE_URL;
-
-        // Check if the database version and endpoint are equal
-        if (
-            currentStaticDb !== row.db_version ||
-            currentEndpoint !== row.endpoint
-        ) {
-            return null;
-        }
-
         // Now try to read the serialized pept2data from the database
         const result: [
             TransferDescriptor,

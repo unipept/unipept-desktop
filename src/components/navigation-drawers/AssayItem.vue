@@ -314,7 +314,7 @@ export default class AssayItem extends Vue {
     }
 
     private reanalyse() {
-        this.$store.dispatch("processAssay", this.assay);
+        this.$store.dispatch("processAssay", [this.assay, true]);
     }
 
     private selectAssay() {

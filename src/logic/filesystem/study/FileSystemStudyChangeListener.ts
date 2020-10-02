@@ -50,7 +50,11 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
 
     private async createAssay(study: Study, assay: Assay): Promise<void> {
         const path: string = `${store.getters.projectLocation}${study.getName()}/`;
-        const metaDataWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(path, store.getters.database, study);
+        const metaDataWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
+            path,
+            store.getters.database,
+            study
+        );
         const dataWriter: FileSystemAssayVisitor = new AssayFileSystemDataWriter(path, store.getters.database);
 
         await assay.accept(metaDataWriter);
