@@ -1,20 +1,19 @@
-
 import {
     ProteomicsAssay,
     SearchConfiguration,
     PeptideTrust,
     PeptideData,
-    PeptideDataSerializer, NetworkConfiguration, DateUtils
+    PeptideDataSerializer,
+    NetworkConfiguration,
+    DateUtils,
+    QueueManager
 } from "unipept-web-components";
 
 import ProcessedAssayResult from "@/logic/filesystem/assay/processed/ProcessedAssayResult";
 import { Database } from "better-sqlite3";
 import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
-import { spawn, TransferDescriptor, Worker } from "threads/dist";
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
-import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
-import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
 export default class ProcessedAssayManager {
     private static worker: any;
@@ -31,10 +30,6 @@ export default class ProcessedAssayManager {
      * @param assay The assay for which the deserialized results should be returned.
      */
     public async readProcessingResults(assay: ProteomicsAssay): Promise<ProcessedAssayResult | null> {
-        if (!ProcessedAssayManager.worker) {
-            ProcessedAssayManager.worker = await spawn(new Worker("./ProcessedAssayManager.worker.ts"));
-        }
-
         // Look up whether storage metadata with the given properties is present in the database.
         const row = this.db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
 
@@ -62,15 +57,22 @@ export default class ProcessedAssayManager {
         }
 
         // Now try to read the serialized pept2data from the database
-        const result: [
-            TransferDescriptor,
-            TransferDescriptor,
-            PeptideTrust
-        ] | null = await ProcessedAssayManager.worker.readPept2Data(
+        const result = await QueueManager.getLongRunningQueue().pushTask<
+            [
+                ArrayBuffer,
+                ArrayBuffer,
+                PeptideTrust
+            ] | null,
+            [
+                string,
+                string,
+                string
+            ]
+        >("readPept2Data", [
             __dirname,
             this.dbFile,
             assay.getId()
-        )
+        ]);
 
         if (!result) {
             return null;
@@ -79,8 +81,8 @@ export default class ProcessedAssayManager {
         const [indexBuffer, dataBuffer, trust] = result;
         const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
         sharedMap.setBuffers(
-            indexBuffer.transferables[0] as SharedArrayBuffer,
-            dataBuffer.transferables[0] as SharedArrayBuffer
+            indexBuffer,
+            dataBuffer
         );
 
         return new ProcessedAssayResult(
@@ -103,14 +105,17 @@ export default class ProcessedAssayManager {
 
         // First try to write the pept2data information to the database.
         const buffers = pept2Data.getBuffers();
-        await ProcessedAssayManager.worker.writePept2Data(
+        await QueueManager.getLongRunningQueue().pushTask<
+            void,
+            [string, ArrayBuffer, ArrayBuffer, PeptideTrust, string, string]
+        >("writePept2Data", [
             __dirname,
             buffers[0],
             buffers[1],
             trust,
             assay.getId(),
             this.dbFile
-        );
+        ]);
 
         // Now write the metadata to the database again.
         const existingConfig = assay.getSearchConfiguration();

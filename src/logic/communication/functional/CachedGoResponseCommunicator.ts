@@ -1,11 +1,9 @@
-import { GoResponse, GoResponseCommunicator, GoCode } from "unipept-web-components";
+import { GoResponse, GoResponseCommunicator, GoCode, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
-import { spawn, Worker } from "threads/dist";
 
 export default class CachedGoResponseCommunicator extends GoResponseCommunicator {
     private static codeToResponses: Map<GoCode, GoResponse> = new Map<GoCode, GoResponse>();
     private static processing: Promise<Map<GoCode, GoResponse>>;
-    private static worker: any;
     private readonly dbFile: string;
 
     constructor() {
@@ -29,17 +27,14 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
             await CachedGoResponseCommunicator.processing;
         }
 
-        if (!CachedGoResponseCommunicator.worker) {
-            CachedGoResponseCommunicator.worker = await spawn(
-                new Worker("./CachedGoResponseCommunicator.worker.ts")
-            );
-        }
-        CachedGoResponseCommunicator.processing = CachedGoResponseCommunicator.worker.process(
+        CachedGoResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
+            Map<string, GoResponse>, [string, string, GoCode[], Map<GoCode, GoResponse>]
+        >("computeCachedGoResponses", [
             __dirname,
             this.dbFile,
             codes,
             CachedGoResponseCommunicator.codeToResponses
-        );
+        ]);
 
         CachedGoResponseCommunicator.codeToResponses = await CachedGoResponseCommunicator.processing;
         CachedGoResponseCommunicator.processing = undefined;

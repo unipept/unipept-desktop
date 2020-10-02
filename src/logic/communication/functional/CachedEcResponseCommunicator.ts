@@ -1,5 +1,4 @@
-import { EcCode, EcResponseCommunicator, EcResponse } from "unipept-web-components";
-import { spawn, Worker } from "threads/dist";
+import { EcCode, EcResponseCommunicator, EcResponse, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 
 export default class CachedEcResponseCommunicator extends EcResponseCommunicator {
@@ -29,17 +28,14 @@ export default class CachedEcResponseCommunicator extends EcResponseCommunicator
             await CachedEcResponseCommunicator.processing;
         }
 
-        if (!CachedEcResponseCommunicator.worker) {
-            CachedEcResponseCommunicator.worker = await spawn(
-                new Worker("./CachedEcResponseCommunicator.worker.ts")
-            );
-        }
-        CachedEcResponseCommunicator.processing = CachedEcResponseCommunicator.worker.process(
+        CachedEcResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
+            Map<EcCode, EcResponse>, [string, string, EcCode[], Map<EcCode, EcResponse>]
+        >("computeCachedEcResponses", [
             __dirname,
             this.dbFile,
             codes,
             CachedEcResponseCommunicator.codeToResponses
-        );
+        ]);
 
         CachedEcResponseCommunicator.codeToResponses = await CachedEcResponseCommunicator.processing;
         CachedEcResponseCommunicator.processing = undefined;

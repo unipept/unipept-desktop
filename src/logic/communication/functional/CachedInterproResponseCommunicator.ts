@@ -1,6 +1,5 @@
-import { InterproCode, InterproResponse, InterproResponseCommunicator } from "unipept-web-components";
+import { InterproCode, InterproResponse, InterproResponseCommunicator, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
-import { spawn, Worker } from "threads/dist";
 
 export default class CachedInterproResponseCommunicator extends InterproResponseCommunicator {
     private static codeToResponses: Map<InterproCode, InterproResponse> = new Map<InterproCode, InterproResponse>();
@@ -29,16 +28,16 @@ export default class CachedInterproResponseCommunicator extends InterproResponse
             await CachedInterproResponseCommunicator.processing;
         }
 
-        if (!CachedInterproResponseCommunicator.worker) {
-            CachedInterproResponseCommunicator.worker = await spawn(
-                new Worker("./CachedInterproResponseCommunicator.worker.ts")
-            );
-        }
-        CachedInterproResponseCommunicator.processing = CachedInterproResponseCommunicator.worker.process(
-            __dirname,
-            this.dbFile,
-            codes,
-            CachedInterproResponseCommunicator.codeToResponses
+        CachedInterproResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
+            Map<InterproCode, InterproResponse>, [string, string, InterproCode[], Map<InterproCode, InterproResponse>]
+        >(
+            "computeCachedInterproResponses",
+            [
+                __dirname,
+                this.dbFile,
+                codes,
+                CachedInterproResponseCommunicator.codeToResponses
+            ]
         );
 
         CachedInterproResponseCommunicator.codeToResponses = await CachedInterproResponseCommunicator.processing;

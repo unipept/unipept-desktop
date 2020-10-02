@@ -1,9 +1,6 @@
-import { expose } from "threads/worker";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 
-expose(readAssay)
-
-async function readAssay(peptidesString: string): Promise<Peptide[]> {
+export async function compute(peptidesString: string): Promise<Peptide[]> {
     const output = [];
     let terminatorPos = peptidesString.indexOf("\n");
     let previousTerminatorPos = 0;

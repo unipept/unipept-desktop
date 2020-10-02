@@ -1,17 +1,12 @@
-import { expose, TransferDescriptor } from "threads/dist";
 import PeptideTrust from "unipept-web-components/src/business/processors/raw/PeptideTrust";
 import Database from "better-sqlite3";
-import { Transfer } from "threads/worker";
 
-expose({ readPept2Data, writePept2Data })
 
-export function readPept2Data(
-    installationDir: string,
-    dbFile: string,
-    assayId: string
-): [TransferDescriptor, TransferDescriptor, PeptideTrust] | null {
+export async function readPept2Data(
+    [installationDir, dbFile, assayId]: [string, string, string]
+): Promise<[ArrayBuffer, ArrayBuffer, PeptideTrust] | null> {
     // @ts-ignore
-    const db = new Database(dbFile, { timeout: 15000, verbose: console.warn }, installationDir);
+    const db = new Database(dbFile, { timeout: 15000 }, installationDir);
 
     const row = db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").get(assayId);
 
@@ -34,19 +29,21 @@ export function readPept2Data(
         trustRow.searched_peptides
     );
 
-    return [Transfer(indexBuffer), Transfer(dataBuffer), peptideTrust]
+    return [indexBuffer, dataBuffer, peptideTrust]
 }
 
-export function writePept2Data(
-    installationDir: string,
-    peptDataIndexBuffer: ArrayBuffer,
-    peptDataDataBuffer: ArrayBuffer,
-    peptideTrust: PeptideTrust,
-    assayId: string,
-    dbFile: string
+export async function writePept2Data(
+    [
+        installationDir,
+        peptDataIndexBuffer,
+        peptDataDataBuffer,
+        peptideTrust,
+        assayId,
+        dbFile
+    ]: [string, ArrayBuffer, ArrayBuffer, PeptideTrust, string, string]
 ) {
     //@ts-ignore
-    const db = new Database(dbFile, { timeout: 15000, verbose: console.warn }, installationDir);
+    const db = new Database(dbFile, { timeout: 15000 }, installationDir);
 
     // First delete all existing rows for this assay;
     db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);

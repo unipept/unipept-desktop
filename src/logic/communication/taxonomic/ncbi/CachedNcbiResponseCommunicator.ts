@@ -1,7 +1,6 @@
-import { NcbiResponseCommunicator, NcbiId, NcbiResponse } from "unipept-web-components";
+import { NcbiResponseCommunicator, NcbiId, NcbiResponse, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import { Database, Statement } from "better-sqlite3";
-import { spawn, Worker } from "threads/dist";
 
 export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunicator {
     private readonly database: Database;
@@ -9,7 +8,6 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
     private readonly extractStmt: Statement;
     private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
     private static processing: Promise<Map<NcbiId, NcbiResponse>>;
-    private static worker: any;
 
     constructor() {
         super();
@@ -33,17 +31,19 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
 
             const staticDatabaseManager = new StaticDatabaseManager();
 
-            if (!CachedNcbiResponseCommunicator.worker) {
-                CachedNcbiResponseCommunicator.worker = await spawn(
-                    new Worker("./CachedNcbiResponseCommunicator.worker.ts")
-                );
-            }
-            CachedNcbiResponseCommunicator.processing = CachedNcbiResponseCommunicator.worker.process(
-                __dirname,
-                staticDatabaseManager.getDatabasePath(),
-                codes,
-                CachedNcbiResponseCommunicator.codesProcessed
+            CachedNcbiResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
+                Map<NcbiId, NcbiResponse>,
+                [string, string, NcbiId[], Map<NcbiId, NcbiResponse>]
+            >(
+                "computeCachedNcbiResponses",
+                [
+                    __dirname,
+                    staticDatabaseManager.getDatabasePath(),
+                    codes,
+                    CachedNcbiResponseCommunicator.codesProcessed
+                ]
             );
+
             CachedNcbiResponseCommunicator.codesProcessed = await CachedNcbiResponseCommunicator.processing;
             CachedNcbiResponseCommunicator.processing = undefined;
         }

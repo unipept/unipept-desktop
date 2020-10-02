@@ -1,12 +1,11 @@
 import NcbiResponse from "unipept-web-components/src/business/communication/taxonomic/ncbi/NcbiResponse";
 import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
 import { NcbiRank } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiRank";
-import { expose } from "threads/worker";
 import Database from "better-sqlite3";
 
-expose({ process })
-
-export default function process(installationDir: string, dbPath: string, ncbiIds: NcbiId[], output: Map<NcbiId, NcbiResponse>): Map<NcbiId, NcbiResponse> {
+export async function compute(
+    [installationDir, dbPath, ncbiIds, output]: [string, string, NcbiId[], Map<NcbiId, NcbiResponse>]
+): Promise<Map<NcbiId, NcbiResponse>> {
     // @ts-ignore
     const database = new Database(dbPath, {}, installationDir);
 

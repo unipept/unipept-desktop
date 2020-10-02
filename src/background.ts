@@ -8,7 +8,7 @@ import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer"
 
-app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096");
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096 --expose_gc");
 
 const isDevelopment = process.env.NODE_ENV !== "production"
 

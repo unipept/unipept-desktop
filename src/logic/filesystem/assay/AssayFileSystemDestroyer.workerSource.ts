@@ -1,9 +1,6 @@
-import { expose } from "threads/worker";
 import Database from "better-sqlite3";
 
-expose(removeAssayFromDB)
-
-async function removeAssayFromDB(assayId: number, dbFile: string, installationDir: string): Promise<void> {
+export async function compute([assayId, dbFile, installationDir]: [string, string, string]): Promise<void> {
     //@ts-ignore
     const db = new Database(dbFile, {}, installationDir);
     db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);
