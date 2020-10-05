@@ -178,7 +178,7 @@ export default class AnalysisPage extends Vue {
 
     private reanalyse() {
         if (this.activeAssay) {
-            this.$store.dispatch("processAssay", this.activeAssay);
+            this.$store.dispatch("processAssay", [this.activeAssay, true]);
         }
     }
 

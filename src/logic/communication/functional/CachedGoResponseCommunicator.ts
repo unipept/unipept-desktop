@@ -1,52 +1,47 @@
-import { GoResponse, GoResponseCommunicator, GoCode } from "unipept-web-components";
+import { GoResponse, GoResponseCommunicator, GoCode, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
-import { spawn, Worker } from "threads/dist";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { Database } from "better-sqlite3";
 
 export default class CachedGoResponseCommunicator extends GoResponseCommunicator {
     private static codeToResponses: Map<GoCode, GoResponse> = new Map<GoCode, GoResponse>();
     private static processing: Promise<Map<GoCode, GoResponse>>;
-    private static worker: any;
-    private readonly dbFile: string;
+    private readonly dbManager: DatabaseManager;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            staticDatabaseManager.getDatabase();
-            this.dbFile = staticDatabaseManager.getDatabasePath();
+            this.dbManager = staticDatabaseManager.getDatabaseManager();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
-            this.dbFile = "";
         }
     }
 
     public async process(codes: string[]): Promise<void> {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.process(codes);
         }
 
-        while (CachedGoResponseCommunicator.processing) {
-            await CachedGoResponseCommunicator.processing;
-        }
+        await this.dbManager.performQuery<void>((db: Database) => {
+            const stmt = db.prepare("SELECT * FROM go_terms WHERE `code` = ?");
 
-        if (!CachedGoResponseCommunicator.worker) {
-            CachedGoResponseCommunicator.worker = await spawn(
-                new Worker("./CachedGoResponseCommunicator.worker.ts")
-            );
-        }
-        CachedGoResponseCommunicator.processing = CachedGoResponseCommunicator.worker.process(
-            __dirname,
-            this.dbFile,
-            codes,
-            CachedGoResponseCommunicator.codeToResponses
-        );
+            for (const code of codes) {
+                const row = stmt.get(code);
 
-        CachedGoResponseCommunicator.codeToResponses = await CachedGoResponseCommunicator.processing;
-        CachedGoResponseCommunicator.processing = undefined;
+                if (row) {
+                    CachedGoResponseCommunicator.codeToResponses.set(code, {
+                        code: row.code,
+                        namespace: row.namespace,
+                        name: row.name
+                    });
+                }
+            }
+        });
     }
 
     public getResponse(code: string): GoResponse {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.getResponse(code);
         }
 
@@ -54,7 +49,7 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
     }
 
     public getResponseMap(): Map<GoCode, GoResponse> {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.getResponseMap();
         }
 

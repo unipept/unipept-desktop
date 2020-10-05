@@ -314,7 +314,7 @@ export default class AssayItem extends Vue {
     }
 
     private reanalyse() {
-        this.$store.dispatch("processAssay", this.assay);
+        this.$store.dispatch("processAssay", [this.assay, true]);
     }
 
     private selectAssay() {
@@ -356,7 +356,7 @@ export default class AssayItem extends Vue {
         newAssay.setSearchConfiguration(searchConfiguration);
         const metadataWriter = new AssayFileSystemMetaDataWriter(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
-            this.$store.getters.database,
+            this.$store.getters.dbManager,
             this.study
         );
         await newAssay.accept(metadataWriter);
@@ -371,8 +371,7 @@ export default class AssayItem extends Vue {
         this.removeConfirmationActive = false;
         const assayDestroyer = new AssayFileSystemDestroyer(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
-            this.$store.getters.database,
-            this.$store.getters.databaseFile
+            this.$store.getters.dbManager
         );
         await this.assay.accept(assayDestroyer);
     }

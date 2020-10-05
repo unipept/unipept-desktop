@@ -1,5 +1,6 @@
 import { Database } from "better-sqlite3";
 import { AssayVisitor, ProteomicsAssay } from "unipept-web-components";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 /**
  * A specific kind of visitor for assays that's specifically tailored at storing and reading information from the
@@ -7,18 +8,18 @@ import { AssayVisitor, ProteomicsAssay } from "unipept-web-components";
  */
 export default abstract class FileSystemAssayVisitor implements AssayVisitor {
     protected directoryPath: string;
-    protected readonly db: Database;
+    protected readonly dbManager: DatabaseManager;
 
     /**
      * @param directoryPath path to the parent directory of this assay.
-     * @param db The database-object that keeps track of metadata for the assays.
+     * @param dbManager The database-object that keeps track of metadata for the assays.
      */
-    constructor(directoryPath: string, db: Database) {
+    constructor(directoryPath: string, dbManager: DatabaseManager) {
         if (!directoryPath.endsWith("/")) {
             directoryPath += "/";
         }
         this.directoryPath = directoryPath;
-        this.db = db;
+        this.dbManager = dbManager;
     }
 
     public abstract visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void>;

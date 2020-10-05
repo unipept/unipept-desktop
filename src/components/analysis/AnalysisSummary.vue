@@ -3,13 +3,13 @@
         <v-card-title>
             {{ assay.getName() }}
         </v-card-title>
-        <v-card-subtitle>
+        <v-card-subtitle class="pb-0">
             Analysis summary
         </v-card-subtitle>
         <v-card-text>
-            <v-container fluid>
+            <v-container fluid class="pt-0">
                 <v-row>
-                    <v-col class="d-flex flex-column">
+                    <v-col class="d-flex flex-column" sm="12" lg="6">
                         <div class="d-flex flex-row flex-grow-1 align-center">
                             <div>
                                 <!-- eslint-disable-next-line -->
@@ -21,9 +21,44 @@
                                     {{ peptideTrust.matchedPeptides }} peptides found,
                                     {{ peptideTrust.searchedPeptides }} peptides in assay
                                 </div>
-                                <div class="subtitle-2">Last analysed on May 5 at 13:28</div>
-                                <div>UniProt 2020.01</div>
-                                <div>https://unipept.ugent.be</div>
+                                <div class="subtitle-2">Last analysed on {{ getHumanReadableAssayDate() }}</div>
+                                <div :class="assay.getDatabaseVersion() !== dbVersion ? 'alert' : ''">
+                                    <tooltip
+                                        v-if="assay.getDatabaseVersion() !== dbVersion"
+                                        message="
+                                        The database version that was used to analyse this assay does not correspond
+                                        to the version currently available at the chosen endpoint.
+                                    ">
+                                        <v-icon
+                                            @click="() => {}"
+                                            size="20"
+                                            color="red">
+                                            mdi-alert-outline
+                                        </v-icon>
+                                    </tooltip>
+                                    {{ assay.getDatabaseVersion() }}
+                                </div>
+                                <div :class="assay.getEndpoint() !== endpoint ? 'alert' : ''">
+                                    <tooltip
+                                        v-if="assay.getEndpoint() !== endpoint"
+                                        message="
+                                        The endpoint that was used to analyse this assay does not correspond
+                                        to the currently selected endpoint.
+                                    ">
+                                        <v-icon
+                                            @click="() => {}"
+                                            size="20"
+                                            color="red">
+                                            mdi-alert-outline
+                                        </v-icon>
+                                    </tooltip>
+                                    {{ assay.getEndpoint() }}
+                                </div>
+                                <div v-if="dirty" class="alert mt-4">
+                                    Either the selected endpoint, the supported UniProt database version or the selected
+                                    search settings changed since the last time you analysed this assay. It is
+                                    recommended that you reanalyse this assay.
+                                </div>
                             </div>
                         </div>
                         <search-settings-form
@@ -34,13 +69,20 @@
                         </search-settings-form>
 
                         <div class="d-flex justify-center align-center mt-4">
-                            <v-btn :disabled="progress !== 1" color="primary" @click="update()" class="mr-2">
-                                Update
-                            </v-btn>
+                            <tooltip message="Reanalyse this assay">
+                                <v-btn
+                                    :disabled="progress !== 1 || !dirty"
+                                    color="primary"
+                                    @click="update()"
+                                    class="mr-2"
+                                >
+                                    Update
+                                </v-btn>
+                            </tooltip>
                             <export-results-button :assay="assay" button-text="Export results"></export-results-button>
                         </div>
                     </v-col>
-                    <v-col>
+                    <v-col sm="12" lg="6">
                         <peptide-summary-table :assay="assay">
                         </peptide-summary-table>
                     </v-col>
@@ -69,13 +111,16 @@ import {
     PeptideTrust,
     Pept2DataCommunicator,
     ExportResultsButton,
-    AssayData
+    AssayData,
+    NetworkConfiguration,
+    Tooltip
 } from "unipept-web-components";
 
 import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
+import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
 @Component({
-    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton }
+    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip }
 })
 export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
@@ -86,10 +131,20 @@ export default class AnalysisSummary extends Vue {
     private missedCleavage: boolean = false;
 
     private peptideTrust: PeptideTrust = null;
+    private dbVersion: string = "";
 
-    mounted() {
-        this.onAssayChanged();
-        this.onPeptideCountTableChanged();
+    get dirty(): boolean {
+        const currentConfig = this.assay.getSearchConfiguration();
+
+        return this.assay.getDatabaseVersion() !== this.dbVersion ||
+            this.assay.getEndpoint() !== this.endpoint ||
+            currentConfig.equateIl !== this.equateIl ||
+            currentConfig.filterDuplicates !== this.filterDuplicates ||
+            currentConfig.enableMissingCleavageHandling !== this.missedCleavage;
+    }
+
+    get endpoint(): string {
+        return NetworkConfiguration.BASE_URL;
     }
 
     get peptideCountTable(): CountTable<Peptide> {
@@ -99,6 +154,12 @@ export default class AnalysisSummary extends Vue {
     get progress(): number {
         const assayData: AssayData = this.$store.getters.assayData(this.assay);
         return assayData ? assayData.analysisMetaData.progress : 0;
+    }
+
+    private async mounted() {
+        this.dbVersion = await MetadataCommunicator.getRemoteUniprotVersion();
+        this.onAssayChanged();
+        this.onPeptideCountTableChanged();
     }
 
     @Watch("assay")
@@ -126,11 +187,33 @@ export default class AnalysisSummary extends Vue {
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
         this.assay.setSearchConfiguration(config);
-        this.$store.dispatch("processAssay", this.assay);
+        this.$store.dispatch("processAssay", [this.assay, true]);
+    }
+
+    private getHumanReadableAssayDate(): string {
+        const date = this.assay.getDate();
+        const months = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December"
+        ]
+
+        return `${months[date.getMonth()]} ${date.getDate()} at ${date.getHours()}:${date.getMinutes()}`;
     }
 }
 </script>
 
 <style scoped>
-
+    .alert {
+        color: #F44336;
+    }
 </style>

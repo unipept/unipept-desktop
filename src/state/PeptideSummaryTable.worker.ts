@@ -1,12 +1,10 @@
 import { ShareableMap } from "shared-memory-datastructures";
-import { expose } from "threads";
 import NcbiTaxon from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
 import { Ontology } from "unipept-web-components/src/business/ontology/Ontology";
 import PeptideData from "unipept-web-components/src/business/communication/peptides/PeptideData";
 import PeptideDataSerializer from "unipept-web-components/src/business/communication/peptides/PeptideDataSerializer";
 import { DataOptions } from "vuetify";
-import { Observable } from "observable-fns";
 
 export type ItemType = {
     peptide: string,
@@ -15,71 +13,68 @@ export type ItemType = {
     rank: string
 };
 
+const ctx: Worker = self as any;
+
+ctx.addEventListener("message", (message: MessageEvent) => {
+    if (message.data.type === "computeItems") {
+        computeItems(message.data.args);
+        ctx.postMessage({
+            type: "result"
+        });
+    } else if (message.data.type === "getItems") {
+        ctx.postMessage({
+            type: "result",
+            result: getItems(message.data.args)
+        });
+    }
+});
+
 // Maps an assay's id onto a list of all peptide summary items for this assay.
 const itemsPerAssay: Map<string, ItemType[]> = new Map();
 
-expose({ getItems, computeItems });
-
 function computeItems(
-    assayId: string,
-    indexBuffer: SharedArrayBuffer,
-    dataBuffer: SharedArrayBuffer,
-    countTable: Map<Peptide, number>,
-    lcaOntology: Ontology<number, NcbiTaxon>
-): Observable<number> {
-    return new Observable((obs) => {
-        const output = [];
+    [
+        assayId,
+        indexBuffer,
+        dataBuffer,
+        countTable,
+        lcaOntology
+    ]: [string, ArrayBuffer, ArrayBuffer, Map<Peptide, number>, Ontology<number, NcbiTaxon>]
+): void {
+    const output = [];
 
-        obs.next(0);
+    const pept2DataMap: ShareableMap<Peptide, PeptideData> = new ShareableMap(
+        0,
+        0,
+        new PeptideDataSerializer()
+    );
+    pept2DataMap.setBuffers(indexBuffer, dataBuffer);
 
-        const pept2DataMap: ShareableMap<Peptide, PeptideData> = new ShareableMap(
-            0,
-            0,
-            new PeptideDataSerializer()
-        );
-        pept2DataMap.setBuffers(indexBuffer, dataBuffer);
+    for (const peptide of countTable.keys()) {
+        const response: PeptideData = pept2DataMap.get(peptide);
+        let lcaName: string = "N/A";
+        let rank: string = "N/A";
 
-        const totalPeptides: number = countTable.size;
-        let processedPeptides: number = 0;
-
-        const start = new Date().getTime();
-
-        for (const peptide of countTable.keys()) {
-            const response: PeptideData = pept2DataMap.get(peptide);
-            let lcaName: string = "N/A";
-            let rank: string = "N/A";
-
-            if (response) {
-                // @ts-ignore
-                const lcaDefinition = lcaOntology.definitions.get(response.lca);
-                lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
-                rank = lcaDefinition ? lcaDefinition.rank : rank;
-            }
-
-            output.push({
-                peptide: peptide,
-                count: countTable.get(peptide),
-                lca: lcaName,
-                rank: rank
-            });
-
-            processedPeptides++;
-
-            if (processedPeptides % 5000 === 0) {
-                obs.next(processedPeptides / totalPeptides);
-            }
+        if (response) {
+            // @ts-ignore
+            const lcaDefinition = lcaOntology.definitions.get(response.lca);
+            lcaName = lcaDefinition ? lcaDefinition.name : lcaName;
+            rank = lcaDefinition ? lcaDefinition.rank : rank;
         }
 
-        const end = new Date().getTime();
-        console.log("Peptide summary took: " + (end - start) / 1000 + "s for --> " + assayId);
+        output.push({
+            peptide: peptide,
+            count: countTable.get(peptide),
+            lca: lcaName,
+            rank: rank
+        });
+    }
 
-        itemsPerAssay.set(assayId, output);
-        obs.next(1);
-        obs.complete();
-    });
+
+    itemsPerAssay.set(assayId, output);
 }
 
-function getItems(assayId: string, options: DataOptions): ItemType[] {
+function getItems([assayId, options]: [string, DataOptions]): ItemType[] {
     const itemsForAssay = itemsPerAssay.get(assayId);
 
     if (!itemsForAssay) {

@@ -1,13 +1,13 @@
-import { Database } from "better-sqlite3";
 import { Study } from "unipept-web-components";
 import { ActionContext, ActionTree, GetterTree, MutationTree } from "vuex";
 import FileSystemWatcher from "@/logic/filesystem/project/FileSystemWatcher";
 import path from "path";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 export interface ProjectState {
     projectName: string,
     projectLocation: string,
-    database: Database,
+    dbManager: DatabaseManager,
     studies: Study[],
     fileSystemWatcher: FileSystemWatcher
 }
@@ -15,7 +15,7 @@ export interface ProjectState {
 const projectState: ProjectState = {
     projectName: "",
     projectLocation: "",
-    database: undefined,
+    dbManager: undefined,
     studies: [],
     fileSystemWatcher: undefined
 }
@@ -33,12 +33,8 @@ const projectGetters: GetterTree<ProjectState, any> = {
         return state.projectLocation;
     },
 
-    database(state: ProjectState): Database {
-        return state.database;
-    },
-
-    databaseFile(state: ProjectState): string {
-        return state.projectLocation + "metadata.sqlite";
+    dbManager(state: ProjectState): DatabaseManager {
+        return state.dbManager;
     }
 };
 
@@ -70,10 +66,10 @@ const projectMutations: MutationTree<ProjectState> = {
         state.studies.push(...studies);
     },
 
-    SET_PROJECT(state: ProjectState, [name, location, database]: [string, string, Database]) {
+    SET_PROJECT(state: ProjectState, [name, location, dbManager]: [string, string, DatabaseManager]) {
         state.projectName = name;
         state.projectLocation = location;
-        state.database = database;
+        state.dbManager = dbManager;
     }
 };
 
@@ -82,11 +78,11 @@ const projectActions: ActionTree<ProjectState, any> = {
         store: ActionContext<ProjectState, any>,
         [
             projectDirectory,
-            database,
+            dbManager,
             studies
         ]: [
             string,
-            Database,
+            DatabaseManager,
             Study[]
         ]
     ) {
@@ -102,12 +98,12 @@ const projectActions: ActionTree<ProjectState, any> = {
         const name = path.basename(projectDirectory);
 
 
-        store.commit("SET_PROJECT", [name, projectDirectory, database]);
+        store.commit("SET_PROJECT", [name, projectDirectory, dbManager]);
 
         for (const study of studies) {
             for (const assay of study.getAssays()) {
                 await store.dispatch("addAssay", assay);
-                store.dispatch("processAssay", assay);
+                store.dispatch("processAssay", [assay, false]);
             }
         }
 

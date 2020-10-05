@@ -6,6 +6,7 @@ import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFil
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException } from "unipept-web-components";
 import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
+import { Database } from "better-sqlite3";
 
 
 /**
@@ -28,16 +29,18 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
 
                 let assay: Assay;
 
-                const row = this.db.prepare(
-                    "SELECT * FROM assays WHERE `name`=? and `study_id`=?"
-                ).get(assayName, study.getId());
+                const row = await this.dbManager.performQuery<any>((db: Database) => {
+                    return db.prepare(
+                        "SELECT * FROM assays WHERE `name`=? and `study_id`=?"
+                    ).get(assayName, study.getId());
+                });
 
                 if (row) {
                     // Assay exists. Get it's ID and create a new object.
                     assay = new ProteomicsAssay(row.id);
                     assay.setName(assayName);
 
-                    const assayVisitor = new AssayFileSystemMetaDataReader(this.studyPath, this.db);
+                    const assayVisitor = new AssayFileSystemMetaDataReader(this.studyPath, this.dbManager);
                     await assay.accept(assayVisitor);
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.
@@ -46,7 +49,7 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
 
                     const assayVisitor: AssayVisitor = new AssayFileSystemMetaDataWriter(
                         this.studyPath,
-                        this.db,
+                        this.dbManager,
                         study
                     );
                     await assay.accept(assayVisitor);
@@ -54,7 +57,7 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
 
                 // Also read in any data related to this assay.
                 try {
-                    const dataReader: AssayVisitor = new AssayFileSystemDataReader(this.studyPath, this.db);
+                    const dataReader: AssayVisitor = new AssayFileSystemDataReader(this.studyPath, this.dbManager);
                     await assay.accept(dataReader);
 
                     study.addAssay(assay);

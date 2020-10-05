@@ -1,4 +1,3 @@
-
 import {
     ProteomicsAssay,
     SearchConfiguration,
@@ -10,16 +9,13 @@ import {
 import ProcessedAssayResult from "@/logic/filesystem/assay/processed/ProcessedAssayResult";
 import { Database } from "better-sqlite3";
 import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
-import { spawn, TransferDescriptor, Worker } from "threads/dist";
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 export default class ProcessedAssayManager {
-    private static worker: any;
-
     constructor(
-        private readonly db: Database,
-        private readonly dbFile: string
+        private readonly dbManager: DatabaseManager,
     ) {}
 
     /**
@@ -29,14 +25,10 @@ export default class ProcessedAssayManager {
      * @param assay The assay for which the deserialized results should be returned.
      */
     public async readProcessingResults(assay: ProteomicsAssay): Promise<ProcessedAssayResult | null> {
-        if (!ProcessedAssayManager.worker) {
-            console.log("Spawning processed assay manager...");
-            ProcessedAssayManager.worker = await spawn(new Worker("./ProcessedAssayManager.worker.ts"));
-            console.log("Did spawn processed assay manager...");
-        }
-
         // Look up whether storage metadata with the given properties is present in the database.
-        const row = this.db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
+        const row = await this.dbManager.performQuery<any>((db: Database) => {
+            return db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
+        });
 
         if (!row) {
             return null;
@@ -48,7 +40,7 @@ export default class ProcessedAssayManager {
             false,
             row.configuration_id
         );
-        const searchConfigReader = new SearchConfigFileSystemReader(this.db);
+        const searchConfigReader = new SearchConfigFileSystemReader(this.dbManager);
         await serializedSearchConfig.accept(searchConfigReader);
 
         // Now check whether the search config is the same as the one that's currently assigned to this assay.
@@ -58,41 +50,38 @@ export default class ProcessedAssayManager {
             serializedSearchConfig.filterDuplicates !== assayConfig.filterDuplicates ||
             serializedSearchConfig.enableMissingCleavageHandling !== assayConfig.enableMissingCleavageHandling
         ) {
-            console.log("Config different!");
             return null;
         }
 
-        // Check if the database version and endpoint are equal
-        // if (
-        //     assay.getDatabaseVersion() !== row.db_version ||
-        //     assay.getEndpoint() !== row.endpoint
-        // ) {
-        //     console.log("Db or endpoint different");
-        //     console.log("Row: ");
-        //     console.log(row.db_version + " - " + row.endpoint);
-        //     console.log("Assay: ");
-        //     console.log(assay.getDatabaseVersion() + " - " + assay.getEndpoint());
-        //     return null;
-        // }
+        const dataRow = await this.dbManager.performQuery<any>((db: Database) => {
+            return db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").get(assay.getId());
+        })
 
-        // Now try to read the serialized pept2data from the database
-        const result: [TransferDescriptor, TransferDescriptor, PeptideTrust] | null = await ProcessedAssayManager.worker.readPept2Data(
-            __dirname,
-            this.dbFile,
-            assay.getId()
-        )
-
-        if (!result) {
+        if (!dataRow) {
             return null;
         }
 
-        console.log(result);
+        const indexBuffer = this.bufferToSharedArrayBuffer(dataRow.index_buffer);
+        const dataBuffer = this.bufferToSharedArrayBuffer(dataRow.data_buffer);
 
-        const [indexBuffer, dataBuffer, trust] = result;
+        const trustRow = await this.dbManager.performQuery<any>((db: Database) => {
+            return db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assay.getId());
+        })
+
+        if (!trustRow) {
+            return null;
+        }
+
+        const trust = new PeptideTrust(
+            JSON.parse(trustRow.missed_peptides),
+            trustRow.matched_peptides,
+            trustRow.searched_peptides
+        );
+
         const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
         sharedMap.setBuffers(
-            indexBuffer.transferables[0] as SharedArrayBuffer,
-            dataBuffer.transferables[0] as SharedArrayBuffer
+            indexBuffer,
+            dataBuffer
         );
 
         return new ProcessedAssayResult(
@@ -111,18 +100,31 @@ export default class ProcessedAssayManager {
         trust: PeptideTrust
     ) {
         // Delete the metadata that's associated with this assay
-        this.db.prepare("DELETE FROM storage_metadata WHERE assay_id = ?").run(assay.getId());
+        await this.dbManager.performQuery<void>((db: Database) => {
+            db.prepare("DELETE FROM storage_metadata WHERE assay_id = ?").run(assay.getId())
+        });
 
         // First try to write the pept2data information to the database.
         const buffers = pept2Data.getBuffers();
-        await ProcessedAssayManager.worker.writePept2Data(
-            __dirname,
-            buffers[0],
-            buffers[1],
-            trust,
-            assay.getId(),
-            this.dbFile
-        );
+        await this.dbManager.performQuery<void>((db: Database) => {
+            // First delete all existing rows for this assay;
+            db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assay.getId());
+            db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assay.getId());
+
+            db.prepare("INSERT INTO pept2data VALUES (?, ?, ?)").run(
+                assay.getId(),
+                this.arrayBufferToBuffer(buffers[0]),
+                this.arrayBufferToBuffer(buffers[1])
+            );
+
+            const insertTrust = db.prepare("INSERT INTO peptide_trust VALUES (?, ?, ?, ?)");
+            insertTrust.run(
+                assay.getId(),
+                JSON.stringify(trust.missedPeptides),
+                trust.matchedPeptides,
+                trust.searchedPeptides
+            );
+        });
 
         // Now write the metadata to the database again.
         const existingConfig = assay.getSearchConfiguration();
@@ -132,14 +134,30 @@ export default class ProcessedAssayManager {
             existingConfig.enableMissingCleavageHandling
         );
 
-        const searchConfigWriter = new SearchConfigFileSystemWriter(this.db);
+        const searchConfigWriter = new SearchConfigFileSystemWriter(this.dbManager);
         searchConfigWriter.visitSearchConfiguration(searchConfiguration);
 
-        this.db.prepare("INSERT INTO storage_metadata VALUES (?, ? , ?, ?)").run(
-            assay.getId(),
-            searchConfiguration.id,
-            assay.getEndpoint(),
-            assay.getDatabaseVersion()
-        );
+        await this.dbManager.performQuery<void>((db: Database) => {
+            db.prepare("INSERT INTO storage_metadata VALUES (?, ?, ?, ?, ?)").run(
+                assay.getId(),
+                searchConfiguration.id,
+                assay.getEndpoint(),
+                assay.getDatabaseVersion(),
+                assay.getDate().toJSON()
+            );
+        });
+    }
+
+    private arrayBufferToBuffer(buffer: ArrayBuffer): Buffer {
+        return Buffer.from(buffer);
+    }
+
+    private bufferToSharedArrayBuffer(buf: Buffer): SharedArrayBuffer {
+        const ab = new SharedArrayBuffer(buf.length);
+        const view = new Uint8Array(ab);
+        for (let i = 0; i < buf.length; ++i) {
+            view[i] = buf[i];
+        }
+        return ab;
     }
 }

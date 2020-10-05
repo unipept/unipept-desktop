@@ -1,32 +1,47 @@
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
-import { ProteomicsAssay, IOException } from "unipept-web-components";
+import { ProteomicsAssay, IOException, QueueManager } from "unipept-web-components";
 import { promises as fs } from "fs";
-import { spawn, Worker } from "threads"
-import { Database } from "better-sqlite3";
+import Worker from "worker-loader?inline=fallback!./AssayFileSystemDataReader.worker";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
-    private static worker: any;
+    private static inProgress: Promise<string[]>;
+    private static worker: Worker;
 
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
         const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;
 
         try {
-            const start = new Date().getTime();
             const peptidesString: string = await fs.readFile(path, {
                 encoding: "utf-8"
             });
 
-            if (!AssayFileSystemDataReader.worker) {
-                AssayFileSystemDataReader.worker = await spawn(new Worker("./AssayFileSystemDataReader.worker.ts"));
+            while (AssayFileSystemDataReader.inProgress) {
+                await AssayFileSystemDataReader.inProgress;
             }
 
-            const splitted = await AssayFileSystemDataReader.worker(peptidesString);
-            const end = new Date().getTime();
-            console.log("Reading in peptides from file: " + (end - start) / 1000 + "s");
+            AssayFileSystemDataReader.inProgress = new Promise<string[]>((resolve) => {
+                if (!AssayFileSystemDataReader.worker) {
+                    AssayFileSystemDataReader.worker = new Worker();
+                }
+
+                const eventListener = (message: MessageEvent) => {
+                    AssayFileSystemDataReader.worker.removeEventListener("message", eventListener);
+                    resolve(message.data);
+                };
+
+                AssayFileSystemDataReader.worker.addEventListener("message", eventListener);
+
+                AssayFileSystemDataReader.worker.postMessage(peptidesString);
+            });
+
+            const splitted = await AssayFileSystemDataReader.inProgress;
+            AssayFileSystemDataReader.inProgress = undefined;
+
             mpAssay.setPeptides(splitted);
         } catch (err) {
             // The file does not exist (yet), throw an exception
             throw new IOException(err);
         }
+
     }
 }

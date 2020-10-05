@@ -1,6 +1,7 @@
 import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
 import mkdirp from "mkdirp";
 import { Study, IOException } from "unipept-web-components";
+import { Database } from "better-sqlite3";
 
 
 /**
@@ -12,16 +13,9 @@ export default class StudyFileSystemMetaDataWriter extends FileSystemStudyVisito
             // Make study directory if it does not exist yet...
             await mkdirp(`${this.studyPath}`);
 
-            if (this.db.prepare("SELECT * FROM studies WHERE `id`=?").get(study.getId())) {
-                this.db.prepare("UPDATE studies SET `name`=? WHERE `id`=?").run(study.getName(), study.getId());
-            } else {
-                this.db.prepare(
-                    "INSERT INTO studies (id, name) VALUES (?, ?)"
-                ).run(
-                    study.getId(),
-                    study.getName()
-                );
-            }
+            await this.dbManager.performQuery<void>((db: Database) => {
+                db.prepare("REPLACE INTO studies (id, name) VALUES (?, ?)").run(study.getId(), study.getName())
+            });
         } catch (err) {
             throw new IOException(err);
         }

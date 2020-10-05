@@ -1,5 +1,6 @@
 import { StudyVisitor } from "unipept-web-components";
 import { Database } from "better-sqlite3";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 /**
  * A type of StudyVisitor that is built for interaction with the local filesystem. This Visitor needs to know the
@@ -8,11 +9,11 @@ import { Database } from "better-sqlite3";
 export default abstract class FileSystemStudyVisitor extends StudyVisitor {
     /**
      * @param studyPath Points to the root of the study directory.
-     * @param db Active database in which all metadata for the current project is stored.
+     * @param dbManager Active database in which all metadata for the current project is stored.
      */
     constructor(
         protected readonly studyPath: string,
-        protected readonly db: Database
+        protected readonly dbManager: DatabaseManager
     ) {
         super();
         if (!studyPath.endsWith("/")) {
