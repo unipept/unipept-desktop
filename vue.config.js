@@ -1,5 +1,3 @@
-const ThreadsPlugin = require("threads-plugin")
-const NodeTargetPlugin = require("webpack/lib/node/NodeTargetPlugin");
 const webpack = require("webpack");
 
 module.exports = {
@@ -37,9 +35,6 @@ module.exports = {
     },
     configureWebpack:{
         plugins: [
-            // new ThreadsPlugin({
-            //     plugins: [new NodeTargetPlugin()]
-            // }),
             new webpack.optimize.LimitChunkCountPlugin({
                 maxChunks: 1
             })
