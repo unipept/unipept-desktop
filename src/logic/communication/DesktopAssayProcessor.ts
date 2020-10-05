@@ -17,14 +17,14 @@ import ProcessedAssayManager from "@/logic/filesystem/assay/processed/ProcessedA
 import { Database } from "better-sqlite3";
 import { ShareableMap } from "shared-memory-datastructures";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 export default class DesktopAssayProcessor implements AssayProcessor {
     private pept2DataCommunicator: Pept2DataCommunicator;
     private cancelled: boolean = false;
 
     constructor(
-        private readonly db: Database,
-        private readonly dbFile: string,
+        private readonly dbManager: DatabaseManager,
         private readonly assay: ProteomicsAssay,
         private readonly progressListener?: ProgressListener
     ) {}
@@ -62,7 +62,7 @@ export default class DesktopAssayProcessor implements AssayProcessor {
         peptideCountTable: CountTable<Peptide>,
         forceUpdate: boolean
     ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
-        const processedAssayManager = new ProcessedAssayManager(this.db, this.dbFile);
+        const processedAssayManager = new ProcessedAssayManager(this.dbManager);
         const processingResult = await processedAssayManager.readProcessingResults(this.assay);
 
         if (processingResult !== null && !forceUpdate) {

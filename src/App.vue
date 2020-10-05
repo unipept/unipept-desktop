@@ -71,7 +71,6 @@ import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
 const electron = require("electron");
-import Worker from "worker-loader?inline=fallback!./logic/system/DesktopWorker.worker";
 import {
     Assay,
     ProteomicsAssay,
@@ -205,7 +204,7 @@ export default class App extends Vue implements ErrorListener {
             let config: Configuration = await configurationManager.readConfiguration();
             NetworkConfiguration.BASE_URL = config.apiSource;
             NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
-            QueueManager.initializeQueue(config.maxLongRunningTasks, () => new Worker());
+            QueueManager.initializeQueue(config.maxLongRunningTasks);
             await this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens

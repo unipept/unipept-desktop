@@ -1,5 +1,6 @@
 import { Database } from "better-sqlite3";
 import { SearchConfiguration, SearchConfigurationVisitor } from "unipept-web-components";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 /**
  * Remove a search configuration from a database. If no search configuration with the given id exists, no error will be
@@ -9,18 +10,14 @@ import { SearchConfiguration, SearchConfigurationVisitor } from "unipept-web-com
  */
 export default class SearchConfigFileSystemDestroyer implements SearchConfigurationVisitor {
     constructor(
-        private readonly db: Database
+        private readonly dbManager: DatabaseManager
     ) {}
 
     public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
-        // First check if a config with the given id is present in the database.
         if (config.id) {
-            const results = this.db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
-
-            if (results) {
-                // It is present, now we can remove it without problems.
-                this.db.prepare("DELETE FROM search_configuration WHERE id = ?").run(config.id);
-            }
+            await this.dbManager.performQuery<void>(
+                (db: Database) => db.prepare("DELETE FROM search_configuration WHERE id = ?").run(config.id)
+            );
         }
 
         // An undefined id means that the configuration is no longer present in the database.

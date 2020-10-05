@@ -32,7 +32,7 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
         // Also write this information to the database...
         const studyWriter: FileSystemStudyVisitor = new StudyFileSystemMetaDataWriter(
             `${store.getters.projectLocation}${newName}`,
-            store.getters.database
+            store.getters.dbManager
         );
 
         await study.accept(studyWriter);
@@ -41,8 +41,7 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
     private async removeAssay(study: Study, assay: Assay): Promise<void> {
         const assayRemover: FileSystemAssayVisitor = new AssayFileSystemDestroyer(
             `${store.getters.projectLocation}${study.getName()}`,
-            store.getters.database,
-            store.getters.databaseFile
+            store.getters.dbManager
         );
 
         await assay.accept(assayRemover);
@@ -52,10 +51,10 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
         const path: string = `${store.getters.projectLocation}${study.getName()}/`;
         const metaDataWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             path,
-            store.getters.database,
+            store.getters.dbManager,
             study
         );
-        const dataWriter: FileSystemAssayVisitor = new AssayFileSystemDataWriter(path, store.getters.database);
+        const dataWriter: FileSystemAssayVisitor = new AssayFileSystemDataWriter(path, store.getters.dbManager);
 
         await assay.accept(metaDataWriter);
         await assay.accept(dataWriter);

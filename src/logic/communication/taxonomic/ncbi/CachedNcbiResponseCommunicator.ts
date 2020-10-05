@@ -1,63 +1,59 @@
 import { NcbiResponseCommunicator, NcbiId, NcbiResponse, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
-import { Database, Statement } from "better-sqlite3";
+import { Database } from "better-sqlite3";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { NcbiRank } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiRank";
 
 export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunicator {
-    private readonly database: Database;
-    private fallbackCommunicator: NcbiResponseCommunicator;
-    private readonly extractStmt: Statement;
+    private readonly dbManager: DatabaseManager;
     private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
-    private static processing: Promise<Map<NcbiId, NcbiResponse>>;
 
     constructor() {
         super();
-        const staticDatabaseManager = new StaticDatabaseManager();
         try {
-            this.database = staticDatabaseManager.getDatabase();
+            const staticDatabaseManager = new StaticDatabaseManager();
+            this.dbManager = staticDatabaseManager.getDatabaseManager();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
-            this.database = null;
-            this.fallbackCommunicator = new NcbiResponseCommunicator();
         }
     }
 
     public async process(codes: NcbiId[]): Promise<void> {
-        if (!this.database) {
-            await this.fallbackCommunicator.process(codes);
+        if (!this.dbManager) {
+            await super.process(codes);
         } else {
-            while (CachedNcbiResponseCommunicator.processing) {
-                await CachedNcbiResponseCommunicator.processing;
-            }
+            await this.dbManager.performQuery<void>((db: Database) => {
+                const extractStmt = db.prepare(
+                    "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
+                );
 
-            const staticDatabaseManager = new StaticDatabaseManager();
-
-            CachedNcbiResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
-                Map<NcbiId, NcbiResponse>,
-                [string, string, NcbiId[], Map<NcbiId, NcbiResponse>]
-            >(
-                "computeCachedNcbiResponses",
-                [
-                    __dirname,
-                    staticDatabaseManager.getDatabasePath(),
-                    codes,
-                    CachedNcbiResponseCommunicator.codesProcessed
-                ]
-            );
-
-            CachedNcbiResponseCommunicator.codesProcessed = await CachedNcbiResponseCommunicator.processing;
-            CachedNcbiResponseCommunicator.processing = undefined;
+                for (const id of codes) {
+                    const row = extractStmt.get(id);
+                    if (row) {
+                        const lineage = Object.values(NcbiRank).map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+                        CachedNcbiResponseCommunicator.codesProcessed.set(id, {
+                            id: row.id,
+                            name: row.name,
+                            rank: row.rank,
+                            lineage: lineage
+                        });
+                    }
+                }
+            })
         }
     }
 
     public getResponse(id: NcbiId): NcbiResponse {
-        if (!this.database) {
-            return this.fallbackCommunicator.getResponse(id);
-        } else {
-            return CachedNcbiResponseCommunicator.codesProcessed.get(id);
+        if (!this.dbManager) {
+            return super.getResponse(id);
         }
+        return CachedNcbiResponseCommunicator.codesProcessed.get(id);
     }
 
     public getResponseMap(): Map<NcbiId, NcbiResponse> {
+        if (!this.dbManager) {
+            return super.getResponseMap();
+        }
         return CachedNcbiResponseCommunicator.codesProcessed;
     }
 }

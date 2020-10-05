@@ -17,8 +17,6 @@ jobs:
       - uses: actions/setup-node@v1
       - name: Install dependencies
         run: npm install
-      - name: Patch dependencies
-        run: npx patch-package
       - name: Build application for ${{ matrix.os }}
         run: npm run electron:publish
         env:

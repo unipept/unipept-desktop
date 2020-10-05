@@ -89,7 +89,7 @@ export default class FileSystemWatcher {
                 // Read metadata from disk if it exists.
                 const assayMetaReader = new AssayFileSystemMetaDataReader(
                     store.getters.projectLocation + studyName,
-                    store.getters.database,
+                    store.getters.dbManager,
                     study
                 );
                 await assay.accept(assayMetaReader);
@@ -97,7 +97,7 @@ export default class FileSystemWatcher {
                 // Read peptides from disk for this assay
                 const assayReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                     store.getters.projectLocation + studyName,
-                    store.getters.database
+                    store.getters.dbManager
                 );
 
                 await assay.accept(assayReader);
@@ -105,7 +105,7 @@ export default class FileSystemWatcher {
                 // Write metadata for this assay to disk
                 const assayWriter = new AssayFileSystemMetaDataWriter(
                     store.getters.projectPath + studyName,
-                    store.getters.database,
+                    store.getters.dbManager,
                     study
                 );
 
@@ -137,11 +137,14 @@ export default class FileSystemWatcher {
             const study: Study = new Study(uuidv4());
             study.setName(studyName);
 
-            const studyWriter: FileSystemStudyVisitor = new StudyFileSystemMetaDataWriter(directoryPath, store.getters.database);
+            const studyWriter: FileSystemStudyVisitor = new StudyFileSystemMetaDataWriter(
+                directoryPath,
+                store.getters.dbManager
+            );
             await study.accept(studyWriter);
 
             // This reader directly reads all assays associated with this study from disk.
-            const studyReader = new StudyFileSystemDataReader(directoryPath, store.getters.database);
+            const studyReader = new StudyFileSystemDataReader(directoryPath, store.getters.dbManager);
             await study.accept(studyReader);
 
             await store.dispatch("addStudy", study);
@@ -180,7 +183,7 @@ export default class FileSystemWatcher {
 
             const dataReader: FileSystemAssayVisitor = new AssayFileSystemDataReader(
                 path.dirname(filePath),
-                store.getters.database
+                store.getters.dbManager
             );
 
             // This assay's change listener should be active at this point and should reprocess automatically.
@@ -209,8 +212,7 @@ export default class FileSystemWatcher {
                     await study.removeAssay(assay);
                     const assayDestroyer = new AssayFileSystemDestroyer(
                         store.getters.projectLocation + studyName,
-                        store.getters.database,
-                        store.getters.databaseFile
+                        store.getters.dbManager
                     );
 
                     await assay.accept(assayDestroyer);
@@ -236,8 +238,7 @@ export default class FileSystemWatcher {
 
             const assayDestroyer = new AssayFileSystemDestroyer(
                 store.getters.projectLocation + studyName,
-                store.getters.database,
-                store.getters.databaseFile
+                store.getters.dbManager
             );
 
             for (const assay of study.getAssays()) {
@@ -246,7 +247,7 @@ export default class FileSystemWatcher {
 
             const studyDestroyer = new StudyFileSystemRemover(
                 store.getters.projectLocation + studyName,
-                store.getters.database
+                store.getters.dbManager
             );
 
             await study.accept(studyDestroyer);

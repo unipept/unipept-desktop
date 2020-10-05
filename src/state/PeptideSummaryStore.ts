@@ -1,4 +1,3 @@
-import { spawn, Worker } from "threads/dist";
 import { ActionContext, ActionTree, GetterTree, MutationTree } from "vuex";
 import ProteomicsAssay from "unipept-web-components/src/business/entities/assay/ProteomicsAssay";
 import { DataOptions } from "vuetify";
@@ -8,6 +7,7 @@ import NcbiTaxon from "unipept-web-components/src/business/ontology/taxonomic/nc
 import { NcbiId } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiTaxon";
 import { CountTable } from "unipept-web-components/src/business/counts/CountTable";
 import { Peptide } from "unipept-web-components/src/business/ontology/raw/Peptide";
+import Worker from "worker-loader?inline=fallback!./PeptideSummaryTable.worker"
 
 export interface SummaryData {
     assay: ProteomicsAssay,
@@ -18,7 +18,7 @@ export interface PeptideSummaryState {
     summaryData: SummaryData[]
 }
 
-let inProgress: Promise<void>;
+let inProgress: Promise<any>;
 let summaryWorker: any;
 
 const summaryState: PeptideSummaryState = {
@@ -27,7 +27,31 @@ const summaryState: PeptideSummaryState = {
 
 const summaryGetters: GetterTree<PeptideSummaryState, any> = {
     getSummaryItems(state: PeptideSummaryState): (assay: ProteomicsAssay, options: DataOptions) => Promise<ItemType[]> {
-        return async(assay: ProteomicsAssay, options: DataOptions) =>  summaryWorker.getItems(assay.getId(), options);
+        return async(assay: ProteomicsAssay, options: DataOptions) =>  {
+            while (inProgress) {
+                await inProgress;
+            }
+
+            inProgress = new Promise<ItemType[]>(async(resolve, reject) => {
+                const eventListener = (message: MessageEvent) => {
+                    summaryWorker.removeEventListener("message", eventListener);
+                    resolve(message.data.result);
+                }
+
+                summaryWorker.addEventListener("message", eventListener)
+
+                summaryWorker.postMessage(
+                    {
+                        type: "getItems",
+                        args: [assay.getId(), options]
+                    }
+                );
+            });
+
+            const result = await inProgress;
+            inProgress = undefined;
+            return result;
+        }
     },
 
     getProgress(state: PeptideSummaryState): (assay: ProteomicsAssay) => number {
@@ -75,7 +99,7 @@ const summaryActions: ActionTree<PeptideSummaryState, any> = {
 
             inProgress = new Promise<void>(async(resolve, reject) => {
                 if (!summaryWorker) {
-                    summaryWorker = await spawn(new Worker("./PeptideSummaryTable.worker.ts"));
+                    summaryWorker = new Worker();
                 }
 
                 const assayData = store.rootGetters["assayData"](assay);
@@ -92,17 +116,23 @@ const summaryActions: ActionTree<PeptideSummaryState, any> = {
                 const responseMap = pept2DataCommunicator.getPeptideResponseMap(assay.getSearchConfiguration());
                 const [indexBuffer, dataBuffer] = responseMap.getBuffers();
 
-                const obs = summaryWorker.computeItems(
-                    assay.getId(), indexBuffer, dataBuffer, countTable.toMap(), ontology
-                );
+                await new Promise<void>((resolve) => {
+                    const eventListener = (message: MessageEvent) => {
+                        summaryWorker.removeEventListener("message", eventListener);
+                        resolve();
+                    }
 
-                await new Promise((resolve, reject) => {
-                    obs.subscribe(
-                        (val: number) => store.commit("SET_PROGRESS", [assay, val]),
-                        (err: Error) => reject(err),
-                        () => resolve(),
+                    summaryWorker.addEventListener("message", eventListener)
+
+                    summaryWorker.postMessage(
+                        {
+                            type: "computeItems",
+                            args: [assay.getId(), indexBuffer, dataBuffer, countTable.toMap(), ontology]
+                        }
                     );
                 });
+
+                store.commit("SET_PROGRESS", [assay, 1]);
 
                 resolve();
             });

@@ -1,51 +1,46 @@
 import { InterproCode, InterproResponse, InterproResponseCommunicator, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { Database } from "better-sqlite3";
 
 export default class CachedInterproResponseCommunicator extends InterproResponseCommunicator {
     private static codeToResponses: Map<InterproCode, InterproResponse> = new Map<InterproCode, InterproResponse>();
-    private static processing: Promise<Map<InterproCode, InterproResponse>>;
-    private static worker: any;
-    private readonly dbFile: string;
+    private readonly dbManager: DatabaseManager;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            staticDatabaseManager.getDatabase();
-            this.dbFile = staticDatabaseManager.getDatabasePath();
+            this.dbManager = staticDatabaseManager.getDatabaseManager();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
-            this.dbFile = "";
         }
     }
 
     public async process(codes: string[]): Promise<void> {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.process(codes as unknown as string[]);
         }
 
-        while (CachedInterproResponseCommunicator.processing) {
-            await CachedInterproResponseCommunicator.processing;
-        }
+        await this.dbManager.performQuery<void>((db: Database) => {
+            const stmt = db.prepare("SELECT * FROM interpro_entries WHERE `code` = ?");
 
-        CachedInterproResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
-            Map<InterproCode, InterproResponse>, [string, string, InterproCode[], Map<InterproCode, InterproResponse>]
-        >(
-            "computeCachedInterproResponses",
-            [
-                __dirname,
-                this.dbFile,
-                codes,
-                CachedInterproResponseCommunicator.codeToResponses
-            ]
-        );
+            for (const code of codes) {
+                const row = stmt.get(code.substr(4));
 
-        CachedInterproResponseCommunicator.codeToResponses = await CachedInterproResponseCommunicator.processing;
-        CachedInterproResponseCommunicator.processing = undefined;
+                if (row) {
+                    CachedInterproResponseCommunicator.codeToResponses.set(code, {
+                        code: "IPR:" + row.code,
+                        name: row.name,
+                        category: row.category
+                    });
+                }
+            }
+        });
     }
 
     public getResponse(code: InterproCode): InterproResponse {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.getResponse(code as unknown as string);
         }
 
@@ -53,7 +48,7 @@ export default class CachedInterproResponseCommunicator extends InterproResponse
     }
 
     public getResponseMap(): Map<InterproCode, InterproResponse> {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.getResponseMap();
         }
 

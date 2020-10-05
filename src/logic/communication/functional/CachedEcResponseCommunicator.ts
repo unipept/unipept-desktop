@@ -1,48 +1,46 @@
 import { EcCode, EcResponseCommunicator, EcResponse, QueueManager } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { Database } from "better-sqlite3";
 
 export default class CachedEcResponseCommunicator extends EcResponseCommunicator {
     private static codeToResponses: Map<EcCode, EcResponse> = new Map<EcCode, EcResponse>();
     private static processing: Promise<Map<EcCode, EcResponse>>;
-    private static worker: any;
-    private readonly dbFile: string;
+    private readonly dbManager: DatabaseManager;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            staticDatabaseManager.getDatabase();
-            this.dbFile = staticDatabaseManager.getDatabasePath();
+            this.dbManager = staticDatabaseManager.getDatabaseManager();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
-            this.dbFile = "";
         }
     }
 
     public async process(codes: EcCode[]): Promise<void> {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.process(codes);
         }
 
-        while (CachedEcResponseCommunicator.processing) {
-            await CachedEcResponseCommunicator.processing;
-        }
+        await this.dbManager.performQuery<void>((db: Database) => {
+            const stmt = db.prepare("SELECT * FROM ec_numbers WHERE `code` = ?");
 
-        CachedEcResponseCommunicator.processing = QueueManager.getLongRunningQueue().pushTask<
-            Map<EcCode, EcResponse>, [string, string, EcCode[], Map<EcCode, EcResponse>]
-        >("computeCachedEcResponses", [
-            __dirname,
-            this.dbFile,
-            codes,
-            CachedEcResponseCommunicator.codeToResponses
-        ]);
+            for (const code of codes) {
+                const row = stmt.get(code.substr(3));
 
-        CachedEcResponseCommunicator.codeToResponses = await CachedEcResponseCommunicator.processing;
-        CachedEcResponseCommunicator.processing = undefined;
+                if (row) {
+                    CachedEcResponseCommunicator.codeToResponses.set(code, {
+                        code: "EC:" + row.code,
+                        name: row.name
+                    });
+                }
+            }
+        });
     }
 
     public getResponse(code: EcCode): EcResponse {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.getResponse(code);
         }
 
@@ -50,7 +48,7 @@ export default class CachedEcResponseCommunicator extends EcResponseCommunicator
     }
 
     public getResponseMap(): Map<EcCode, EcResponse> {
-        if (!this.dbFile) {
+        if (!this.dbManager) {
             return super.getResponseMap();
         }
 

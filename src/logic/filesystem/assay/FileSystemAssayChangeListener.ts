@@ -14,8 +14,6 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     }
 
     public async onChange(object: ProteomicsAssay, field: string, oldValue: any, newValue: any): Promise<void> {
-        console.log("Update assay...");
-        console.log("HUPLA...");
         if (["date", "searchConfiguration", "endpoint", "databaseVersion"].indexOf(field) !== -1) {
             // Only update metadata in this case
             await this.serializeMetaData(object);
@@ -31,7 +29,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     private async renameAssay(assay: ProteomicsAssay, oldName: string, newName: string): Promise<void> {
         const mdWriter: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             this.getAssayDirectory(),
-            store.getters.database,
+            store.getters.dbManager,
             this.study
         );
 
@@ -50,7 +48,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     private async serializeMetaData(assay: ProteomicsAssay): Promise<void> {
         const writer: FileSystemAssayVisitor = new AssayFileSystemMetaDataWriter(
             this.getAssayDirectory(),
-            store.getters.database,
+            store.getters.dbManager,
             this.study
         );
 
@@ -60,7 +58,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
     private async serializeData(assay: ProteomicsAssay): Promise<void> {
         const writer: FileSystemAssayVisitor = new AssayFileSystemDataWriter(
             this.getAssayDirectory(),
-            store.getters.database
+            store.getters.dbManager
         );
 
         await assay.accept(writer);

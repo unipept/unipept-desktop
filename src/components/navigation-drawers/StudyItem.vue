@@ -246,7 +246,7 @@ export default class StudyItem extends Vue {
         // Completely destroy this study and wait for the file system watcher to pick the change up.
         const studyDestroyer = new StudyFileSystemRemover(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
-            this.$store.getters.database
+            this.$store.getters.dbManager
         );
         await this.study.accept(studyDestroyer);
     }
@@ -270,7 +270,7 @@ export default class StudyItem extends Vue {
                 // Write metadata to disk
                 const metaDataWriter = new AssayFileSystemMetaDataWriter(
                     `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                    this.$store.getters.database,
+                    this.$store.getters.dbManager,
                     this.study
                 );
 
@@ -301,7 +301,7 @@ export default class StudyItem extends Vue {
             // Write metadata to disk
             const metaDataWriter = new AssayFileSystemMetaDataWriter(
                 `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                this.$store.getters.database,
+                this.$store.getters.dbManager,
                 this.study
             );
 
@@ -310,7 +310,7 @@ export default class StudyItem extends Vue {
             // Write the assay to disk. It will automatically be picked up by the file system watchers
             const assaySerializer = new AssayFileSystemDataWriter(
                 `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                this.$store.getters.database
+                this.$store.getters.dbManager
             );
 
             await assay.accept(assaySerializer);

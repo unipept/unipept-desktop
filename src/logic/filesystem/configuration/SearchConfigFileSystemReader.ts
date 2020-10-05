@@ -1,5 +1,6 @@
 import { SearchConfigurationVisitor, SearchConfiguration } from "unipept-web-components";
 import { Database } from "better-sqlite3";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 /**
  * Read a search configuration from a database. The search configuration's id must have been filled in for this to work.
@@ -9,12 +10,15 @@ import { Database } from "better-sqlite3";
  */
 export default class SearchConfigFileSystemReader implements SearchConfigurationVisitor {
     constructor(
-        private readonly db: Database
+        private readonly dbManager: DatabaseManager
     ) {}
 
     public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
         if (config.id) {
-            const result = this.db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
+            const result = await this.dbManager.performQuery<any>((db: Database) => {
+                db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
+            });
+
             if (result) {
                 config.equateIl = (result.equate_il === 1);
                 config.filterDuplicates = (result.filter_duplicates === 1);

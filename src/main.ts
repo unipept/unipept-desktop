@@ -75,7 +75,7 @@ const assayStore = createAssayStore((
     assay: ProteomicsAssay,
     progressListener: ProgressListener
 ) => {
-    return new DesktopAssayProcessor(store.getters["database"], store.getters["databaseFile"], assay, progressListener);
+    return new DesktopAssayProcessor(store.getters.dbManager, assay, progressListener);
 });
 
 

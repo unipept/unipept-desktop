@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import { ProteomicsAssay, IOException, QueueManager } from "unipept-web-components";
 import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
 import { Database } from "better-sqlite3";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 /**
  * Removes both the metadata and raw data for an assay.
@@ -11,10 +12,9 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
 
     constructor(
         directoryPath: string,
-        db: Database,
-        private readonly dbFile: string
+        dbManager: DatabaseManager,
     ) {
-        super(directoryPath, db);
+        super(directoryPath, dbManager);
     }
 
 
@@ -31,12 +31,16 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
                 // File does no longer exist, which is not an issue here.
             }
 
-            await QueueManager.getLongRunningQueue().pushTask<void, [string, string, string]>(
-                "destroyAssay",
-                [assay.getId(), this.dbFile, __dirname]
-            );
+            const assayId = assay.getId();
 
-            const configDestroyer = new SearchConfigFileSystemDestroyer(this.db);
+            await this.dbManager.performQuery<void>((db: Database) => {
+                db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);
+                db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assayId);
+                db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assayId);
+                db.prepare("DELETE FROM assays WHERE `id` = ?").run(assayId);
+            });
+
+            const configDestroyer = new SearchConfigFileSystemDestroyer(this.dbManager);
             configDestroyer.visitSearchConfiguration(assay.getSearchConfiguration());
         } catch (e) {
             throw new IOException(e);
