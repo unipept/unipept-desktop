@@ -22,6 +22,9 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         if (!this.dbManager) {
             await super.process(codes);
         } else {
+            const ranks = Object.values(NcbiRank).map(rank => rank.replace(" ", "_"));
+            const lineagesToExtract: NcbiId[] = [];
+
             await this.dbManager.performQuery<void>((db: Database) => {
                 const extractStmt = db.prepare(
                     "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
@@ -30,7 +33,9 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
                 for (const id of codes) {
                     const row = extractStmt.get(id);
                     if (row) {
-                        const lineage = Object.values(NcbiRank).map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+                        const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+                        lineagesToExtract.push(...lineage);
+
                         CachedNcbiResponseCommunicator.codesProcessed.set(id, {
                             id: row.id,
                             name: row.name,
@@ -39,7 +44,29 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
                         });
                     }
                 }
-            })
+            });
+
+            await this.dbManager.performQuery<void>((db: Database) => {
+                const extractStmt = db.prepare(
+                    "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
+                );
+
+                for (const id of lineagesToExtract.filter(
+                    (c) => !CachedNcbiResponseCommunicator.codesProcessed.has(c)
+                )) {
+                    const row = extractStmt.get(id);
+                    if (row) {
+                        const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+
+                        CachedNcbiResponseCommunicator.codesProcessed.set(id, {
+                            id: row.id,
+                            name: row.name,
+                            rank: row.rank,
+                            lineage: lineage
+                        });
+                    }
+                }
+            });
         }
     }
 
