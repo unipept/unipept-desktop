@@ -39,6 +39,7 @@ import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.
 import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
+import PeptideAnalysisPage from "@/components/pages/PeptideAnalysisPage.vue";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -115,6 +116,13 @@ const routes = [
         component: ComparativeAnalysisPage,
         meta: {
             title: "Comparative analysis"
+        }
+    },
+    {
+        path: "/peptide/single",
+        component: PeptideAnalysisPage,
+        meta: {
+            title: "Tryptic peptide analysis"
         }
     },
     {

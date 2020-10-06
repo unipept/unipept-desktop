@@ -2,9 +2,6 @@
     <div id="app" style="min-height: 100vh;">
         <v-app style="min-height: 100%;" v-if="!loading">
             <v-app-bar app dark color="primary" style="z-index: 10;" :elevation="0">
-                <v-btn icon @click.stop="navDrawer = !navDrawer">
-                    <v-icon>mdi-menu</v-icon>
-                </v-btn>
                 <v-toolbar-title v-if="$store.getters.projectLocation">
                     {{ $store.getters.projectName }} - {{ $route.meta.title }}
                 </v-toolbar-title>
