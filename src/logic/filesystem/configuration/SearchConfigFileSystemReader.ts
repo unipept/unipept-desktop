@@ -16,10 +16,12 @@ export default class SearchConfigFileSystemReader implements SearchConfiguration
     public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
         if (config.id) {
             const result = await this.dbManager.performQuery<any>((db: Database) => {
-                db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
+                return db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
             });
 
             if (result) {
+                console.log("Result is: ");
+                console.log(result);
                 config.equateIl = (result.equate_il === 1);
                 config.filterDuplicates = (result.filter_duplicates === 1);
                 config.enableMissingCleavageHandling = (result.missing_cleavage_handling === 1);

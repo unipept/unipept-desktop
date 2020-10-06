@@ -41,6 +41,7 @@ export default class ProcessedAssayManager {
             row.configuration_id
         );
         const searchConfigReader = new SearchConfigFileSystemReader(this.dbManager);
+        console.log("Reading in processed manager...");
         await serializedSearchConfig.accept(searchConfigReader);
 
         // Now check whether the search config is the same as the one that's currently assigned to this assay.
@@ -50,6 +51,9 @@ export default class ProcessedAssayManager {
             serializedSearchConfig.filterDuplicates !== assayConfig.filterDuplicates ||
             serializedSearchConfig.enableMissingCleavageHandling !== assayConfig.enableMissingCleavageHandling
         ) {
+            console.log("Config is different!");
+            console.log(JSON.stringify(assayConfig));
+            console.log(JSON.stringify(serializedSearchConfig));
             return null;
         }
 

@@ -3,7 +3,6 @@
         <v-row>
             <v-col>
                 <v-card>
-                    <v-card-title>Tryptic peptide analysis</v-card-title>
                     <v-card-text>
                         <single-peptide-summary
                             :communication-source="communicationSource"
@@ -31,19 +30,23 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import {
     CommunicationSource,
-    SinglePeptideAnalysisCard
+    DefaultCommunicationSource,
+    SinglePeptideAnalysisCard,
+    SinglePeptideSummary
 } from "unipept-web-components";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 
 @Component({
-    components: { SinglePeptideAnalysisCard }
+    components: { SinglePeptideAnalysisCard, SinglePeptideSummary }
 })
 export default class PeptideAnalysisPage extends Vue {
-    private communicationSource: CommunicationSource = new CachedCommunicationSource();
+    private communicationSource: CommunicationSource;
     private peptide: string = "AALTER";
 }
 </script>
 
 <style scoped>
-
+    .theme--light.v-card > .v-card__text {
+        color: #2c3e50;
+    }
 </style>
