@@ -16,7 +16,7 @@ export default class SearchConfigFileSystemReader implements SearchConfiguration
     public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
         if (config.id) {
             const result = await this.dbManager.performQuery<any>((db: Database) => {
-                db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
+                return db.prepare("SELECT * FROM search_configuration WHERE id = ?").get(config.id);
             });
 
             if (result) {

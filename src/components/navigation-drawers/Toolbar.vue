@@ -4,7 +4,10 @@
             :mini-variant="true"
             fixed :class="{'toolbar-navigation-drawer': !isMini}"
             permanent>
-            <div class="navigation-toolbar" style="position: relative; top: 64px;">
+            <div
+                class="navigation-toolbar"
+                style="position: relative; top: 64px; height: calc(100% - 64px); display: flex; flex-direction: column;"
+            >
                 <v-list>
                     <v-list-item
                         :class="{'v-list-item--active': $route.path === '/'}"
@@ -24,7 +27,7 @@
                         link
                         @click="navigate('/analysis/single', true)">
                         <v-list-item-icon>
-                            <v-icon>mdi-bacteria</v-icon>
+                            <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
                             <v-list-item-title>Single assay analysis</v-list-item-title>
@@ -37,10 +40,35 @@
                         link
                         @click="navigate('/analysis/multi', true)">
                         <v-list-item-icon>
-                            <v-icon>mdi-test-tube</v-icon>
+                            <v-icon>$vuetify.icons.testMultiple</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
                             <v-list-item-title>Comparative analysis</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+                </v-list>
+                <div style="flex-grow: 1;"></div>
+                <v-list>
+                    <v-list-item
+                        :class="{'v-list-item--active': $route.path.includes('/peptide/single')}"
+                        link
+                        @click="navigate('/peptide/single', false)">
+                        <v-list-item-icon>
+                            <v-icon>mdi-bacteria</v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                            <v-list-item-title>Single peptide analysis</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item
+                        :class="{'v-list-item--active': $route.path === '/settings'}"
+                        link
+                        @click="navigate('/settings', false)">
+                        <v-list-item-icon>
+                            <v-icon>mdi-cog-outline</v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                            <v-list-item-title>Settings</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
                 </v-list>
@@ -188,10 +216,14 @@ export default class Toolbar extends Vue {
     }
 
     .navigation-toolbar .v-list-item .v-icon:hover {
-        color: #2196F3;
+        color: #2196f3;
     }
 
     .v-list-item--disabled .v-icon {
-        color: rgba(0, 0, 0, 0.15);
+        color: rgb(170, 170, 170) !important;
+    }
+
+    .v-list-item:hover .v-icon {
+        color: #2196f3;
     }
 </style>

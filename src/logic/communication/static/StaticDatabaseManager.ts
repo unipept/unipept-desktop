@@ -4,7 +4,6 @@ import { https } from "follow-redirects";
 import path from "path";
 import { ProgressListener } from "unipept-web-components";
 import yauzl, { Entry, ZipFile } from "yauzl";
-import Database, { Database as DatabaseType } from "better-sqlite3";
 import { Readable } from "stream";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
@@ -21,7 +20,8 @@ const { app } = require("electron").remote;
  */
 export default class StaticDatabaseManager {
     public static readonly STATIC_DB_VERSION_POINTER = "https://raw.githubusercontent.com/unipept/make-database/master/workflows/static_database/version.txt";
-    public static readonly STATIC_DB_URL = "https://github.com/unipept/make-database/releases/latest/download/";
+    // public static readonly STATIC_DB_URL = "https://github.com/unipept/make-database/releases/latest/download/";
+    public static readonly STATIC_DB_URL = "https://github.com/unipept/make-database/releases/download/database-2020-06-01/";
 
     private static dbManager: DatabaseManager;
 
@@ -36,7 +36,10 @@ export default class StaticDatabaseManager {
 
         try {
             const currentVersion = await this.getCurrentVersion();
-            return mostRecentVersion > currentVersion;
+            return currentVersion.getMonth() !== 5
+                || currentVersion.getFullYear() !== 2020
+                || currentVersion.getDate() !== 1;
+            // return mostRecentVersion > currentVersion;
         } catch (err) {
             // The version file is not present and why require updating.
             return true;
@@ -141,21 +144,23 @@ export default class StaticDatabaseManager {
      * @returns The Date corresponding to the most recent version of the database that's present.
      */
     public async getMostRecentVersion(): Promise<Date> {
-        const data = await new Promise<string>((resolve, reject) => {
-            https.get(StaticDatabaseManager.STATIC_DB_VERSION_POINTER, (resp: any) => {
-                let contents: string = "";
-                resp.on("data", (chunk: any) => {
-                    contents += chunk;
-                });
-
-                resp.on("end", () => {
-                    resolve(contents);
-                });
-            });
-        })
-
-        const dateParts = data.split("-");
-        return new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        // const data = await new Promise<string>((resolve, reject) => {
+        //     https.get(StaticDatabaseManager.STATIC_DB_VERSION_POINTER, (resp: any) => {
+        //         let contents: string = "";
+        //         resp.on("data", (chunk: any) => {
+        //             contents += chunk;
+        //         });
+        //
+        //         resp.on("end", () => {
+        //             resolve(contents);
+        //         });
+        //     });
+        // })
+        //
+        // const dateParts = data.split("-");
+        // TODO enable once the Unipept DB has been updated!
+        return new Date(2020, 5, 1);
+        // return new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
     }
 
     /**

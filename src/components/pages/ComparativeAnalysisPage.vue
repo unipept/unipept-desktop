@@ -2,7 +2,7 @@
     <v-container fluid>
         <v-row>
             <v-col>
-                <div style="max-width: 1200px; margin: auto;">
+                <div style="margin: auto;">
                     <collapsable-card>
                         <template v-slot:title><span>Data selection</span></template>
                         <template v-slot:content>

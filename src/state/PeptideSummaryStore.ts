@@ -15,14 +15,18 @@ export interface SummaryData {
 }
 
 export interface PeptideSummaryState {
-    summaryData: SummaryData[]
+    summaryData: SummaryData[],
+    selectedPeptide: Peptide,
+    equateIl: boolean
 }
 
 let inProgress: Promise<any>;
 let summaryWorker: any;
 
 const summaryState: PeptideSummaryState = {
-    summaryData: []
+    summaryData: [],
+    selectedPeptide: "",
+    equateIl: false
 }
 
 const summaryGetters: GetterTree<PeptideSummaryState, any> = {
@@ -56,6 +60,14 @@ const summaryGetters: GetterTree<PeptideSummaryState, any> = {
 
     getProgress(state: PeptideSummaryState): (assay: ProteomicsAssay) => number {
         return (assay: ProteomicsAssay) => summaryState.summaryData.find(d => d.assay.id === assay.id)?.progress || 0.0;
+    },
+
+    selectedPeptide(state: PeptideSummaryState): Peptide {
+        return state.selectedPeptide;
+    },
+
+    equateIl(state: PeptideSummaryState): boolean {
+        return state.equateIl;
     }
 }
 
@@ -75,6 +87,14 @@ const summaryMutations: MutationTree<PeptideSummaryState> = {
 
     SET_PROGRESS(state: PeptideSummaryState, [assay, progress]: [ProteomicsAssay, number]) {
         summaryState.summaryData.find(d => d.assay.id === assay.id).progress = progress;
+    },
+
+    SET_SELECTED_PEPTIDE(state: PeptideSummaryState, peptide: Peptide): void {
+        state.selectedPeptide = peptide;
+    },
+
+    SET_EQUATE_IL(state: PeptideSummaryState, equateIl: boolean): void {
+        state.equateIl = equateIl;
     }
 }
 
@@ -140,6 +160,11 @@ const summaryActions: ActionTree<PeptideSummaryState, any> = {
             await inProgress;
             inProgress = undefined;
         }
+    },
+
+    setPeptide(store: ActionContext<PeptideSummaryState, any>, [peptide, equateIl]: [Peptide, boolean]) {
+        store.commit("SET_SELECTED_PEPTIDE", peptide);
+        store.commit("SET_EQUATE_IL", equateIl);
     }
 }
 
