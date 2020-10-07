@@ -1,8 +1,7 @@
 import Vue from "vue";
 import Vuetify from "vuetify/lib";
 import { Ripple } from "vuetify/lib/directives"
-// @ts-ignore
-import IconTestMultiple from "@/assets/icons/test_multiple.svg";
+import IconTestMultiple from "@/components/icons/IconTestMultiple.vue";
 
 Vue.use(Vuetify, {
     directives: {

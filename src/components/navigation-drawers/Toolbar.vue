@@ -27,7 +27,7 @@
                         link
                         @click="navigate('/analysis/single', true)">
                         <v-list-item-icon>
-                            <v-icon>mdi-bacteria</v-icon>
+                            <v-icon>mdi-test-tube</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
                             <v-list-item-title>Single assay analysis</v-list-item-title>
@@ -54,7 +54,7 @@
                         link
                         @click="navigate('/peptide/single', false)">
                         <v-list-item-icon>
-                            <v-icon>mdi-test-tube</v-icon>
+                            <v-icon>mdi-bacteria</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
                             <v-list-item-title>Single peptide analysis</v-list-item-title>
@@ -216,10 +216,14 @@ export default class Toolbar extends Vue {
     }
 
     .navigation-toolbar .v-list-item .v-icon:hover {
-        color: #2196F3;
+        color: #2196f3;
     }
 
     .v-list-item--disabled .v-icon {
-        color: rgba(0, 0, 0, 0.15);
+        color: rgb(170, 170, 170) !important;
+    }
+
+    .v-list-item:hover .v-icon {
+        color: #2196f3;
     }
 </style>
