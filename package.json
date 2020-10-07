@@ -45,7 +45,7 @@
     "node-abi": "^2.18.0",
     "regenerator-runtime": "^0.13.3",
     "shared-memory-datastructures": "0.1.8",
-    "unipept-web-components": "1.2.4",
+    "unipept-web-components": "file:unipept-web-components-1.2.4.tgz",
     "uuid": "^7.0.3",
     "vue": "^2.6.12",
     "vue-class-component": "^7.1.0",
@@ -87,6 +87,7 @@
     "vue-cli-plugin-electron-builder": "^2.0.0-rc.4",
     "vue-cli-plugin-styleguidist": "^4.2.3",
     "vue-cli-plugin-vuetify": "^0.6.3",
+    "vue-svg-loader": "^0.16.0",
     "vue-template-compiler": "^2.6.12",
     "vuetify-loader": "^1.2.2",
     "worker-loader": "^3.0.2"

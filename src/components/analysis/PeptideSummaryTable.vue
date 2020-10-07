@@ -12,7 +12,11 @@
             <v-progress-linear :value="computeProgress * 100" height="2"></v-progress-linear>
         </template>
         <template v-slot:item.peptide="{ item }">
-            <div class="sequence-value" :title="item.peptide">{{ item.peptide }}</div>
+            <div class="sequence-value" :title="item.peptide">
+                <a @click="openPeptide(item.peptide)">
+                    {{ item.peptide }}
+                </a>
+            </div>
         </template>
     </v-data-table>
 </template>
@@ -113,6 +117,11 @@ export default class PeptideSummaryTable extends Vue {
         if (this.computeProgress === 0) {
             this.items.splice(0, this.items.length);
         }
+    }
+
+    private openPeptide(peptide: Peptide): void {
+        this.$store.dispatch("peptideSummary/setPeptide", [peptide, this.assay.getSearchConfiguration().equateIl]);
+        this.$router.push("/peptide/single");
     }
 }
 </script>

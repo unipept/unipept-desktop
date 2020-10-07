@@ -1,6 +1,8 @@
 import Vue from "vue";
 import Vuetify from "vuetify/lib";
 import { Ripple } from "vuetify/lib/directives"
+// @ts-ignore
+import IconTestMultiple from "@/assets/icons/test_multiple.svg";
 
 Vue.use(Vuetify, {
     directives: {
@@ -11,6 +13,11 @@ Vue.use(Vuetify, {
 export default new Vuetify({
     icons: {
         iconfont: "mdi",
+        values: {
+            testMultiple: {
+                component: IconTestMultiple
+            }
+        }
     },
     theme: {
         themes: {

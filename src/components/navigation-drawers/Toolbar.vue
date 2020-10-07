@@ -40,7 +40,7 @@
                         link
                         @click="navigate('/analysis/multi', true)">
                         <v-list-item-icon>
-                            <v-icon>mdi-test-tube</v-icon>
+                            <v-icon>$vuetify.icons.testMultiple</v-icon>
                         </v-list-item-icon>
                         <v-list-item-content>
                             <v-list-item-title>Comparative analysis</v-list-item-title>
@@ -50,7 +50,7 @@
                 <div style="flex-grow: 1;"></div>
                 <v-list>
                     <v-list-item
-                        :class="{'v-list-item--active': $route.path === '/peptide/single'}"
+                        :class="{'v-list-item--active': $route.path.includes('/peptide/single')}"
                         link
                         @click="navigate('/peptide/single', false)">
                         <v-list-item-icon>

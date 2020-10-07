@@ -1,5 +1,3 @@
-const ThreadsPlugin = require("threads-plugin")
-const NodeTargetPlugin = require("webpack/lib/node/NodeTargetPlugin");
 const webpack = require("webpack");
 
 module.exports = {
@@ -13,6 +11,17 @@ module.exports = {
             }
         ]);
         config.output.globalObject("this");
+
+
+        const svgRule = config.module.rule("svg");
+        svgRule.uses.clear();
+
+        svgRule
+            .use("babel-loader")
+            .loader("babel-loader")
+            .end()
+            .use("vue-svg-loader")
+            .loader("vue-svg-loader");
     },
     pluginOptions: {
         electronBuilder: {
