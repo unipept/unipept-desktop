@@ -7,6 +7,7 @@ import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer"
+// import Database from "better-sqlite3";
 
 app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096 --expose_gc");
 
@@ -17,7 +18,10 @@ const isDevelopment = process.env.NODE_ENV !== "production"
 let win: BrowserWindow | null
 
 // Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }])
+protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }]);
+
+// const db = new Database("/Users/pverscha/Desktop/Second Project/metadata.sqlite");
+// console.log(db.prepare("SELECT name FROM assays").get());
 
 async function createWindow() {
     let configManager = new ConfigurationManager(app);

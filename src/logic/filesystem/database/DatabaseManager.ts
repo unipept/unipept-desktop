@@ -18,7 +18,10 @@ export default class DatabaseManager {
         });
 
         this.queue = async.queue((task, callback) => {
+            const start = new Date().getTime();
             callback(task.query(this.db));
+            const end = new Date().getTime();
+            console.log("DB task took " + (end - start) / 1000 + "s");
         }, 1);
     }
 
