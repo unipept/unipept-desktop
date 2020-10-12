@@ -284,6 +284,10 @@ export default class App extends Vue implements ErrorListener {
         padding: 0;
     }
 
+    .updating-snackbar-container .v-snack__wrapper {
+        display: block;
+    }
+
     .v-content__wrap .container--fluid {
         padding-top: 0 !important;
         padding-bottom: 0 !important;
