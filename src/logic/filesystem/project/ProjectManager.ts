@@ -69,7 +69,7 @@ export default class ProjectManager  {
      * @param projectLocation Path to root directory of project.
      * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
      */
-    public async initializeProject(projectLocation: string, addToRecents: boolean): Promise<void> {
+    public async initializeProject(projectLocation: string, addToRecents: boolean = true): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
