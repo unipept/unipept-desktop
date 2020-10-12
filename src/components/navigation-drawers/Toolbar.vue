@@ -207,14 +207,6 @@ export default class Toolbar extends Vue {
         color: #1976D2 !important;
     }
 
-    .navigation-toolbar .v-list-item--active {
-        color: white !important;
-    }
-
-    .navigation-toolbar .v-list-item:hover {
-        color: white !important;
-    }
-
     .navigation-toolbar .v-list-item .v-icon:hover {
         color: #2196f3;
     }

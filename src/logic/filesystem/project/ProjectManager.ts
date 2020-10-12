@@ -24,10 +24,11 @@ export default class ProjectManager  {
 
     /**
      * @param projectLocation The main directory of the project on disk.
+     * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
      * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
      * @throws {InvalidProjectException} When the given directory does not contain all required project files.
      */
-    public async loadExistingProject(projectLocation: string): Promise<void> {
+    public async loadExistingProject(projectLocation: string, addToRecents: boolean = true): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
@@ -49,7 +50,9 @@ export default class ProjectManager  {
             studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager));
         }
 
-        await this.addToRecentProjects(projectLocation);
+        if (addToRecents) {
+            await this.addToRecentProjects(projectLocation);
+        }
 
         await store.dispatch("initializeProject", [projectLocation, dbManager, studies]);
 
@@ -64,20 +67,28 @@ export default class ProjectManager  {
     /**
      * Create a new project and correctly initialize all required files in the given directory.
      * @param projectLocation Path to root directory of project.
+     * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
      */
-    public async initializeProject(projectLocation: string): Promise<void> {
+    public async initializeProject(projectLocation: string, addToRecents: boolean): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
 
+        const dbManager = await this.setUpDatabase(projectLocation);
+
+        if (addToRecents) {
+            await this.addToRecentProjects(projectLocation);
+        }
+
+        await store.dispatch("initializeProject", [projectLocation, dbManager, []]);
+    }
+
+    public async setUpDatabase(projectLocation: string): Promise<DatabaseManager> {
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
         await dbManager.performQuery<void>((db: DatabaseType) => {
             db.exec(schema_v1);
-        })
-
-        await this.addToRecentProjects(projectLocation);
-
-        await store.dispatch("initializeProject", [projectLocation, dbManager, []]);
+        });
+        return dbManager;
     }
 
     private async loadStudy(directory: string, dbManager: DatabaseManager): Promise<Study> {

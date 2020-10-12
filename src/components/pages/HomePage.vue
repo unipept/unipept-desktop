@@ -35,6 +35,21 @@
                             </tooltip>
                         </div>
                     </div>
+
+                    <div class="d-flex justify-center mt-12">
+                        <v-card>
+                            <v-card-title>
+                                New here? Try our demo project!
+                            </v-card-title>
+                            <v-card-text style="max-width: 400px;">
+                                If this is the first time you're using our application, we advise you to open the
+                                demo project and discover what this application can do for you.
+                                <div class="text-center mt-2">
+                                    <v-btn color="primary" @click="openDemoProject">Open demo project</v-btn>
+                                </div>
+                            </v-card-text>
+                        </v-card>
+                    </div>
                 </v-col>
             </v-row>
             <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
@@ -69,6 +84,7 @@ import { promises as fsPromises } from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
+import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -96,10 +112,11 @@ export default class HomePage extends Vue {
         this.loadingApplication = true;
         let shouldUpdate: boolean = false;
 
+        this.version = app.getVersion();
+
         // Only check if we need to update the database once (at start of application).
         if (!HomePage.downloadCheckPerformed) {
             HomePage.downloadCheckPerformed = true;
-            this.version = app.getVersion();
             shouldUpdate = await this.checkStaticDatabaseUpdate();
         }
 
@@ -152,26 +169,30 @@ export default class HomePage extends Vue {
                 return;
             }
 
-            try {
-                const projectManager: ProjectManager = new ProjectManager();
-                await projectManager.initializeProject(chosenPath[0]);
-                await this.$router.push("/analysis/single");
-            } catch (err) {
-                console.error(err);
-                this.showError(
-                    "Could not initialize your project. Please make sure that the chosen directory is writeable and " +
-                    "try again."
-                );
-            }
+            await this.initializeProject(chosenPath[0]);
         }
     }
 
-    private async onOpenProject(path: string) {
+    private async initializeProject(path: string, addToRecents: boolean = true) {
+        try {
+            const projectManager: ProjectManager = new ProjectManager();
+            await projectManager.initializeProject(path, addToRecents);
+            await this.$router.push("/analysis/single");
+        } catch (err) {
+            console.error(err);
+            this.showError(
+                "Could not initialize your project. Please make sure that the chosen directory is writeable and " +
+                "try again."
+            );
+        }
+    }
+
+    private async onOpenProject(path: string, addToRecents: boolean = true) {
         this.loadingProject = true;
         try {
             if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {
                 const projectManager: ProjectManager = new ProjectManager();
-                await projectManager.loadExistingProject(path);
+                await projectManager.loadExistingProject(path, addToRecents);
             }
             await this.$router.push("/analysis/single");
         } catch (err) {
@@ -185,6 +206,14 @@ export default class HomePage extends Vue {
                 );
             }
         }
+        this.loadingProject = false;
+    }
+
+    private async openDemoProject() {
+        this.loadingProject = true;
+        const demoManager = new DemoProjectManager();
+        const demoPath = await demoManager.initializeDemoProject();
+        await this.onOpenProject(demoPath, false);
         this.loadingProject = false;
     }
 
