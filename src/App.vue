@@ -23,8 +23,7 @@
                     'left': isMini ? '55px' : (toolbarWidth + 55) + 'px'
                 }">
                 <v-alert type="warning" class="ma-2" v-if="isDemoProjectActive">
-                    You are currently browsing the demo project. Note that changes made to this project are not
-                    persisted!
+                    You are currently browsing the demo project. Changes made to this project will not be saved.
                 </v-alert>
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
