@@ -2,7 +2,8 @@
     <v-container fluid v-if="
         !errorStatus &&
         $store.getters.assays.length > 0 &&
-        (maxProgress === 1 && activeProgress === 1)">
+        (maxProgress === 1 && activeProgress === 1)"
+        class="pt-0">
         <v-row>
             <v-col>
                 <analysis-summary :assay="activeAssay"></analysis-summary>

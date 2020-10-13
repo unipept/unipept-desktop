@@ -25,7 +25,9 @@ export default class RecentProjectsManager {
 
             const recentProjects: RecentProject[] = JSON.parse(projectData)
                 .map((obj: any) => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened))));
-            return recentProjects.filter(rp => fs.existsSync(rp.path));
+            const filteredProjects = recentProjects.filter(rp => fs.existsSync(rp.path));
+            this.writeRecentProjects(filteredProjects);
+            return filteredProjects;
         } catch (err) {
             throw new IOException(err);
         }
@@ -55,7 +57,11 @@ export default class RecentProjectsManager {
             recentProjects.push(new RecentProject(path.basename(projectPath), projectPath, new Date()));
         }
 
-        const toWrite = recentProjects.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
+        this.writeRecentProjects(recentProjects);
+    }
+
+    private writeRecentProjects(projects: RecentProject[]): void {
+        const toWrite = projects.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
             .slice(0, RecentProjectsManager.AMOUNT_OF_RECENTS)
             .map(p => {
                 return {
