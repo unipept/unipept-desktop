@@ -35,9 +35,6 @@ module.exports = {
     },
     configureWebpack:{
         plugins: [
-            // new ThreadsPlugin({
-            //     plugins: [new NodeTargetPlugin()]
-            // }),
             new webpack.optimize.LimitChunkCountPlugin({
                 maxChunks: 1
             })
