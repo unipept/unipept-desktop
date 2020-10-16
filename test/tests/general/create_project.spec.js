@@ -3,6 +3,8 @@
  * the app and get some analysis results.
  */
 
+import Setup from "../../src/Setup";
+
 const Application = require("spectron").Application;
 const electronPath = require("electron");
 const path = require("path");
@@ -12,22 +14,9 @@ describe("Application launch", () => {
 
     let app;
 
-    beforeEach(() => {
-        app = new Application({
-            path: path.join(
-                __dirname,
-                "..",
-                "..",
-                "dist_electron",
-                "mac",
-                "Unipept Desktop.app",
-                "Contents",
-                "MacOS",
-                "Unipept Desktop"
-            )
-        });
-
-        return app.start();
+    beforeEach(async() => {
+        const setup = new Setup();
+        app = await setup.setupApp();
     });
 
     afterEach(() => {
@@ -42,6 +31,8 @@ describe("Application launch", () => {
     });
 
     it("creates a new project directory", async() => {
-        // app.client.
+        await app.client.waitUntilWindowLoaded();
+        // Make sure the application is properly started...
+        await app.client.waitUntilTextExists(".project-actions", "Create new project");
     });
 });

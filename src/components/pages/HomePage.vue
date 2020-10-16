@@ -41,7 +41,7 @@
                 {{ errorMessage }}
                 <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
             </v-snackbar>
-            <v-dialog persistent v-model="downloadingDatabase" max-width="600px">
+            <v-dialog persistent v-model="downloadingDatabase" class="download-static-db-modal" max-width="600px">
                 <v-card>
                     <v-card-title>
                         Updating static database
