@@ -18,18 +18,17 @@ module.exports = {
             externals: ["better-sqlite3"],
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop",
-                "asar": true
-                // Disable code signing for now.
-                // "mac": {
-                //     "hardenedRuntime": true,
-                //     "gatekeeperAssess": false,
-                //     "entitlements": "build/entitlements.mac.plist",
-                //     "entitlementsInherit": "build/entitlements.mac.plist"
-                // },
-                // "afterSign": "scripts/notarize.js",
-                // "dmg": {
-                //     "sign": false
-                // }
+                "asar": true,
+                "mac": {
+                    "hardenedRuntime": true,
+                    "gatekeeperAssess": false,
+                    "entitlements": "build/entitlements.mac.plist",
+                    "entitlementsInherit": "build/entitlements.mac.plist"
+                },
+                "afterSign": "scripts/notarize.js",
+                "dmg": {
+                    "sign": false
+                }
             },
         }
     },
