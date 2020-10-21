@@ -1,4 +1,4 @@
-name: Publish app
+name: Publish app on Windows and Linux
 
 on:
   push:
