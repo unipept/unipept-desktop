@@ -54,8 +54,7 @@
                 <!-- Snackbar that's shown after the application has successfully been updated -->
                 <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
                     {{ updateMessage }}
-                    <v-btn text dark @click="updatedSnackbar = false">Close</v-btn>
-                    <v-btn text dark color="white" @click="restartApplication">Restart app</v-btn>
+                    <v-btn text dark @click="updatedSnackbar = false">Close app</v-btn>
                 </v-snackbar>
             </v-main>
         </v-app>
@@ -221,11 +220,6 @@ export default class App extends Vue implements ErrorListener {
     }
 
     private async closeApplication() {
-        electron.remote.app.quit();
-    }
-
-    private async restartApplication() {
-        electron.remote.app.relaunch();
         electron.remote.app.quit();
     }
 
