@@ -22,5 +22,5 @@ jobs:
           mac_certs_password: ${{ secrets.mac_certs_password }}
           release: true
         env:
-          API_KEY_ID: ${{ secrets.api_key_id }}
-          API_KEY_ISSUER_ID: ${{ secrets.api_key_issuer_id }}
+          APPLEID: ${{ secrets.APPLEID }}
+          APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
