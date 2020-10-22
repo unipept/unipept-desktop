@@ -28,6 +28,9 @@ module.exports = {
                 "afterSign": "scripts/notarize.js",
                 "dmg": {
                     "sign": false
+                },
+                "linux": {
+                    "target": "AppImage"
                 }
             },
         }
