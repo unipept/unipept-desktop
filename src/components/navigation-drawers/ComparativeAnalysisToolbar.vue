@@ -7,13 +7,11 @@
         </div>
         <div
             v-else
-            v-for="study of $store.getters.studies"
+            v-for="study of sortedStudies"
             :key="study.getId()">
             <selectable-study-item
                 :study="study"
-                :assays-in-comparison="$store.getters.getSelectedAssays"
-                v-on:select-assay="selectAssay"
-                v-on:deselect-assay="deselectAssay">
+                :assays-in-comparison="$store.getters.getSelectedAssays">
             </selectable-study-item>
         </div>
     </div>
@@ -34,22 +32,14 @@ import SelectableStudyItem from "@/components/navigation-drawers/SelectableStudy
     computed: {
         sortedStudies: {
             get(): Study[] {
-                return this.project.getStudies().sort(
+                return this.$store.getters.studies.sort(
                     (a: Study, b: Study) => a.getName().localeCompare(b.getName())
                 )
             }
         }
     }
 })
-export default class ComparativeAnalysisToolbar extends Vue {
-    private selectAssay(assay: Assay) {
-        this.$store.dispatch("addSelectedAssay", assay);
-    }
-
-    private deselectAssay(assay: Assay) {
-        this.$store.dispatch("removeSelectedAssay", assay);
-    }
-}
+export default class ComparativeAnalysisToolbar extends Vue {}
 </script>
 
 <style>
