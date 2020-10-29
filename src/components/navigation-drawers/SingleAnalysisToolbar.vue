@@ -1,19 +1,22 @@
 <template>
-    <div>
+    <div class="d-flex flex-column" style="min-height: 100%;">
         <div
             class="sample-list-placeholder"
             v-if="$store.getters.studies.length === 0">
             No studies present.
         </div>
-        <div
-            v-else
-            v-for="study of $store.getters.studies"
-            :key="study.getId()">
-            <study-item :study="study"></study-item>
+        <div v-else class="flex-grow-1">
+            <div
+                v-for="study of $store.getters.studies"
+                :key="study.getId()">
+                <study-item :study="study"></study-item>
+            </div>
         </div>
-        <v-btn class="select-sample-button" depressed color="primary" @click="createStudy()">
-            Create study
-        </v-btn>
+        <div class="text-center mt-4 mb-4">
+            <v-btn class="select-sample-button" depressed color="primary" @click="createStudy()">
+                Create study
+            </v-btn>
+        </div>
     </div>
 </template>
 
@@ -67,5 +70,15 @@ export default class SingleAnalysisToolbar extends Vue {
         position: relative;
         top: 16px;
         text-align: center;
+    }
+
+    .select-sample-button {
+
+        /*margin: 0 auto;*/
+        /*display: block !important;*/
+        /*position: sticky !important;*/
+        /*bottom: 72px;*/
+        /*left: 50%;*/
+        /*transform: translateX(-50%);*/
     }
 </style>
