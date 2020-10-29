@@ -161,15 +161,6 @@ export default class Toolbar extends Vue {
 </script>
 
 <style lang="less">
-    .select-sample-button {
-        margin: 0 auto;
-        display: block !important;
-        position: absolute !important;
-        bottom: 72px;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
     .toolbar-content {
         height: 100%;
         position: fixed;
@@ -192,9 +183,9 @@ export default class Toolbar extends Vue {
     }
 
     .toolbar-container {
-        position: relative;
-        top: 64px;
+        padding-top: 64px;
         height: 100%;
+        overflow-y: auto;
     }
 
     .container-after-titlebar .toolbar-container {
