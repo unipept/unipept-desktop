@@ -9,6 +9,11 @@ export default class DatabaseManager {
 
     private readonly db: DbType;
     private readonly queue: AsyncQueue<any>;
+    // Version of the application that was last used with this database.
+    private dbApplicationVersion: string;
+
+    // Database schema version that the db is currently on.
+    public readonly schemaVersion: number;
 
     constructor(
         private readonly dbLocation: string
@@ -17,9 +22,36 @@ export default class DatabaseManager {
             timeout: DatabaseManager.DB_TIMEOUT
         });
 
+        this.schemaVersion = this.db.pragma("user_version");
+        try {
+            const result = this.db.prepare(
+                "SELECT application_version FROM database_metadata"
+            ).get();
+
+            if (result) {
+                this.dbApplicationVersion = result.application_version;
+            } else {
+                this.dbApplicationVersion = "0.0.0";
+            }
+        } catch (err) {
+            this.dbApplicationVersion = "0.0.0";
+        }
+
         this.queue = async.queue((task, callback) => {
             callback(task.query(this.db));
         }, 1);
+    }
+
+    public getApplicationVersion(): string {
+        return this.dbApplicationVersion;
+    }
+
+    public async setApplicationVersion(version: string): Promise<void> {
+        await this.performQuery<void>((db: DbType) => {
+            db.prepare("DELETE FROM database_metadata").run();
+            db.prepare("INSERT INTO database_metadata (application_version) VALUES (?)").run(version);
+        });
+        this.dbApplicationVersion = version;
     }
 
     public async performQuery<ResultType>(query: (db: DbType) => ResultType): Promise<ResultType> {

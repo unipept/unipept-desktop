@@ -85,6 +85,7 @@ import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectEx
 import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
+import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -198,6 +199,11 @@ export default class HomePage extends Vue {
         } catch (err) {
             if (err instanceof InvalidProjectException) {
                 this.showError("This is not a valid Unipept project. Maybe you want to create a new project?");
+            } else if (err instanceof ProjectVersionMismatchException) {
+                this.showError(
+                    "This project was made with a newer version of the Unipept Desktop application. " +
+                    "Please update the application to continue."
+                );
             } else {
                 console.error(err);
                 this.showError(
