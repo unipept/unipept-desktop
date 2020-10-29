@@ -13,7 +13,11 @@ import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSys
 import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
 import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import Utils from "@/logic/Utils";
+import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
 
+const electron = require("electron");
+const app = electron.remote.app;
 
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";
@@ -27,6 +31,7 @@ export default class ProjectManager  {
      * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
      * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
      * @throws {InvalidProjectException} When the given directory does not contain all required project files.
+     * @throws {ProjectVersionMismatchException}
      */
     public async loadExistingProject(projectLocation: string, addToRecents: boolean = true): Promise<void> {
         if (!projectLocation.endsWith("/")) {
@@ -38,6 +43,15 @@ export default class ProjectManager  {
         }
 
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+        const dbAppVersion = dbManager.getApplicationVersion();
+
+        console.log(dbAppVersion);
+        console.log(app.getVersion());
+        if (Utils.isVersionLargerThan(dbAppVersion, app.getVersion())) {
+            throw new ProjectVersionMismatchException();
+        } else {
+            await dbManager.setApplicationVersion(app.getVersion());
+        }
 
         // Check all subdirectories of the given project and try to load the studies.
         const subDirectories: string[] = fs.readdirSync(projectLocation, { withFileTypes: true })
@@ -87,6 +101,7 @@ export default class ProjectManager  {
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
         await dbManager.performQuery<void>((db: DatabaseType) => {
             db.exec(schema_v1);
+            db.pragma("user_version", )
         });
         return dbManager;
     }

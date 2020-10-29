@@ -41,3 +41,7 @@ CREATE TABLE storage_metadata (
     PRIMARY KEY(assay_id),
     FOREIGN KEY(configuration_id) REFERENCES search_configuration(id)
 );
+
+CREATE TABLE database_metadata (
+    application_version TEXT NOT NULL
+);
