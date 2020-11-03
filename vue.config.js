@@ -18,6 +18,7 @@ module.exports = {
             externals: ["better-sqlite3"],
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop",
+                "artifactName": "Unipept-Desktop",
                 "asar": true,
                 "mac": {
                     "hardenedRuntime": true,
