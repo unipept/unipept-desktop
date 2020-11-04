@@ -21,7 +21,12 @@
             <div class="study-action" style="margin-right: 0;">
                 <v-tooltip bottom>
                     <template v-slot:activator="{ on }">
-                        <v-checkbox dense :value="allSelected" @change="updateSelection" :disabled="isProcessing">
+                        <v-checkbox
+                            dense
+                            :input-value="allSelected"
+                            :value="allSelected"
+                            @change="updateSelection"
+                            :disabled="isProcessing">
                         </v-checkbox>
                     </template>
                     <span>Toggle selection of all assays in this study.</span>
@@ -107,12 +112,10 @@ export default class SelectableStudyItem extends Vue {
             for (const assay of this.study.getAssays()) {
                 this.$store.dispatch("removeSelectedAssay", assay);
             }
-            this.itemsSelected = false;
         } else {
             for (const assay of this.study.getAssays()) {
                 this.$store.dispatch("addSelectedAssay", assay);
             }
-            this.itemsSelected = true;
         }
     }
 }
