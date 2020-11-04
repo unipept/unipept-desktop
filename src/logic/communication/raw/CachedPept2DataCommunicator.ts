@@ -53,6 +53,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         return this.peptideToResponse.get(peptide);
     }
 
+    // @ts-ignore
     public getPeptideResponseMap(configuration: SearchConfiguration): ShareableMap<Peptide, PeptideData> {
         if (configuration.toString() !== this.initialConfiguration.toString()) {
             throw "Communicator was configured with different configuration!";
