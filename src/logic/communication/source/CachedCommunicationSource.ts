@@ -35,6 +35,7 @@ export default class CachedCommunicationSource implements CommunicationSource {
         this.goCommunicator = new CachedGoResponseCommunicator();
         this.iprCommunicator = new CachedInterproResponseCommunicator();
         this.ncbiCommunicator = new CachedNcbiResponseCommunicator();
+        // @ts-ignore
         this.pept2DataCommunicator = new CachedPept2DataCommunicator(
             peptToResponseMap,
             peptideTrust,

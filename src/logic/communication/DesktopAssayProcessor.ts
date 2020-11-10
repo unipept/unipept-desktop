@@ -9,12 +9,10 @@ import {
     AssayProcessor,
     PeptideData,
     NetworkConfiguration,
-    DateUtils
 } from "unipept-web-components";
 
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import ProcessedAssayManager from "@/logic/filesystem/assay/processed/ProcessedAssayManager";
-import { Database } from "better-sqlite3";
 import { ShareableMap } from "shared-memory-datastructures";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
@@ -88,7 +86,8 @@ export default class DesktopAssayProcessor implements AssayProcessor {
             );
 
             if (!this.cancelled) {
-                const pept2ResponseMap = this.pept2DataCommunicator.getPeptideResponseMap(
+                // @ts-ignore
+                const pept2ResponseMap: ShareableMap<string, PeptideData> = this.pept2DataCommunicator.getPeptideResponseMap(
                     this.assay.getSearchConfiguration()
                 );
                 const trust = await this.pept2DataCommunicator.getPeptideTrust(

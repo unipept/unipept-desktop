@@ -1,7 +1,7 @@
 <template>
     <div>
         <div
-            @click="selectAssay()"
+            @click="clickCheckbox()"
             @contextmenu="showContextMenu()"
             :class="{
                 'assay-item': true,
@@ -73,7 +73,13 @@
                 type="text"/>
             <div style="display: flex; flex-direction: row; margin-left: auto; height: 32px;" v-if="selectable">
                 <tooltip message="Add assay to comparative analysis." position="bottom">
-                    <v-checkbox v-model="selected" dense @click.native.stop :disabled="progress !== 1"></v-checkbox>
+                    <v-checkbox
+                        :value="selected"
+                        @change="clickCheckbox"
+                        dense
+                        @click.native.stop
+                        :disabled="progress !== 1">
+                    </v-checkbox>
                 </tooltip>
             </div>
             <div
@@ -291,8 +297,8 @@ export default class AssayItem extends Vue {
         this.selected = this.value;
     }
 
-    @Watch("selected")
-    private onSelectedChanged() {
+    private clickCheckbox() {
+        this.selected = !this.selected;
         this.$emit("input", this.selected);
     }
 
@@ -315,14 +321,6 @@ export default class AssayItem extends Vue {
 
     private reanalyse() {
         this.$store.dispatch("processAssay", [this.assay, true]);
-    }
-
-    private selectAssay() {
-        if (this.selectable) {
-            this.selected = !this.selected;
-        } else {
-            this.$emit("select-assay", this.assay);
-        }
     }
 
     private async duplicateAssay() {

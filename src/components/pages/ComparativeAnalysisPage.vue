@@ -22,7 +22,11 @@
                                                         </span>
                                                     </v-col>
                                                     <v-col cols="4">
-                                                        <v-select label="Datasource" v-on:change="props.updateDatasource" v-model="props.datasource" :items="props.datasources">
+                                                        <v-select
+                                                            label="Datasource"
+                                                            v-on:change="props.updateDatasource"
+                                                            v-model="props.datasource"
+                                                            :items="props.datasources">
                                                         </v-select>
                                                     </v-col>
                                                 </v-row>

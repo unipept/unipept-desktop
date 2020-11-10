@@ -1,6 +1,6 @@
 {
   "name": "unipept-desktop",
-  "version": "0.5.5",
+  "version": "0.5.7",
   "private": true,
   "author": "Unipept Team (Ghent University)",
   "description": "A desktop equivalent of unipept.ugent.be. This app aims at high-throughput analysis of metaproteomics samples.",
@@ -45,7 +45,7 @@
     "node-abi": "^2.18.0",
     "regenerator-runtime": "^0.13.3",
     "shared-memory-datastructures": "0.1.8",
-    "unipept-web-components": "file:unipept-web-components-1.2.4.tgz",
+    "unipept-web-components": "1.2.5",
     "uuid": "^7.0.3",
     "vue": "^2.6.12",
     "vue-class-component": "^7.1.0",
