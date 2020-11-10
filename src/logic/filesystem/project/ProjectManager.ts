@@ -3,7 +3,6 @@ import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectEx
 import * as path from "path";
 import { store } from "./../../../main";
 // @ts-ignore
-import schema_v1 from "raw-loader!@/db/schemas/schema_v1.sql";
 import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 import { Study, IOException } from "unipept-web-components";
@@ -15,6 +14,7 @@ import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAs
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import Utils from "@/logic/Utils";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
+import Schema from "@/logic/filesystem/database/Schema";
 
 const electron = require("electron");
 const app = electron.remote.app;
@@ -45,8 +45,6 @@ export default class ProjectManager  {
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
         const dbAppVersion = dbManager.getApplicationVersion();
 
-        console.log(dbAppVersion);
-        console.log(app.getVersion());
         if (Utils.isVersionLargerThan(dbAppVersion, app.getVersion())) {
             throw new ProjectVersionMismatchException();
         } else {
@@ -100,8 +98,8 @@ export default class ProjectManager  {
     public async setUpDatabase(projectLocation: string): Promise<DatabaseManager> {
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
         await dbManager.performQuery<void>((db: DatabaseType) => {
-            db.exec(schema_v1);
-            db.pragma("user_version", )
+            db.exec(Schema.LATEST_SCHEMA);
+            db.pragma("user_version = " + Schema.LATEST_VERSION);
         });
         return dbManager;
     }
