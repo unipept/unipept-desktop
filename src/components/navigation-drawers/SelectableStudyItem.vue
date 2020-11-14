@@ -86,6 +86,7 @@ export default class SelectableStudyItem extends Vue {
     }
 
     private toggleAssayComparison(assay: Assay) {
+        console.log("Toggle comparison: " + assay.getId());
         const idx = this.selectedAssays.indexOf(assay);
         if (idx !== -1) {
             // Remove from the selected assays

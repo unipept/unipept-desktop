@@ -1,7 +1,7 @@
 <template>
     <div>
         <div
-            @click="clickCheckbox()"
+            @click="selectAssay()"
             @contextmenu="showContextMenu()"
             :class="{
                 'assay-item': true,
@@ -321,6 +321,14 @@ export default class AssayItem extends Vue {
 
     private reanalyse() {
         this.$store.dispatch("processAssay", [this.assay, true]);
+    }
+
+    private selectAssay() {
+        if (this.selectable) {
+            this.clickCheckbox();
+        } else {
+            this.$emit("select-assay", this.assay);
+        }
     }
 
     private async duplicateAssay() {
