@@ -4,6 +4,9 @@ import DatabaseMigrator from "@/logic/filesystem/database/DatabaseMigrator";
 import DatabaseMigratorV0ToV1 from "@/logic/filesystem/database/DatabaseMigratorV0ToV1";
 import Schema from "@/logic/filesystem/database/Schema";
 
+const electron = require("electron");
+const app = electron.remote.app;
+
 export default class DatabaseManager {
     // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
     // a "SQLBusyException" to b§e thrown. By increasing the timeout to a value, larger than the time it should take
@@ -26,9 +29,22 @@ export default class DatabaseManager {
     constructor(
         private readonly dbLocation: string
     ) {
-        this.db = new Database(this.dbLocation, {
-            timeout: DatabaseManager.DB_TIMEOUT
-        });
+        try {
+            this.db = new Database(this.dbLocation, {
+                timeout: DatabaseManager.DB_TIMEOUT,
+                fileMustExist: true
+            });
+        } catch (err) {
+            // DB does not exist
+            this.db = new Database(this.dbLocation, {
+                timeout: DatabaseManager.DB_TIMEOUT
+            });
+
+            this.db.exec(Schema.LATEST_SCHEMA);
+            this.db.pragma("user_version = " + Schema.LATEST_VERSION);
+
+            this.db.prepare("INSERT INTO database_metadata (application_version) VALUES (?)").run(app.getVersion());
+        }
 
         this.schemaVersion = this.db.pragma("user_version", { simple: true });
         this.checkAndUpgradeSchema();

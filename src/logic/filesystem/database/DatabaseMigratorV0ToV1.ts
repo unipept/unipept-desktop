@@ -14,6 +14,7 @@ const app = electron.remote.app;
 export default class DatabaseMigratorV0ToV1 implements DatabaseMigrator {
     public upgrade(database: Database): void {
         database.exec(v0_to_v1);
+        database.prepare("DELETE FROM database_metadata").run();
         database.prepare("INSERT INTO database_metadata (application_version) VALUES (?)").run(app.getVersion());
     }
 }

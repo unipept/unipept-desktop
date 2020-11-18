@@ -86,7 +86,7 @@ export default class ProjectManager  {
             projectLocation += "/";
         }
 
-        const dbManager = await this.setUpDatabase(projectLocation);
+        const dbManager = this.setUpDatabase(projectLocation);
 
         if (addToRecents) {
             await this.addToRecentProjects(projectLocation);
@@ -95,13 +95,8 @@ export default class ProjectManager  {
         await store.dispatch("initializeProject", [projectLocation, dbManager, []]);
     }
 
-    public async setUpDatabase(projectLocation: string): Promise<DatabaseManager> {
-        const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
-        await dbManager.performQuery<void>((db: DatabaseType) => {
-            db.exec(Schema.LATEST_SCHEMA);
-            db.pragma("user_version = " + Schema.LATEST_VERSION);
-        });
-        return dbManager;
+    public setUpDatabase(projectLocation: string): DatabaseManager {
+        return new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
     }
 
     private async loadStudy(directory: string, dbManager: DatabaseManager): Promise<Study> {
