@@ -6,11 +6,8 @@ on:
       - master
 
 jobs:
-  publish:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
+  release_linux:
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v1

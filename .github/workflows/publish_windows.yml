@@ -1,4 +1,4 @@
-name: Publish app on macOS
+name: Publish app on Windows
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
       - master
 
 jobs:
-  release_macos:
-    runs-on: macos-latest
+  release_windows:
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v1
@@ -17,9 +17,6 @@ jobs:
         with:
           github_token: ${{ secrets.GH_TOKEN }}
           use_vue_cli: true
-          mac_certs: ${{ secrets.mac_certs }}
-          mac_certs_password: ${{ secrets.mac_certs_password }}
+          mac_certs: ${{ secrets.windows_certs }}
+          mac_certs_password: ${{ secrets.windows_certs_password }}
           release: true
-        env:
-          APPLEID: ${{ secrets.APPLEID }}
-          APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
