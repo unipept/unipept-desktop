@@ -54,7 +54,8 @@
                 <!-- Snackbar that's shown after the application has successfully been updated -->
                 <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
                     {{ updateMessage }}
-                    <v-btn text dark @click="updatedSnackbar = false">Close app</v-btn>
+                    <v-btn text dark @click="updatedSnackbar = false">Dismiss</v-btn>
+                    <v-btn text dark @click="closeApplication">Exit app</v-btn>
                 </v-snackbar>
             </v-main>
         </v-app>
@@ -163,7 +164,6 @@ export default class App extends Vue implements ErrorListener {
         })
 
         await this.initConfiguration();
-        await this.setUpTitlebar();
     }
 
     public handleError(err: Error) {
@@ -181,22 +181,6 @@ export default class App extends Vue implements ErrorListener {
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }
-    }
-
-    @Watch("useNativeTitlebar")
-    private setUpTitlebar() {
-        //   if (
-        //       Utils.isWindows() &&
-        //       !App.previouslyInitialized &&
-        //       this.titleBar == null && !this.$store.getters.useNativeTitlebar
-        //   ) {
-        //       this.titleBar = new Titlebar({
-        //           icon: require("./assets/icon.svg"),
-        //           backgroundColor: Color.fromHex("#004ba0")
-        //       });
-
-        //   }
-        //   App.previouslyInitialized = true;
     }
 
     /**

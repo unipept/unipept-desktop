@@ -54,7 +54,7 @@
             </v-row>
             <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
                 {{ errorMessage }}
-                <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
+                <v-btn dark text @click="errorSnackbarVisible = false">Dismiss</v-btn>
             </v-snackbar>
             <v-dialog persistent v-model="downloadingDatabase" max-width="600px">
                 <v-card>
