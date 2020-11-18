@@ -18,6 +18,7 @@ jobs:
         with:
           github_token: ${{ secrets.GH_TOKEN }}
           use_vue_cli: true
-          mac_certs: ${{ secrets.windows_certs }}
-          mac_certs_password: ${{ secrets.windows_certs_password }}
+          windows_certs: ${{ secrets.windows_certs }}
+          windows_certs_password: ${{ secrets.windows_certs_password }}
           release: true
+
