@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/windows-signing
 
 jobs:
   release_windows:
