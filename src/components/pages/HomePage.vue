@@ -162,8 +162,8 @@ export default class HomePage extends Vue {
 
     private async createProject() {
         const chosenPath: string[] | undefined = await dialog.showOpenDialogSync({
-            properties: ["openDirectory"]
-        } as OpenDialogOptions);
+            properties: ["openDirectory", "createDirectory"]
+        });
 
         if (chosenPath) {
             if (!await this.isDirectoryEmpty(chosenPath[0])) {
