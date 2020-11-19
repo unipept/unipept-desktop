@@ -9,12 +9,10 @@
                     <v-progress-circular indeterminate color="primary"></v-progress-circular>
                 </div>
                 <div v-else>
-                    <ul>
-                        <li v-for="note of releaseNotes" :key="note">{{ note }}</li>
-                    </ul>
-                    <div>
+                    <div v-html="releaseContent"></div>
+                    <div class="mt-4">
                         Check our
-                        <a :href="'https://github.com/unipept/unipept-desktop/releases/tag/v' + appVersion">
+                        <a @click="openReleasePage">
                             release page
                         </a> on GitHub for more information.
                     </div>
@@ -32,6 +30,8 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
+import { NetworkUtils } from "unipept-web-components";
+import marked from "marked";
 
 const electron = require("electron");
 const app = electron.remote.app;
@@ -44,7 +44,7 @@ export default class ReleaseNotesDialog extends Vue {
     private dialogActive: boolean = false;
     private loading: boolean = false;
     private appVersion: string = "";
-    private releaseNotes: string[] = [];
+    private releaseContent: string = "";
 
     private mounted() {
         this.appVersion = app.getVersion();
@@ -63,11 +63,18 @@ export default class ReleaseNotesDialog extends Vue {
 
     private async retrieveReleaseNotes() {
         this.loading = true;
-        const communicator = new GitHubCommunicator();
-        const releaseNotes = await communicator.getReleaseNotes(app.getVersion());
-        this.releaseNotes.splice(0, this.releaseNotes.length);
-        this.releaseNotes.push(...releaseNotes);
+        try {
+            const communicator = new GitHubCommunicator();
+            const releaseNotes = await communicator.getReleaseNotes(app.getVersion());
+            this.releaseContent = marked(releaseNotes);
+        } catch (error) {
+            this.releaseContent = "Could not load release notes. Make sure you're connected to the internet."
+        }
         this.loading = false;
+    }
+
+    private openReleasePage() {
+        NetworkUtils.openInBrowser(`https://github.com/unipept/unipept-desktop/releases/tag/v${this.appVersion}`)
     }
 }
 </script>
