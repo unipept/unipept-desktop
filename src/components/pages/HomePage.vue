@@ -86,6 +86,7 @@ import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
+import { OpenDialogOptions } from "electron";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -160,9 +161,9 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
+        const chosenPath: string[] | undefined = await dialog.showOpenDialogSync({
             properties: ["openDirectory"]
-        });
+        } as OpenDialogOptions);
 
         if (chosenPath) {
             if (!await this.isDirectoryEmpty(chosenPath[0])) {
