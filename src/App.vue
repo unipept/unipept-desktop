@@ -163,7 +163,6 @@ export default class App extends Vue implements ErrorListener {
         })
 
         await this.initConfiguration();
-        await this.setUpTitlebar();
     }
 
     public handleError(err: Error) {
@@ -183,22 +182,6 @@ export default class App extends Vue implements ErrorListener {
         }
     }
 
-    @Watch("useNativeTitlebar")
-    private setUpTitlebar() {
-        //   if (
-        //       Utils.isWindows() &&
-        //       !App.previouslyInitialized &&
-        //       this.titleBar == null && !this.$store.getters.useNativeTitlebar
-        //   ) {
-        //       this.titleBar = new Titlebar({
-        //           icon: require("./assets/icon.svg"),
-        //           backgroundColor: Color.fromHex("#004ba0")
-        //       });
-
-        //   }
-        //   App.previouslyInitialized = true;
-    }
-
     /**
      * Read the current application configuration from disk and set up all corresponding values in the configuration
      * store.
@@ -211,7 +194,6 @@ export default class App extends Vue implements ErrorListener {
             NetworkConfiguration.BASE_URL = config.apiSource;
             NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
             QueueManager.initializeQueue(config.maxLongRunningTasks);
-            await this.$store.dispatch("setUseNativeTitlebar", config.useNativeTitlebar);
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
             console.error(err)
