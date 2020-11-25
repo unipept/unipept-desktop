@@ -7,7 +7,7 @@
         </div>
         <div v-else class="flex-grow-1">
             <div
-                v-for="study of $store.getters.studies"
+                v-for="study of sortedStudies"
                 :key="study.getId()">
                 <study-item :study="study"></study-item>
             </div>
@@ -70,15 +70,5 @@ export default class SingleAnalysisToolbar extends Vue {
         position: relative;
         top: 16px;
         text-align: center;
-    }
-
-    .select-sample-button {
-
-        /*margin: 0 auto;*/
-        /*display: block !important;*/
-        /*position: sticky !important;*/
-        /*bottom: 72px;*/
-        /*left: 50%;*/
-        /*transform: translateX(-50%);*/
     }
 </style>

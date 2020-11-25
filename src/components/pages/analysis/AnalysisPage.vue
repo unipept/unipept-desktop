@@ -1,32 +1,9 @@
 <template>
-    <v-container fluid v-if="
-        !errorStatus &&
-        $store.getters.assays.length > 0 &&
-        (maxProgress === 1 && activeProgress === 1)"
+    <v-container
+        fluid
+        v-if="!errorStatus && $store.getters.assays.length > 0 && (maxProgress === 1 && activeProgress === 1)"
         class="pt-0">
-        <v-row>
-            <v-col>
-                <analysis-summary :assay="activeAssay"></analysis-summary>
-            </v-col>
-        </v-row>
-        <v-row>
-            <v-col>
-                <single-dataset-visualizations-card
-                    :assay="activeAssay"
-                    :analysisInProgress="true"
-                    v-on:update-selected-term="onUpdateSelectedTerm"
-                    v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
-                </single-dataset-visualizations-card>
-            </v-col>
-        </v-row>
-        <v-row>
-            <v-col>
-                <functional-summary-card
-                    :assay="activeAssay"
-                    :analysisInProgress="true">
-                </functional-summary-card>
-            </v-col>
-        </v-row>
+        <router-view></router-view>
     </v-container>
     <v-container fluid v-else class="status-container">
         <div class="inner-status-container" v-if="errorStatus">
@@ -103,19 +80,13 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import {
-    SingleDatasetVisualizationsCard,
-    FunctionalSummaryCard,
     ProteomicsAssay,
     AssayData
 } from "unipept-web-components";
-import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
-import Snake from "./../games/Snake.vue";
+import Snake from "./../../games/Snake.vue";
 
 @Component({
     components: {
-        AnalysisSummary,
-        SingleDatasetVisualizationsCard,
-        FunctionalSummaryCard,
         Snake
     }
 })
@@ -167,14 +138,6 @@ export default class AnalysisPage extends Vue {
             return 0;
         }
         return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.eta;
-    }
-
-    private onUpdateSelectedTaxonId(id: number) {
-        this.$store.dispatch("setSelectedTaxonId", id);
-    }
-
-    private onUpdateSelectedTerm(term: string) {
-        this.$store.dispatch("setSelectedTerm", term);
     }
 
     private reanalyse() {

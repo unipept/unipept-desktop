@@ -33,13 +33,14 @@ import { summaryStore } from "@/state/PeptideSummaryStore";
 import { ComparativeStore } from "@/state/ComparativeStore";
 
 import HomePage from "@/components/pages/HomePage.vue";
-import AnalysisPage from "@/components/pages/AnalysisPage.vue";
+import AnalysisPage from "@/components/pages/analysis/AnalysisPage.vue";
 import SettingsPage from "@/components/pages/SettingsPage.vue";
-import ComparativeAnalysisPage from "@/components/pages/ComparativeAnalysisPage.vue";
+import ComparativeAnalysisPage from "@/components/pages/analysis/ComparativeAnalysisPage.vue";
 import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
 import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 import PeptideAnalysisPage from "@/components/pages/PeptideAnalysisPage.vue";
+import SingleAssayAnalysisPage from "@/components/pages/analysis/SingleAssayAnalysisPage.vue";
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -105,18 +106,24 @@ const routes = [
         }
     },
     {
-        path: "/analysis/single",
+        path: "/analysis",
         component: AnalysisPage,
-        meta: {
-            title: "Single assay analysis"
-        }
-    },
-    {
-        path: "/analysis/multi",
-        component: ComparativeAnalysisPage,
-        meta: {
-            title: "Comparative analysis"
-        }
+        children: [
+            {
+                path: "single",
+                component: SingleAssayAnalysisPage,
+                meta: {
+                    title: "Single assay analysis"
+                }
+            },
+            {
+                path: "multi",
+                component: ComparativeAnalysisPage,
+                meta: {
+                    title: "Comparative analysis"
+                }
+            }
+        ]
     },
     {
         path: "/peptide/single",
