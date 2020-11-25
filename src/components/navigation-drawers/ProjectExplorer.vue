@@ -26,13 +26,11 @@ import Component from "vue-class-component";
 import { Study, Tooltip } from "unipept-web-components";
 import StudyItem from "@/components/navigation-drawers/StudyItem.vue";
 import mkdirp from "mkdirp";
-import SelectableStudyItem from "@/components/navigation-drawers/SelectableStudyItem.vue";
 
 @Component({
     components: {
         Tooltip,
-        StudyItem,
-        SelectableStudyItem
+        StudyItem
     },
     computed: {
         sortedStudies: {
