@@ -14,7 +14,6 @@ import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAs
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import Utils from "@/logic/Utils";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
-import Schema from "@/logic/filesystem/database/Schema";
 
 const electron = require("electron");
 const app = electron.remote.app;

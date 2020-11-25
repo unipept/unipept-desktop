@@ -18,8 +18,10 @@
                     <div style="display: flex; flex-direction: column; align-items: center;">
                         <img src="@/assets/logo.png" style="max-width: 200px;"/>
                         <span class="logo-headline">Unipept Desktop</span>
-                        <span class="logo-subline">Version {{ version }}</span>
-
+                        <span class="logo-subline">
+                            Version {{ version }}
+                            <a @click="releaseNotesActive = true">(What's new?)</a>
+                        </span>
                         <div class="project-actions">
                             <tooltip message="Select an empty folder and create a new project." position="bottom">
                                 <div @click="createProject()">
@@ -70,6 +72,7 @@
                     </v-card-text>
                 </v-card>
             </v-dialog>
+            <release-notes-dialog v-if="releaseNotesActive" v-model="releaseNotesActive"></release-notes-dialog>
         </v-container>
     </div>
 </template>
@@ -86,6 +89,7 @@ import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
+import ReleaseNotesDialog from "@/components/dialogs/ReleaseNotesDialog.vue";
 import { OpenDialogOptions } from "electron";
 
 const electron = require("electron");
@@ -94,6 +98,7 @@ const app = electron.remote.app;
 
 @Component({
     components: {
+        ReleaseNotesDialog,
         RecentProjects,
         Tooltip
     }
@@ -104,10 +109,13 @@ export default class HomePage extends Vue {
     private version: string = "";
     private loadingApplication: boolean = false;
     private loadingProject: boolean = false;
+    private releaseNotesActive: boolean = false;
+
     // Whether we're currently downloading the static information database (user interaction should be blocked during
     // this event).
     private downloadingDatabase: boolean = false;
     private downloadDatabaseProgress: number = 0;
+
     private static downloadCheckPerformed: boolean = false;
 
     async mounted() {
