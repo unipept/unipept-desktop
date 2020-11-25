@@ -62,7 +62,7 @@
             </v-row>
             <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
                 {{ errorMessage }}
-                <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
+                <v-btn dark text @click="errorSnackbarVisible = false">Dismiss</v-btn>
             </v-snackbar>
             <v-dialog persistent v-model="downloadingDatabase" max-width="600px">
                 <v-card>
@@ -90,7 +90,6 @@ import Component from "vue-class-component";
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
-import { promises as fsPromises } from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
@@ -100,6 +99,7 @@ import ReleaseNotesDialog from "@/components/dialogs/ReleaseNotesDialog.vue";
 import UpdateNotesDialog from "@/components/dialogs/UpdateNotesDialog.vue";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import Utils from "@/logic/Utils";
+import { OpenDialogOptions } from "electron";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -191,8 +191,8 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
-            properties: ["openDirectory"]
+        const chosenPath: string[] | undefined = await dialog.showOpenDialogSync({
+            properties: ["openDirectory", "createDirectory"]
         });
 
         if (chosenPath) {
