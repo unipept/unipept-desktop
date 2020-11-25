@@ -2,20 +2,18 @@
     <v-dialog v-model="dialogActive" max-width="600">
         <v-card>
             <v-card-title>
-                Unipept Desktop v{{ appVersion }} - release notes
+                Available updates
             </v-card-title>
             <v-card-text>
                 <div v-if="loading" class="text-center">
                     <v-progress-circular indeterminate color="primary"></v-progress-circular>
                 </div>
                 <div v-else>
-                    <div v-html="releaseContent"></div>
-                    <div class="mt-4">
-                        Check our
-                        <a @click="openReleasePage">
-                            release page
-                        </a> on GitHub for more information.
+                    <div>
+                        Your current version of Unipept Desktop is outdated. The following updates are available and
+                        will be automatically installed in the background:
                     </div>
+                    <div v-html="releaseContent" class="mt-4 release-notes"></div>
                 </div>
                 <div class="text-center mt-4">
                     <v-btn @click="dialogActive = false" color="primary">Dismiss</v-btn>
@@ -32,12 +30,13 @@ import { Prop, Watch } from "vue-property-decorator";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import { NetworkUtils } from "unipept-web-components";
 import marked from "marked";
+import Utils from "@/logic/Utils";
 
 const electron = require("electron");
 const app = electron.remote.app;
 
 @Component
-export default class ReleaseNotesDialog extends Vue {
+export default class UpdateNotesDialog extends Vue {
     @Prop({ required: true })
     private value: boolean;
 
@@ -67,7 +66,19 @@ export default class ReleaseNotesDialog extends Vue {
             this.loading = true;
             try {
                 const communicator = new GitHubCommunicator();
-                const releaseNotes = await communicator.getReleaseNotes(app.getVersion());
+                const allReleases = (await communicator.getAllReleases()).filter(
+                    (rel) => Utils.isVersionLargerThan(rel, this.appVersion)
+                );
+
+                let releaseNotes: string = "";
+                for (const release of allReleases) {
+                    // Add title for this release
+                    releaseNotes += `### Unipept Desktop ${release}\n`;
+                    releaseNotes += await communicator.getReleaseNotes(release) + "\n\n";
+                }
+
+                console.log(releaseNotes);
+
                 this.releaseContent = marked(releaseNotes);
             } catch (error) {
                 this.releaseContent = "Could not load release notes. Make sure you're connected to the internet."
@@ -82,6 +93,13 @@ export default class ReleaseNotesDialog extends Vue {
 }
 </script>
 
-<style scoped>
+<style>
+    .release-notes h3 {
+        margin-top: 16px;
+    }
 
+    .release-notes {
+        max-height: 500px;
+        overflow-y: auto;
+    }
 </style>
