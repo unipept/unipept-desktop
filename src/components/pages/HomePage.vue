@@ -56,7 +56,7 @@
             </v-row>
             <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
                 {{ errorMessage }}
-                <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
+                <v-btn dark text @click="errorSnackbarVisible = false">Dismiss</v-btn>
             </v-snackbar>
             <v-dialog persistent v-model="downloadingDatabase" max-width="600px">
                 <v-card>
@@ -90,6 +90,7 @@ import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseMa
 import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
 import ReleaseNotesDialog from "@/components/dialogs/ReleaseNotesDialog.vue";
+import { OpenDialogOptions } from "electron";
 
 const electron = require("electron");
 const { dialog } = electron.remote;
@@ -168,8 +169,8 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
-            properties: ["openDirectory"]
+        const chosenPath: string[] | undefined = await dialog.showOpenDialogSync({
+            properties: ["openDirectory", "createDirectory"]
         });
 
         if (chosenPath) {
