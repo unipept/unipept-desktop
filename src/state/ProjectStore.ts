@@ -86,9 +86,11 @@ const projectActions: ActionTree<ProjectState, any> = {
             Study[]
         ]
     ) {
+        await store.dispatch("resetSelectedAssays");
+
         // Make sure that all assays from the previously loaded project are gone.
         for (const assayData of store.rootGetters.assays) {
-            store.dispatch("removeAssay", assayData.assay);
+            await store.dispatch("removeAssay", assayData.assay);
         }
 
         if (!projectDirectory.endsWith("/")) {
