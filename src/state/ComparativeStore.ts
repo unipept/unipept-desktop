@@ -36,6 +36,9 @@ const comparativeMutations: MutationTree<ComparativeState> = {
         if (id >= 0) {
             state.selectedAssays.splice(id, 1);
         }
+    },
+    RESET_SELECTED_ASSAYS(state: ComparativeState) {
+        state.selectedAssays.splice(0, state.selectedAssays.length);
     }
 }
 
@@ -46,6 +49,10 @@ const comparativeActions: ActionTree<ComparativeState, any> = {
 
     removeSelectedAssay(store: ActionContext<ComparativeState, any>, assay: Assay) {
         store.commit("REMOVE_SELECTED_ASSAY", assay);
+    },
+
+    resetSelectedAssays(store: ActionContext<ComparativeState, any>) {
+        store.commit("RESET_SELECTED_ASSAYS");
     }
 }
 
