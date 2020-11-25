@@ -234,8 +234,6 @@ export default class StudyItem extends Vue {
     }
 
     private assayInComparison(assay: Assay): boolean {
-        console.log("In comparison: ");
-        console.log(this.selectedAssays.findIndex(a => a.getId() === assay.getId()) !== -1);
         return this.selectedAssays.findIndex(a => a.getId() === assay.getId()) !== -1;
     }
 
