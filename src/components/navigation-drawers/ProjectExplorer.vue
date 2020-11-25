@@ -9,12 +9,7 @@
             <div
                 v-for="study of sortedStudies"
                 :key="study.getId()">
-                <study-item :study="study" v-if="$route.path === '/analysis/single'"></study-item>
-                <selectable-study-item
-                    v-if="$route.path === '/analysis/multi'"
-                    :study="study"
-                    :assays-in-comparison="$store.getters.getSelectedAssays">
-                </selectable-study-item>
+                <study-item :study="study" :selectable="$route.path === '/analysis/multi'"></study-item>
             </div>
         </div>
         <div class="text-center mt-4 mb-4">

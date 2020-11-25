@@ -20,10 +20,24 @@
                     </template>
                     <span>{{ Math.round(progress * 100) }}%</span>
                 </v-tooltip>
+                <div style="display: flex; flex-direction: row; margin-left: auto; height: 32px;" v-else-if="selectable">
+                    <tooltip message="Add assay to comparative analysis." position="bottom">
+                        <v-checkbox
+                            v-model="selected"
+                            class="mr-0 pr-0"
+                            @change="clickCheckbox"
+                            dense
+                            hide-details
+                            @click.native.stop
+                            :disabled="progress !== 1">
+                        </v-checkbox>
+                    </tooltip>
+                </div>
                 <v-icon
                     v-else
                     color="#424242"
-                    size="20">
+                    size="20"
+                    class="assay-icon">
                     mdi-text-box-outline
                 </v-icon>
             </div>
@@ -71,20 +85,7 @@
                 v-on:keyup.enter="disableAssayEdit()"
                 :class="{ 'error-item': !isValidAssayName }"
                 type="text"/>
-            <div style="display: flex; flex-direction: row; margin-left: auto; height: 32px;" v-if="selectable">
-                <tooltip message="Add assay to comparative analysis." position="bottom">
-                    <v-checkbox
-                        :value="selected"
-                        @change="clickCheckbox"
-                        dense
-                        @click.native.stop
-                        :disabled="progress !== 1">
-                    </v-checkbox>
-                </tooltip>
-            </div>
-            <div
-                style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;"
-                v-else-if="progress === 1">
+            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-if="progress === 1">
                 <tooltip message="Display experiment summary." position="bottom">
                     <v-icon
                         @click="experimentSummaryActive = true"
@@ -293,6 +294,7 @@ export default class AssayItem extends Vue {
     }
 
     @Watch("value")
+    @Watch("selectable")
     private onValueChanged() {
         this.selected = this.value;
     }
@@ -384,6 +386,15 @@ export default class AssayItem extends Vue {
 }
 </script>
 
-<style scoped lang="less">
+<style lang="less">
     @import "./../../assets/style/navigation-drawers/assay-item.css.less";
+
+    .assay-item .v-input--selection-controls__input {
+        margin-right: 0 !important;
+    }
+
+    .assay-icon {
+        position: relative;
+        bottom: 1px;
+    }
 </style>
