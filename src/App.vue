@@ -54,7 +54,8 @@
                 <!-- Snackbar that's shown after the application has successfully been updated -->
                 <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
                     {{ updateMessage }}
-                    <v-btn text dark @click="updatedSnackbar = false">Close app</v-btn>
+                    <v-btn text dark @click="updatedSnackbar = false">Dismiss</v-btn>
+                    <v-btn text dark @click="closeApplication">Exit app</v-btn>
                 </v-snackbar>
             </v-main>
         </v-app>
