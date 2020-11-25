@@ -9,7 +9,12 @@
             <div
                 v-for="study of sortedStudies"
                 :key="study.getId()">
-                <study-item :study="study"></study-item>
+                <study-item :study="study" v-if="$route.path === '/analysis/single'"></study-item>
+                <selectable-study-item
+                    v-if="$route.path === '/analysis/multi'"
+                    :study="study"
+                    :assays-in-comparison="$store.getters.getSelectedAssays">
+                </selectable-study-item>
             </div>
         </div>
         <div class="text-center mt-4 mb-4">
@@ -23,14 +28,16 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { Tooltip, Study } from "unipept-web-components";
-import StudyItem from "./StudyItem.vue";
+import { Study, Tooltip } from "unipept-web-components";
+import StudyItem from "@/components/navigation-drawers/StudyItem.vue";
 import mkdirp from "mkdirp";
+import SelectableStudyItem from "@/components/navigation-drawers/SelectableStudyItem.vue";
 
 @Component({
     components: {
         Tooltip,
-        StudyItem
+        StudyItem,
+        SelectableStudyItem
     },
     computed: {
         sortedStudies: {
@@ -42,7 +49,7 @@ import mkdirp from "mkdirp";
         }
     }
 })
-export default class SingleAnalysisToolbar extends Vue {
+export default class ProjectExplorer extends Vue {
     private createStudy() {
         // Check which studies already exist, and make sure there isn't one with the same name.
         const unknowns: number[] = this.$store.getters.studies
@@ -63,7 +70,7 @@ export default class SingleAnalysisToolbar extends Vue {
 }
 </script>
 
-<style>
+<style scoped>
     .sample-list-placeholder {
         margin-left: 8px;
         margin-right: 8px;
