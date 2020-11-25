@@ -187,6 +187,10 @@ export default class StudyItem extends Vue {
     // Keep track of the names of the assays that we are currently processing.
     private assaysInProgress: string[] = [];
 
+    // The previous directory that was used to load an assay from. 
+    // (Is required to open the file dialog in the same directory on Linux)
+    private previousDirectory: string = undefined;
+
     mounted() {
         this.onStudyChanged();
     }
@@ -317,12 +321,15 @@ export default class StudyItem extends Vue {
 
     private async createFromFile() {
         const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
-            properties: ["openFile"]
+            properties: ["openFile"],
+            defaultPath: this.previousDirectory
         });
 
         if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
             let assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
             assayName = this.generateUniqueAssayName(assayName);
+
+            this.previousDirectory = path.dirname(chosenPath["filePaths"][0]);
 
             this.assaysInProgress.push(assayName);
 

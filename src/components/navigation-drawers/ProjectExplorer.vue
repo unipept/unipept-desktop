@@ -1,7 +1,7 @@
 <template>
     <div class="d-flex flex-column" style="min-height: 100%;">
         <div
-            class="sample-list-placeholder"
+            class="sample-list-placeholder flex-grow-1"
             v-if="$store.getters.studies.length === 0">
             No studies present.
         </div>

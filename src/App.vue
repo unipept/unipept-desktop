@@ -21,7 +21,8 @@
                     'max-width': isMini ? 'calc(100% - 55px)' : 'calc(100% - ' + (toolbarWidth + 55) + 'px)',
                     'position': 'relative',
                     'left': isMini ? '55px' : (toolbarWidth + 55) + 'px'
-                }">
+                }"
+                class="main-container">
                 <v-alert type="warning" class="ma-2" v-if="isDemoProjectActive">
                     You are currently browsing the demo project. Changes made to this project will not be saved.
                 </v-alert>
@@ -54,7 +55,8 @@
                 <!-- Snackbar that's shown after the application has successfully been updated -->
                 <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
                     {{ updateMessage }}
-                    <v-btn text dark @click="updatedSnackbar = false">Close app</v-btn>
+                    <v-btn text dark @click="updatedSnackbar = false">Dismiss</v-btn>
+                    <v-btn text dark @click="closeApplication">Exit app</v-btn>
                 </v-snackbar>
             </v-main>
         </v-app>
@@ -285,6 +287,10 @@ export default class App extends Vue implements ErrorListener {
 
     .tip {
         font-family: "Roboto", sans-serif;
+    }
+
+    .main-container {
+        transition: none !important;
     }
 
     //   .container-after-titlebar .v-app-bar {

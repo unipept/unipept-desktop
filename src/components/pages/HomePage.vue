@@ -17,9 +17,17 @@
                 <v-col>
                     <div style="display: flex; flex-direction: column; align-items: center;">
                         <img src="@/assets/logo.png" style="max-width: 200px;"/>
-                        <span class="logo-headline">Unipept Desktop</span>
-                        <span class="logo-subline">Version {{ version }}</span>
-
+                        <span class="logo-headline">
+                            Unipept Desktop
+                        </span>
+                        <span class="logo-subline">
+                            Version {{ version }}
+                            <a @click="releaseNotesActive = true">(What's new?)</a>
+                        </span>
+                        <span v-if="updateAvailable" class="logo-subline" @click="updateNotesActive = true">
+                            <v-icon style="position: relative; bottom: 2px;" color="success">mdi-arrow-up-bold</v-icon>
+                            <a>An update is available!</a>
+                        </span>
                         <div class="project-actions">
                             <tooltip message="Select an empty folder and create a new project." position="bottom">
                                 <div @click="createProject()">
@@ -54,7 +62,7 @@
             </v-row>
             <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
                 {{ errorMessage }}
-                <v-btn dark text @click="errorSnackbarVisible = false">Close</v-btn>
+                <v-btn dark text @click="errorSnackbarVisible = false">Dismiss</v-btn>
             </v-snackbar>
             <v-dialog persistent v-model="downloadingDatabase" max-width="600px">
                 <v-card>
@@ -70,6 +78,8 @@
                     </v-card-text>
                 </v-card>
             </v-dialog>
+            <release-notes-dialog v-model="releaseNotesActive"></release-notes-dialog>
+            <update-notes-dialog v-model="updateNotesActive"></update-notes-dialog>
         </v-container>
     </div>
 </template>
@@ -80,12 +90,15 @@ import Component from "vue-class-component";
 import RecentProjects from "./../project/RecentProjects.vue";
 import ProjectManager from "@/logic/filesystem/project/ProjectManager";
 import fs from "fs";
-import { promises as fsPromises } from "fs";
 import InvalidProjectException from "@/logic/filesystem/project/InvalidProjectException";
 import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
+import ReleaseNotesDialog from "@/components/dialogs/ReleaseNotesDialog.vue";
+import UpdateNotesDialog from "@/components/dialogs/UpdateNotesDialog.vue";
+import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
+import Utils from "@/logic/Utils";
 import { OpenDialogOptions } from "electron";
 
 const electron = require("electron");
@@ -94,6 +107,8 @@ const app = electron.remote.app;
 
 @Component({
     components: {
+        UpdateNotesDialog,
+        ReleaseNotesDialog,
         RecentProjects,
         Tooltip
     }
@@ -104,10 +119,18 @@ export default class HomePage extends Vue {
     private version: string = "";
     private loadingApplication: boolean = false;
     private loadingProject: boolean = false;
+    // Is the release notes dialog visible? (shows changes introduced in the current version of the app)
+    private releaseNotesActive: boolean = false;
+    // Is the update notes dialog visible? (shows the changes between this version and the most recent one)
+    private updateNotesActive: boolean = false;
+    // Is there an update for the application available?
+    private updateAvailable: boolean = false;
+
     // Whether we're currently downloading the static information database (user interaction should be blocked during
     // this event).
     private downloadingDatabase: boolean = false;
     private downloadDatabaseProgress: number = 0;
+
     private static downloadCheckPerformed: boolean = false;
 
     async mounted() {
@@ -120,6 +143,12 @@ export default class HomePage extends Vue {
         if (!HomePage.downloadCheckPerformed) {
             HomePage.downloadCheckPerformed = true;
             shouldUpdate = await this.checkStaticDatabaseUpdate();
+
+            const githubCommunicator = new GitHubCommunicator();
+            this.updateAvailable = Utils.isVersionLargerThan(
+                await githubCommunicator.getMostRecentVersion(),
+                this.version
+            );
         }
 
         this.loadingApplication = false;
@@ -128,6 +157,7 @@ export default class HomePage extends Vue {
             await this.updateStaticDatabase();
             this.downloadingDatabase = false;
         }
+
     }
 
     private async checkStaticDatabaseUpdate(): Promise<boolean> {
