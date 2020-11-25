@@ -50,9 +50,9 @@
                                             </v-col>
                                             <v-col md="4" class="hidden-sm-and-down">
                                                 <div class="d-flex justify-center align-center" style="height: 100%;">
-                                                    <v-img v-if="normalizer.toString() === 'AllNormalizer'" alt="normalization explanation" max-height="300" src="../../../src/assets/images/normalization/all_normalizer.svg"/>
-                                                    <v-img v-else-if="normalizer.toString() === 'RowNormalizer'" alt="normalization explanation" max-height="300" src="../../../src/assets/images/normalization/row_normalizer.svg"/>
-                                                    <v-img v-else alt="normalization explanation" max-height="300" src="../../../src/assets/images/normalization/column_normalizer.svg"/>
+                                                    <v-img v-if="normalizer.toString() === 'AllNormalizer'" alt="normalization explanation" max-height="300" src="../../../../src/assets/images/normalization/all_normalizer.svg"/>
+                                                    <v-img v-else-if="normalizer.toString() === 'RowNormalizer'" alt="normalization explanation" max-height="300" src="../../../../src/assets/images/normalization/row_normalizer.svg"/>
+                                                    <v-img v-else alt="normalization explanation" max-height="300" src="../../../../src/assets/images/normalization/column_normalizer.svg"/>
                                                 </div>
                                             </v-col>
                                         </v-row>

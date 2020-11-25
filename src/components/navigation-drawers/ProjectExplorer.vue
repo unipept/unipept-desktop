@@ -7,9 +7,9 @@
         </div>
         <div v-else class="flex-grow-1">
             <div
-                v-for="study of $store.getters.studies"
+                v-for="study of sortedStudies"
                 :key="study.getId()">
-                <study-item :study="study"></study-item>
+                <study-item :study="study" :selectable="$route.path === '/analysis/multi'"></study-item>
             </div>
         </div>
         <div class="text-center mt-4 mb-4">
@@ -23,8 +23,8 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { Tooltip, Study } from "unipept-web-components";
-import StudyItem from "./StudyItem.vue";
+import { Study, Tooltip } from "unipept-web-components";
+import StudyItem from "@/components/navigation-drawers/StudyItem.vue";
 import mkdirp from "mkdirp";
 
 @Component({
@@ -42,7 +42,7 @@ import mkdirp from "mkdirp";
         }
     }
 })
-export default class SingleAnalysisToolbar extends Vue {
+export default class ProjectExplorer extends Vue {
     private createStudy() {
         // Check which studies already exist, and make sure there isn't one with the same name.
         const unknowns: number[] = this.$store.getters.studies
@@ -63,22 +63,12 @@ export default class SingleAnalysisToolbar extends Vue {
 }
 </script>
 
-<style>
+<style scoped>
     .sample-list-placeholder {
         margin-left: 8px;
         margin-right: 8px;
         position: relative;
         top: 16px;
         text-align: center;
-    }
-
-    .select-sample-button {
-
-        /*margin: 0 auto;*/
-        /*display: block !important;*/
-        /*position: sticky !important;*/
-        /*bottom: 72px;*/
-        /*left: 50%;*/
-        /*transform: translateX(-50%);*/
     }
 </style>

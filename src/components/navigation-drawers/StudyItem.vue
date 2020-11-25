@@ -15,6 +15,20 @@
                 @click="collapsed = !collapsed">
                 mdi-chevron-right
             </v-icon>
+            <v-tooltip v-if="selectable" bottom>
+                <template v-slot:activator="{ on }">
+                    <v-checkbox
+                        dense
+                        hide-details
+                        class="mt-0 pt-0"
+                        :input-value="allSelected"
+                        :value="allSelected"
+                        @change="updateSelection"
+                        :disabled="isProcessing">
+                    </v-checkbox>
+                </template>
+                <span>Toggle selection of all assays in this study.</span>
+            </v-tooltip>
             <span
                 v-if="!isEditingStudyName"
                 v-on:dblclick="enableStudyEdit()"
@@ -69,9 +83,12 @@
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
             <assay-item
                 v-for="assay of sortedAssays"
+                :selectable="selectable"
                 :assay="assay"
                 :study="study"
                 v-bind:key="assay.id"
+                :value="assayInComparison(assay)"
+                v-on:input="toggleAssayComparison(assay)"
                 v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
@@ -137,12 +154,21 @@ const { dialog } = electron.remote;
                     (a: Assay, b: Assay) => a.getName().localeCompare(b.getName())
                 );
             }
+        },
+        isProcessing: {
+            get(): boolean {
+                return this.study.getAssays().some(
+                    (a: Assay) => this.$store.getters["assayData"](a).analysisMetaData.progress !== 1
+                );
+            }
         }
     }
 })
 export default class StudyItem extends Vue {
     @Prop({ required: true })
     private study: Study;
+    @Prop({ required: false, default: false })
+    private selectable: boolean;
 
     private collapsed: boolean = false;
     private studyName: string = "";
@@ -169,22 +195,15 @@ export default class StudyItem extends Vue {
         this.onStudyChanged();
     }
 
-    private showContextMenu() {
-        const menu = new Menu()
-        menu.append(new MenuItem({
-            label: "Rename",
-            click: () => {
-                this.enableStudyEdit();
-            }
-        }));
-        menu.append(new MenuItem({ type: "separator" }));
-        menu.append(new MenuItem({
-            label: "Delete",
-            click: () => {
-                this.removeConfirmationActive = true;
-            }
-        }));
-        menu.popup();
+    get selectedAssays(): Assay[] {
+        return this.$store.getters["getSelectedAssays"];
+    }
+
+    get allSelected(): boolean {
+        const selectedAssays: Assay[] = this.$store.getters["getSelectedAssays"];
+        return this.study.getAssays().every(
+            a => selectedAssays.find(selected => selected.getId() === a.getId())
+        );
     }
 
     @Watch("study")
@@ -205,6 +224,51 @@ export default class StudyItem extends Vue {
             const idx = this.assaysInProgress.indexOf(remove);
             this.assaysInProgress.splice(idx, 1);
         }
+    }
+
+    private toggleAssayComparison(assay: Assay) {
+        const idx = this.selectedAssays.indexOf(assay);
+        if (idx !== -1) {
+            // Remove from the selected assays
+            this.$store.dispatch("removeSelectedAssay", assay);
+        } else {
+            // Add to the selected assays
+            this.$store.dispatch("addSelectedAssay", assay);
+        }
+    }
+
+    private assayInComparison(assay: Assay): boolean {
+        return this.selectedAssays.findIndex(a => a.getId() === assay.getId()) !== -1;
+    }
+
+    private updateSelection(): void {
+        if (this.allSelected) {
+            for (const assay of this.study.getAssays()) {
+                this.$store.dispatch("removeSelectedAssay", assay);
+            }
+        } else {
+            for (const assay of this.study.getAssays()) {
+                this.$store.dispatch("addSelectedAssay", assay);
+            }
+        }
+    }
+
+    private showContextMenu() {
+        const menu = new Menu()
+        menu.append(new MenuItem({
+            label: "Rename",
+            click: () => {
+                this.enableStudyEdit();
+            }
+        }));
+        menu.append(new MenuItem({ type: "separator" }));
+        menu.append(new MenuItem({
+            label: "Delete",
+            click: () => {
+                this.removeConfirmationActive = true;
+            }
+        }));
+        menu.popup();
     }
 
     private enableStudyEdit() {
@@ -362,6 +426,6 @@ export default class StudyItem extends Vue {
 }
 </script>
 
-<style scoped lang="less">
+<style lang="less">
     @import "./../../assets/style/navigation-drawers/study-item.css.less";
 </style>

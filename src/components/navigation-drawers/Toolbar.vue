@@ -76,14 +76,7 @@
         </v-navigation-drawer>
         <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
             <div class="toolbar-container">
-                <single-analysis-toolbar
-                    :project="$store.getters.projectLocation === ''"
-                    v-if="$route.path === '/analysis/single'">
-                </single-analysis-toolbar>
-                <comparative-analysis-toolbar
-                    :project="$store.getters.projectLocation === ''"
-                    v-if="$route.path === '/analysis/multi'">
-                </comparative-analysis-toolbar>
+                <project-explorer></project-explorer>
             </div>
             <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
         </div>
@@ -95,14 +88,12 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import { Tooltip } from "unipept-web-components";
-import SingleAnalysisToolbar from "./SingleAnalysisToolbar.vue";
-import ComparativeAnalysisToolbar from "@/components/navigation-drawers/ComparativeAnalysisToolbar.vue";
+import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue";
 
 @Component({
     components: {
-        ComparativeAnalysisToolbar,
         Tooltip,
-        SingleAnalysisToolbar
+        ProjectExplorer
     },
     computed: {
         isMini: {
