@@ -5,7 +5,8 @@
             v-on:peptide-change="peptides = $event"
             v-on:name-change="name = $event">
         </dataset-form>
-        <div style="display: flex; justify-content: center;">
+        <div class="d-flex justify-center">
+            <v-btn @click="cancelCreation" class="mr-2">Cancel</v-btn>
             <v-btn color="primary" @click="createAssay">Create assay</v-btn>
         </div>
     </div>
@@ -35,6 +36,10 @@ export default class CreateAssay extends Vue {
         assay.setPeptides(this.peptides.split(/\r?\n/));
 
         this.$emit("create-assay", assay);
+    }
+
+    private async cancelCreation() {
+        this.$emit("cancel");
     }
 }
 </script>
