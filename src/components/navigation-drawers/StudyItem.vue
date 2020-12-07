@@ -98,7 +98,11 @@
                     Create assay
                 </v-card-title>
                 <v-card-text>
-                    <create-assay :study="study" v-on:create-assay="onCreateAssay"></create-assay>
+                    <create-assay
+                        :study="study"
+                        v-on:create-assay="onCreateAssay"
+                        v-on:cancel="showCreateAssayDialog = false">
+                    </create-assay>
                 </v-card-text>
             </v-card>
         </v-dialog>
@@ -187,7 +191,7 @@ export default class StudyItem extends Vue {
     // Keep track of the names of the assays that we are currently processing.
     private assaysInProgress: string[] = [];
 
-    // The previous directory that was used to load an assay from. 
+    // The previous directory that was used to load an assay from.
     // (Is required to open the file dialog in the same directory on Linux)
     private previousDirectory: string = undefined;
 
