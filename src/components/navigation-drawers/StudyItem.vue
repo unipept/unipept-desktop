@@ -92,7 +92,7 @@
                 v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
-        <v-dialog v-model="showCreateAssayDialog" max-width="800" v-if="study">
+        <v-dialog v-model="showCreateAssayDialog" v-if="study && showCreateAssayDialog" max-width="800">
             <v-card>
                 <v-card-title>
                     Create assay
@@ -107,9 +107,9 @@
             </v-card>
         </v-dialog>
         <search-configuration-dialog
-                v-model="showSearchConfigDialog"
-                :assay="searchConfigAssay"
-                :callback="searchConfigCallback">
+            v-model="showSearchConfigDialog"
+            :assay="searchConfigAssay"
+            :callback="searchConfigCallback">
         </search-configuration-dialog>
         <confirm-deletion-dialog
             v-model="removeConfirmationActive"
