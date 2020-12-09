@@ -63,7 +63,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.10.1",
     "@babel/plugin-proposal-optional-chaining": "^7.10.3",
-    "@mdi/font": "^4.1.95",
+    "@mdi/font": "^5.8.55",
     "@types/jquery": "^3.3.31",
     "@vue/cli-plugin-babel": "^3.11.0",
     "@vue/cli-plugin-eslint": "^4.5.6",

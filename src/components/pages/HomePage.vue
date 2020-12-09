@@ -143,12 +143,7 @@ export default class HomePage extends Vue {
         if (!HomePage.downloadCheckPerformed) {
             HomePage.downloadCheckPerformed = true;
             shouldUpdate = await this.checkStaticDatabaseUpdate();
-
-            const githubCommunicator = new GitHubCommunicator();
-            this.updateAvailable = Utils.isVersionLargerThan(
-                await githubCommunicator.getMostRecentVersion(),
-                this.version
-            );
+            this.updateAvailable = await this.checkApplicationUpdateAvailable();
         }
 
         this.loadingApplication = false;
@@ -171,6 +166,24 @@ export default class HomePage extends Vue {
                 "The application will work without these files, but will be slower or less accurate than usual."
             );
         }
+        return false;
+    }
+
+    private async checkApplicationUpdateAvailable(): Promise<boolean> {
+        try {
+            const githubCommunicator = new GitHubCommunicator();
+            return Utils.isVersionLargerThan(
+                await githubCommunicator.getMostRecentVersion(),
+                this.version
+            );
+        } catch (err) {
+            console.warn(err);
+            this.showError(
+                "Could not connect to GitHub and check for new updates. Make sure you're connected to the internet " +
+                "and retry."
+            );
+        }
+        return false;
     }
 
     private async updateStaticDatabase(): Promise<void> {
