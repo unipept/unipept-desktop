@@ -219,6 +219,8 @@ export default class App extends Vue implements ErrorListener {
 
 <style lang="less">
     @import "~unipept-web-components/dist/unipept-web-components.css";
+    @import "~@mdi/font/css/materialdesignicons.min.css";
+
 
     #app {
         font-family: 'Avenir', Helvetica, Arial, sans-serif;
