@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="dialogActive" max-width="800" persistent>
+    <v-dialog v-model="dialogActive" max-width="800" v-on:click:outside="cancel">
         <v-card>
             <v-card-title>
                 Search configuration
@@ -13,6 +13,21 @@
                 <v-data-table
                     :items="tableItems"
                     :headers="tableHeaders">
+                    <template v-slot:header.equateIl="{ header }">
+                        {{ header.text }}
+                        <v-simple-checkbox v-model="areAllEquateIl" color="primary">
+                        </v-simple-checkbox>
+                    </template>
+                    <template v-slot:header.filterDuplicates="{ header }">
+                        {{ header.text }}
+                        <v-simple-checkbox v-model="areAllFilterDuplicate" color="primary">
+                        </v-simple-checkbox>
+                    </template>
+                    <template v-slot:header.missedCleavage="{ header }">
+                        {{ header.text }}
+                        <v-simple-checkbox v-model="areAllMissedCleavage" color="primary">
+                        </v-simple-checkbox>
+                    </template>
                     <template v-slot:item.equateIl="{ item }">
                         <v-simple-checkbox v-model="item.equateIl" color="primary">
                         </v-simple-checkbox>
@@ -56,6 +71,41 @@ type SearchConfigTableItem = {
 @Component({
     components: {
         SearchSettingsForm
+    },
+    computed: {
+        areAllEquateIl: {
+            get() {
+                return this.tableItems.every(item => item.equateIl);
+            },
+            set() {
+                const value = !this.areAllEquateIl;
+                for (const item of this.tableItems) {
+                    item.equateIl = value;
+                }
+            }
+        },
+        areAllFilterDuplicate: {
+            get() {
+                return this.tableItems.every(item => item.filterDuplicates);
+            },
+            set() {
+                const value = !this.areAllFilterDuplicate;
+                for (const item of this.tableItems) {
+                    item.filterDuplicates = value;
+                }
+            }
+        },
+        areAllMissedCleavage: {
+            get() {
+                return this.tableItems.every(item => item.missedCleavage);
+            },
+            set() {
+                const value = !this.areAllMissedCleavage;
+                for (const item of this.tableItems) {
+                    item.missedCleavage = value;
+                }
+            }
+        }
     }
 })
 export default class SearchConfigurationDialog extends Vue {
@@ -83,17 +133,17 @@ export default class SearchConfigurationDialog extends Vue {
         }, {
             text: "Equate I/L",
             align: "center",
-            sortable: true,
+            sortable: false,
             value: "equateIl"
         }, {
             text: "Filter duplicates",
             align: "center",
-            sortable: true,
+            sortable: false,
             value: "filterDuplicates"
         }, {
             text: "Advanced missed cleavages",
             align: "center",
-            sortable: true,
+            sortable: false,
             value: "missedCleavage"
         }
     ];
