@@ -97,7 +97,8 @@ export default class ProcessedAssayManager {
     public async storeProcessingResults(
         assay: ProteomicsAssay,
         pept2Data: ShareableMap<string, PeptideData>,
-        trust: PeptideTrust
+        trust: PeptideTrust,
+        searchSettings: SearchConfiguration
     ) {
         // Delete the metadata that's associated with this assay
         await this.dbManager.performQuery<void>((db: Database) => {
@@ -127,7 +128,7 @@ export default class ProcessedAssayManager {
         });
 
         // Now write the metadata to the database again.
-        const existingConfig = assay.getSearchConfiguration();
+        const existingConfig = searchSettings;
         const searchConfiguration = new SearchConfiguration(
             existingConfig.equateIl,
             existingConfig.filterDuplicates,

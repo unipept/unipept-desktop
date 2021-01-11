@@ -9,6 +9,7 @@ import {
     AssayProcessor,
     PeptideData,
     NetworkConfiguration,
+    SearchConfiguration
 } from "unipept-web-components";
 
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
@@ -29,9 +30,14 @@ export default class DesktopAssayProcessor implements AssayProcessor {
 
     public async processAssay(
         countTable: CountTable<Peptide>,
-        forceUpdate: boolean = false
+        forceUpdate: boolean = false,
+        searchSettings: SearchConfiguration
     ): Promise<CommunicationSource> {
-        const [pept2DataResponses, peptideTrust] = await this.getPept2Data(countTable, forceUpdate);
+        const [pept2DataResponses, peptideTrust] = await this.getPept2Data(
+            countTable,
+            forceUpdate,
+            searchSettings
+        );
         this.setProgress(1);
 
         if (this.isCancelled()) {
@@ -58,7 +64,8 @@ export default class DesktopAssayProcessor implements AssayProcessor {
 
     private async getPept2Data(
         peptideCountTable: CountTable<Peptide>,
-        forceUpdate: boolean
+        forceUpdate: boolean,
+        searchSettings: SearchConfiguration
     ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
         const processedAssayManager = new ProcessedAssayManager(this.dbManager);
         const processingResult = await processedAssayManager.readProcessingResults(this.assay);
@@ -81,26 +88,27 @@ export default class DesktopAssayProcessor implements AssayProcessor {
 
             await this.pept2DataCommunicator.process(
                 peptideCountTable,
-                this.assay.getSearchConfiguration(),
+                searchSettings,
                 pept2DataProgressNotifier
             );
 
             if (!this.cancelled) {
                 // @ts-ignore
                 const pept2ResponseMap: ShareableMap<string, PeptideData> = this.pept2DataCommunicator.getPeptideResponseMap(
-                    this.assay.getSearchConfiguration()
+                    searchSettings
                 );
                 const trust = await this.pept2DataCommunicator.getPeptideTrust(
                     peptideCountTable,
-                    this.assay.getSearchConfiguration()
+                    searchSettings
                 );
 
                 this.assay.setEndpoint(currentEndpoint);
                 this.assay.setDatabaseVersion(currentDbVersion);
                 this.assay.setDate(new Date());
+                this.assay.setSearchConfiguration(searchSettings);
 
                 // Store results and update metadata...
-                await processedAssayManager.storeProcessingResults(this.assay, pept2ResponseMap, trust);
+                await processedAssayManager.storeProcessingResults(this.assay, pept2ResponseMap, trust, searchSettings);
 
                 return [
                     pept2ResponseMap,
