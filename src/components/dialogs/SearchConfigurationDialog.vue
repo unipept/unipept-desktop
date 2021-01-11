@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="dialogActive" max-width="800" v-on:click:outside="cancel">
+    <v-dialog v-model="dialogActive" max-width="900" v-on:click:outside="cancel">
         <v-card>
             <v-card-title>
                 Search configuration
@@ -12,21 +12,40 @@
                 </p>
                 <v-data-table
                     :items="tableItems"
-                    :headers="tableHeaders">
+                    :headers="tableHeaders"
+                    class="searchConfigTable">
                     <template v-slot:header.equateIl="{ header }">
                         {{ header.text }}
-                        <v-simple-checkbox v-model="areAllEquateIl" color="primary">
-                        </v-simple-checkbox>
+                        <div>
+                            <a v-if="areAllEquateIl" @click="areAllEquateIl = false">
+                                Uncheck all
+                            </a>
+                            <a v-else @click="areAllEquateIl = true">
+                                Check all
+                            </a>
+                        </div>
                     </template>
                     <template v-slot:header.filterDuplicates="{ header }">
                         {{ header.text }}
-                        <v-simple-checkbox v-model="areAllFilterDuplicate" color="primary">
-                        </v-simple-checkbox>
+                        <div>
+                            <a v-if="areAllFilterDuplicate" @click="areAllFilterDuplicate = false">
+                                Uncheck all
+                            </a>
+                            <a v-else @click="areAllFilterDuplicate = true">
+                                Check all
+                            </a>
+                        </div>
                     </template>
                     <template v-slot:header.missedCleavage="{ header }">
                         {{ header.text }}
-                        <v-simple-checkbox v-model="areAllMissedCleavage" color="primary">
-                        </v-simple-checkbox>
+                        <div>
+                            <a v-if="areAllMissedCleavage" @click="areAllMissedCleavage = false">
+                                Uncheck all
+                            </a>
+                            <a v-else @click="areAllMissedCleavage = true">
+                                Check all
+                            </a>
+                        </div>
                     </template>
                     <template v-slot:item.equateIl="{ item }">
                         <v-simple-checkbox v-model="item.equateIl" color="primary">
@@ -77,8 +96,7 @@ type SearchConfigTableItem = {
             get() {
                 return this.tableItems.every(item => item.equateIl);
             },
-            set() {
-                const value = !this.areAllEquateIl;
+            set(value) {
                 for (const item of this.tableItems) {
                     item.equateIl = value;
                 }
@@ -129,22 +147,26 @@ export default class SearchConfigurationDialog extends Vue {
             text: "Assay name",
             align: "start",
             sortable: true,
-            value: "name"
+            value: "name",
+            width: "25%"
         }, {
             text: "Equate I/L",
             align: "center",
             sortable: false,
-            value: "equateIl"
+            value: "equateIl",
+            width: "25%"
         }, {
             text: "Filter duplicates",
             align: "center",
             sortable: false,
-            value: "filterDuplicates"
+            value: "filterDuplicates",
+            width: "25%"
         }, {
             text: "Advanced missed cleavages",
             align: "center",
             sortable: false,
-            value: "missedCleavage"
+            value: "missedCleavage",
+            width: "25%"
         }
     ];
 
@@ -187,6 +209,9 @@ export default class SearchConfigurationDialog extends Vue {
 }
 </script>
 
-<style scoped>
-
+<style>
+    .searchConfigTable th {
+        vertical-align: baseline;
+        padding-top: 8px;
+    }
 </style>
