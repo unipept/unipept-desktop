@@ -1,4 +1,4 @@
-import { Study } from "unipept-web-components";
+import { ProteomicsAssay, Study } from "unipept-web-components";
 import { ActionContext, ActionTree, GetterTree, MutationTree } from "vuex";
 import FileSystemWatcher from "@/logic/filesystem/project/FileSystemWatcher";
 import path from "path";
@@ -102,7 +102,9 @@ const projectActions: ActionTree<ProjectState, any> = {
         for (const study of studies) {
             for (const assay of study.getAssays()) {
                 await store.dispatch("addAssay", assay);
-                store.dispatch("processAssay", [assay, false]);
+                store.dispatch(
+                    "processAssay",
+                    [assay, false, (assay as ProteomicsAssay).getSearchConfiguration()]);
             }
         }
 

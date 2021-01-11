@@ -114,7 +114,7 @@ export default class FileSystemWatcher {
                 // it is added to the study.
                 study.addAssay(assay);
                 await store.dispatch("addAssay", assay);
-                store.dispatch("processAssay", [assay, false]);
+                store.dispatch("processAssay", [assay, false, assay.getSearchConfiguration()]);
             }
         } catch (err) {
             this.reportError(err);
@@ -153,7 +153,10 @@ export default class FileSystemWatcher {
             for (const assay of study.getAssays()) {
                 await store.dispatch("addAssay", assay);
                 // noinspection ES6MissingAwait
-                store.dispatch("processAssay", [assay, false]);
+                store.dispatch(
+                    "processAssay",
+                    [assay, false, (assay as ProteomicsAssay).getSearchConfiguration()]
+                );
             }
 
             study.addChangeListener(new FileSystemStudyChangeListener());

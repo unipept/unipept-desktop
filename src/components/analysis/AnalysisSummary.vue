@@ -186,8 +186,7 @@ export default class AnalysisSummary extends Vue {
 
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
-        this.assay.setSearchConfiguration(config);
-        this.$store.dispatch("processAssay", [this.assay, true]);
+        this.$store.dispatch("processAssay", [this.assay, true, config]);
     }
 
     private getHumanReadableAssayDate(): string {
