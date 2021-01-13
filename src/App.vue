@@ -79,15 +79,6 @@ import {
     QueueManager
 } from "unipept-web-components";
 
-const bt = require("backtrace-js");
-
-// JavaScript errors in renderer process
-bt.initialize({
-    endpoint: "https://unipept.sp.backtrace.io:6098",
-    token: "94d2b87fb00b2b755d07dc4bad99f231603503724471e122f95212f768704898",
-    handlePromises: true
-});
-
 const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
