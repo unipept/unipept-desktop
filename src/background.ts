@@ -19,6 +19,14 @@ let win: BrowserWindow | null
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }])
 
+crashReporter.start({
+    productName: "unipept-desktop",
+    companyName: "unipept",
+    submitURL: "https://submit.backtrace.io/unipept/94d2b87fb00b2b755d07dc4bad99f231603503724471e122f95212f768704898/minidump",
+    uploadToServer: true,
+    compress: true
+});
+
 async function createWindow() {
     let configManager = new ConfigurationManager(app);
     let config = await configManager.readConfiguration();
