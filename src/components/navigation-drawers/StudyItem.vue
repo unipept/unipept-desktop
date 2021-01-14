@@ -179,7 +179,7 @@ export default class StudyItem extends Vue {
     private showCreateAssayDialog: boolean = false;
     private removeConfirmationActive: boolean = false;
     private showSearchConfigDialog: boolean = false;
-    private searchConfigCallback: () => Promise<void> = async() => {
+    private searchConfigCallback: (cancelled: boolean) => Promise<void> = async(cancelled: boolean) => {
         return;
     };
     private searchConfigAssays: ProteomicsAssay[] = [];
@@ -414,7 +414,7 @@ export default class StudyItem extends Vue {
         })
     }
 
-    private requestSearchSettings(assays: ProteomicsAssay[], callback: () => Promise<void>) {
+    private requestSearchSettings(assays: ProteomicsAssay[], callback: (cancelled: boolean) => Promise<void>) {
         this.searchConfigAssays.splice(0, this.searchConfigAssays.length);
         this.searchConfigAssays.push(...assays);
         this.searchConfigCallback = callback;
