@@ -35,12 +35,12 @@
                                     <span style="font-size: 24px;">Create new project</span>
                                 </div>
                             </tooltip>
-                            <tooltip message="Import a project from an external model." position="bottom">
-                                <div>
-                                    <v-icon large>mdi-folder-download-outline</v-icon>
-                                    <span style="font-size: 24px;">Import project</span>
-                                </div>
-                            </tooltip>
+<!--                            <tooltip message="Import a project from an external model." position="bottom">-->
+<!--                                <div>-->
+<!--                                    <v-icon large>mdi-folder-download-outline</v-icon>-->
+<!--                                    <span style="font-size: 24px;">Import project</span>-->
+<!--                                </div>-->
+<!--                            </tooltip>-->
                         </div>
                     </div>
 
