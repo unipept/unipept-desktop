@@ -75,7 +75,8 @@
             </tooltip>
             <span
                 v-if="!isEditingAssayName"
-                v-on:dblclick="enableAssayEdit()">
+                v-on:dblclick="enableAssayEdit()"
+                class="assay-name">
                 {{ assay.getName() }}
             </span>
             <input
@@ -83,7 +84,7 @@
                 v-model="assayName"
                 v-on:blur="disableAssayEdit()"
                 v-on:keyup.enter="disableAssayEdit()"
-                :class="{ 'error-item': !isValidAssayName }"
+                :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
                 type="text"/>
             <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-if="progress === 1">
                 <tooltip message="Display experiment summary." position="bottom">
