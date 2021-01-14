@@ -94,7 +94,7 @@ type SearchConfigTableItem = {
     computed: {
         areAllEquateIl: {
             get() {
-                return this.tableItems.every(item => item.equateIl);
+                return this.tableItems.every((item: SearchConfigTableItem) => item.equateIl);
             },
             set(value) {
                 for (const item of this.tableItems) {
@@ -104,7 +104,7 @@ type SearchConfigTableItem = {
         },
         areAllFilterDuplicate: {
             get() {
-                return this.tableItems.every(item => item.filterDuplicates);
+                return this.tableItems.every((item: SearchConfigTableItem) => item.filterDuplicates);
             },
             set() {
                 const value = !this.areAllFilterDuplicate;
@@ -115,7 +115,7 @@ type SearchConfigTableItem = {
         },
         areAllMissedCleavage: {
             get() {
-                return this.tableItems.every(item => item.missedCleavage);
+                return this.tableItems.every((item: SearchConfigTableItem) => item.missedCleavage);
             },
             set() {
                 const value = !this.areAllMissedCleavage;
