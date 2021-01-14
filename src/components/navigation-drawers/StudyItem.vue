@@ -108,7 +108,7 @@
         </v-dialog>
         <search-configuration-dialog
             v-model="showSearchConfigDialog"
-            :assay="searchConfigAssay"
+            :assays="searchConfigAssays"
             :callback="searchConfigCallback">
         </search-configuration-dialog>
         <confirm-deletion-dialog
@@ -182,7 +182,7 @@ export default class StudyItem extends Vue {
     private searchConfigCallback: () => Promise<void> = async() => {
         return;
     };
-    private searchConfigAssay: ProteomicsAssay = null;
+    private searchConfigAssays: ProteomicsAssay[] = [];
 
     private isEditingStudyName: boolean = false;
     private isValidStudyName: boolean = true;
@@ -325,36 +325,54 @@ export default class StudyItem extends Vue {
 
     private async createFromFile() {
         const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
-            properties: ["openFile"],
+            properties: ["openFile", "multiSelections"],
             defaultPath: this.previousDirectory
         });
 
+        const assaysToProcess: ProteomicsAssay[] = [];
+        const paths: string[] = [];
         if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
-            let assayName = path.basename(chosenPath["filePaths"][0]).replace(/\.[^/.]+$/, "");
-            assayName = this.generateUniqueAssayName(assayName);
+            this.searchConfigAssays.splice(0, this.searchConfigAssays.length);
+            for (const filePath of chosenPath["filePaths"]) {
+                let assayName = path.basename(filePath).replace(/\.[^/.]+$/, "");
+                assayName = this.generateUniqueAssayName(assayName);
 
-            this.previousDirectory = path.dirname(chosenPath["filePaths"][0]);
+                this.previousDirectory = path.dirname(filePath);
 
-            this.assaysInProgress.push(assayName);
+                this.assaysInProgress.push(assayName);
 
-            // First ask the user for the desired search configuration that should be applied for this assay and write
-            // it to the db.
-            const assay = new ProteomicsAssay(uuidv4());
-            assay.setName(assayName);
-            this.requestSearchSettings(assay, async() => {
-                // Write metadata to disk
-                const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                    this.$store.getters.dbManager,
-                    this.study
-                );
+                // First ask the user for the desired search configuration that should be applied for this assay and
+                // write it to the db.
+                const assay = new ProteomicsAssay(uuidv4());
+                assay.setName(assayName);
+                assaysToProcess.push(assay);
 
-                await assay.accept(metaDataWriter);
+                paths.push(filePath);
+            }
 
-                await fs.copyFile(
-                    chosenPath["filePaths"][0],
-                    this.$store.getters.projectLocation + this.study.getName() + "/" + assayName + ".pep"
-                )
+            this.requestSearchSettings(assaysToProcess, async(cancelled: boolean) => {
+                if (cancelled) {
+                    this.assaysInProgress.splice(0, this.assaysInProgress.length);
+                } else {
+                    for (let i = 0; i < assaysToProcess.length; i++) {
+                        const assay = assaysToProcess[i];
+                        const filePath = paths[i];
+
+                        // Write metadata to disk
+                        const metaDataWriter = new AssayFileSystemMetaDataWriter(
+                            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                            this.$store.getters.dbManager,
+                            this.study
+                        );
+
+                        await assay.accept(metaDataWriter);
+
+                        await fs.copyFile(
+                            filePath,
+                            this.$store.getters.projectLocation + this.study.getName() + "/" + assay.getName() + ".pep"
+                        )
+                    }
+                }
             });
         }
     }
@@ -364,36 +382,41 @@ export default class StudyItem extends Vue {
 
         // First ask the user for the desired search configuration that should be applied for this assay and write it to
         // the db.
-        this.requestSearchSettings(assay, async() => {
-            let assayName = assay.getName();
-            if (assayName === "") {
-                assayName = "Unknown";
+        this.requestSearchSettings([assay], async(cancelled: boolean) => {
+            if (cancelled) {
+                this.assaysInProgress.splice(0, this.assaysInProgress.length);
+            } else {
+                let assayName = assay.getName();
+                if (assayName === "") {
+                    assayName = "Unknown";
+                }
+
+                assayName = this.generateUniqueAssayName(assayName);
+                assay.setName(assayName);
+
+                // Write metadata to disk
+                const metaDataWriter = new AssayFileSystemMetaDataWriter(
+                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                    this.$store.getters.dbManager,
+                    this.study
+                );
+
+                await assay.accept(metaDataWriter);
+
+                // Write the assay to disk. It will automatically be picked up by the file system watchers
+                const assaySerializer = new AssayFileSystemDataWriter(
+                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
+                    this.$store.getters.dbManager
+                );
+
+                await assay.accept(assaySerializer);
             }
-
-            assayName = this.generateUniqueAssayName(assayName);
-            assay.setName(assayName);
-
-            // Write metadata to disk
-            const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                this.$store.getters.dbManager,
-                this.study
-            );
-
-            await assay.accept(metaDataWriter);
-
-            // Write the assay to disk. It will automatically be picked up by the file system watchers
-            const assaySerializer = new AssayFileSystemDataWriter(
-                `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                this.$store.getters.dbManager
-            );
-
-            await assay.accept(assaySerializer);
         })
     }
 
-    private requestSearchSettings(assay: ProteomicsAssay, callback: () => Promise<void>) {
-        this.searchConfigAssay = assay;
+    private requestSearchSettings(assays: ProteomicsAssay[], callback: () => Promise<void>) {
+        this.searchConfigAssays.splice(0, this.searchConfigAssays.length);
+        this.searchConfigAssays.push(...assays);
         this.searchConfigCallback = callback;
         this.showSearchConfigDialog = true;
     }
