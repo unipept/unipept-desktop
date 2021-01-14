@@ -71,7 +71,6 @@ import Toolbar from "./components/navigation-drawers/Toolbar.vue";
 import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import Configuration from "./logic/configuration/Configuration";
 import ErrorListener from "@/logic/filesystem/ErrorListener";
-const electron = require("electron");
 import {
     Assay,
     ProteomicsAssay,
@@ -80,6 +79,7 @@ import {
     QueueManager
 } from "unipept-web-components";
 
+const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
 const BrowserWindow = electron.BrowserWindow;
 const { app } = require("electron").remote;

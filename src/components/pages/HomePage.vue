@@ -147,12 +147,12 @@ export default class HomePage extends Vue {
         }
 
         this.loadingApplication = false;
+
         if (shouldUpdate) {
             this.downloadingDatabase = true;
             await this.updateStaticDatabase();
             this.downloadingDatabase = false;
         }
-
     }
 
     private async checkStaticDatabaseUpdate(): Promise<boolean> {

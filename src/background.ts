@@ -7,6 +7,7 @@ import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer"
+const bt = require("backtrace-node");
 
 app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096 --expose_gc");
 
@@ -18,6 +19,21 @@ let win: BrowserWindow | null
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }])
+
+// Electron crashes
+crashReporter.start({
+    productName: "unipept-desktop",
+    companyName: "unipept",
+    submitURL: "https://submit.backtrace.io/unipept/94d2b87fb00b2b755d07dc4bad99f231603503724471e122f95212f768704898/minidump",
+    uploadToServer: true
+});
+
+// JavaScript errors in main process
+bt.initialize({
+    endpoint: "https://unipept.sp.backtrace.io:6098",
+    token: "94d2b87fb00b2b755d07dc4bad99f231603503724471e122f95212f768704898"
+});
+
 
 async function createWindow() {
     let configManager = new ConfigurationManager(app);

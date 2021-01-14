@@ -34,6 +34,8 @@
     "@types/yauzl": "^2.9.1",
     "axios": "^0.21.1",
     "babel-polyfill": "^6.26.0",
+    "backtrace-js": "0.0.12",
+    "backtrace-node": "^1.0.8",
     "better-sqlite3": "^7.1.2",
     "chokidar": "^3.3.1",
     "core-js": "^2.6.9",
