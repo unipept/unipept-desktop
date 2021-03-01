@@ -38,7 +38,6 @@ import SettingsPage from "@/components/pages/SettingsPage.vue";
 import ComparativeAnalysisPage from "@/components/pages/analysis/ComparativeAnalysisPage.vue";
 import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
-import "unipept-visualizations/dist/unipept-visualizations.es5.js";
 import PeptideAnalysisPage from "@/components/pages/PeptideAnalysisPage.vue";
 import SingleAssayAnalysisPage from "@/components/pages/analysis/SingleAssayAnalysisPage.vue";
 

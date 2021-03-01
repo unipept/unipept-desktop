@@ -96,6 +96,7 @@ type SearchConfigTableItem = {
             get() {
                 return this.tableItems.every((item: SearchConfigTableItem) => item.equateIl);
             },
+
             set(value) {
                 for (const item of this.tableItems) {
                     item.equateIl = value;
