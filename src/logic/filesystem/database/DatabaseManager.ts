@@ -48,7 +48,7 @@ export default class DatabaseManager {
 
         this.schemaVersion = this.db.pragma("user_version", { simple: true });
         this.checkAndUpgradeSchema();
-        this.dbApplicationVersion = this.db.prepare(
+        this.dbApplicationVersion = this.db.sD(
             "SELECT application_version FROM database_metadata"
         ).get().application_version;
 

@@ -4,7 +4,7 @@ module.exports = {
         "node": true,
         "browser": true,
     },
-    "extends": [
+    extends: [
         "plugin:vue/essential",
         "eslint:recommended",
         "@vue/typescript",
