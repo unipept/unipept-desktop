@@ -1,6 +1,7 @@
 <template>
     <div>
         <dataset-form
+            ref="assayForm"
             :showSave="false"
             v-on:peptide-change="peptides = $event"
             v-on:name-change="name = $event">
@@ -25,17 +26,23 @@ import { v4 as uuidv4 } from "uuid";
     }
 })
 export default class CreateAssay extends Vue {
+    $refs!: {
+        assayForm: DatasetForm
+    }
+
     @Prop({ required: true })
     private study: Study;
     private peptides: string;
     private name: string;
 
     private async createAssay() {
-        const assay: ProteomicsAssay = new ProteomicsAssay(uuidv4());
-        assay.setName(this.name);
-        assay.setPeptides(this.peptides.split(/\r?\n/));
+        if ((this.$refs.assayForm as any).isValid()) {
+            const assay: ProteomicsAssay = new ProteomicsAssay(uuidv4());
+            assay.setName(this.name);
+            assay.setPeptides(this.peptides.split(/\r?\n/));
 
-        this.$emit("create-assay", assay);
+            this.$emit("create-assay", assay);
+        }
     }
 
     private async cancelCreation() {
