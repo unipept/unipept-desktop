@@ -116,6 +116,10 @@
             :action="() => removeStudy()"
             item-type="study">
         </confirm-deletion-dialog>
+        <binary-files-error-dialog
+            v-model="showBinaryFilesError"
+            :binary-files="binaryFilesList">
+        </binary-files-error-dialog>
     </div>
 </template>
 
@@ -133,6 +137,8 @@ import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationD
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import path from "path";
+import { isText, isBinary, getEncoding } from "istextorbinary";
+import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
 
 
 const { remote } = require("electron");
@@ -144,6 +150,7 @@ const { dialog } = electron.remote;
 
 @Component({
     components: {
+        BinaryFilesErrorDialog,
         SearchConfigurationDialog,
         ConfirmDeletionDialog,
         CreateDatasetCard,
@@ -177,6 +184,10 @@ export default class StudyItem extends Vue {
     private collapsed: boolean = false;
     private studyName: string = "";
     private showCreateAssayDialog: boolean = false;
+
+    private showBinaryFilesError: boolean = false;
+    private binaryFilesList: string[] = [];
+
     private removeConfirmationActive: boolean = false;
     private showSearchConfigDialog: boolean = false;
     private searchConfigCallback: (cancelled: boolean) => Promise<void> = async(cancelled: boolean) => {
@@ -329,11 +340,18 @@ export default class StudyItem extends Vue {
             defaultPath: this.previousDirectory
         });
 
+        this.binaryFilesList.splice(0, this.binaryFilesList.length);
+
         const assaysToProcess: ProteomicsAssay[] = [];
         const paths: string[] = [];
         if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
             this.searchConfigAssays.splice(0, this.searchConfigAssays.length);
             for (const filePath of chosenPath["filePaths"]) {
+                if (!filePath.endsWith(".pep") && !isText(filePath)) {
+                    this.binaryFilesList.push(filePath);
+                    continue;
+                }
+
                 let assayName = path.basename(filePath).replace(/\.[^/.]+$/, "");
                 assayName = this.generateUniqueAssayName(assayName);
 
@@ -348,6 +366,12 @@ export default class StudyItem extends Vue {
                 assaysToProcess.push(assay);
 
                 paths.push(filePath);
+            }
+
+            // Did we detect any binary files? Then we should show the error dialog...
+            if (this.binaryFilesList.length > 0) {
+                this.showBinaryFilesError = true;
+                return;
             }
 
             this.requestSearchSettings(assaysToProcess, async(cancelled: boolean) => {
