@@ -1,5 +1,7 @@
 import mkdirp from "mkdirp";
 import { promises as fs } from "fs";
+import path from "path";
+
 const { app } = require("electron").remote;
 
 import clover1a from "raw-loader!@/demo_project/clover/clover_1a.pep";
@@ -19,8 +21,7 @@ export default class DemoProjectManager {
      */
     public async initializeDemoProject(): Promise<string> {
         const tempFolder = app.getPath("temp");
-        // const tempFolder = "/Users/pverscha/Downloads/Temp/"
-        const demoFolder = tempFolder + "Demo project/";
+        const demoFolder = path.join(tempFolder, "Demo project/");
 
         // Create new subdirectory inside of the temp folder
         await mkdirp(demoFolder);
@@ -34,14 +35,14 @@ export default class DemoProjectManager {
         await mkdirp(demoFolder + "Clover");
 
         // Now copy all demo files to this directory
-        await fs.writeFile(demoFolder + "Clover/" + "Clover 1a.pep", clover1a);
-        await fs.writeFile(demoFolder + "Clover/" + "Clover 1b.pep", clover1b);
-        await fs.writeFile(demoFolder + "Clover/" + "Clover 2.pep", clover2);
+        await fs.writeFile(path.join(demoFolder, "Clover", "Clover 1a.pep"), clover1a);
+        await fs.writeFile(path.join(demoFolder, "Clover", "Clover 1b.pep"), clover1b);
+        await fs.writeFile(path.join(demoFolder, "Clover", "Clover 2.pep"), clover2);
 
         await mkdirp(demoFolder + "Soybean");
 
-        await fs.writeFile(demoFolder + "Soybean/" + "Soybean 1.pep", soybean1);
-        await fs.writeFile(demoFolder + "Soybean/" + "Soybean 2.pep", soybean2);
+        await fs.writeFile(path.join(demoFolder, "Soybean", "Soybean 1.pep"), soybean1);
+        await fs.writeFile(path.join(demoFolder, "Soybean", "Soybean 2.pep"), soybean2);
 
         return demoFolder;
     }
