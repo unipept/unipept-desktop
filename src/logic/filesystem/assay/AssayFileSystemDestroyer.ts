@@ -34,7 +34,6 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
             const assayId = assay.getId();
 
             await this.dbManager.performQuery<void>((db: Database) => {
-                db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assayId);
                 db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assayId);
                 db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assayId);
                 db.prepare("DELETE FROM assays WHERE `id` = ?").run(assayId);
