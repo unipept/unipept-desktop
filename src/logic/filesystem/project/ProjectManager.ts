@@ -52,7 +52,7 @@ export default class ProjectManager  {
 
         // Check all subdirectories of the given project and try to load the studies.
         const subDirectories: string[] = fs.readdirSync(projectLocation, { withFileTypes: true })
-            .filter(dirEntry => dirEntry.isDirectory())
+            .filter(dirEntry => dirEntry.isDirectory() && dirEntry.name !== ".buffers")
             .map(dirEntry => dirEntry.name);
 
         const studies = [];

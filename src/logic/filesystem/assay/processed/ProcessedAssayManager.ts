@@ -3,7 +3,7 @@ import {
     SearchConfiguration,
     PeptideTrust,
     PeptideData,
-    PeptideDataSerializer
+    PeptideDataSerializer, Assay
 } from "unipept-web-components";
 
 import ProcessedAssayResult from "@/logic/filesystem/assay/processed/ProcessedAssayResult";
@@ -12,6 +12,11 @@ import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/Searc
 import { ShareableMap } from "shared-memory-datastructures";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+
+import { promises as fs } from "fs";
+import path from "path";
+import mkdirp from "mkdirp";
+import { store } from "./../../../../main";
 
 export default class ProcessedAssayManager {
     constructor(
@@ -53,16 +58,11 @@ export default class ProcessedAssayManager {
             return null;
         }
 
-        const dataRow = await this.dbManager.performQuery<any>((db: Database) => {
-            return db.prepare("SELECT * FROM pept2data WHERE `assay_id` = ?").get(assay.getId());
-        })
+        const sharedMap = await this.readShareableMap(assay);
 
-        if (!dataRow) {
+        if (!sharedMap) {
             return null;
         }
-
-        const indexBuffer = this.bufferToSharedArrayBuffer(dataRow.index_buffer);
-        const dataBuffer = this.bufferToSharedArrayBuffer(dataRow.data_buffer);
 
         const trustRow = await this.dbManager.performQuery<any>((db: Database) => {
             return db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assay.getId());
@@ -78,11 +78,6 @@ export default class ProcessedAssayManager {
             trustRow.searched_peptides
         );
 
-        const sharedMap = new ShareableMap<string, PeptideData>(0, 0, new PeptideDataSerializer());
-        sharedMap.setBuffers(
-            indexBuffer,
-            dataBuffer
-        );
 
         return new ProcessedAssayResult(
             assay.getEndpoint(),
@@ -105,18 +100,12 @@ export default class ProcessedAssayManager {
             db.prepare("DELETE FROM storage_metadata WHERE assay_id = ?").run(assay.getId())
         });
 
-        // First try to write the pept2data information to the database.
-        const buffers = pept2Data.getBuffers();
+        // Write both buffers to a binary file.
+        await this.writeShareableMap(assay, pept2Data);
+
         await this.dbManager.performQuery<void>((db: Database) => {
             // First delete all existing rows for this assay;
-            db.prepare("DELETE FROM pept2data WHERE `assay_id` = ?").run(assay.getId());
             db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assay.getId());
-
-            db.prepare("INSERT INTO pept2data VALUES (?, ?, ?)").run(
-                assay.getId(),
-                this.arrayBufferToBuffer(buffers[0]),
-                this.arrayBufferToBuffer(buffers[1])
-            );
 
             const insertTrust = db.prepare("INSERT INTO peptide_trust VALUES (?, ?, ?, ?)");
             insertTrust.run(
@@ -160,5 +149,67 @@ export default class ProcessedAssayManager {
             view[i] = buf[i];
         }
         return ab;
+    }
+
+    /**
+     * Write the given assay and the corresponding data to the filesystem.
+     *
+     * @param assay
+     * @param pept2Data
+     * @private
+     */
+    private async writeShareableMap(assay: ProteomicsAssay, pept2Data: ShareableMap<String, PeptideData>) {
+        // Filter dataset for peptides that only occur in this assay.
+        const filteredDataset = new ShareableMap(undefined, undefined, new PeptideDataSerializer());
+        for (const peptide of assay.getPeptides()) {
+            const result = pept2Data.get(peptide);
+            if (result) {
+                filteredDataset.set(peptide, result);
+            }
+        }
+
+        // Write both buffers to a binary file.
+        const buffers: ArrayBuffer[] = filteredDataset.getBuffers();
+
+        const bufferDirectory = path.join(store.getters.projectLocation, ".buffers");
+        await mkdirp(bufferDirectory);
+
+        const indexBufferPath = path.join(bufferDirectory, assay.getId() + ".index");
+        const dataBufferPath = path.join(bufferDirectory, assay.getId() + ".data");
+
+        try {
+            // Remove previous versions of this file's persistent storage.
+            await fs.unlink(indexBufferPath);
+            await fs.unlink(dataBufferPath);
+        } catch (error) {
+            // Ignore (this throws an error if these files do not exist, which is not an issue here)
+        }
+
+        // Write new version of this file's buffer to file
+        await fs.writeFile(indexBufferPath, Buffer.from(buffers[0]));
+        await fs.writeFile(dataBufferPath, Buffer.from(buffers[1]));
+    }
+
+    private async readShareableMap(assay: ProteomicsAssay): Promise<ShareableMap<String, PeptideData> | null> {
+        const bufferDirectory = path.join(store.getters.projectLocation, ".buffers");
+        await mkdirp(bufferDirectory);
+
+        const indexBufferPath = path.join(bufferDirectory, assay.getId() + ".index");
+        const dataBufferPath = path.join(bufferDirectory, assay.getId() + ".data");
+
+        try {
+            const indexBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(indexBufferPath));
+            const dataBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(dataBufferPath));
+
+            const output = new ShareableMap<String, PeptideData>(0, 0, new PeptideDataSerializer());
+            output.setBuffers(indexBuffer, dataBuffer);
+
+            return output;
+        } catch (error) {
+            console.error(error);
+
+            // File's do not exist!
+            return null;
+        }
     }
 }

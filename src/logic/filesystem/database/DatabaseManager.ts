@@ -3,9 +3,12 @@ import async, { AsyncQueue } from "async";
 import DatabaseMigrator from "@/logic/filesystem/database/DatabaseMigrator";
 import DatabaseMigratorV0ToV1 from "@/logic/filesystem/database/DatabaseMigratorV0ToV1";
 import Schema from "@/logic/filesystem/database/Schema";
+import DatabaseMigratorV1ToV2 from "@/logic/filesystem/database/DatabaseMigratorV1ToV2";
 
 const electron = require("electron");
 const app = electron.remote.app;
+
+import path from "path";
 
 export default class DatabaseManager {
     // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
@@ -23,7 +26,8 @@ export default class DatabaseManager {
 
     // Maps each schema index onto the db-migrator that can be used to update the db to the next schema version.
     private readonly migrations: (() => DatabaseMigrator)[] = [
-        () => new DatabaseMigratorV0ToV1()
+        () => new DatabaseMigratorV0ToV1(),
+        () => new DatabaseMigratorV1ToV2(path.dirname(this.dbLocation))
     ];
 
     constructor(
