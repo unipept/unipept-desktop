@@ -29,7 +29,7 @@ export default class FileSystemWatcher {
         this.watcher = chokidar.watch(store.getters.projectLocation, {
             ignoreInitial: true,
             // Ignore hidden files and metadata changes
-            ignored: /^\..*$|metadata.sqlite/,
+            ignored: /^\..*$|metadata.sqlite|\.buffers/,
             awaitWriteFinish: {
                 stabilityThreshold: 1000,
                 pollInterval: 100
