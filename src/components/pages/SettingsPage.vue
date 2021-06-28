@@ -80,6 +80,35 @@
                                 </v-container>
                             </v-card-text>
                         </v-card>
+                        <h2 class="mx-auto settings-category-title">Storage</h2>
+                        <v-card>
+                            <v-card-text>
+                                <v-container fluid>
+                                    <v-row>
+                                        <v-col cols="8">
+                                            <div class="settings-title">Database storage location</div>
+                                            <div class="settings-text">
+                                                Indicates where the application should store custom database files? Note
+                                                that these files can grow quite large in size, depending on the amount
+                                                and size of the custom databases you are planning to use. For large
+                                                databases, at least 100GiB of free space is required.
+                                            </div>
+                                        </v-col>
+                                        <v-col cols="4">
+                                            <v-text-field
+                                                single-line
+                                                filled
+                                                readonly
+                                                v-model="customDbStorageLocation"
+                                                :rules="customDbStorageLocationRules"
+                                                prepend-inner-icon="mdi-folder-outline"
+                                                @click="openDbStorageFileDialog">
+                                            </v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+                        </v-card>
                         <h2 class="mx-auto settings-category-title">Docker</h2>
                         <v-card>
                             <v-card-text>
@@ -231,7 +260,11 @@ export default class SettingsPage extends Vue {
     private dockerConfigRules: ((x: string) => boolean | string)[] = [
         Rules.required,
         Rules.json
-    ]
+    ];
+
+    private customDbStorageLocationRules: ((x: string) => boolean | string)[] = [
+        Rules.required
+    ];
 
     private mounted() {
         let configManager: ConfigurationManager = new ConfigurationManager();
@@ -270,6 +303,14 @@ export default class SettingsPage extends Vue {
         return this.configuration.dockerConfigurationSettings;
     }
 
+    set customDbStorageLocation(value: string) {
+        this.configuration.customDbStorageLocation = value;
+    }
+
+    get customDbStorageLocation(): string {
+        return this.configuration.customDbStorageLocation;
+    }
+
     @Watch("configuration.apiSource")
     @Watch("configuration.maxLongRunningTasks")
     @Watch("configuration.maxParallelRequests")
@@ -294,7 +335,6 @@ export default class SettingsPage extends Vue {
 
         try {
             this.dockerInfo = await dockerCommunicator.getDockerInfo();
-            console.log(this.dockerInfo);
         } catch (e) {
             this.dockerInfo = null;
         }
@@ -319,6 +359,20 @@ export default class SettingsPage extends Vue {
                     );
                 }
             }
+        }
+    }
+
+    private async openDbStorageFileDialog(): Promise<void> {
+        const electron = require("electron");
+        const { dialog } = electron.remote;
+
+        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
+            properties: ["openDirectory"]
+        });
+
+        if (chosenPath && chosenPath.filePaths.length > 0) {
+            this.customDbStorageLocation = chosenPath.filePaths[0];
+            console.log("Setting directory path to: " + this.customDbStorageLocation);
         }
     }
 

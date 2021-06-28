@@ -7,6 +7,7 @@ import { App } from "electron";
 import Utils from "@/logic/Utils";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
+
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
     private static readonly CONFIG_FILE_NAME = "unipept.config";
@@ -18,7 +19,8 @@ export default class ConfigurationManager {
         maxLongRunningTasks: 8,
         maxParallelRequests: 5,
         dockerConfigurationSettings:
-            Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS
+            Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
+        customDbStorageLocation: "/Volumes/T7/unipept-db"
     };
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
     // configuration and write the changes to disk (without having to read it again).
@@ -34,14 +36,15 @@ export default class ConfigurationManager {
                 config.maxParallelRequests >= 1
         },
         (config: Configuration) => {
-            // Check if the given config value is a valid JSON object.
+            // Check if the given Docker-config value is a valid JSON object.
             try {
                 JSON.parse(config.dockerConfigurationSettings);
                 return true;
             } catch (e) {
                 return false;
             }
-        }
+        },
+        (config: Configuration) => config.customDbStorageLocation !== ""
     ]
 
     private app: App;
