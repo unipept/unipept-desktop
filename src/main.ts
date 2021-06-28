@@ -40,6 +40,7 @@ import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
 import PeptideAnalysisPage from "@/components/pages/PeptideAnalysisPage.vue";
 import SingleAssayAnalysisPage from "@/components/pages/analysis/SingleAssayAnalysisPage.vue";
+import CustomDatabasePage from "@/components/pages/CustomDatabasePage.vue";
 
 const { app } = require("electron").remote;
 const bt = require("backtrace-js");
@@ -143,6 +144,13 @@ const routes = [
         component: PeptideAnalysisPage,
         meta: {
             title: "Tryptic peptide analysis"
+        }
+    },
+    {
+        path: "/databases",
+        component: CustomDatabasePage,
+        meta: {
+            title: "Custom databases"
         }
     },
     {
