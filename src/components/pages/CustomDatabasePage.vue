@@ -18,6 +18,9 @@
                                     <thead>
                                         <tr>
                                             <th class="text-left">
+                                                Status
+                                            </th>
+                                            <th class="text-left">
                                                 Name
                                             </th>
                                             <th class="text-left">
@@ -39,6 +42,14 @@
                                     </thead>
                                     <tbody>
                                         <tr v-for="item of databases" :key="item.name">
+                                            <td>
+                                                <tooltip message="Database is ready.">
+                                                    <v-icon>mdi-check</v-icon>
+                                                </tooltip>
+<!--                                                <tooltip message="Database is under construction.">-->
+<!--                                                    <v-progress-circular size="25" indeterminate color="primary"/>-->
+<!--                                                </tooltip>-->
+                                            </td>
                                             <td>{{ item.name }}</td>
                                             <td>{{ item.source }}</td>
                                             <td>{{ item.sourceVersion }}</td>
@@ -53,8 +64,13 @@
                                 </template>
                             </v-simple-table>
                             <div class="d-flex justify-end mt-4">
-                                <v-btn color="primary">Create custom database</v-btn>
+                                <v-btn color="primary" @click="createDatabaseDialog = true">
+                                    Create custom database
+                                </v-btn>
                             </div>
+                            <v-dialog v-model="createDatabaseDialog" max-width="800">
+                                <create-custom-database></create-custom-database>
+                            </v-dialog>
                         </v-card-text>
                     </v-card>
                 </div>
@@ -67,14 +83,19 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatabase.vue";
+import { Tooltip } from "unipept-web-components";
 
-@Component
+@Component({
+    components: { CreateCustomDatabase, Tooltip }
+})
 export default class CustomDatabasePage extends Vue {
     private databases: CustomDatabase[] = [
         new CustomDatabase("DB 1", "TrEMBL", "2021.2", [23, 4589, 129, 12324], 36123),
         new CustomDatabase("DB 2", "SwissProt", "2020.4", [78123, 23834, 3843, 218723], 38723)
     ];
 
+    private createDatabaseDialog: boolean = false;
 
 }
 </script>
