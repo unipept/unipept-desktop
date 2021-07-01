@@ -80,23 +80,126 @@
                                 </v-container>
                             </v-card-text>
                         </v-card>
-                        <h2 class="mx-auto settings-category-title">Appearance</h2>
+                        <h2 class="mx-auto settings-category-title">Storage</h2>
                         <v-card>
                             <v-card-text>
                                 <v-container fluid>
                                     <v-row>
-                                        <v-col cols="11">
-                                            <div class="settings-title">Use native titlebar</div>
+                                        <v-col cols="8">
+                                            <div class="settings-title">Database storage location</div>
+                                            <div class="settings-text">
+                                                Indicates where the application should store custom database files? Note
+                                                that these files can grow quite large in size, depending on the amount
+                                                and size of the custom databases you are planning to use. For large
+                                                databases, at least 100GiB of free space is required.
+                                            </div>
+                                        </v-col>
+                                        <v-col cols="4">
+                                            <v-text-field
+                                                single-line
+                                                filled
+                                                readonly
+                                                v-model="customDbStorageLocation"
+                                                :rules="customDbStorageLocationRules"
+                                                prepend-inner-icon="mdi-folder-outline"
+                                                @click="openDbStorageFileDialog">
+                                            </v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+                        </v-card>
+                        <h2 class="mx-auto settings-category-title">Docker</h2>
+                        <v-card>
+                            <v-card-text>
+                                <v-container fluid>
+                                    <v-row>
+                                        <v-col cols="12">
                                             <span class="settings-text">
-                                                Forces the application to use the native titlebar on Windows.
-                                            </span>
-                                            <span class="settings-text settings-important-text">
-                                                Changing this option requires you to restart the application.
+                                                This application requires a connection with a local Docker installation
+                                                in order to provide custom protein database functionality. If you
+                                                currently don't have Docker installed locally, you can download it for
+                                                free from <a @click="openInBrowser('https://www.docker.com/products/docker-desktop')">the Docker website</a>.
+                                                We recommend using Docker Desktop, which automatically comes with
+                                                Docker Engine (which in turn is required by this application in order
+                                                to allow easy communication with the Docker daemon.
                                             </span>
                                         </v-col>
-                                        <v-col cols="1">
-                                            <v-switch :disabled="!isWindows"
-                                                      v-model="configuration.useNativeTitlebar"></v-switch>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <div class="settings-title">Connection settings</div>
+                                            <span class="settings-text">
+                                                Provide a valid configuration that's required to connect to your local
+                                                Docker installation. All valid configuration options, that will be
+                                                accepted by this application can be found
+                                                <a @click="openInBrowser('https://github.com/apocas/dockerode#getting-started')">
+                                                here</a>. Please note that the default settings provided by this
+                                                application work in most cases, you only need to change this
+                                                configuration if no connection to your local Docker installation can be
+                                                made.
+                                            </span>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <v-textarea filled :rules="dockerConfigRules" v-model="dockerConnectionSettings" :rows="2" v-on:blur="updateDockerConnection" />
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <div class="settings-title">
+                                                Docker availability
+                                            </div>
+                                            <a class="settings-text" @click="retrieveDockerInfo">
+                                                Click to refresh status
+                                            </a>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12" style="min-height: 132px;">
+                                            <div v-if="dockerInfoLoading" class="d-flex flex-column align-center">
+                                                <v-progress-circular color="primary" indeterminate></v-progress-circular>
+                                                <span>Checking connection with Docker</span>
+                                            </div>
+                                            <div v-else class="d-flex">
+                                                <div style="max-width: 120px;" class="ml-4 mr-8">
+                                                    <v-img v-if="dockerInfo" src="@/assets/images/docker/docker_available.svg"/>
+                                                    <v-img v-else src="@/assets/images/docker/docker_na.svg"/>
+                                                </div>
+                                                <div class="settings-text" v-if="dockerInfo">
+                                                    <div>
+                                                        <strong>Architecture:</strong> {{ dockerInfo.Architecture }}
+                                                    </div>
+                                                    <div>
+                                                        <strong>CPUs available:</strong> {{ dockerInfo.NCPU }}
+                                                    </div>
+                                                    <div>
+                                                        <strong>Total memory available: </strong>
+                                                        {{ dockerInfo.MemTotal }} bytes
+                                                        ({{ (dockerInfo.MemTotal / (Math.pow(2,30))).toFixed(2) }} GiB)
+                                                    </div>
+                                                    <div>
+                                                        <strong>OS type:</strong>
+                                                        {{ dockerInfo.OSType }} ({{ dockerInfo.KernelVersion }})
+                                                    </div>
+                                                    <div>
+                                                        <strong>Docker server version:</strong>
+                                                        {{ dockerInfo.ServerVersion }}
+                                                    </div>
+                                                    <div>
+                                                        <strong>ID:</strong> {{ dockerInfo.ID }}
+                                                    </div>
+                                                </div>
+                                                <span class="settings-text" v-else>
+                                                    We were unable to connect to your local Docker installation. Please
+                                                    verify that Docker engine has been properly installed on your
+                                                    system, that it is currently running and that the configuration
+                                                    provided above is correct. Remember to check your firewall settings
+                                                    if Docker seems to be running perfectly, but no connection can be
+                                                    established.
+                                                </span>
+                                            </div>
                                         </v-col>
                                     </v-row>
                                 </v-container>
@@ -107,7 +210,7 @@
             </v-row>
         </v-form>
     </v-container>
-    <v-container v-else>
+    <v-container v-else class="d-flex flex-column align-center">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
     </v-container>
 </template>
@@ -119,9 +222,8 @@ import Configuration from "./../../logic/configuration/Configuration";
 import ConfigurationManager from "./../../logic/configuration/ConfigurationManager";
 import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
-import VForm from "vuetify";
-import Utils from "@/logic/Utils";
-import { NetworkConfiguration } from "unipept-web-components";
+import { NetworkConfiguration, NetworkUtils } from "unipept-web-components";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -134,8 +236,8 @@ export default class SettingsPage extends Vue {
     private errorVisible: boolean = false;
     private errorMessage: string = "";
 
-    private validInputs: boolean = true;
-    private isWindows: boolean = Utils.isWindows();
+    private dockerInfo: any = null;
+    private dockerInfoLoading: boolean = true;
 
     private apiSourceRules: ((x: string) => boolean | string)[] = [
         Rules.required,
@@ -146,18 +248,29 @@ export default class SettingsPage extends Vue {
         Rules.required,
         Rules.integer,
         Rules.gtZero
-    ]
+    ];
 
     private maxRequestRules: ((x: string) => boolean | string)[] = [
         Rules.required,
         Rules.integer,
         Rules.gtZero,
         Rules.lteTen
-    ]
+    ];
+
+    private dockerConfigRules: ((x: string) => boolean | string)[] = [
+        Rules.required,
+        Rules.json
+    ];
+
+    private customDbStorageLocationRules: ((x: string) => boolean | string)[] = [
+        Rules.required
+    ];
 
     private mounted() {
         let configManager: ConfigurationManager = new ConfigurationManager();
         configManager.readConfiguration().then((result) => this.configuration = result);
+
+        this.retrieveDockerInfo();
     }
 
     private async beforeDestroy() {
@@ -182,15 +295,70 @@ export default class SettingsPage extends Vue {
         return this.configuration.maxParallelRequests.toString();
     }
 
+    set dockerConnectionSettings(settings: string) {
+        this.configuration.dockerConfigurationSettings = settings;
+    }
+
+    get dockerConnectionSettings(): string {
+        return this.configuration.dockerConfigurationSettings;
+    }
+
+    set customDbStorageLocation(value: string) {
+        this.configuration.customDbStorageLocation = value;
+    }
+
+    get customDbStorageLocation(): string {
+        return this.configuration.customDbStorageLocation;
+    }
+
     @Watch("configuration.apiSource")
-    @Watch("configuration.useNativeTitlebar")
     @Watch("configuration.maxLongRunningTasks")
     @Watch("configuration.maxParallelRequests")
+    @Watch("configuration.dockerConnectionSettings")
     private async saveChanges(): Promise<void> {
         NetworkConfiguration.BASE_URL = this.configuration.apiSource;
         NetworkConfiguration.PARALLEL_API_REQUESTS = this.configuration.maxParallelRequests;
-        this.updateStore("setUseNativeTitlebar", this.configuration.useNativeTitlebar);
+        // Update docker connection
     }
+
+    private updateDockerConnection() {
+        if (this.dockerConfigRules.every(rule => rule(this.configuration.dockerConfigurationSettings))) {
+            DockerCommunicator.initializeConnection(JSON.parse(this.configuration.dockerConfigurationSettings));
+            this.retrieveDockerInfo();
+        }
+    }
+
+    private async retrieveDockerInfo() {
+        this.dockerInfoLoading = true;
+
+        const dockerCommunicator = new DockerCommunicator();
+
+        try {
+            this.dockerInfo = await dockerCommunicator.getDockerInfo();
+            await dockerCommunicator.buildDatabase(
+                [
+                    "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
+                ],
+                [
+                    "swissprot"
+                ],
+                [
+                    33090
+                ],
+                "/Volumes/T7/database/mysql",
+                "/Volumes/T7/database/index",
+                (step: string, value: number) => console.log("PROGRESS REPORTED FOR " + step + " WITH VALUE " + value)
+            );
+
+            console.log("Run has been completed...");
+        } catch (e) {
+            console.error(e);
+            this.dockerInfo = null;
+        }
+
+        this.dockerInfoLoading = false;
+    }
+
 
     private async updateStore(method: string, value: any) {
         this.errorVisible = false;
@@ -211,9 +379,27 @@ export default class SettingsPage extends Vue {
         }
     }
 
+    private async openDbStorageFileDialog(): Promise<void> {
+        const electron = require("electron");
+        const { dialog } = electron.remote;
+
+        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
+            properties: ["openDirectory"]
+        });
+
+        if (chosenPath && chosenPath.filePaths.length > 0) {
+            this.customDbStorageLocation = chosenPath.filePaths[0];
+            console.log("Setting directory path to: " + this.customDbStorageLocation);
+        }
+    }
+
     private showError(message: string): void {
         this.errorVisible = true;
         this.errorMessage = message;
+    }
+
+    private openInBrowser(url: string): void {
+        NetworkUtils.openInBrowser(url);
     }
 }
 </script>
@@ -232,11 +418,5 @@ export default class SettingsPage extends Vue {
 
     .settings-category-title:not(:first-child) {
         margin-top: 32px;
-    }
-
-    .v-progress-circular--indeterminate {
-        position: relative;
-        left: 50%;
-        transform: translateX(-50%);
     }
 </style>
