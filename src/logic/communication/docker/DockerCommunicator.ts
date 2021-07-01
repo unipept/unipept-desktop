@@ -1,6 +1,8 @@
 import Dockerode, { DockerOptions } from "dockerode";
 import { NcbiId, ProgressListener } from "unipept-web-components";
 import ProgressInspectorStream from "@/logic/communication/docker/ProgressInspectorStream";
+import { promises as fs } from "fs";
+import mkdirp from "mkdirp";
 
 
 export default class DockerCommunicator {
@@ -49,33 +51,43 @@ export default class DockerCommunicator {
             throw new Error("Connection to Docker daemon has not been initialized.");
         }
 
-        DockerCommunicator.connection.run(
-            "pverscha/unipept-custom-db:1.1.1",
-            [],
-            new ProgressInspectorStream(progressListener),
-            {
-                Env: [
-                    "MYSQL_ROOT_PASSWORD=unipept",
-                    "MYSQL_DATABASE=unipept",
-                    "MYSQL_USER=unipept",
-                    "MYSQL_PASSWORD=unipept",
-                    `DB_TYPES=${databaseTypes.join(",")}`,
-                    `DB_SOURCES=${databaseSources.join(",")}`,
-                    `FILTER_TAXA=${taxa.join(",")}`
-                ],
-                PortBindings: {
-                    "3306/tcp": [{
-                        HostIP: "0.0.0.0",
-                        HostPort: "3306"
-                    }]
-                },
-                Binds: [
-                    // Mount the folder in which the MySQL-specific database files will be kept
-                    `${databaseFolder}:/var/lib/mysql`,
-                    // Mount the folder in which the reusable database index structure will be kept
-                    `${indexFolder}:/data`
-                ]
-            }
-        );
+        // Clear the database output folder since this one will be filled up again by rebuilding the database.
+        await fs.rmdir(databaseFolder, { recursive: true });
+        await mkdirp(databaseFolder);
+
+        return new Promise<void>((resolve) => {
+            DockerCommunicator.connection.run(
+                "pverscha/unipept-custom-db:1.1.1",
+                [],
+                new ProgressInspectorStream(progressListener, () => resolve()),
+                {
+                    Env: [
+                        "MYSQL_ROOT_PASSWORD=unipept",
+                        "MYSQL_DATABASE=unipept",
+                        "MYSQL_USER=unipept",
+                        "MYSQL_PASSWORD=unipept",
+                        `DB_TYPES=${databaseTypes.join(",")}`,
+                        `DB_SOURCES=${databaseSources.join(",")}`,
+                        `FILTER_TAXA=${taxa.join(",")}`
+                    ],
+                    PortBindings: {
+                        "3306/tcp": [{
+                            HostIP: "0.0.0.0",
+                            HostPort: "3306"
+                        }]
+                    },
+                    Binds: [
+                        // Mount the folder in which the MySQL-specific database files will be kept
+                        `${databaseFolder}:/var/lib/mysql`,
+                        // Mount the folder in which the reusable database index structure will be kept
+                        `${indexFolder}:/data`
+                    ]
+                }
+            );
+        });
+    }
+
+    public async startDatabase(databaseLocation: string): Promise<void> {
+
     }
 }

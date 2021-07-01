@@ -2,7 +2,8 @@ import * as stream from "stream";
 
 export default class ProgressInspectorStream extends stream.Writable {
     constructor(
-        private readonly progressReporter: (step: string, progress: number) => void
+        private readonly progressReporter: (step: string, progress: number) => void,
+        private readonly onReadyListener: () => void
     ) {
         super();
     }
