@@ -34,6 +34,19 @@ export default class Rules {
         return pattern.test(x) || "An invalid URL is provided.";
     }
 
+    /**
+     * Is the provided string a valid JSON object?
+     * @param x
+     */
+    public static json: (x: string) => boolean | string = (x: string) => {
+        try {
+            JSON.parse(x);
+            return true;
+        } catch (e) {
+            return "The provided value is not a valid JSON object.";
+        }
+    }
+
     public static integer: (x: string) => boolean | string = (x: string) => {
         return Number.isInteger(Number.parseFloat(x)) || "Provided value is not a valid integer.";
     }

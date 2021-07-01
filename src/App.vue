@@ -78,6 +78,7 @@ import {
     AssayData,
     QueueManager
 } from "unipept-web-components";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
 const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
@@ -196,6 +197,7 @@ export default class App extends Vue implements ErrorListener {
             NetworkConfiguration.BASE_URL = config.apiSource;
             NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
             QueueManager.initializeQueue(config.maxLongRunningTasks);
+            DockerCommunicator.initializeConnection(JSON.parse(config.dockerConfigurationSettings));
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
             console.error(err)
