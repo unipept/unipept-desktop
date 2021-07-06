@@ -1,8 +1,7 @@
 <template>
     <v-data-table
         :headers="headers"
-    >
-
+        show-select>
     </v-data-table>
 </template>
 
@@ -11,6 +10,7 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { DefaultCommunicationSource, NcbiOntologyProcessor, NcbiTaxon } from "unipept-web-components";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
+import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 
 @Component
 export default class TaxaBrowser extends Vue {
@@ -35,13 +35,8 @@ export default class TaxaBrowser extends Vue {
     private taxa: NcbiTaxon[] = [];
 
     private async retrieveAllTaxa(): Promise<void> {
-        // TODO retrieve all taxa (for this we need to add a new endpoint to the Unipept server that provides this
-        // kind of information).
-        const taxaOntologyProcessor = new NcbiOntologyProcessor(
-            new DefaultCommunicationSource()
-        );
-
-        taxaOntologyProcessor.getOntologyByIds()
+        const ncbiManager = new CachedNcbiResponseCommunicator();
+        const ncbis = ncbiManager.getAllNcbiIds();
     }
 }
 </script>

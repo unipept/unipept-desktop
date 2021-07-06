@@ -55,7 +55,7 @@ export default class DockerCommunicator {
         await fs.rmdir(databaseFolder, { recursive: true });
         await mkdirp(databaseFolder);
 
-        return new Promise<void>((resolve) => {
+        await new Promise<void>((resolve) => {
             DockerCommunicator.connection.run(
                 "pverscha/unipept-custom-db:1.1.1",
                 [],

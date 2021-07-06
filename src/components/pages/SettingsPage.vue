@@ -335,24 +335,7 @@ export default class SettingsPage extends Vue {
 
         try {
             this.dockerInfo = await dockerCommunicator.getDockerInfo();
-            await dockerCommunicator.buildDatabase(
-                [
-                    "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
-                ],
-                [
-                    "swissprot"
-                ],
-                [
-                    33090
-                ],
-                "/Volumes/T7/database/mysql",
-                "/Volumes/T7/database/index",
-                (step: string, value: number) => console.log("PROGRESS REPORTED FOR " + step + " WITH VALUE " + value)
-            );
-
-            console.log("Run has been completed...");
         } catch (e) {
-            console.error(e);
             this.dockerInfo = null;
         }
 

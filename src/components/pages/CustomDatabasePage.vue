@@ -13,56 +13,47 @@
                                 Please note that Docker must be configured correctly in the
                                 <router-link to="/settings">settings</router-link> before new databases can be created.
                             </div>
-                            <v-simple-table class="mt-6">
-                                <template v-slot:default>
-                                    <thead>
-                                        <tr>
-                                            <th class="text-left">
-                                                Status
-                                            </th>
-                                            <th class="text-left">
-                                                Name
-                                            </th>
-                                            <th class="text-left">
-                                                Source
-                                            </th>
-                                            <th class="text-left">
-                                                Source version
-                                            </th>
-                                            <th class="text-left">
-                                                Taxa filter
-                                            </th>
-                                            <th class="text-left">
-                                                Number of entries
-                                            </th>
-                                            <th class="text-center">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="item of databases" :key="item.name">
-                                            <td>
-                                                <tooltip message="Database is ready.">
-                                                    <v-icon>mdi-check</v-icon>
-                                                </tooltip>
-<!--                                                <tooltip message="Database is under construction.">-->
-<!--                                                    <v-progress-circular size="25" indeterminate color="primary"/>-->
-<!--                                                </tooltip>-->
-                                            </td>
-                                            <td>{{ item.name }}</td>
-                                            <td>{{ item.source }}</td>
-                                            <td>{{ item.sourceVersion }}</td>
-                                            <td>{{ item.taxa.join(", ") }}</td>
-                                            <td>{{ item.entries }}</td>
-                                            <td class="text-center">
-                                                <v-icon small>mdi-delete</v-icon>
-                                                <v-icon small>mdi-information</v-icon>
-                                            </td>
-                                        </tr>
-                                    </tbody>
+                            <v-data-table
+                                :headers="headers"
+                                show-expand
+                                :expanded.sync="expandedItems"
+                                :items="databases">
+                                <template v-slot:item.actions="{ item }">
+                                    <v-icon small>mdi-delete</v-icon>
+                                    <v-icon small>mdi-information</v-icon>
                                 </template>
-                            </v-simple-table>
+                                <template v-slot:item.status="{ item }">
+                                    <td>
+                                        <tooltip message="Database is ready." v-if="item.ready">
+                                            <v-icon color="success">mdi-check</v-icon>
+                                        </tooltip>
+                                        <tooltip :message="item.progress.step" v-else>
+                                            <v-icon>mdi-progress-clock</v-icon>
+                                        </tooltip>
+                                    </td>
+                                </template>
+                                <template
+                                    v-slot:expanded-item="{ headers, item }">
+                                    <td :colspan="headers.length">
+                                        <div class="my-2">
+                                            <div v-if="item.ready">
+
+                                            </div>
+                                            <div v-else class="d-flex flex-column align-center">
+                                                <v-progress-circular
+                                                    :rotate="-90"
+                                                    :indeterminate="item.progress.value === -1"
+                                                    :value="item.progress.value"
+                                                    color="primary">
+                                                </v-progress-circular>
+                                                <span>
+                                                    {{ item.progress.step }} {{ item.progress.value === -1 ? "" : ` (${item.progress.value}%)` }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </template>
+                            </v-data-table>
                             <div class="d-flex justify-end mt-4">
                                 <v-btn color="primary" @click="createDatabaseDialog = true">
                                     Create custom database
@@ -85,18 +76,61 @@ import Component from "vue-class-component";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatabase.vue";
 import { Tooltip } from "unipept-web-components";
+import { CustomDatabaseInfo } from "@/state/DockerStore";
 
 @Component({
-    components: { CreateCustomDatabase, Tooltip }
+    components: { CreateCustomDatabase, Tooltip },
+    computed: {
+        databases: {
+            get(): CustomDatabaseInfo[] {
+                return [...Object.values(this.$store.getters.databases)];
+            }
+        }
+    }
 })
 export default class CustomDatabasePage extends Vue {
-    private databases: CustomDatabase[] = [
-        new CustomDatabase("DB 1", "TrEMBL", "2021.2", [23, 4589, 129, 12324], 36123),
-        new CustomDatabase("DB 2", "SwissProt", "2020.4", [78123, 23834, 3843, 218723], 38723)
-    ];
-
     private createDatabaseDialog: boolean = false;
 
+    private headers = [
+        {
+            text: "Status",
+            align: "start",
+            sortable: true,
+            value: "status"
+        },
+        {
+            text: "Name",
+            align: "start",
+            sortable: true,
+            value: "database.name"
+        },
+        {
+            text: "Source",
+            align: "start",
+            sortable: true,
+            value: "database.sourceTypes"
+        },
+        {
+            text: "Taxa filter",
+            align: "start",
+            sortable: true,
+            value: "database.taxa"
+        },
+        {
+            text: "Number of entries",
+            align: "start",
+            sortable: true,
+            value: "database.entries"
+        },
+        {
+            text: "Actions",
+            align: "center",
+            sortable: false,
+            value: "actions"
+        }
+    ];
+
+    private expandedItems: [] = [];
 }
 </script>
 

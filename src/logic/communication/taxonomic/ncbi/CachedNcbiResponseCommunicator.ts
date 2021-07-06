@@ -83,4 +83,12 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         }
         return CachedNcbiResponseCommunicator.codesProcessed;
     }
+
+    public getAllNcbiIds(): Promise<NcbiId[]> {
+        return this.dbManager.performQuery<NcbiId[]>((db: Database) => {
+            return db.prepare(
+                "SELECT id FROM taxons"
+            ).all();
+        });
+    }
 }

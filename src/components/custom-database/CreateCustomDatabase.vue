@@ -22,10 +22,22 @@
             </div>
             <v-container v-else>
                 <v-row>
-                    <v-col cols="6" class="py-0">
+                    <v-col cols="12">
+                        <div class="settings-title">General settings</div>
+                    </v-col>
+                </v-row>
+                <v-row>
+                    <v-col cols="12">
+                        <v-text-field
+                            label="Database name"
+                            hint="Give your database a name to easily recognize it."
+                            persistent-hint
+                            v-model="databaseName">
+                        </v-text-field>
+                    </v-col>
+                    <v-col cols="12">
                         <v-select
                             dense
-                            filled
                             label="Database sources"
                             hint="Select all database sources that should be filtered."
                             persistent-hint
@@ -33,22 +45,30 @@
                             :items="sources">
                         </v-select>
                     </v-col>
-                    <v-col cols="6" class="py-0">
-                        <v-select filled dense label="Database version" :items="versions"></v-select>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" class="py-0">
-                        <v-checkbox dense hide-details label="Use UniProt US mirror" class="mt-0" v-model="useUsMirror"></v-checkbox>
-                        <span class="font-weight-light">
-                            A UniProt mirror that's located in the EU is used by default. Tick this box if you're
-                            located closer to the US.
-                        </span>
+                    <v-col cols="12">
+                        <v-select
+                            dense
+                            label="Database version"
+                            :items="versions"
+                            hint="Select the version of the UniProt source that should be processed."
+                            persistent-hint>
+                        </v-select>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12">
-                        <span>Filter</span>
+                        <v-select
+                            dense
+                            label="UniProt mirror"
+                            :items="mirrors"
+                            persistent-hint
+                            hint="Select the mirror that's closest to your physical location to help speed up the download process.">
+                        </v-select>
+                    </v-col>
+                </v-row>
+                <v-row>
+                    <v-col cols="12">
+                        <div class="settings-title">Filter</div>
                         <div>
                             Please select a range of taxa that should be included in this custom database.
                         </div>
@@ -58,7 +78,7 @@
                     <v-col cols="12">
                         <div class="d-flex flex-row justify-center">
                             <v-btn class="mr-2">Cancel</v-btn>
-                            <v-btn color="primary">Continue</v-btn>
+                            <v-btn color="primary" @click="buildDatabase">Continue</v-btn>
                         </div>
                     </v-col>
                 </v-row>
@@ -82,7 +102,8 @@ export default class CreateCustomDatabase extends Vue {
         "TrEMBL",
         "SwissProt"
     ];
-    private useUsMirror: boolean = false;
+    private databaseName: string = "";
+    private mirrors: string[] = ["EU (EBI)", "US (UniProt)"];
 
     // All database versions of UniPept that are currently available
     private versions: String[] = [];
@@ -111,9 +132,26 @@ export default class CreateCustomDatabase extends Vue {
             this.error = true;
         }
     }
+
+    private async buildDatabase(): Promise<void> {
+        this.$store.dispatch(
+            "buildDatabase",
+            [
+                this.databaseName,
+                ["https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"],
+                ["swissprot"],
+                [33090],
+                "/Volumes/T7/database/mysql",
+                "/Volumes/T7/database/index",
+            ]
+        );
+    }
 }
 </script>
 
 <style scoped>
-
+    .settings-title {
+        color: black;
+        font-size: 18px;
+    }
 </style>
