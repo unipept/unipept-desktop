@@ -53,11 +53,15 @@
                     </v-snackbar>
                 </div>
                 <!-- Snackbar that's shown after the application has successfully been updated -->
-                <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
-                    {{ updateMessage }}
-                    <v-btn text dark @click="updatedSnackbar = false">Dismiss</v-btn>
-                    <v-btn text dark @click="closeApplication">Exit app</v-btn>
-                </v-snackbar>
+                <div class="updated-snackbar-container">
+                    <v-snackbar v-model="updatedSnackbar" :color="updatedColor" :timeout="-1">
+                        <div>
+                            {{ updateMessage }}
+                            <v-btn text dark @click="updatedSnackbar = false">Dismiss</v-btn>
+                            <v-btn text dark @click="closeApplication">Exit app</v-btn>
+                        </div>
+                    </v-snackbar>
+                </div>
             </v-main>
         </v-app>
     </div>
@@ -278,6 +282,10 @@ export default class App extends Vue implements ErrorListener {
         display: block;
     }
 
+    .updated-snackbar-container .v-snack__wrapper {
+        max-width: none;
+    }
+
     .v-content__wrap .container--fluid {
         padding-top: 0 !important;
         padding-bottom: 0 !important;
@@ -295,26 +303,4 @@ export default class App extends Vue implements ErrorListener {
         transition: none !important;
     }
 
-    //   .container-after-titlebar .v-app-bar {
-    //     margin-top: 30px !important;
-    //   }
-
-    //   .container-after-titlebar .v-navigation-drawer {
-    //     top: 30px !important;
-    //   }
-
-    //   .container-after-titlebar {
-    //     top: 0 !important;
-    //     position: static !important;
-    //     margin-top: 30px !important;
-    //   }
-
-    //   .container-after-titlebar .v-content__wrap {
-    //       max-height: 100vh;
-    //   }
-
-    //   .container-after-titlebar .v-content__wrap > .container {
-    //       height: 100%;
-    //       overflow-y: scroll;
-    //   }
 </style>
