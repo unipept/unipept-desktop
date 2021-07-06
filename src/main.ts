@@ -29,6 +29,7 @@ import vueFullscreen from "vue-fullscreen";
 
 import { DesktopConfigurationStore } from "@/state/DesktopConfigurationStore";
 import { projectStore } from "@/state/ProjectStore";
+import { customDatabaseStore } from "@/state/DockerStore";
 import { summaryStore } from "@/state/PeptideSummaryStore";
 import { ComparativeStore } from "@/state/ComparativeStore";
 
@@ -40,6 +41,7 @@ import DesktopAssayProcessor from "@/logic/communication/DesktopAssayProcessor";
 
 import PeptideAnalysisPage from "@/components/pages/PeptideAnalysisPage.vue";
 import SingleAssayAnalysisPage from "@/components/pages/analysis/SingleAssayAnalysisPage.vue";
+import CustomDatabasePage from "@/components/pages/CustomDatabasePage.vue";
 
 const { app } = require("electron").remote;
 const bt = require("backtrace-js");
@@ -93,7 +95,6 @@ const assayStore = createAssayStore((
     return new DesktopAssayProcessor(store.getters.dbManager, assay, progressListener);
 });
 
-
 export const store = new Vuex.Store({
     modules: {
         assay: assayStore,
@@ -106,7 +107,8 @@ export const store = new Vuex.Store({
         interpro: iprStore,
         ncbi: lcaOntologyStore,
         project: projectStore,
-        peptideSummary: summaryStore
+        peptideSummary: summaryStore,
+        customDatabase: customDatabaseStore
     }
 });
 
@@ -143,6 +145,13 @@ const routes = [
         component: PeptideAnalysisPage,
         meta: {
             title: "Tryptic peptide analysis"
+        }
+    },
+    {
+        path: "/databases",
+        component: CustomDatabasePage,
+        meta: {
+            title: "Custom databases"
         }
     },
     {
