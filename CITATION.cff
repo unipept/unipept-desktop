@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Verschaffelt"
+    given-names: "Pieter"
+  - family-names: "Van Den Bossche"
+    given-names: "Tim"
+  - family-names: "Martens"
+    given-names: "Lennart"
+  - family-names: "Dawyndt"
+    given-names: "Peter"
+  - family-names: "Mesuere"
+    given-names: "Bart"
+    orcid: "https://orcid.org/0000-0003-0610-3441"
+  doi: "10.1021/acs.jproteome.0c00855"
+  journal: "Journal of Proteome Research"
+  start: 2005
+  end: 2009
+  title: "Unipept Desktop: A Faster, More Powerful Metaproteomics Results Analysis Tool"
+  issue: 4
+  volume: 20
+  year: 2021
