@@ -79,6 +79,7 @@ import {
     QueueManager
 } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import BootstrapApplication from "@/logic/application/BootstrapApplication";
 
 const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
@@ -193,11 +194,8 @@ export default class App extends Vue implements ErrorListener {
         this.loading = true;
         let configurationManager = new ConfigurationManager();
         try {
-            let config: Configuration = await configurationManager.readConfiguration();
-            NetworkConfiguration.BASE_URL = config.apiSource;
-            NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
-            QueueManager.initializeQueue(config.maxLongRunningTasks);
-            DockerCommunicator.initializeConnection(JSON.parse(config.dockerConfigurationSettings));
+            const appBootstrap = new BootstrapApplication();
+            appBootstrap.loadApplicationComponents();
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
             console.error(err)

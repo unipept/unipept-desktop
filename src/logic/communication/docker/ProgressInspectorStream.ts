@@ -21,6 +21,18 @@ export default class ProgressInspectorStream extends stream.Writable {
             this.progressReporter(step, value);
         }
 
+        // If this text appears in the Docker logs, we now that the server has been started.
+        if (
+            chunk.toString().contains(
+                "No existing UUID has been found, so we assume that this is the first time that this server " +
+                "has been started."
+            )
+        ) {
+            // Wait 2 more seconds for the server to be completely ready and then notify all listeners that the database
+            // has been successfully built.
+            setTimeout(() => this.onReadyListener(), 2000);
+        }
+
         callback();
     }
 }

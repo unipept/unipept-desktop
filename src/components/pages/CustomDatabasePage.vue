@@ -77,6 +77,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatabase.vue";
 import { Tooltip } from "unipept-web-components";
 import { CustomDatabaseInfo } from "@/state/DockerStore";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
 @Component({
     components: { CreateCustomDatabase, Tooltip },
