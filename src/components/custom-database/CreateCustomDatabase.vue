@@ -72,6 +72,7 @@
                         <div>
                             Please select a range of taxa that should be included in this custom database.
                         </div>
+                        <taxa-browser></taxa-browser>
                     </v-col>
                 </v-row>
                 <v-row>
@@ -93,8 +94,10 @@ import Component from "vue-class-component";
 import axios from "axios";
 
 import https from "https";
-
-@Component
+import TaxaBrowser from "@/components/taxon/TaxaBrowser.vue";
+@Component({
+    components: { TaxaBrowser }
+})
 export default class CreateCustomDatabase extends Vue {
     private loading: boolean = true;
     private error: boolean = false;

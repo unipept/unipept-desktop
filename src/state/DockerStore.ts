@@ -174,7 +174,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         store.commit("INITIALIZE_QUEUE", [queue]);
 
         setTimeout(
-            () => {
+            async() => {
                 if (!store.getters.constructionInProgress) {
                     // If no databases are currently being constructed, and at least one database is waiting in the
                     // queue, we should start the construction process for this database.
@@ -184,7 +184,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                         const customDb = store.getters.queue[0];
 
                         const dockerCommunicator = new DockerCommunicator();
-                        dockerCommunicator.buildDatabase(
+                        await dockerCommunicator.buildDatabase(
                             customDb,
                             path.join(configuration.customDbStorageLocation, "databases"),
                             path.join(configuration.customDbStorageLocation, "index"),
@@ -192,6 +192,8 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                                 store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value]);
                             }
                         );
+
+                        store.commit("UPDATE_CONSTRUCTION_STATUS", false);
                     }
                 }
             },

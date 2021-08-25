@@ -4,10 +4,12 @@ import ProgressInspectorStream from "@/logic/communication/docker/ProgressInspec
 import { promises as fs } from "fs";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
 
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
+    private static readonly WEB_CONTAINER_NAME = "unipept_web";
 
     public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({ socketPath: "/var/run/docker.sock" });
     public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
@@ -127,8 +129,23 @@ export default class DockerCommunicator {
      * Start a Docker container that connects to a database on port 3306 of the host computer and exposes a Unipept
      * API service on port 3000 that can be connected to from this application.
      */
-    public async startApi(): Promise<void> {
-
+    public async startWebComponent(): Promise<void> {
+        await new Promise<void>((resolve) => {
+            DockerCommunicator.connection.run(
+                "pverscha/unipept-web",
+                [],
+                new StringNotifierInspectorStream("Listening on", resolve),
+                {
+                    Name: DockerCommunicator.WEB_CONTAINER_NAME,
+                    PortBindings: {
+                        "3000/tcp": [{
+                            HostIP: "0.0.0.0",
+                            HostPort: "3000"
+                        }]
+                    }
+                }
+            )
+        });
     }
 
     /**

@@ -29,7 +29,7 @@ export default class CustomDatabaseManager {
             // Check if a metadata file is present in the folder that was found. If it is present, we should read the
             // database name and other metadata from this file.
             const metadata = JSON.parse(await fs.readFile(
-                path.join(dbRootFolder, databases, dir, "metadata.json"),
+                path.join(dbRootFolder, "databases", dir, "metadata.json"),
                 { encoding: "utf-8" }
             ));
 
