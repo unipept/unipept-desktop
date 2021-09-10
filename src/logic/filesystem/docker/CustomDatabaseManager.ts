@@ -83,6 +83,35 @@ export default class CustomDatabaseManager {
     }
 
     /**
+     * Returns the most appropriate URL that can be used to download the specific UniProt database. This function will
+     * automatically take into account the current location of the user and point the user to the closest FTP mirror.
+     * Note that location detection of the user is very rudimentary and only provides a rough estimate of the user's
+     * current point of residence (e.g. Europe, United States, ...).
+     *
+     * @param dbVersionId A valid version identifier in the format YYYY.MM (that should point to an existing UniProt
+     * version) or "current" for the most recent version of the database.
+     */
+    public getUrl(
+        dbVersionId: string
+    ): string {
+        if (dbVersionId.toLowerCase() === "current") {
+            // The user wants to download the most recent version of the UniProt database and we should check the user's
+            // current location (e.g. Europe, United States, Africa, ...) to determine what the most appropriate
+            // mirror is.
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            // if (timezone && timezone.toLowerCase().includes("europe")) {
+            //     // The user is situated in Europe and we should use Expasy as our default FTP server.
+            //     return
+            // } else {
+            //     return
+            // }
+        }
+
+        return "";
+    }
+
+    /**
      * Constructs the path to a folder wherein the database's metadata should be stored.
      *
      * @param dbRootFolder The root folder in which all custom database information for the complete application is

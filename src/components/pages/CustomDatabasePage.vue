@@ -59,9 +59,7 @@
                                     Create custom database
                                 </v-btn>
                             </div>
-                            <v-dialog v-model="createDatabaseDialog" max-width="800">
-                                <create-custom-database></create-custom-database>
-                            </v-dialog>
+                            <create-custom-database v-model="createDatabaseDialog"></create-custom-database>
                         </v-card-text>
                     </v-card>
                 </div>

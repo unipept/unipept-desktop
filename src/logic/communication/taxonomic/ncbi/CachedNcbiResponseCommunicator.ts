@@ -31,17 +31,19 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
             );
 
             for (const id of codes) {
-                const row = extractStmt.get(id);
-                if (row) {
-                    const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
-                    lineagesToExtract.push(...lineage);
+                if (id) {
+                    const row = extractStmt.get(id);
+                    if (row) {
+                        const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+                        lineagesToExtract.push(...lineage);
 
-                    CachedNcbiResponseCommunicator.codesProcessed.set(id, {
-                        id: row.id,
-                        name: row.name,
-                        rank: row.rank,
-                        lineage: lineage
-                    });
+                        CachedNcbiResponseCommunicator.codesProcessed.set(id, {
+                            id: row.id,
+                            name: row.name,
+                            rank: row.rank,
+                            lineage: lineage
+                        });
+                    }
                 }
             }
 
@@ -52,16 +54,18 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
             for (const id of lineagesToExtract.filter(
                 (c) => !CachedNcbiResponseCommunicator.codesProcessed.has(c)
             )) {
-                const row = extractStmt.get(id);
-                if (row) {
-                    const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
+                if (id) {
+                    const row = extractStmt.get(id);
+                    if (row) {
+                        const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
 
-                    CachedNcbiResponseCommunicator.codesProcessed.set(id, {
-                        id: row.id,
-                        name: row.name,
-                        rank: row.rank,
-                        lineage: lineage
-                    });
+                        CachedNcbiResponseCommunicator.codesProcessed.set(id, {
+                            id: row.id,
+                            name: row.name,
+                            rank: row.rank,
+                            lineage: lineage
+                        });
+                    }
                 }
             }
         }
@@ -81,9 +85,45 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         return CachedNcbiResponseCommunicator.codesProcessed;
     }
 
-    public getAllNcbiIds(): NcbiId[] {
+    /**
+     * Returns the amount of NCBI taxa that are known to the database underlying the application. An optional filter
+     * string can be given that allows the database to be filtered by all taxa that contain a specific text in their
+     * name.
+     *
+     * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
+     * function.
+     */
+    public getNcbiCount(nameFilter: string = ""): number {
+        return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name LIKE ?")
+            .get(`%${nameFilter}%`)["COUNT(id)"];
+    }
+
+    /**
+     * Returns a slice of all NCBI id's from the database starting from row number start (inclusive) and ending at end
+     * (exclusive). Note that if a specific name filter is given, only taxa that contain this text as portion of their
+     * name will be returned.
+     *
+     * @param start First NCBI id that should be included in the result (inclusive).
+     * @param end First NCBI id that should not be included in the result (exclusive).
+     * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
+     * function.
+     * @param sortBy Which taxon property should be used to sort the table?
+     * @param sortDescending Sort according to ascending or descending values in the selected column?
+     */
+    public getNcbiRange(
+        start: number,
+        end: number,
+        nameFilter: string = "",
+        sortBy: "id" | "name" | "rank" = "id",
+        sortDescending: boolean = true
+    ): NcbiId[] {
+        console.log("sortBy: " + sortBy);
+        console.log("sortDescending: " + sortDescending);
+
         return this.db.prepare(
-            "SELECT id FROM taxons"
-        ).all().map(item => item.id);
+            `SELECT id, name, rank FROM taxons WHERE name LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
+        )
+            .all(`%${nameFilter}%`, end - start, start)
+            .map(item => item.id);
     }
 }
