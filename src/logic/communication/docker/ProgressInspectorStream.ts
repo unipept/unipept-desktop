@@ -23,7 +23,7 @@ export default class ProgressInspectorStream extends stream.Writable {
 
         // If this text appears in the Docker logs, we now that the server has been started.
         if (
-            chunk.toString().contains(
+            chunk.toString().includes(
                 "No existing UUID has been found, so we assume that this is the first time that this server " +
                 "has been started."
             )

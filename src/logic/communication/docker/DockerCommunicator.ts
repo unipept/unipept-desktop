@@ -5,6 +5,8 @@ import { promises as fs } from "fs";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
+import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
+import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 
 
 export default class DockerCommunicator {
@@ -94,6 +96,13 @@ export default class DockerCommunicator {
                 }
             );
         });
+
+        // Write the metadata JSON file.
+        const configMng = new ConfigurationManager();
+        const config = await configMng.readConfiguration();
+
+        const customManager = new CustomDatabaseManager();
+        customManager.updateMetadata(config.customDbStorageLocation, customDb);
 
         // Now, stop this container
         const buildContainer = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);

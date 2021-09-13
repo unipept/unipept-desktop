@@ -81,7 +81,7 @@
                                             label="UniProt mirror"
                                             :items="mirrors"
                                             :rules="[value => !! value || 'You must select a UniProt mirror']"
-                                            :v-model="selectedMirror"
+                                            v-model="selectedMirror"
                                             persistent-hint
                                             hint="Select the mirror that's closest to your physical location to help speed up the download process.">
                                         </v-select>
@@ -201,6 +201,7 @@ import {
 } from "unipept-web-components";
 import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
+import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 @Component({
     components: { TaxaBrowser }
 })
@@ -221,12 +222,12 @@ export default class CreateCustomDatabase extends Vue {
 
     private databaseName: string = "";
 
-    private mirrors: string[] = ["EU (EBI)", "US (UniProt)"];
-    private selectedMirror: string = "EU (EBI)";
+    private mirrors: string[] = ["UK (EBI)", "EU (Expasy)", "US (UniProt)"];
+    private selectedMirror: string = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
     private versions: String[] = [];
-    private selectedVersion: string = "current";
+    private selectedVersion: string = "Current";
 
     private selectedTaxa: NcbiTaxon[] = [];
 
@@ -234,6 +235,7 @@ export default class CreateCustomDatabase extends Vue {
 
     private async mounted() {
         this.onValueChanged();
+        this.selectedMirror = this.getMostSuitableMirror();
         await this.retrieveUniProtVersions();
     }
 
@@ -265,26 +267,47 @@ export default class CreateCustomDatabase extends Vue {
     }
 
     private validateAndContinue(): void {
-        // if (this.$refs.databaseForm.validate()) {
-        this.currentStep = 2;
-        // }
+        if (this.$refs.databaseForm.validate()) {
+            this.currentStep = 2;
+        }
     }
 
     private async buildDatabase(): Promise<void> {
+        const sourceUrlMap = {
+            "TrEMBL": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.xml.gz",
+            "SwissProt": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
+        }
 
+        const configManager = new ConfigurationManager();
 
         this.$store.dispatch(
             "buildDatabase",
             [
                 this.databaseName,
-                ["https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"],
-                ["swissprot"],
-                [33090],
-                "/Volumes/T7/database/mysql",
-                "/Volumes/T7/database/index",
+                this.selectedSources.map(source => sourceUrlMap[source]),
+                this.selectedSources,
+                this.selectedTaxa.map(taxon => taxon.id),
+                await configManager.readConfiguration()
             ]
         );
         this.dialogActive = false;
+    }
+
+    /**
+     * This function checks the user's current timezone settings and uses this information to determine what the most
+     * suitable mirror is that can be used for his present location. Note that this is only an estimate.
+     */
+    private getMostSuitableMirror(): string {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        if (timezone.includes("London") || timezone.includes("Dublin")) {
+            // Return UK-based mirror
+            return "UK (EBI)";
+        } else if (timezone.includes("Europe")) {
+            return "EU (Expasy)";
+        } else {
+            return "US (UniProt)";
+        }
     }
 
     @Watch("value")

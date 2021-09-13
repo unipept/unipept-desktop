@@ -47,7 +47,11 @@ export default class BootstrapApplication {
 
     private async initializeCustomDatabases(config: Configuration): Promise<void> {
         const customDatabaseManager = new CustomDatabaseManager();
-        const dbs = await customDatabaseManager.listAllIncompleteDatabases(config.customDbStorageLocation);
-        this.store.dispatch("customDatabase/initializeQueue", dbs);
+
+        const completeDbs = await customDatabaseManager.listAllBuildDatabases(config.customDbStorageLocation);
+        this.store.dispatch("initializeReadyDatabases", completeDbs)
+
+        const incompleteDbs = await customDatabaseManager.listAllIncompleteDatabases(config.customDbStorageLocation);
+        this.store.dispatch("initializeQueue", [incompleteDbs, config]);
     }
 }

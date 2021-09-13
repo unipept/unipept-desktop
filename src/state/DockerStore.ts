@@ -114,6 +114,22 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         inProgress: boolean
     ) {
         state.constructionInProgress = inProgress;
+    },
+
+    ADD_TO_DB_LIST(
+        state: CustomDatabaseState,
+        list: CustomDatabase[]
+    ) {
+        for (const db of list) {
+            state.databases.push({
+                database: db,
+                progress: {
+                    value: 1,
+                    step: ""
+                },
+                ready: true
+            });
+        }
     }
 }
 
@@ -127,15 +143,13 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                 databaseSources,
                 databaseTypes,
                 taxa,
-                databaseFolder,
-                indexFolder
+                configuration
             ]: [
                 string,
                 string[],
                 string[],
                 NcbiId[],
-                string,
-                string
+                Configuration
             ]
         ) {
             // TODO count exact number of entries that will be present in this database.
@@ -155,8 +169,8 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                 const dockerCommunicator = new DockerCommunicator();
                 await dockerCommunicator.buildDatabase(
                     customDb,
-                    databaseFolder,
-                    indexFolder,
+                    path.join(configuration.customDbStorageLocation, "databases", dbName),
+                    path.join(configuration.customDbStorageLocation, "index"),
                     (step, value) => {
                         store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value]);
                     }
@@ -171,7 +185,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         store: ActionContext<CustomDatabaseState, any>,
         [queue, configuration]: [CustomDatabase[], Configuration]
     ) {
-        store.commit("INITIALIZE_QUEUE", [queue]);
+        store.commit("INITIALIZE_QUEUE", queue);
 
         setTimeout(
             async() => {
@@ -199,6 +213,13 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
             },
             1000
         );
+    },
+
+    initializeReadyDatabases(
+        store: ActionContext<CustomDatabaseState, any>,
+        dbList: CustomDatabase[]
+    ) {
+        store.commit("ADD_TO_DB_LIST", dbList);
     }
 }
 

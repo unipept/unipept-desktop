@@ -194,7 +194,7 @@ export default class App extends Vue implements ErrorListener {
         this.loading = true;
         let configurationManager = new ConfigurationManager();
         try {
-            const appBootstrap = new BootstrapApplication();
+            const appBootstrap = new BootstrapApplication(this.$store);
             appBootstrap.loadApplicationComponents();
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
