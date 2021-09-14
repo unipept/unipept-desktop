@@ -97,12 +97,7 @@ export default class DockerCommunicator {
             );
         });
 
-        // Write the metadata JSON file.
-        const configMng = new ConfigurationManager();
-        const config = await configMng.readConfiguration();
-
-        const customManager = new CustomDatabaseManager();
-        customManager.updateMetadata(config.customDbStorageLocation, customDb);
+        customDb.complete = true;
 
         // Now, stop this container
         const buildContainer = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);

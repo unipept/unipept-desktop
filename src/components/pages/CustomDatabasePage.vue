@@ -36,10 +36,17 @@
                                     v-slot:expanded-item="{ headers, item }">
                                     <td :colspan="headers.length">
                                         <div class="my-2">
-                                            <div v-if="item.ready">
-
+                                            <div v-if="item.ready" class="d-flex flex-column align-center py-4">
+                                                <v-avatar color="green">
+                                                    <v-icon dark>mdi-check</v-icon>
+                                                </v-avatar>
+                                                <div class="mt-2">
+                                                    This custom database has been constructed successfully and can be
+                                                    used as part of an analysis. Head over to the analysis page and
+                                                    open up a new sample to get started.
+                                                </div>
                                             </div>
-                                            <div v-else class="d-flex flex-column align-center">
+                                            <div v-else class="d-flex flex-column align-center py-4">
                                                 <v-progress-circular
                                                     :rotate="-90"
                                                     :indeterminate="item.progress.value === -1"

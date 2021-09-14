@@ -177,7 +177,7 @@ export default class StaticDatabaseManager {
      */
     public getDatabase(): sqlite3.Database {
         if (!StaticDatabaseManager.db) {
-            StaticDatabaseManager.db = new sqlite3(this.getDatabasePath(), { verbose: console.log });
+            StaticDatabaseManager.db = new sqlite3(this.getDatabasePath());
         }
 
         return StaticDatabaseManager.db;

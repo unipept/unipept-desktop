@@ -6,6 +6,7 @@ import Vue from "vue";
 import { queue } from "async";
 import Configuration from "@/logic/configuration/Configuration";
 import * as path from "path";
+import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
 
 type CustomDatabaseInfo = {
     database: CustomDatabase
@@ -163,20 +164,11 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
 
             store.commit("ADD_DATABASE", customDb);
 
+            const customDbMng = new CustomDatabaseManager();
+            customDbMng.updateMetadata(configuration.customDbStorageLocation, customDb);
+
             if (!store.getters.constructionInProgress) {
-                store.commit("UPDATE_CONSTRUCTION_STATUS", true);
-
-                const dockerCommunicator = new DockerCommunicator();
-                await dockerCommunicator.buildDatabase(
-                    customDb,
-                    path.join(configuration.customDbStorageLocation, "databases", dbName),
-                    path.join(configuration.customDbStorageLocation, "index"),
-                    (step, value) => {
-                        store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value]);
-                    }
-                );
-
-                store.commit("UPDATE_DATABASE_STATUS", [customDb, true]);
+                await startDatabaseConstruction(store, customDb, configuration);
             }
         }
     },
@@ -185,6 +177,9 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         store: ActionContext<CustomDatabaseState, any>,
         [queue, configuration]: [CustomDatabase[], Configuration]
     ) {
+        for (const db of queue) {
+            store.commit("ADD_DATABASE", db);
+        }
         store.commit("INITIALIZE_QUEUE", queue);
 
         setTimeout(
@@ -193,21 +188,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                     // If no databases are currently being constructed, and at least one database is waiting in the
                     // queue, we should start the construction process for this database.
                     if (store.getters.queue.length > 0) {
-                        store.commit("UPDATE_CONSTRUCTION_STATUS", true);
-
-                        const customDb = store.getters.queue[0];
-
-                        const dockerCommunicator = new DockerCommunicator();
-                        await dockerCommunicator.buildDatabase(
-                            customDb,
-                            path.join(configuration.customDbStorageLocation, "databases"),
-                            path.join(configuration.customDbStorageLocation, "index"),
-                            (step, value) => {
-                                store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value]);
-                            }
-                        );
-
-                        store.commit("UPDATE_CONSTRUCTION_STATUS", false);
+                        await startDatabaseConstruction(store, store.getters.queue[0], configuration);
                     }
                 }
             },
@@ -221,6 +202,29 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
     ) {
         store.commit("ADD_TO_DB_LIST", dbList);
     }
+}
+
+const startDatabaseConstruction = async function(
+    store: ActionContext<CustomDatabaseState, any>,
+    customDb: CustomDatabase,
+    configuration: Configuration
+) {
+    store.commit("UPDATE_CONSTRUCTION_STATUS", true);
+
+    const dockerCommunicator = new DockerCommunicator();
+    await dockerCommunicator.buildDatabase(
+        customDb,
+        path.join(configuration.customDbStorageLocation, "databases", customDb.name),
+        path.join(configuration.customDbStorageLocation, "index"),
+        (step, value) => {
+            store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value]);
+        }
+    );
+
+    const customManager = new CustomDatabaseManager();
+    customManager.updateMetadata(configuration.customDbStorageLocation, customDb);
+
+    store.commit("UPDATE_DATABASE_STATUS", [customDb, true]);
 }
 
 export const customDatabaseStore = {

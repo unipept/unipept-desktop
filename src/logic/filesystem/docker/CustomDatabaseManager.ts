@@ -29,21 +29,26 @@ export default class CustomDatabaseManager {
             if ((await fs.lstat(path.join(dbRootFolder, "databases", dir))).isDirectory()) {
                 // Check if a metadata file is present in the folder that was found. If it is present, we should read
                 // the database name and other metadata from this file.
-                const metadata = JSON.parse(await fs.readFile(
-                    path.join(dbRootFolder, "databases", dir, "metadata.json"),
-                    { encoding: "utf-8" }
-                ));
+                try {
+                    const metadata = JSON.parse(await fs.readFile(
+                        path.join(dbRootFolder, "databases", dir, "metadata.json"),
+                        { encoding: "utf-8" }
+                    ));
 
-                databases.push(
-                    new CustomDatabase(
-                        metadata.name,
-                        metadata.sources,
-                        metadata.sourceTypes,
-                        metadata.taxa,
-                        metadata.entries,
-                        metadata.complete
-                    )
-                );
+                    databases.push(
+                        new CustomDatabase(
+                            metadata.name,
+                            metadata.sources,
+                            metadata.sourceTypes,
+                            metadata.taxa,
+                            metadata.entries,
+                            metadata.complete
+                        )
+                    );
+                } catch (e) {
+                    // The inspected directory probably doesn't contain a database and we should do nothing in this
+                    // case.
+                }
             }
         }
         return databases;

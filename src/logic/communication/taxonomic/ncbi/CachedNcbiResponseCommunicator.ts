@@ -8,6 +8,9 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
     private readonly db: Database;
     private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
 
+    private static staticDbProgress: Promise<NcbiId[]>;
+    private static worker: Worker;
+
     constructor() {
         super();
         try {
@@ -117,13 +120,10 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         sortBy: "id" | "name" | "rank" = "id",
         sortDescending: boolean = true
     ): NcbiId[] {
-        console.log("sortBy: " + sortBy);
-        console.log("sortDescending: " + sortDescending);
-
         return this.db.prepare(
             `SELECT id, name, rank FROM taxons WHERE name LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
         )
             .all(`%${nameFilter}%`, end - start, start)
-            .map(item => item.id);
+            .map((item: any) => item.id);
     }
 }
