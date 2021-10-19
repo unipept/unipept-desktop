@@ -8,12 +8,18 @@ import Configuration from "@/logic/configuration/Configuration";
 import * as path from "path";
 import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
 
+const PROGRESS_STEPS_LENGTH: number = 12;
+
 type CustomDatabaseInfo = {
     database: CustomDatabase
     progress: {
         // Progress value ([0 - 100]) or -1 if indeterminate
         value: number,
-        step: string
+        step: string,
+        progress_step: number,
+        startTimes: number[],
+        endTimes: number[],
+        previousStep: number
     },
     // Whether the database has been constructed successfully.
     ready: boolean
@@ -65,7 +71,11 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
             database: database,
             progress: {
                 value: -1,
-                step: "Initializing database construction"
+                step: "Initializing database construction",
+                progress_step: 0,
+                startTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
+                endTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
+                previousStep: -1
             },
             ready: false
         });
@@ -73,11 +83,22 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
 
     UPDATE_DATABASE_PROGRESS(
         state: CustomDatabaseState,
-        [database, step, value]: [CustomDatabase, string, number]
+        [database, step, value, progress_step]: [CustomDatabase, string, number, number]
     ) {
         const dbObj = state.databases.find(db => db.database.name === database.name);
         dbObj.progress.value = value;
         dbObj.progress.step = step;
+        dbObj.progress.progress_step = progress_step;
+
+        if (dbObj.progress.previousStep !== progress_step) {
+            const time = new Date().getTime();
+            dbObj.progress.startTimes[progress_step] = time;
+            dbObj.progress.endTimes[dbObj.progress.previousStep] = time;
+        }
+
+        console.log(JSON.stringify(dbObj.progress));
+
+        dbObj.progress.previousStep = progress_step;
     },
 
     UPDATE_DATABASE_STATUS(
@@ -126,7 +147,11 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
                 database: db,
                 progress: {
                     value: 1,
-                    step: ""
+                    step: "",
+                    progress_step: 0,
+                    startTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
+                    endTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
+                    previousStep: -1
                 },
                 ready: true
             });
@@ -153,13 +178,17 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                 Configuration
             ]
         ) {
+            // TODO change to correct most recent version, retrieved from the Expasy FTP server.
+            const dbVersion = "2021.3";
+
             // TODO count exact number of entries that will be present in this database.
             const customDb = new CustomDatabase(
                 dbName,
                 databaseSources,
                 databaseTypes,
                 taxa,
-                0
+                0,
+                dbVersion
             );
 
             store.commit("ADD_DATABASE", customDb);
@@ -182,7 +211,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         }
         store.commit("INITIALIZE_QUEUE", queue);
 
-        setTimeout(
+        setInterval(
             async() => {
                 if (!store.getters.constructionInProgress) {
                     // If no databases are currently being constructed, and at least one database is waiting in the
@@ -216,8 +245,8 @@ const startDatabaseConstruction = async function(
         customDb,
         path.join(configuration.customDbStorageLocation, "databases", customDb.name),
         path.join(configuration.customDbStorageLocation, "index"),
-        (step, value) => {
-            store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value]);
+        (step, value, progress_step) => {
+            store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value, progress_step]);
         }
     );
 

@@ -3,11 +3,13 @@ import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisi
 import { ProteomicsAssay, SearchConfiguration, Study } from "unipept-web-components";
 import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 
 export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisitor {
     constructor(
         directoryPath: string,
         dbManager: DatabaseManager,
+        private readonly projectLocation: string,
         private readonly study?: Study
     ) {
         super(directoryPath, dbManager);
@@ -38,24 +40,28 @@ export default class AssayFileSystemMetaDataReader extends FileSystemAssayVisito
             })
 
             let config: SearchConfiguration;
+            config = new SearchConfiguration(
+                true,
+                true,
+                false,
+                row.configuration_id
+            );
+            const configReader = new SearchConfigFileSystemReader(this.dbManager);
+            configReader.visitSearchConfiguration(config);
+            mpAssay.setSearchConfiguration(config);
+
+            mpAssay.setAnalysisSource(
+                await AnalysisSourceSerializer.deserializeAnalysisSource(
+                    row.endpoint,
+                    mpAssay,
+                    this.dbManager,
+                    this.projectLocation
+                )
+            );
 
             if (metadataRow) {
-                mpAssay.setEndpoint(metadataRow.endpoint);
-                mpAssay.setDatabaseVersion(metadataRow.db_version);
                 mpAssay.setDate(new Date(metadataRow.analysis_date));
-                config = new SearchConfiguration(
-                    true,
-                    true,
-                    false,
-                    metadataRow.configuration_id
-                );
-                const configReader = new SearchConfigFileSystemReader(this.dbManager);
-                configReader.visitSearchConfiguration(config);
-            } else {
-                config = new SearchConfiguration();
             }
-
-            mpAssay.setSearchConfiguration(config);
         }
     }
 }

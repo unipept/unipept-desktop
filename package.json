@@ -51,7 +51,7 @@
     "marked": "^2.0.3",
     "node-abi": "^2.19.3",
     "regenerator-runtime": "^0.13.3",
-    "shared-memory-datastructures": "0.1.8",
+    "shared-memory-datastructures": "0.1.9",
     "unipept-web-components": "^1.4.3",
     "uuid": "^7.0.3",
     "vue": "^2.6.12",

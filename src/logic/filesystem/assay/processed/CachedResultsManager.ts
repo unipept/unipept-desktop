@@ -3,10 +3,12 @@ import {
     SearchConfiguration,
     PeptideTrust,
     PeptideData,
-    PeptideDataSerializer, Assay
+    PeptideDataSerializer,
+    Assay,
+    AnalysisSource, Peptide
 } from "unipept-web-components";
 
-import ProcessedAssayResult from "@/logic/filesystem/assay/processed/ProcessedAssayResult";
+import CachedAssayData from "@/logic/filesystem/assay/processed/CachedAssayData";
 import { Database } from "better-sqlite3";
 import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
 import { ShareableMap } from "shared-memory-datastructures";
@@ -16,29 +18,35 @@ import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import { promises as fs } from "fs";
 import path from "path";
 import mkdirp from "mkdirp";
-import { store } from "./../../../../main";
+import crypto from "crypto";
+import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 
-export default class ProcessedAssayManager {
+export default class CachedResultsManager {
     constructor(
         private readonly dbManager: DatabaseManager,
+        private readonly projectLocation: string
     ) {}
 
     /**
-     * Looks up the given assay in the database with all serialized processing results and returns the deserialized
-     * results if they are available. If no data is available for the assay, null will be returned.
+     * Checks, for the given assay, if analysis results are available and valid in the cache. The cache results are
+     * valid if the search configuration for the stored results is the same as the configuration of the provided assay
+     * and if the cache_valid_bit has been set to 1 (which means that the storage of the results correctly finished
+     * last time).
      *
-     * @param assay The assay for which the deserialized results should be returned.
+     * @param assay The assay for which should be checked if the results are available and valid in this project's
+     * cache.
      */
-    public async readProcessingResults(assay: ProteomicsAssay): Promise<ProcessedAssayResult | null> {
-        // Look up whether storage metadata with the given properties is present in the database.
+    public async verifyCacheIntegrity(assay: ProteomicsAssay): Promise<boolean> {
         const row = await this.dbManager.performQuery<any>((db: Database) => {
             return db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
         });
 
+        // First, check if metadata for this assay is present in the database.
         if (!row) {
-            return null;
+            return false;
         }
 
+        // Second, check if the current search configuration is identical to the one used for the offline analysis.
         const serializedSearchConfig = new SearchConfiguration(
             true,
             true,
@@ -48,13 +56,68 @@ export default class ProcessedAssayManager {
         const searchConfigReader = new SearchConfigFileSystemReader(this.dbManager);
         await serializedSearchConfig.accept(searchConfigReader);
 
-        // Now check whether the search config is the same as the one that's currently assigned to this assay.
         const assayConfig = assay.getSearchConfiguration();
         if (
             serializedSearchConfig.equateIl !== assayConfig.equateIl ||
             serializedSearchConfig.filterDuplicates !== assayConfig.filterDuplicates ||
             serializedSearchConfig.enableMissingCleavageHandling !== assayConfig.enableMissingCleavageHandling
         ) {
+            return false;
+        }
+
+        // Third, check if the fingerprint of the stored AnalysisSource is the same as the current AnalysisSource.
+        const fingerprint = row.fingerprint;
+        if (!(await assay.getAnalysisSource().verifyEquality(fingerprint))) {
+            return false;
+        }
+
+        // Fourth, check if the peptide trust is available in the database.
+        const trustRow = await this.dbManager.performQuery<any>((db: Database) => {
+            return db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assay.getId());
+        })
+
+        if (!trustRow) {
+            return false;
+        }
+
+        // Finally, check if the integrity hash of the local data files corresponds to the hash that was stored
+        // alongside in the database.
+        const computedHash = await this.computeDataHash(assay);
+        return computedHash === row.data_hash;
+    }
+
+    /**
+     * Compute the hash for the local stored analysis results of this assay. The hash is computed over both the data
+     * and index buffer files (the result is a concatenation of the sha256 of both these files).
+     *
+     * @param assay The assay for which we should compute the integrity hash of the
+     */
+    public async computeDataHash(assay: ProteomicsAssay): Promise<string> {
+        const dataHash = crypto.createHash("sha256");
+
+        const dataBuffer = await fs.readFile(this.getDataBufferPath(assay));
+        dataHash.update(dataBuffer);
+
+        const dataHex = dataHash.digest("hex");
+
+        const indexHash = crypto.createHash("sha256");
+
+        const indexBuffer = await fs.readFile(this.getIndexBufferPath(assay));
+        indexHash.update(indexBuffer);
+
+        const indexHex = indexHash.digest("hex");
+
+        return dataHex + indexHex;
+    }
+
+    /**
+     * Looks up the given assay in the database with all serialized processing results and returns the deserialized
+     * results if they are available. If no data is available for the assay, null will be returned.
+     *
+     * @param assay The assay for which the deserialized results should be returned.
+     */
+    public async readProcessingResults(assay: ProteomicsAssay): Promise<CachedAssayData | null> {
+        if (!(await this.verifyCacheIntegrity(assay))) {
             return null;
         }
 
@@ -66,11 +129,7 @@ export default class ProcessedAssayManager {
 
         const trustRow = await this.dbManager.performQuery<any>((db: Database) => {
             return db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assay.getId());
-        })
-
-        if (!trustRow) {
-            return null;
-        }
+        });
 
         const trust = new PeptideTrust(
             JSON.parse(trustRow.missed_peptides),
@@ -78,12 +137,7 @@ export default class ProcessedAssayManager {
             trustRow.searched_peptides
         );
 
-
-        return new ProcessedAssayResult(
-            assay.getEndpoint(),
-            assay.getDatabaseVersion(),
-            serializedSearchConfig,
-            // @ts-ignore
+        return new CachedAssayData(
             sharedMap,
             trust
         );
@@ -128,11 +182,12 @@ export default class ProcessedAssayManager {
         searchConfigWriter.visitSearchConfiguration(searchConfiguration);
 
         await this.dbManager.performQuery<void>((db: Database) => {
-            db.prepare("INSERT INTO storage_metadata VALUES (?, ?, ?, ?, ?)").run(
+            db.prepare("INSERT INTO storage_metadata VALUES (?, ?, ?, ?, ?, ?)").run(
                 assay.getId(),
                 searchConfiguration.id,
-                assay.getEndpoint(),
-                assay.getDatabaseVersion(),
+                AnalysisSourceSerializer.serializeAnalysisSource(assay.getAnalysisSource()),
+                assay.getAnalysisSource().computeFingerprint(),
+                this.computeDataHash(assay),
                 assay.getDate().toJSON()
             );
         });
@@ -171,11 +226,11 @@ export default class ProcessedAssayManager {
         // Write both buffers to a binary file.
         const buffers: ArrayBuffer[] = filteredDataset.getBuffers();
 
-        const bufferDirectory = path.join(store.getters.projectLocation, ".buffers");
+        const bufferDirectory = this.getBufferDirectory();
         await mkdirp(bufferDirectory);
 
-        const indexBufferPath = path.join(bufferDirectory, assay.getId() + ".index");
-        const dataBufferPath = path.join(bufferDirectory, assay.getId() + ".data");
+        const indexBufferPath = this.getIndexBufferPath(assay);
+        const dataBufferPath = this.getDataBufferPath(assay);
 
         try {
             // Remove previous versions of this file's persistent storage.
@@ -190,18 +245,18 @@ export default class ProcessedAssayManager {
         await fs.writeFile(dataBufferPath, Buffer.from(buffers[1]));
     }
 
-    private async readShareableMap(assay: ProteomicsAssay): Promise<ShareableMap<String, PeptideData> | null> {
-        const bufferDirectory = path.join(store.getters.projectLocation, ".buffers");
+    private async readShareableMap(assay: ProteomicsAssay): Promise<ShareableMap<Peptide, PeptideData> | null> {
+        const bufferDirectory = this.getBufferDirectory()
         await mkdirp(bufferDirectory);
 
-        const indexBufferPath = path.join(bufferDirectory, assay.getId() + ".index");
-        const dataBufferPath = path.join(bufferDirectory, assay.getId() + ".data");
+        const indexBufferPath = this.getIndexBufferPath(assay);
+        const dataBufferPath = this.getDataBufferPath(assay);
 
         try {
             const indexBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(indexBufferPath));
             const dataBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(dataBufferPath));
 
-            const output = new ShareableMap<String, PeptideData>(0, 0, new PeptideDataSerializer());
+            const output = new ShareableMap<Peptide, PeptideData>(0, 0, new PeptideDataSerializer());
             output.setBuffers(indexBuffer, dataBuffer);
 
             return output;
@@ -211,5 +266,19 @@ export default class ProcessedAssayManager {
             // File's do not exist!
             return null;
         }
+    }
+
+    private getBufferDirectory(): string {
+        return path.join(this.projectLocation, ".buffers");
+    }
+
+    private getDataBufferPath(assay: ProteomicsAssay): string {
+        const bufferDirectory = this.getBufferDirectory();
+        return path.join(bufferDirectory, assay.getId() + ".data");
+    }
+
+    private getIndexBufferPath(assay: ProteomicsAssay): string {
+        const bufferDirectory = this.getBufferDirectory();
+        return path.join(bufferDirectory, assay.getId() + ".index");
     }
 }

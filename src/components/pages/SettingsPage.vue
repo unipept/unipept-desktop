@@ -367,7 +367,7 @@ export default class SettingsPage extends Vue {
         const { dialog } = electron.remote;
 
         const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
-            properties: ["openDirectory"]
+            properties: ["openDirectory", "createDirectory"]
         });
 
         if (chosenPath && chosenPath.filePaths.length > 0) {

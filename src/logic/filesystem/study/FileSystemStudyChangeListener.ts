@@ -59,7 +59,6 @@ export default class FileSystemStudyChangeListener implements ChangeListener<Stu
         await assay.accept(metaDataWriter);
         await assay.accept(dataWriter);
 
-        // TODO
-        // await this.project.processAssay(assay as ProteomicsAssay);
+        await store.dispatch("analyseAssay", assay);
     }
 }

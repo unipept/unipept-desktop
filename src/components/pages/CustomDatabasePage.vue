@@ -17,7 +17,8 @@
                                 :headers="headers"
                                 show-expand
                                 :expanded.sync="expandedItems"
-                                :items="databases">
+                                :items="databases"
+                                item-key="database.name">
                                 <template v-slot:item.actions="{ item }">
                                     <v-icon small>mdi-delete</v-icon>
                                     <v-icon small>mdi-information</v-icon>
@@ -47,15 +48,7 @@
                                                 </div>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
-                                                <v-progress-circular
-                                                    :rotate="-90"
-                                                    :indeterminate="item.progress.value === -1"
-                                                    :value="item.progress.value"
-                                                    color="primary">
-                                                </v-progress-circular>
-                                                <span>
-                                                    {{ item.progress.step }} {{ item.progress.value === -1 ? "" : ` (${item.progress.value}%)` }}
-                                                </span>
+                                                <custom-database-progress-report :db="item.database"/>
                                             </div>
                                         </div>
                                     </td>
@@ -83,13 +76,14 @@ import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatab
 import { Tooltip } from "unipept-web-components";
 import { CustomDatabaseInfo } from "@/state/DockerStore";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import CustomDatabaseProgressReport from "@/components/custom-database/CustomDatabaseProgressReport.vue";
 
 @Component({
-    components: { CreateCustomDatabase, Tooltip },
+    components: { CustomDatabaseProgressReport, CreateCustomDatabase, Tooltip },
     computed: {
         databases: {
             get(): CustomDatabaseInfo[] {
-                return [...Object.values(this.$store.getters.databases)];
+                return [...Object.values(this.$store.getters.databases)] as CustomDatabaseInfo[];
             }
         }
     }

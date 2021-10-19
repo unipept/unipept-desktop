@@ -25,6 +25,7 @@ export default class BootstrapApplication {
         this.initializeWorkers(config);
         this.initializeDocker(config);
         this.initializeCustomDatabases(config);
+        this.initializeProcessing(config);
     }
 
     private async initializeConfiguration(): Promise<Configuration> {
@@ -49,13 +50,13 @@ export default class BootstrapApplication {
         const customDatabaseManager = new CustomDatabaseManager();
 
         const completeDbs = await customDatabaseManager.listAllBuildDatabases(config.customDbStorageLocation);
-        console.log("Complete dbs:");
-        console.log(completeDbs);
         this.store.dispatch("initializeReadyDatabases", completeDbs)
 
         const incompleteDbs = await customDatabaseManager.listAllIncompleteDatabases(config.customDbStorageLocation);
-        console.log("Incomplete databases: ");
-        console.log(incompleteDbs);
         this.store.dispatch("initializeQueue", [incompleteDbs, config]);
+    }
+
+    private initializeProcessing(config: Configuration): void {
+        this.store.dispatch("initializeAssayQueue");
     }
 }

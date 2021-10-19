@@ -12,7 +12,7 @@ import path from "path";
 
 export default class DatabaseManager {
     // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
-    // a "SQLBusyException" to b§e thrown. By increasing the timeout to a value, larger than the time it should take
+    // a "SQLBusyException" to be thrown. By increasing the timeout to a value larger than the time it should take
     // to execute these transactions, these errors can be avoided.
     public static readonly DB_TIMEOUT: number = 15000;
 

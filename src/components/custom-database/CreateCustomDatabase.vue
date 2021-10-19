@@ -267,6 +267,7 @@ export default class CreateCustomDatabase extends Vue {
     }
 
     private validateAndContinue(): void {
+        // @ts-ignore
         if (this.$refs.databaseForm.validate()) {
             this.currentStep = 2;
         }
@@ -275,6 +276,7 @@ export default class CreateCustomDatabase extends Vue {
     private async buildDatabase(): Promise<void> {
         const sourceUrlMap = {
             "TrEMBL": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.xml.gz",
+            // "TrEMBL": "host.docker.internal:8000/uniprot_trembl.xml.gz",
             "SwissProt": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
         }
 
@@ -284,7 +286,7 @@ export default class CreateCustomDatabase extends Vue {
             "buildDatabase",
             [
                 this.databaseName,
-                this.selectedSources.map(source => sourceUrlMap[source]),
+                this.selectedSources.map(source => (sourceUrlMap as any)[source]),
                 this.selectedSources,
                 this.selectedTaxa.map(taxon => taxon.id),
                 await configManager.readConfiguration()

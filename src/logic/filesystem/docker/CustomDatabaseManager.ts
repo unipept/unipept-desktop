@@ -1,6 +1,7 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { promises as fs } from "fs";
-import path from "path";
+import path, { dirname } from "path";
+import mkdirp from "mkdirp";
 
 /**
  * This class is responsible for managing the custom databases that are currently created by some of the users and to
@@ -42,6 +43,7 @@ export default class CustomDatabaseManager {
                             metadata.sourceTypes,
                             metadata.taxa,
                             metadata.entries,
+                            metadata.databaseVersion,
                             metadata.complete
                         )
                     );
@@ -86,6 +88,9 @@ export default class CustomDatabaseManager {
      */
     public async updateMetadata(dbRootFolder: string, db: CustomDatabase): Promise<void> {
         const path = this.metadataPath(dbRootFolder, db);
+        // Make sure that the path to the database that we want to build actually exists, before trying to write the
+        // metadata file to it.
+        mkdirp(dirname(path));
         return fs.writeFile(path, JSON.stringify(db));
     }
 

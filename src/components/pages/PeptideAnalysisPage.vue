@@ -54,7 +54,7 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import {
     CommunicationSource,
-    DefaultCommunicationSource, Pept2DataCommunicator, Peptide,
+    DefaultCommunicationSource, NetworkConfiguration, Pept2DataCommunicator, Peptide,
     SinglePeptideAnalysisCard,
     SinglePeptideSummary
 } from "unipept-web-components";
@@ -70,7 +70,7 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 })
 export default class PeptideAnalysisPage extends Vue {
     private communicationSource: CommunicationSource = new ConfigureableCommunicationSource(
-        new Pept2DataCommunicator(),
+        new Pept2DataCommunicator(NetworkConfiguration.BASE_URL),
         new CachedGoResponseCommunicator(),
         new CachedEcResponseCommunicator(),
         new CachedInterproResponseCommunicator(),

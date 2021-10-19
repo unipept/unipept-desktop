@@ -90,6 +90,7 @@ export default class FileSystemWatcher {
                 const assayMetaReader = new AssayFileSystemMetaDataReader(
                     store.getters.projectLocation + studyName,
                     store.getters.dbManager,
+                    store.getters.projectLocation,
                     study
                 );
                 await assay.accept(assayMetaReader);
@@ -114,7 +115,7 @@ export default class FileSystemWatcher {
                 // it is added to the study.
                 study.addAssay(assay);
                 await store.dispatch("addAssay", assay);
-                store.dispatch("processAssay", [assay, false, assay.getSearchConfiguration()]);
+                store.dispatch("analyseAssay", assay);
             }
         } catch (err) {
             this.reportError(err);
@@ -144,7 +145,11 @@ export default class FileSystemWatcher {
             await study.accept(studyWriter);
 
             // This reader directly reads all assays associated with this study from disk.
-            const studyReader = new StudyFileSystemDataReader(directoryPath, store.getters.dbManager);
+            const studyReader = new StudyFileSystemDataReader(
+                directoryPath,
+                store.getters.dbManager,
+                store.getters.projectLocation
+            );
             await study.accept(studyReader);
 
             await store.dispatch("addStudy", study);
@@ -154,8 +159,8 @@ export default class FileSystemWatcher {
                 await store.dispatch("addAssay", assay);
                 // noinspection ES6MissingAwait
                 store.dispatch(
-                    "processAssay",
-                    [assay, false, (assay as ProteomicsAssay).getSearchConfiguration()]
+                    "analyseAssay",
+                    assay
                 );
             }
 

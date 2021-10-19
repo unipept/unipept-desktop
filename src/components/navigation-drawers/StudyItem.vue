@@ -54,30 +54,16 @@
                     </template>
                     <span>{{ nameError }}</span>
                 </v-tooltip>
-                <v-menu v-if="assaysInProgress.length === 0">
-                    <template v-slot:activator="{ on: menu }">
-                        <v-tooltip bottom>
-                            <template v-slot:activator="{ on: tooltip }">
-                                <v-icon
-                                    color="#424242"
-                                    size="20"
-                                    v-on="{ ...tooltip, ...menu }">
-                                    mdi-file-plus-outline
-                                </v-icon>
-                            </template>
-                            <span>Create a new assay</span>
-                        </v-tooltip>
+                <v-tooltip bottom>
+                    <template v-slot:activator="{ on: tooltip }">
+                        <v-btn text icon @click="createAssay">
+                            <v-icon color="#424242" size="20" v-on="{ ...tooltip }">
+                                mdi-file-plus-outline
+                            </v-icon>
+                        </v-btn>
                     </template>
-                    <v-list>
-                        <v-list-item @click="showCreateAssayDialog = true">
-                            <v-list-item-title>From peptides</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item @click="createFromFile()">
-                            <v-list-item-title>From file</v-list-item-title>
-                        </v-list-item>
-                    </v-list>
-                </v-menu>
-                <v-progress-circular v-else indeterminate :size="16" color="primary"></v-progress-circular>
+                    <span>Create a new assay</span>
+                </v-tooltip>
             </div>
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
@@ -92,20 +78,6 @@
                 v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
-        <v-dialog v-model="showCreateAssayDialog" v-if="study && showCreateAssayDialog" max-width="800">
-            <v-card>
-                <v-card-title>
-                    Create assay
-                </v-card-title>
-                <v-card-text>
-                    <create-assay
-                        :study="study"
-                        v-on:create-assay="onCreateAssay"
-                        v-on:cancel="showCreateAssayDialog = false">
-                    </create-assay>
-                </v-card-text>
-            </v-card>
-        </v-dialog>
         <search-configuration-dialog
             v-model="showSearchConfigDialog"
             :assays="searchConfigAssays"
@@ -127,8 +99,14 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import { CreateDatasetCard, Tooltip, Assay, Study, ProteomicsAssay } from "unipept-web-components";
-import CreateAssay from "./../assay/CreateAssay.vue";
+import {
+    CreateDatasetCard,
+    Tooltip,
+    Assay,
+    Study,
+    ProteomicsAssay,
+    NetworkConfiguration
+} from "unipept-web-components";
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
@@ -139,6 +117,7 @@ import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFil
 import path from "path";
 import { isText, isBinary, getEncoding } from "istextorbinary";
 import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 
 
 const { remote } = require("electron");
@@ -154,7 +133,6 @@ const { dialog } = electron.remote;
         SearchConfigurationDialog,
         ConfirmDeletionDialog,
         CreateDatasetCard,
-        CreateAssay,
         Tooltip,
         AssayItem
     },
@@ -394,7 +372,17 @@ export default class StudyItem extends Vue {
                         await fs.copyFile(
                             filePath,
                             this.$store.getters.projectLocation + this.study.getName() + "/" + assay.getName() + ".pep"
-                        )
+                        );
+
+                        // TODO also implement some kind of way to select the analysis source
+                        assay.setAnalysisSource(
+                            new CachedOnlineAnalysisSource(
+                                NetworkConfiguration.BASE_URL,
+                                assay,
+                                this.$store.getters.dbManager,
+                                this.$store.getters.projectLocation
+                            )
+                        );
                     }
                 }
             });
@@ -473,6 +461,11 @@ export default class StudyItem extends Vue {
             requestedName = newName;
         }
         return requestedName;
+    }
+
+    private createAssay() {
+        // Emit event to indicate that we want to create a new assay
+        this.$emit("createAssay", this.study);
     }
 }
 </script>

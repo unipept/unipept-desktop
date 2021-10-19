@@ -25,7 +25,7 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import { ProteomicsAssay, CountTable, Peptide, AssayData } from "unipept-web-components";
+import { ProteomicsAssay, CountTable, Peptide } from "unipept-web-components";
 import { DataOptions } from "vuetify";
 import { ItemType } from "@/state/PeptideSummaryTable.worker";
 
@@ -33,8 +33,10 @@ import { ItemType } from "@/state/PeptideSummaryTable.worker";
     computed: {
         progress: {
             get(): number {
-                const assayData: AssayData = this.$store.getters.assayData(this.assay);
-                return assayData ? assayData.analysisMetaData.progress : 0;
+                // const assayData: AssayData = this.$store.getters.assayData(this.assay);
+                // return assayData ? assayData.analysisMetaData.progress : 0;
+
+                return 0;
             }
         },
         headers: {

@@ -152,7 +152,8 @@ import {
     CountTable,
     Peptide,
     Assay,
-    AssayData
+    AssayAnalysisStatus,
+    PeptideData
 } from "unipept-web-components";
 
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
@@ -160,6 +161,7 @@ import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDe
 import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import { ShareableMap } from "shared-memory-datastructures";
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -209,27 +211,28 @@ export default class AssayItem extends Vue {
     }
 
     get progress(): number {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData ? assayData.analysisMetaData.progress : 0;
+        const assayData: AssayAnalysisStatus = this.$store.getters.assayData(this.assay);
+        return assayData ? assayData.progress.value : 0;
     }
 
     get peptideCountTable(): CountTable<Peptide> {
-        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+        return this.$store.getters.assayData(this.assay)?.filteredData.peptideCountTable;
     }
 
     get errorStatus(): boolean {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData?.analysisMetaData.status === "error";
+        const assayData: AssayAnalysisStatus = this.$store.getters.assayData(this.assay);
+        return assayData?.error.status;
     }
 
     get cancelStatus(): boolean {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData?.analysisMetaData.status === "cancelled";
+        return false;
+        // const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        // return assayData?.analysisMetaData.status === "cancelled";
     }
 
-    get pept2dataCommunicator(): Pept2DataCommunicator {
+    get pept2Data(): ShareableMap<Peptide, PeptideData> {
         const processingResult = this.$store.getters.assayData(this.assay);
-        return processingResult?.communicationSource?.getPept2DataCommunicator();
+        return processingResult?.pept2Data;
     }
 
     private cancelAnalysis() {
@@ -310,20 +313,21 @@ export default class AssayItem extends Vue {
         this.assayName = this.assay.getName();
     }
 
-    @Watch("pept2dataCommunicator", { immediate: true })
+    @Watch("pept2Data", { immediate: true })
     private async computePeptideTrust(): Promise<void> {
-        if (this.assay && this.pept2dataCommunicator) {
+        if (this.assay && this.pept2Data) {
             const processingResult = this.$store.getters.assayData(this.assay);
-            const countTable = processingResult?.peptideCountTable;
-            this.peptideTrust = await this.pept2dataCommunicator.getPeptideTrust(
-                countTable,
-                this.assay.getSearchConfiguration()
-            );
+            const countTable = processingResult?.filteredData.peptideCountTable;
+            // TODO get trust
+            // this.peptideTrust = await this.pept2dataCommunicator.getPeptideTrust(
+            //     countTable,
+            //     this.assay.getSearchConfiguration()
+            // );
         }
     }
 
     private reanalyse() {
-        this.$store.dispatch("processAssay", [this.assay, true, this.assay.getSearchConfiguration()]);
+        this.$store.dispatch("analyseAssay", this.assay);
     }
 
     private selectAssay() {

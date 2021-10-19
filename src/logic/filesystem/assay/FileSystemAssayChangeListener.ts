@@ -64,7 +64,7 @@ export default class FileSystemAssayChangeListener implements ChangeListener<Pro
         await assay.accept(writer);
 
         // noinspection ES6MissingAwait
-        store.dispatch("processAssay", [assay, false, assay.getSearchConfiguration()]);
+        store.dispatch("analyseAssay", assay);
     }
 
     private getAssayDirectory(): string {

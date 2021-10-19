@@ -7,6 +7,7 @@ import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemD
 import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException } from "unipept-web-components";
 import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 import { Database } from "better-sqlite3";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 
 /**
@@ -17,6 +18,14 @@ import { Database } from "better-sqlite3";
  * @author Pieter Verschaffelt
  */
 export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
+    constructor(
+        studyPath: string,
+        dbManager: DatabaseManager,
+        private readonly projectLocation: string
+    ) {
+        super(studyPath, dbManager);
+    }
+
     public async visitStudy(study: Study): Promise<void> {
         try {
             // Try to read all assays and replace current assays where necessary.
@@ -40,7 +49,7 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
                     assay = new ProteomicsAssay(row.id);
                     assay.setName(assayName);
 
-                    const assayVisitor = new AssayFileSystemMetaDataReader(this.studyPath, this.dbManager);
+                    const assayVisitor = new AssayFileSystemMetaDataReader(this.studyPath, this.dbManager, this.projectLocation);
                     await assay.accept(assayVisitor);
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.

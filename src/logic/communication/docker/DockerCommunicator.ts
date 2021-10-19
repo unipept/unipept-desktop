@@ -19,6 +19,8 @@ export default class DockerCommunicator {
         host: "127.0.0.1",
         port: 2376
     });
+    public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
+    public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
     public static connection: Dockerode;
 
@@ -50,7 +52,7 @@ export default class DockerCommunicator {
         customDb: CustomDatabase,
         databaseFolder: string,
         indexFolder: string,
-        progressListener: (step: string, progress: number) => void
+        progressListener: (step: string, progress: number, progress_step: number) => void
     ): Promise<void> {
         if (!DockerCommunicator.connection) {
             throw new Error("Connection to Docker daemon has not been initialized.");
@@ -69,7 +71,7 @@ export default class DockerCommunicator {
             DockerCommunicator.connection.run(
                 "pverscha/unipept-custom-db:1.1.1",
                 [],
-                new ProgressInspectorStream(progressListener, () => resolve()),
+                new ProgressInspectorStream(progressListener, () => resolve(), (n: number) => customDb.entries = n),
                 {
                     Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
                     Env: [
@@ -111,7 +113,7 @@ export default class DockerCommunicator {
             DockerCommunicator.connection.run(
                 "pverscha/unipept-custom-db:1.1.1",
                 [],
-                new ProgressInspectorStream((step: string, progress: number) => {}, () => {}),
+                new ProgressInspectorStream((step: string, progress: number) => {}, () => resolve(), () => {}),
                 {
                     Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
                     PortBindings: {
@@ -130,13 +132,20 @@ export default class DockerCommunicator {
     }
 
     /**
+     * Stop all of the running Docker database containers associated with the Unipept Desktop application.
+     */
+    public stopDatabase(): Promise<void> {
+        return this.stopContainer(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+    }
+
+    /**
      * Start a Docker container that connects to a database on port 3306 of the host computer and exposes a Unipept
      * API service on port 3000 that can be connected to from this application.
      */
     public async startWebComponent(): Promise<void> {
         await new Promise<void>((resolve) => {
             DockerCommunicator.connection.run(
-                "pverscha/unipept-web",
+                "pverscha/unipept-web:1.0.0",
                 [],
                 new StringNotifierInspectorStream("Listening on", resolve),
                 {
@@ -144,12 +153,16 @@ export default class DockerCommunicator {
                     PortBindings: {
                         "3000/tcp": [{
                             HostIP: "0.0.0.0",
-                            HostPort: "3000"
+                            HostPort: DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT
                         }]
                     }
                 }
             )
         });
+    }
+
+    public stopWebComponent(): Promise<void> {
+        return this.stopContainer(DockerCommunicator.WEB_CONTAINER_NAME);
     }
 
     /**
@@ -195,5 +208,15 @@ export default class DockerCommunicator {
             return allWithName[0];
         }
         return undefined;
+    }
+
+    private async stopContainer(name: string): Promise<void> {
+        const containerInfo = await this.getContainerByName(name);
+
+        if (containerInfo) {
+            return new Promise<void>((resolve) => {
+                DockerCommunicator.connection.getContainer(containerInfo.Id).stop(resolve);
+            });
+        }
     }
 }

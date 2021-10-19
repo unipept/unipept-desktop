@@ -111,7 +111,6 @@ import {
     PeptideTrust,
     Pept2DataCommunicator,
     ExportResultsButton,
-    AssayData,
     NetworkConfiguration,
     Tooltip
 } from "unipept-web-components";
@@ -136,11 +135,13 @@ export default class AnalysisSummary extends Vue {
     get dirty(): boolean {
         const currentConfig = this.assay.getSearchConfiguration();
 
-        return this.assay.getDatabaseVersion() !== this.dbVersion ||
-            this.assay.getEndpoint() !== this.endpoint ||
-            currentConfig.equateIl !== this.equateIl ||
-            currentConfig.filterDuplicates !== this.filterDuplicates ||
-            currentConfig.enableMissingCleavageHandling !== this.missedCleavage;
+        // return this.assay.getDatabaseVersion() !== this.dbVersion ||
+        //     this.assay.getEndpoint() !== this.endpoint ||
+        //     currentConfig.equateIl !== this.equateIl ||
+        //     currentConfig.filterDuplicates !== this.filterDuplicates ||
+        //     currentConfig.enableMissingCleavageHandling !== this.missedCleavage;
+
+        return false;
     }
 
     get endpoint(): string {
@@ -148,12 +149,14 @@ export default class AnalysisSummary extends Vue {
     }
 
     get peptideCountTable(): CountTable<Peptide> {
-        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+        return undefined;
+        // return this.$store.getters.assayData(this.assay)?.peptideCountTable;
     }
 
     get progress(): number {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData ? assayData.analysisMetaData.progress : 0;
+        return 0;
+        // const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        // return assayData ? assayData.analysisMetaData.progress : 0;
     }
 
     private async mounted() {
@@ -175,18 +178,18 @@ export default class AnalysisSummary extends Vue {
     @Watch("peptideCountTable")
     private async onPeptideCountTableChanged() {
         if (this.peptideCountTable) {
-            const communicator: Pept2DataCommunicator =
-                this.$store.getters.assayData(this.assay)?.communicationSource.getPept2DataCommunicator();
-            this.peptideTrust = await communicator?.getPeptideTrust(
-                this.peptideCountTable,
-                this.assay.getSearchConfiguration()
-            );
+            // const communicator: Pept2DataCommunicator =
+            //     this.$store.getters.assayData(this.assay)?.communicationSource.getPept2DataCommunicator();
+            // this.peptideTrust = await communicator?.getPeptideTrust(
+            //     this.peptideCountTable,
+            //     this.assay.getSearchConfiguration()
+            // );
         }
     }
 
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
-        this.$store.dispatch("processAssay", [this.assay, true, config]);
+        this.$store.dispatch("analyseAssay", this.assay);
     }
 
     private getHumanReadableAssayDate(): string {

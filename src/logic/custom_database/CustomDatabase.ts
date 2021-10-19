@@ -8,7 +8,8 @@ export default class CustomDatabase {
         public readonly sourceTypes: string[],
         public readonly taxa: NcbiId[],
         // Amount of entries that are present in this filtered database.
-        public readonly entries: number,
+        public entries: number,
+        public readonly databaseVersion: string,
         // Has the database successfully been built?
         public complete: boolean = false
     ) {}

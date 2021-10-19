@@ -1,8 +1,13 @@
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
 import { Database, RunResult } from "better-sqlite3";
-import { Study, ProteomicsAssay, SearchConfiguration } from "unipept-web-components";
+import {
+    Study,
+    ProteomicsAssay,
+    SearchConfiguration
+} from "unipept-web-components";
 import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 
 export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
     protected readonly study: Study;
@@ -28,22 +33,14 @@ export class AssayFileSystemMetaDataWriter extends FileSystemAssayVisitor {
 
         await this.dbManager.performQuery<void>((db: Database) => {
             db.prepare(
-                "REPLACE INTO assays (id, name, study_id) VALUES (?, ?, ?)"
+                "REPLACE INTO assays (id, name, study_id, configuration_id, endpoint) VALUES (?, ?, ?, ?, ?)"
             ).run(
                 mpAssay.getId(),
                 mpAssay.getName(),
-                this.study.getId()
-            );
-
-            db.prepare(
-                "REPLACE INTO storage_metadata (assay_id, configuration_id, endpoint, db_version, analysis_date) VALUES (?, ?, ?, ?, ?)"
-            ).run(
-                mpAssay.getId(),
+                this.study.getId(),
                 searchConfig.id,
-                mpAssay.getEndpoint(),
-                mpAssay.getDatabaseVersion(),
-                mpAssay.getDate().toJSON()
-            )
+                AnalysisSourceSerializer.serializeAnalysisSource(mpAssay.getAnalysisSource())
+            );
         });
     }
 }

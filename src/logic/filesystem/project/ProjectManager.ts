@@ -123,7 +123,7 @@ export default class ProjectManager  {
         await study.accept(studyWriter);
 
         // Read all assays from this study
-        const studyReader = new StudyFileSystemDataReader(directory, dbManager);
+        const studyReader = new StudyFileSystemDataReader(directory, dbManager, store.getters.projectLocation);
         await study.accept(studyReader);
 
         return study;

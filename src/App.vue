@@ -11,7 +11,6 @@
             <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on
                  the left side -->
             <Toolbar
-                v-on:activate-dataset="onActivateDataset"
                 v-on:update:toolbar-width="onToolbarWidthUpdated">
             </Toolbar>
 
@@ -75,8 +74,8 @@ import {
     Assay,
     ProteomicsAssay,
     NetworkConfiguration,
-    AssayData,
-    QueueManager
+    QueueManager,
+    AssayAnalysisStatus
 } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import BootstrapApplication from "@/logic/application/BootstrapApplication";
@@ -99,8 +98,8 @@ const { app } = require("electron").remote;
         assaysInProgress: {
             get(): Assay[] {
                 return this.$store.getters.assays
-                    .filter((a: AssayData) => a.analysisMetaData.progress < 1)
-                    .map((a: AssayData) => a.assay);
+                    .filter((a: AssayAnalysisStatus) => !a.analysisReady)
+                    .map((a: AssayAnalysisStatus) => a.assay);
             }
         },
         isMini: {
@@ -122,6 +121,7 @@ export default class App extends Vue implements ErrorListener {
     private updatedColor: string = "info";
 
     private toolbarWidth: number = 210;
+
     // Has this component been initialized before?
     private static previouslyInitialized: boolean = false;
 
@@ -180,7 +180,7 @@ export default class App extends Vue implements ErrorListener {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev + this.$store.getters.assayData(currentAssay).analysisMetaData.progress, 0
+                (prev: number, currentAssay: Assay) => prev + this.$store.getters["assayData"](currentAssay).progress.value, 0
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }
@@ -209,10 +209,6 @@ export default class App extends Vue implements ErrorListener {
 
     private onToolbarWidthUpdated(newValue: number) {
         this.toolbarWidth = newValue;
-    }
-
-    private onActivateDataset(value: ProteomicsAssay) {
-        this.$store.dispatch("setActiveDataset", value);
     }
 }
 </script>
