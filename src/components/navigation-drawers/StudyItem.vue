@@ -418,7 +418,8 @@ export default class StudyItem extends Vue {
                 // Write the assay to disk. It will automatically be picked up by the file system watchers
                 const assaySerializer = new AssayFileSystemDataWriter(
                     `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                    this.$store.getters.dbManager
+                    this.$store.getters.dbManager,
+                    this.study
                 );
 
                 await assay.accept(assaySerializer);

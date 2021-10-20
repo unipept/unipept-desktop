@@ -2,12 +2,27 @@
     <v-select
         :items="items"
         label="Analysis source"
-        item-text="title"
         v-model="selectedSource"
+        item-text="title"
         hide-details
         dense
         :error="error"
-        :error-messages="errorMessages">
+        :error-messages="errorMessages"
+        clearable
+        return-object>
+        <template v-slot:selection="{ item }">
+            <div class="d-flex justify-center">
+                <v-icon small v-if="item.type === 'online'" class="mr-1">
+                    mdi-web
+                </v-icon>
+                <v-icon small v-else class="mr-1">
+                    mdi-database
+                </v-icon>
+                <span>
+                    {{ item.title }}
+                </span>
+            </div>
+        </template>
         <template v-slot:item="{ item }">
             <v-icon v-if="item.type === 'online'">
                 mdi-web

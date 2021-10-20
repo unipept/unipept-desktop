@@ -35,6 +35,7 @@ import { Study, Tooltip } from "unipept-web-components";
 import StudyItem from "@/components/navigation-drawers/StudyItem.vue";
 import mkdirp from "mkdirp";
 import { Watch } from "vue-property-decorator";
+import StudyFileSystemDataWriter from "@/logic/filesystem/study/StudyFileSystemDataWriter";
 
 @Component({
     components: {
@@ -60,7 +61,7 @@ export default class ProjectExplorer extends Vue {
         this.setupDraggableExplorer();
     }
 
-    private createStudy() {
+    private async createStudy() {
         // Check which studies already exist, and make sure there isn't one with the same name.
         const unknowns: number[] = this.$store.getters.studies
             .map((s: Study) => s.getName())
@@ -73,9 +74,15 @@ export default class ProjectExplorer extends Vue {
             studyName += ` (${Math.max(...unknowns) + 1})`
         }
 
-        // Write a new directory to the file system with this name, the file system watcher will then automatically
-        // pick this up.
-        mkdirp(`${this.$store.getters.projectLocation}${studyName}`);
+        const study = new Study();
+        study.setName(studyName);
+        await this.$store.dispatch("addStudy", study);
+
+        const studyWriter = new StudyFileSystemDataWriter(
+            `${this.$store.getters.projectLocation}/${studyName}`,
+            this.$store.getters.dbManager
+        );
+        study.accept(studyWriter);
     }
 
     private setupDraggableExplorer() {

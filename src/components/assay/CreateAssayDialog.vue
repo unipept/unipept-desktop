@@ -208,6 +208,7 @@ import { v4 as uuidv4 } from "uuid";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 
 
 const electron = require("electron");
@@ -350,7 +351,7 @@ export default class CreateAssayDialog extends Vue {
             subtitle: "https://unipept.ugent.be"
         });
 
-        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo)) {
+        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
             if (dbInfo.database.complete) {
                 this.renderableSources.push({
                     type: "local",
@@ -367,6 +368,8 @@ export default class CreateAssayDialog extends Vue {
         if (this.value) {
             this.assayPlaceholders.splice(0, this.assayPlaceholders.length);
         }
+        this.errorActive = false;
+        this.errorMessage = "";
 
         this.dialogActive = this.value;
     }
@@ -383,6 +386,9 @@ export default class CreateAssayDialog extends Vue {
      */
     private async addToProject() {
         if (this.validate()) {
+            const failedToWrite: ProteomicsAssay[] = [];
+            const constructedAssays: ProteomicsAssay[] = [];
+
             // Create assays for each placeholder and add them to the store to be processed.
             for (const placeholder of this.assayPlaceholders) {
                 const assay = new ProteomicsAssay(uuidv4());
@@ -392,6 +398,8 @@ export default class CreateAssayDialog extends Vue {
                 assay.setName(placeholder.name);
                 assay.setPeptides(placeholder.peptides.split(/\r?\n/g));
                 assay.setSearchConfiguration(placeholder.searchConfiguration);
+
+                console.log(placeholder.analysisSource);
 
                 let analysisSource: AnalysisSource;
                 if (placeholder.analysisSource.type === "online") {
@@ -408,17 +416,50 @@ export default class CreateAssayDialog extends Vue {
                     analysisSource = new CachedCustomDbAnalysisSource(
                         assay,
                         this.$store.getters.dbManager,
-                        this.$store.getters.databases.find(d => d.name === placeholder.analysisSource.title),
+                        this.$store.getters.databases.find(
+                            (d: CustomDatabaseInfo) => d.database.name === placeholder.analysisSource.title
+                        ),
                         config.customDbStorageLocation,
                         this.$store.getters.projectLocation
                     );
                 }
 
+                console.log(analysisSource);
                 assay.setAnalysisSource(analysisSource);
 
-                this.$store.dispatch("addAssay", assay);
+                try {
+                    // Write assay to filesystem
+                    const assayFileWriter = new AssayFileSystemDataWriter(
+                        `${this.$store.getters.projectLocation}/${this.study.getName()}`,
+                        this.$store.getters.dbManager,
+                        this.study
+                    );
+                    await assay.accept(assayFileWriter);
+
+                    this.$store.dispatch("addAssay", assay);
+                } catch (err) {
+                    console.error(err);
+                    failedToWrite.push(assay);
+                }
+
+                constructedAssays.push(assay);
+            }
+
+            if (failedToWrite.length === 0) {
+                // Start processing all of the given assays.
+                for (const assay of constructedAssays) {
+                    await this.$store.dispatch("addAssay", assay);
+                }
 
                 this.close();
+            } else {
+                this.errorMessage =
+                    `
+                    The application was unable to write the following assays to disk:
+                    <span class="font-weight-bold">${failedToWrite.map(a => a.getName()).join(", ")}</span>. Please
+                    try again later. Make sure that the filesystem you're are trying to access is writeable.
+                    `;
+                this.errorActive = true;
             }
         }
     }

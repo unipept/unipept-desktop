@@ -8,7 +8,7 @@ import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 export default class AnalysisSourceSerializer {
     public static serializeAnalysisSource(source: AnalysisSource): string {
-        if (source instanceof CachedOnlineAnalysisSource) {
+        if (source instanceof CachedOnlineAnalysisSource || source instanceof OnlineAnalysisSource) {
             return source.getCommunicationSource().getPept2DataCommunicator().serviceUrl;
         } else if (source instanceof CachedCustomDbAnalysisSource) {
             return `cdb://${source.customDatabase.name}`;

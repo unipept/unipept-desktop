@@ -10,7 +10,8 @@ CREATE TABLE assays (
     configuration_id INT NOT NULL,
     /*
       Endpoint that was last selected for this assay. This endpoint does not necessarily need to be the same as the one
-      selected for the storage_metadata table. This endpoint merely only supports the
+      selected for the storage_metadata table. This endpoint is only used to detect whether the assay needs to be
+      recomputed or not.
      */
     endpoint TEXT,
     FOREIGN KEY(study_id) REFERENCES studies(id),
