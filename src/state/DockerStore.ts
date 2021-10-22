@@ -1,6 +1,6 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { ActionContext, ActionTree, GetterTree, MutationTree } from "vuex";
-import { NcbiId } from "unipept-web-components";
+import { NcbiId, ProgressReport } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import Vue from "vue";
 import { queue } from "async";
@@ -8,24 +8,30 @@ import Configuration from "@/logic/configuration/Configuration";
 import * as path from "path";
 import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
 
-const PROGRESS_STEPS_LENGTH: number = 12;
-
 type CustomDatabaseInfo = {
-    database: CustomDatabase
-    progress: {
-        // Progress value ([0 - 100]) or -1 if indeterminate
-        value: number,
-        step: string,
-        progress_step: number,
-        startTimes: number[],
-        endTimes: number[],
-        previousStep: number
-    },
+    database: CustomDatabase,
+    progress: ProgressReport,
     // Whether the database has been constructed successfully.
     ready: boolean
 };
 
 export { CustomDatabaseInfo };
+
+const progressSteps: string[] = [
+    "Creating taxon tables",
+    "Initializing database build process",
+    "Downloading database",
+    "Processing chunks",
+    "Started building main database tables",
+    "Calculating lowest common ancestors",
+    "Calculating functional annotations",
+    "Sorting peptides",
+    "Creating sequence table",
+    "Fetching EC numbers",
+    "Fetching GO terms",
+    "Fetching InterPro entries",
+    "Filling database and computing indices"
+];
 
 export interface CustomDatabaseState {
     databases: CustomDatabaseInfo[],
@@ -70,12 +76,12 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         state.databases.push({
             database: database,
             progress: {
-                value: -1,
-                step: "Initializing database construction",
-                progress_step: 0,
-                startTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
-                endTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
-                previousStep: -1
+                steps: progressSteps,
+                startTimes: new Array(progressSteps.length).fill(0),
+                endTimes: new Array(progressSteps.length).fill(0),
+                currentStep: 0,
+                currentValue: -1,
+                eta: -1
             },
             ready: false
         });
@@ -83,29 +89,58 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
 
     UPDATE_DATABASE_PROGRESS(
         state: CustomDatabaseState,
-        [database, step, value, progress_step]: [CustomDatabase, string, number, number]
+        [database, step, value]: [CustomDatabase, number, number]
     ) {
         const dbObj = state.databases.find(db => db.database.name === database.name);
-        dbObj.progress.value = value;
-        dbObj.progress.step = step;
-        dbObj.progress.progress_step = progress_step;
+        dbObj.progress.currentValue = value;
+        dbObj.progress.currentStep = step;
 
-        if (dbObj.progress.previousStep !== progress_step) {
-            const time = new Date().getTime();
-            dbObj.progress.startTimes[progress_step] = time;
-            dbObj.progress.endTimes[dbObj.progress.previousStep] = time;
+        const time = new Date().getTime();
+
+        for (let i = step - 1; i > 0; i--) {
+            if (dbObj.progress.endTimes[i] === 0) {
+                dbObj.progress.endTimes[i] = time;
+            }
+
+            if (dbObj.progress.startTimes[i] === 0) {
+                dbObj.progress.startTimes[i] = time;
+            }
         }
 
-        console.log(JSON.stringify(dbObj.progress));
-
-        dbObj.progress.previousStep = progress_step;
+        if (dbObj.progress.startTimes[step] === 0) {
+            dbObj.progress.startTimes[step] = time;
+        }
     },
 
     UPDATE_DATABASE_STATUS(
         state: CustomDatabaseState,
         [database, status]: [CustomDatabase, boolean]
     ) {
-        state.databases.find(db => db.database.name === database.name).ready = status;
+        const dbObj = state.databases.find(db => db.database.name === database.name);
+        const progressObj = dbObj.progress;
+
+        const time = new Date().getTime();
+
+        if (status) {
+            // Store end time for the last progress
+            for (let i = 0; i < progressObj.steps.length; i++) {
+                if (progressObj.startTimes[i] === 0) {
+                    progressObj.startTimes[i] = time;
+                }
+
+                if (progressObj.endTimes[i] === 0) {
+                    progressObj.endTimes[i] = time;
+                }
+            }
+        } else {
+            // Reset progress values
+            for (let i = 0; i < progressObj.steps.length; i++) {
+                progressObj.startTimes[i] = 0;
+                progressObj.endTimes[i] = 0;
+            }
+        }
+
+        dbObj.ready = status;
     },
 
     INITIALIZE_QUEUE(
@@ -146,12 +181,12 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
             state.databases.push({
                 database: db,
                 progress: {
-                    value: 1,
-                    step: "",
-                    progress_step: 0,
-                    startTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
-                    endTimes: new Array(PROGRESS_STEPS_LENGTH).fill(-1),
-                    previousStep: -1
+                    steps: progressSteps,
+                    startTimes: new Array(progressSteps.length).fill(0),
+                    endTimes: new Array(progressSteps.length).fill(0),
+                    currentStep: 0,
+                    currentValue: -1,
+                    eta: -1
                 },
                 ready: true
             });

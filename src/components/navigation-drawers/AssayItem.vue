@@ -13,7 +13,7 @@
             <!-- Icon at the start of the assay item -->
             <div class="mr-2">
                 <!-- Show an error if the name of the assay is incorrect. -->
-                <v-tooltip v-if="errorStatus" position="bottom" open-delay="500">
+                <v-tooltip v-if="errorStatus || nameError !== ''" position="bottom" open-delay="500">
                     <template v-slot:activator="{ on }">
                         <v-icon
                             size="20"
@@ -22,7 +22,7 @@
                             mdi-alert-outline
                         </v-icon>
                     </template>
-                    <span>{{ nameError }}</span>
+                    <span>{{ errorMessage }}</span>
                 </v-tooltip>
 
                 <!-- Show a distinct status if the analysis of the assay has been cancelled. -->
@@ -230,16 +230,20 @@ export default class AssayItem extends Vue {
     }
 
     get analysisReady(): boolean {
-        return this.activeAssay?.analysisReady || false;
+        return this.$store.getters.assayData(this.assay)?.analysisReady || false;
     }
 
     get analysisInProgress(): boolean {
-        return this.activeAssay?.analysisInProgress || false;
+        return this.$store.getters.assayData(this.assay)?.analysisInProgress || false;
     }
 
     get errorStatus(): boolean {
         const assayData: AssayAnalysisStatus = this.$store.getters.assayData(this.assay);
         return assayData?.error.status;
+    }
+
+    get errorMessage(): boolean {
+        return this.$store.getters.assayData(this.assay)?.error.message || this.nameError;
     }
 
     get cancelStatus(): boolean {

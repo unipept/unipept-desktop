@@ -7,28 +7,46 @@
                 'width': `calc(100vw - 55px - ${explorerWidth}px)`,
                 'float': 'right'
             }">
+
+            <!-- Show analysis results for the currently selected assay if it's ready with processing -->
             <v-container
-                v-if="!errorStatus && $store.getters.assays.length > 0 && (maxProgress === 1 && activeProgress === 1)"
+                v-if="!errorStatus && activeAssay && activeAssay.analysisReady"
                 fluid
                 class="pt-0">
                 <router-view></router-view>
             </v-container>
 
+            <!-- Show progress information / help information / ... when processing is not done yet -->
             <v-container
                 v-else
                 fluid
                 class="status-container">
-                <div class="inner-status-container" v-if="errorStatus">
-                    <v-icon x-large>
-                        mdi-wifi-strength-4-alert
-                    </v-icon>
-                    <p>
-                        A network communication error occurred while processing this assay. Please check that you
-                        are connected to the internet, or that your Unipept API-endpoint is correctly set and
-                        <a @click="reanalyse()">try again.</a>
-                    </p>
-                </div>
-                <div class="d-flex flex-column mt-12" style="max-width: 1000px;" v-else-if="$store.getters.assays.length === 0">
+
+                <!-- Show extensive error message about error that might have happened during analysis of an assay. -->
+                <v-alert v-if="errorStatus" prominent type="error" text>
+                    <div class="mb-4">
+                        An unexpected error has occurred during the analysis of this assay. Details about this specific
+                        error are shown below. You can <a @click="reanalyse">restart</a> the analysis to try again. If
+                        you believe that this error is not the result of a user action, then please contact us and
+                        provide the error details below. Make sure to check your internet connection before continuing.
+                    </div>
+
+                    <div class="font-weight-bold">Error details</div>
+                    <div>{{ errorObject ? errorObject.stack : errorMessage }}</div>
+                </v-alert>
+
+                <!-- Show message that informs the user that the analysis of this assay has been cancelled. -->
+                <v-alert v-else-if="cancelled" prominent type="warning" text  icon="mdi-motion-pause">
+                    You chose to cancel the analysis of this assay. <a @click="reanalyse">Click here</a> to restart this
+                    assay's analysis. Previously generated analysis results
+                    <span class="font-weight-bold">will be lost</span> if the analysis is restarted. The analysis of
+                    this assay will be scheduled to start after all currently active analysis processes have finished.
+                </v-alert>
+
+                <div
+                    v-else-if="$store.getters.assays.length === 0"
+                    class="d-flex flex-column mt-12"
+                    style="max-width: 1000px;">
                     <h2>Empty project</h2>
                     <p>
                         You have created an empty project. If this is the first time you're using this application, you can use
@@ -59,31 +77,49 @@
                     </p>
                 </div>
 
-                <div class="inner-status-container mt-12" v-else-if="cancelled">
-                    <v-icon x-large>mdi-cancel</v-icon>
-                    <p>
-                        You chose to cancel the analysis of this assay. <a @click="reanalyse">Click here</a> to restart this
-                        assay's analysis.
-                    </p>
-                </div>
+                <div v-else-if="activeAssay ? !activeAssay.analysisReady : false">
+                    <div v-if="activeAssay.analysisInProgress" class="inner-status-container mt-12">
+                        <div class="d-flex">
+                            <div style="max-width: 500px;">
+                                <v-progress-circular
+                                    color="primary"
+                                    size="80"
+                                    width="10"
+                                    :rotate="activeProgress.currentValue === -1 ? 0 : -90"
+                                    :indeterminate="activeProgress.currentValue === -1"
+                                    :value="activeProgress.currentValue"
+                                >
+                                <span v-if="activeProgress.currentValue !== -1">
+                                    {{ Math.round(activeProgress.currentValue) }}%
+                                </span>
+                                </v-progress-circular>
+                                <div class="mt-4">
+                                    {{ activeProgress.eta !== -1 ? `Approximately ${msToTimeString(activeProgress.eta)} remaining.` : "Computing estimated time remaining..." }}
+                                </div>
+                                <div class="mb-4">
+                                    Analysis started {{ msToTimeString(currentTime - activeProgress.startTimes[activeProgress.currentStep]) }} ago.
+                                </div>
+                                <div>
+                                    Note that assays are processed sequentially and that the estimated time is only computed once the
+                                    analysis for this assay has been started.
+                                </div>
+                            </div>
+                            <v-divider vertical class="mx-8"></v-divider>
+                            <progress-report-summary
+                                :progress-report="activeProgress">
+                            </progress-report-summary>
+                        </div>
+                    </div>
 
-                <div class="inner-status-container game-container mt-12" v-else-if="activeAssay ? !activeAssay.analysisReady : false" >
-                    <v-progress-circular
-                        :size="100"
-                        :rotate="-90"
-                        :width="15"
-                        :value="(activeAssay ? activeAssay.progress.value : 0) * 100"
-                        color="primary">
-                        {{ Math.round((activeAssay ? activeProgress : maxProgress) * 100) }}%
-                    </v-progress-circular>
-                    <p class="mt-4">
-                        {{ activeEta ? secondsToTimeString(activeEta) : secondsToTimeString(minEta) }}
-                    </p>
-                    <p>
-                        Note that assays are processed sequentially and that the estimated time is only computed once the
-                        analysis for this assay has been started.
-                    </p>
-                    <div class="mt-12">
+                    <!-- Show information that this assay is queued for processing -->
+                    <v-alert v-else prominent type="info" text icon="mdi-progress-clock">
+                        This assay is queued for analysis. Only one analysis will be analysed by this application at a
+                        time. Note, however, that parallelism at the single assay analysis level is present in order to
+                        maximize the usage of your system's available resources. You will see the progress of this
+                        assay's analysis once the actual analysis process has started.
+                    </v-alert>
+
+                    <div class="mt-12 d-flex justify-center">
                         <snake></snake>
                     </div>
                 </div>
@@ -97,15 +133,17 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { ProteomicsAssay, AssayAnalysisStatus, StringUtils, Study } from "unipept-web-components";
+import { ProteomicsAssay, AssayAnalysisStatus, StringUtils, Study, ProgressReport } from "unipept-web-components";
 import Snake from "@/components/games/Snake.vue";
 import Toolbar from "@/components/navigation-drawers/Toolbar.vue";
 import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue";
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
 import CreateAssayDialog from "@/components/assay/CreateAssayDialog.vue";
+import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 
 @Component({
     components: {
+        ProgressReportSummary,
         SearchConfigurationDialog,
         Snake,
         Toolbar,
@@ -121,6 +159,8 @@ export default class AnalysisPage extends Vue {
     // The Study object to which new assays should be added.
     private studyForCreation: Study = null;
 
+    private currentTime: number = new Date().getTime();
+
     get activeAssay(): AssayAnalysisStatus {
         return this.$store.getters.activeAssay;
     }
@@ -129,7 +169,15 @@ export default class AnalysisPage extends Vue {
         if (!this.activeAssay) {
             return false;
         }
-        return this.$store.getters.assayData(this.activeAssay)?.error.status;
+        return this.activeAssay?.error?.status;
+    }
+
+    get errorMessage(): string {
+        return this.activeAssay?.error?.message;
+    }
+
+    get errorObject(): Error | undefined {
+        return this.activeAssay?.error?.object;
     }
 
     get cancelled(): boolean {
@@ -138,52 +186,23 @@ export default class AnalysisPage extends Vue {
         // return this.$store.getters.assayData(this.activeAssay)?.analysisMetaData.status === "cancelled";
     }
 
-    get maxProgress(): number {
-        return this.$store.getters.assays.reduce((acc: number, curr: AssayAnalysisStatus) => {
-            const progressResult = curr.progress.value;
-            if (progressResult && progressResult > acc) {
-                return progressResult;
-            } else {
-                return acc;
-            }
-        }, 0);
-    }
-
-    get activeProgress(): number {
-        if (!this.activeAssay) {
-            return 0;
-        }
-        return this.$store.getters.assayData(this.activeAssay)?.progress.value;
-    }
-
-    get minEta(): number {
-        return this.$store.getters.assays.reduce((acc: number, curr: AssayAnalysisStatus) => {
-            const eta = curr.progress.eta;
-            if (eta < acc) {
-                return eta;
-            }
-        }, Infinity);
-    }
-
-    get activeEta(): number {
-        if (!this.activeAssay) {
-            return 0;
-        }
-        return this.$store.getters.assayData(this.activeAssay)?.progress.eta;
+    get activeProgress(): ProgressReport | undefined {
+        // const item = this.activeAssay?.progress;
+        // item.currentValue = 45;
+        // return item;
+        return this.activeAssay?.progress;
     }
 
     private reanalyse() {
-        // if (this.activeAssay) {
-        //     this.$store.dispatch("analyseAssay", [
-        //         this.activeAssay,
-        //         true,
-        //         this.activeAssay.getSearchConfiguration()
-        //     ]);
-        // }
+        if (this.activeAssay) {
+            this.$store.dispatch("analyseAssay", this.activeAssay.assay);
+        }
     }
 
-    private secondsToTimeString(time: number): string {
-        return StringUtils.secondsToTimeString(time);
+    mounted() {
+        setInterval(() => {
+            this.currentTime = new Date().getTime();
+        }, 1000);
     }
 
     private explorerWidthChanged(value: number) {
@@ -193,6 +212,10 @@ export default class AnalysisPage extends Vue {
     private createAssay(study: Study) {
         this.studyForCreation = study;
         this.createAssayDialogActive = true;
+    }
+
+    private msToTimeString(ms: number) {
+        return StringUtils.secondsToTimeString(ms / 1000);
     }
 }
 </script>
@@ -205,7 +228,7 @@ export default class AnalysisPage extends Vue {
     }
 
     .inner-status-container {
-        max-width: 600px;
+        max-width: 1000px;
         display: flex;
         justify-content: center;
         flex-direction: column;
@@ -213,9 +236,6 @@ export default class AnalysisPage extends Vue {
         align-items: center;
     }
 
-    .game-container {
-        justify-content: flex-start;
-    }
 
     .status-container {
         width: 100%;

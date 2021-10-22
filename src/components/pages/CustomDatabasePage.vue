@@ -48,7 +48,7 @@
                                                 </div>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
-                                                <custom-database-progress-report :db="item.database"/>
+                                                <progress-report-summary :db="item.database"/>
                                             </div>
                                         </div>
                                     </td>
@@ -76,10 +76,10 @@ import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatab
 import { Tooltip } from "unipept-web-components";
 import { CustomDatabaseInfo } from "@/state/DockerStore";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
-import CustomDatabaseProgressReport from "@/components/custom-database/CustomDatabaseProgressReport.vue";
+import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 
 @Component({
-    components: { CustomDatabaseProgressReport, CreateCustomDatabase, Tooltip },
+    components: { ProgressReportSummary, CreateCustomDatabase, Tooltip },
     computed: {
         databases: {
             get(): CustomDatabaseInfo[] {
