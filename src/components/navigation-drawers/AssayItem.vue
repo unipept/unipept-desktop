@@ -39,15 +39,11 @@
                 </v-tooltip>
 
                 <span v-else-if="!analysisReady">
-                    <v-tooltip v-if="analysisInProgress" bottom open-delay="500">
-                        <template v-slot:activator="{ on }">
-                            <v-progress-circular size="20" indeterminate color="primary"></v-progress-circular>
-                        </template>
-                        <span>Analysis is in progress.</span>
-                    </v-tooltip>
+                    <v-progress-circular v-if="analysisInProgress" size="20" indeterminate color="primary"></v-progress-circular>
+
                     <v-tooltip v-else bottom open-delay="500">
                         <template v-slot:activator="{ on }">
-                            <v-icon size="20" v-on="on">
+                            <v-icon size="18" v-on="on">
                                 mdi-progress-clock
                             </v-icon>
                         </template>

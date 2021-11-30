@@ -5,12 +5,11 @@ import Worker from "worker-loader?inline=fallback!./AssayFileSystemDataReader.wo
 import { Database } from "better-sqlite3";
 import {
     AssayTableRow,
-    SearchConfigurationTableRow,
-    StorageMetadataTableRow,
-    StudyTableRow
 } from "@/logic/filesystem/database/Schema";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
+import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
+import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     private static inProgress: Promise<string[]>;
@@ -48,7 +47,6 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
             };
 
             AssayFileSystemDataReader.worker.addEventListener("message", eventListener);
-
             AssayFileSystemDataReader.worker.postMessage(peptidesString);
         });
 
@@ -64,28 +62,13 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
 
         if (assayRow) {
             // Also read in the metadata
-            const metadataRow = await this.dbManager.performQuery<StorageMetadataTableRow>(
-                (db: Database) => {
-                    return db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(mpAssay.getId());
-                }
-            );
+            const metadataMng = new StorageMetadataManager(this.dbManager);
+            const metadata = await metadataMng.readMetadata(assayRow.id);
 
-            const searchConfigRow = await this.dbManager.performQuery<SearchConfigurationTableRow>(
-                (db: Database) =>  {
-                    return db.prepare("SELECT * FROM search_configuration WHERE id = ?")
-                        .get(assayRow.configuration_id);
-                }
-            )
-
-            const searchConfig = new SearchConfiguration(
-                searchConfigRow.equate_il,
-                searchConfigRow.filter_duplicates,
-                searchConfigRow.missing_cleavage_handling,
-                searchConfigRow.id.toString()
-            );
+            const searchConfigMng = new SearchConfigManager(this.dbManager);
 
             mpAssay.setName(assayRow.name);
-            mpAssay.setSearchConfiguration(searchConfig);
+            mpAssay.setSearchConfiguration(await searchConfigMng.readSearchConfig(assayRow.configuration_id));
             mpAssay.setAnalysisSource(
                 await AnalysisSourceSerializer.deserializeAnalysisSource(
                     assayRow.endpoint,
@@ -95,12 +78,12 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
                 )
             );
 
-            if (metadataRow) {
-                mpAssay.setDate(new Date(metadataRow.analysis_date));
+            if (metadata) {
+                mpAssay.setDate(metadata.analysisDate);
             }
         } else {
             // Throw an exception, the assay was not found in the database
-            throw new IOException();
+            throw new IOException("Requested assay was not found in the database!");
         }
     }
 }

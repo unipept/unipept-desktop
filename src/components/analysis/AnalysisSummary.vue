@@ -22,43 +22,67 @@
                                     {{ peptideTrust.searchedPeptides }} peptides in assay
                                 </div>
                                 <div class="subtitle-2">Last analysed on {{ getHumanReadableAssayDate() }}</div>
-                                <div :class="assay.getDatabaseVersion() !== dbVersion ? 'alert' : ''">
-                                    <tooltip
-                                        v-if="assay.getDatabaseVersion() !== dbVersion"
-                                        message="
-                                        The database version that was used to analyse this assay does not correspond
-                                        to the version currently available at the chosen endpoint.
-                                    ">
-                                        <v-icon
-                                            @click="() => {}"
-                                            size="20"
-                                            color="red">
-                                            mdi-alert-outline
-                                        </v-icon>
-                                    </tooltip>
-                                    {{ assay.getDatabaseVersion() }}
+
+                                <!-- Show information about the analysis source -->
+                                <div>
+
                                 </div>
-                                <div :class="assay.getEndpoint() !== endpoint ? 'alert' : ''">
-                                    <tooltip
-                                        v-if="assay.getEndpoint() !== endpoint"
-                                        message="
-                                        The endpoint that was used to analyse this assay does not correspond
-                                        to the currently selected endpoint.
-                                    ">
-                                        <v-icon
-                                            @click="() => {}"
-                                            size="20"
-                                            color="red">
-                                            mdi-alert-outline
-                                        </v-icon>
-                                    </tooltip>
-                                    {{ assay.getEndpoint() }}
+
+                                <!-- Show information about the validity status of this assay's cache -->
+                                <div>
+                                    <div v-if="cacheValidityLoading" class="d-flex justify-center">
+                                        <span class="text--secondary">
+                                            Checking cache validity...
+                                        </span>
+                                    </div>
+                                    <div v-else-if="cacheIsValid">
+                                        <span>Analysis is up-to-date, no need to restart the analysis.</span>
+                                    </div>
+                                    <div v-else>
+                                        <span class="red--text">
+                                            Something about the selected analysis source changed since the last time
+                                            this assay has been analysed. Restart the analysis for these changes to
+                                            come to effect.
+                                        </span>
+                                    </div>
                                 </div>
-                                <div v-if="dirty" class="alert mt-4">
-                                    Either the selected endpoint, the supported UniProt database version or the selected
-                                    search settings changed since the last time you analysed this assay. It is
-                                    recommended that you reanalyse this assay.
-                                </div>
+<!--                                <div :class="assay.getDatabaseVersion() !== dbVersion ? 'alert' : ''">-->
+<!--                                    <tooltip-->
+<!--                                        v-if="assay.getDatabaseVersion() !== dbVersion"-->
+<!--                                        message="-->
+<!--                                        The database version that was used to analyse this assay does not correspond-->
+<!--                                        to the version currently available at the chosen endpoint.-->
+<!--                                    ">-->
+<!--                                        <v-icon-->
+<!--                                            @click="() => {}"-->
+<!--                                            size="20"-->
+<!--                                            color="red">-->
+<!--                                            mdi-alert-outline-->
+<!--                                        </v-icon>-->
+<!--                                    </tooltip>-->
+<!--                                    {{ assay.getDatabaseVersion() }}-->
+<!--                                </div>-->
+<!--                                <div :class="assay.getEndpoint() !== endpoint ? 'alert' : ''">-->
+<!--                                    <tooltip-->
+<!--                                        v-if="assay.getEndpoint() !== endpoint"-->
+<!--                                        message="-->
+<!--                                        The endpoint that was used to analyse this assay does not correspond-->
+<!--                                        to the currently selected endpoint.-->
+<!--                                    ">-->
+<!--                                        <v-icon-->
+<!--                                            @click="() => {}"-->
+<!--                                            size="20"-->
+<!--                                            color="red">-->
+<!--                                            mdi-alert-outline-->
+<!--                                        </v-icon>-->
+<!--                                    </tooltip>-->
+<!--                                    {{ assay.getEndpoint() }}-->
+<!--                                </div>-->
+<!--                                <div v-if="dirty" class="alert mt-4">-->
+<!--                                    Either the selected endpoint, the supported UniProt database version or the selected-->
+<!--                                    search settings changed since the last time you analysed this assay. It is-->
+<!--                                    recommended that you reanalyse this assay.-->
+<!--                                </div>-->
                             </div>
                         </div>
                         <search-settings-form
@@ -71,7 +95,7 @@
                         <div class="d-flex justify-center align-center mt-4">
                             <tooltip message="Reanalyse this assay">
                                 <v-btn
-                                    :disabled="progress !== 1 || !dirty"
+                                    :disabled="progress !== 1 || !cacheIsValid"
                                     color="primary"
                                     @click="update()"
                                     class="mr-2"
@@ -117,6 +141,7 @@ import {
 
 import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
+import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip }
@@ -129,19 +154,14 @@ export default class AnalysisSummary extends Vue {
     private filterDuplicates: boolean = true;
     private missedCleavage: boolean = false;
 
-    private peptideTrust: PeptideTrust = null;
-    private dbVersion: string = "";
+    private cacheIsValid: boolean = true;
+    // We are currently still checking if the provided cache is valid or not...
+    private cacheValidityLoading: boolean = true;
 
-    get dirty(): boolean {
-        const currentConfig = this.assay.getSearchConfiguration();
+    private searchConfigIsValid: boolean = true;
 
-        // return this.assay.getDatabaseVersion() !== this.dbVersion ||
-        //     this.assay.getEndpoint() !== this.endpoint ||
-        //     currentConfig.equateIl !== this.equateIl ||
-        //     currentConfig.filterDuplicates !== this.filterDuplicates ||
-        //     currentConfig.enableMissingCleavageHandling !== this.missedCleavage;
-
-        return false;
+    get peptideTrust(): PeptideTrust {
+        return this.$store.getters.assayData(this.assay)?.peptideTrust;
     }
 
     get endpoint(): string {
@@ -160,9 +180,8 @@ export default class AnalysisSummary extends Vue {
     }
 
     private async mounted() {
-        this.dbVersion = await MetadataCommunicator.getRemoteUniprotVersion();
         this.onAssayChanged();
-        this.onPeptideCountTableChanged();
+        this.checkCacheValidity();
     }
 
     @Watch("assay")
@@ -175,16 +194,14 @@ export default class AnalysisSummary extends Vue {
         }
     }
 
-    @Watch("peptideCountTable")
-    private async onPeptideCountTableChanged() {
-        if (this.peptideCountTable) {
-            // const communicator: Pept2DataCommunicator =
-            //     this.$store.getters.assayData(this.assay)?.communicationSource.getPept2DataCommunicator();
-            // this.peptideTrust = await communicator?.getPeptideTrust(
-            //     this.peptideCountTable,
-            //     this.assay.getSearchConfiguration()
-            // );
-        }
+    private async checkCacheValidity(): Promise<void> {
+        this.cacheValidityLoading = true;
+        const metadataMng = new StorageMetadataManager(this.$store.getters.dbManager);
+        const metadata = await metadataMng.readMetadata(this.assay.getId());
+
+        this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+
+        this.cacheValidityLoading = false;
     }
 
     private update() {

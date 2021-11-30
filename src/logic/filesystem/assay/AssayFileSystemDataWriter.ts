@@ -5,6 +5,7 @@ import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import { Database, RunResult } from "better-sqlite3";
 import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 import { AssayTableRow } from "@/logic/filesystem/database/Schema";
+import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 
 /**
  * Visitor that writes the raw data associated with an assay to disk. This raw data can become rather large, which is
@@ -25,20 +26,8 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
         // Write search configuration to database
         const config = mpAssay.getSearchConfiguration();
 
-        await this.dbManager.performQuery<void>((db: Database) => {
-            const info = db.prepare(
-                `
-                    REPLACE INTO search_configuration (equate_il, filter_duplicates, missing_cleavage_handling)
-                    VALUES (?, ?, ?)
-                `
-            ).run(
-                config.equateIl ? 1 : 0,
-                config.filterDuplicates ? 1 : 0,
-                config.enableMissingCleavageHandling ? 1 : 0,
-            );
-
-            config.id = info.lastInsertRowid.toString();
-        });
+        const searchConfigMng = new SearchConfigManager(this.dbManager);
+        await searchConfigMng.writeSearchConfig(config);
 
         // Get previous assay metadata results (if they exist)
         const oldAssayRow = await this.dbManager.performQuery<AssayTableRow>(

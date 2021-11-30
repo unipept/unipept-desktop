@@ -21,9 +21,10 @@ export type StudyTableRow = {
 
 export type SearchConfigurationTableRow = {
     id: number,
-    equate_il: boolean,
-    filter_duplicates: boolean,
-    missing_cleavage_handling: boolean
+    // boolean coded as an integer. 1 = true, 0 = false
+    equate_il: number,
+    filter_duplicates: number,
+    missing_cleavage_handling: number
 };
 
 export type PeptideTrustTableRow = {

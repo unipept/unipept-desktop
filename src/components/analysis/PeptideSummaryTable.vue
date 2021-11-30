@@ -46,13 +46,13 @@ import { ItemType } from "@/state/PeptideSummaryTable.worker";
                         text: "Peptide",
                         align: "start",
                         value: "peptide",
-                        width: "30%"
+                        width: "25%"
                     },
                     {
                         text: "Occurrence",
                         align: "start",
                         value: "count",
-                        width: "15%"
+                        width: "20%"
                     }, {
                         text: "Lowest common ancestor",
                         align: "start",

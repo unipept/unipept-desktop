@@ -35,23 +35,13 @@
                                     <v-toolbar-title>New assays</v-toolbar-title>
                                     <v-divider class="mx-4" inset vertical></v-divider>
                                     <v-spacer></v-spacer>
-                                    <v-tooltip bottom open-delay="500">
-                                        <template v-slot:activator="{ on }">
-                                            <v-btn icon color="primary" outlined class="mr-2" v-on="on" @click="addAssayEntry">
-                                                <v-icon>mdi-text-box-plus-outline</v-icon>
-                                            </v-btn>
-                                        </template>
-                                        <span>Add new assay manually.</span>
-                                    </v-tooltip>
+                                    <v-btn color="primary" outlined class="mr-2" @click="addAssayEntry">
+                                        Add assay manually
+                                    </v-btn>
 
-                                    <v-tooltip bottom open-delay="500">
-                                        <template v-slot:activator="{ on }">
-                                            <v-btn icon color="primary" outlined v-on="on" @click="importAssaysFromFile">
-                                                <v-icon>mdi-file-plus-outline</v-icon>
-                                            </v-btn>
-                                        </template>
-                                        <span>Import assays from file(s).</span>
-                                    </v-tooltip>
+                                    <v-btn color="primary" outlined @click="importAssaysFromFile">
+                                        Import assay from file
+                                    </v-btn>
                                 </v-toolbar>
                             </template>
                             <template v-slot:item.data-table-expand="{ item, isExpanded, expand }">
@@ -399,12 +389,10 @@ export default class CreateAssayDialog extends Vue {
                 assay.setPeptides(placeholder.peptides.split(/\r?\n/g));
                 assay.setSearchConfiguration(placeholder.searchConfiguration);
 
-                console.log(placeholder.analysisSource);
-
                 let analysisSource: AnalysisSource;
                 if (placeholder.analysisSource.type === "online") {
                     analysisSource = new CachedOnlineAnalysisSource(
-                        placeholder.analysisSource.title,
+                        placeholder.analysisSource.subtitle,
                         assay,
                         this.$store.getters.dbManager,
                         this.$store.getters.projectLocation
@@ -424,7 +412,6 @@ export default class CreateAssayDialog extends Vue {
                     );
                 }
 
-                console.log(analysisSource);
                 assay.setAnalysisSource(analysisSource);
 
                 try {

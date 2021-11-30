@@ -97,7 +97,7 @@
                                     {{ activeProgress.eta !== -1 ? `Approximately ${msToTimeString(activeProgress.eta)} remaining.` : "Computing estimated time remaining..." }}
                                 </div>
                                 <div class="mb-4">
-                                    Analysis started {{ msToTimeString(currentTime - activeProgress.startTimes[activeProgress.currentStep]) }} ago.
+                                    Analysis started {{ msToTimeString(currentTime - activeProgress.startTimes[0]) }} ago.
                                 </div>
                                 <div>
                                     Note that assays are processed sequentially and that the estimated time is only computed once the
@@ -228,7 +228,7 @@ export default class AnalysisPage extends Vue {
     }
 
     .inner-status-container {
-        max-width: 1000px;
+        max-width: 1200px;
         display: flex;
         justify-content: center;
         flex-direction: column;
