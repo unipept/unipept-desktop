@@ -198,6 +198,10 @@ export default class App extends Vue implements ErrorListener {
         try {
             let config: Configuration = await configurationManager.readConfiguration();
             NetworkConfiguration.BASE_URL = config.apiSource;
+            // Make sure that the old Unipept URL is no longer being used...
+            if (NetworkConfiguration.BASE_URL === "https://unipept.ugent.be") {
+                NetworkConfiguration.BASE_URL = "https://api.unipept.ugent.be";
+            }
             NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
             QueueManager.initializeQueue(config.maxLongRunningTasks);
         } catch (err) {
