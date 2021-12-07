@@ -199,7 +199,11 @@ export default class AnalysisSummary extends Vue {
         const metadataMng = new StorageMetadataManager(this.$store.getters.dbManager);
         const metadata = await metadataMng.readMetadata(this.assay.getId());
 
-        this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+        if (metadata) {
+            this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+        } else {
+            this.cacheIsValid = false;
+        }
 
         this.cacheValidityLoading = false;
     }

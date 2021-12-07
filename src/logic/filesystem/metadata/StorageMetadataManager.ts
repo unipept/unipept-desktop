@@ -25,9 +25,9 @@ export default class StorageMetadataManager {
                 metaRow.data_hash,
                 new Date(metaRow.analysis_date)
             );
-        } else {
-            return undefined;
         }
+
+        return undefined;
     }
 
     public async writeMetadata(metadata: StorageMetadata): Promise<void> {
@@ -44,7 +44,7 @@ export default class StorageMetadataManager {
                 metadata.fingerprint,
                 metadata.dataHash,
                 metadata.analysisDate.toJSON()
-            )
+            );
         });
     }
 

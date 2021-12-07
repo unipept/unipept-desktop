@@ -11,7 +11,6 @@ import vueFullscreen from "vue-fullscreen";
 import { DesktopConfigurationStore } from "@/state/DesktopConfigurationStore";
 import { projectStore } from "@/state/ProjectStore";
 import { customDatabaseStore } from "@/state/DockerStore";
-import { summaryStore } from "@/state/PeptideSummaryStore";
 import { ComparativeStore } from "@/state/ComparativeStore";
 
 import HomePage from "@/components/pages/HomePage.vue";
@@ -51,7 +50,6 @@ export const store = new Vuex.Store({
         desktopConfiguration: DesktopConfigurationStore,
         comparative: ComparativeStore,
         project: projectStore,
-        peptideSummary: summaryStore,
         customDatabase: customDatabaseStore
     }
 });

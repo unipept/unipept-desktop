@@ -5,14 +5,13 @@ import {
     PeptideData,
     PeptideDataSerializer,
     Assay,
-    AnalysisSource, Peptide
+    AnalysisSource,
+    Peptide
 } from "unipept-web-components";
 
 import CachedAssayData from "@/logic/filesystem/assay/processed/CachedAssayData";
 import { Database } from "better-sqlite3";
-import SearchConfigFileSystemReader from "@/logic/filesystem/configuration/SearchConfigFileSystemReader";
 import { ShareableMap } from "shared-memory-datastructures";
-import SearchConfigFileSystemWriter from "@/logic/filesystem/configuration/SearchConfigFileSystemWriter";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 
 import { promises as fs } from "fs";
@@ -20,6 +19,10 @@ import path from "path";
 import mkdirp from "mkdirp";
 import crypto from "crypto";
 import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
+import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
+import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
+import StorageMetadata from "@/logic/filesystem/metadata/StorageMetadata";
+import PeptideTrustManager from "@/logic/filesystem/trust/PeptideTrustManager";
 
 export default class CachedResultsManager {
     constructor(
@@ -43,18 +46,13 @@ export default class CachedResultsManager {
 
         // First, check if metadata for this assay is present in the database.
         if (!row) {
+            console.log("Metadata not present");
             return false;
         }
 
         // Second, check if the current search configuration is identical to the one used for the offline analysis.
-        const serializedSearchConfig = new SearchConfiguration(
-            true,
-            true,
-            false,
-            row.configuration_id
-        );
-        const searchConfigReader = new SearchConfigFileSystemReader(this.dbManager);
-        await serializedSearchConfig.accept(searchConfigReader);
+        const searchConfigManager = new SearchConfigManager(this.dbManager);
+        const serializedSearchConfig = await searchConfigManager.readSearchConfig(row.configuration_id);
 
         const assayConfig = assay.getSearchConfiguration();
         if (
@@ -62,21 +60,23 @@ export default class CachedResultsManager {
             serializedSearchConfig.filterDuplicates !== assayConfig.filterDuplicates ||
             serializedSearchConfig.enableMissingCleavageHandling !== assayConfig.enableMissingCleavageHandling
         ) {
+            console.log("Search config different");
             return false;
         }
 
         // Third, check if the fingerprint of the stored AnalysisSource is the same as the current AnalysisSource.
         const fingerprint = row.fingerprint;
         if (!(await assay.getAnalysisSource().verifyEquality(fingerprint))) {
+            console.log("Fingerprint not available");
             return false;
         }
 
         // Fourth, check if the peptide trust is available in the database.
-        const trustRow = await this.dbManager.performQuery<any>((db: Database) => {
-            return db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assay.getId());
-        })
+        const trustManager = new PeptideTrustManager(this.dbManager);
+        const peptideTrust = await trustManager.readTrust(assay.getId());
 
-        if (!trustRow) {
+        if (!peptideTrust) {
+            console.log("Trust row not available");
             return false;
         }
 
@@ -127,15 +127,8 @@ export default class CachedResultsManager {
             return null;
         }
 
-        const trustRow = await this.dbManager.performQuery<any>((db: Database) => {
-            return db.prepare("SELECT * FROM peptide_trust WHERE `assay_id` = ?").get(assay.getId());
-        });
-
-        const trust = new PeptideTrust(
-            JSON.parse(trustRow.missed_peptides),
-            trustRow.matched_peptides,
-            trustRow.searched_peptides
-        );
+        const trustMng = new PeptideTrustManager(this.dbManager);
+        const trust = await trustMng.readTrust(assay.getId());
 
         return new CachedAssayData(
             sharedMap,
@@ -145,7 +138,7 @@ export default class CachedResultsManager {
 
     public async storeProcessingResults(
         assay: ProteomicsAssay,
-        pept2Data: ShareableMap<string, PeptideData>,
+        pept2Data: ShareableMap<Peptide, PeptideData>,
         trust: PeptideTrust,
         searchSettings: SearchConfiguration
     ) {
@@ -157,19 +150,6 @@ export default class CachedResultsManager {
         // Write both buffers to a binary file.
         await this.writeShareableMap(assay, pept2Data);
 
-        await this.dbManager.performQuery<void>((db: Database) => {
-            // First delete all existing rows for this assay;
-            db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assay.getId());
-
-            const insertTrust = db.prepare("INSERT INTO peptide_trust VALUES (?, ?, ?, ?)");
-            insertTrust.run(
-                assay.getId(),
-                JSON.stringify(trust.missedPeptides),
-                trust.matchedPeptides,
-                trust.searchedPeptides
-            );
-        });
-
         // Now write the metadata to the database again.
         const existingConfig = searchSettings;
         const searchConfiguration = new SearchConfiguration(
@@ -178,19 +158,21 @@ export default class CachedResultsManager {
             existingConfig.enableMissingCleavageHandling
         );
 
-        const searchConfigWriter = new SearchConfigFileSystemWriter(this.dbManager);
-        searchConfigWriter.visitSearchConfiguration(searchConfiguration);
+        const searchConfigManager = new SearchConfigManager(this.dbManager);
+        searchConfigManager.writeSearchConfig(searchConfiguration);
 
-        await this.dbManager.performQuery<void>((db: Database) => {
-            db.prepare("INSERT INTO storage_metadata VALUES (?, ?, ?, ?, ?, ?)").run(
-                assay.getId(),
-                searchConfiguration.id,
-                AnalysisSourceSerializer.serializeAnalysisSource(assay.getAnalysisSource()),
-                assay.getAnalysisSource().computeFingerprint(),
-                this.computeDataHash(assay),
-                assay.getDate().toJSON()
-            );
-        });
+        const trustMng = new PeptideTrustManager(this.dbManager);
+        await trustMng.writeTrust(assay.getId(), trust);
+
+        const storageMetaManager = new StorageMetadataManager(this.dbManager);
+        await storageMetaManager.writeMetadata(new StorageMetadata(
+            assay.getId(),
+            searchConfiguration,
+            AnalysisSourceSerializer.serializeAnalysisSource(assay.getAnalysisSource()),
+            await assay.getAnalysisSource().computeFingerprint(),
+            await this.computeDataHash(assay),
+            assay.getDate()
+        ));
     }
 
     private arrayBufferToBuffer(buffer: ArrayBuffer): Buffer {
