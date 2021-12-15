@@ -171,6 +171,23 @@ export default class CachedResultsManager {
         ));
     }
 
+    /**
+     * Remove the processing results that might have been stored for a specific assay from the project folder.
+     *
+     * @param assay The assay for which previously created processing results should be deleted.
+     */
+    public async deleteProcessingResults(assay: ProteomicsAssay): Promise<void> {
+        const idxBufferPath = this.getIndexBufferPath(assay);
+        const dataBufferPath = this.getDataBufferPath(assay);
+
+        try {
+            await fs.unlink(idxBufferPath);
+            await fs.unlink(dataBufferPath);
+        } catch (err) {
+            // This means that the files we are trying to delete do no longer exist and should thus not be an issue.
+        }
+    }
+
     private arrayBufferToBuffer(buffer: ArrayBuffer): Buffer {
         return Buffer.from(buffer);
     }

@@ -4,6 +4,8 @@ import { ProteomicsAssay, IOException, QueueManager } from "unipept-web-componen
 import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
 import { Database } from "better-sqlite3";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import CachedResultsManager from "@/logic/filesystem/assay/processed/CachedResultsManager";
+import path from "path";
 
 /**
  * Removes both the metadata and raw data for an assay.
@@ -21,10 +23,10 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
      * @throws {IOException}
      */
     public async visitProteomicsAssay(assay: ProteomicsAssay): Promise<void> {
-        const path: string = `${this.directoryPath}${assay.getName()}.pep`;
+        const assayPath: string = `${this.directoryPath}${assay.getName()}.pep`;
 
         try {
-            await fs.unlink(path);
+            await fs.unlink(assayPath);
         } catch (err) {
             // File does no longer exist, which is not an issue here.
         }
@@ -37,5 +39,13 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
             db.prepare("DELETE FROM assays WHERE `id` = ?").run(assayId);
             db.prepare("DELETE FROM search_configuration WHERE `id` = ?").run(assay.getSearchConfiguration().id)
         });
+
+        // Also delete cached results that might have possibly been created for this assay
+        const cachedResultsMng = new CachedResultsManager(
+            this.dbManager,
+            path.dirname(this.directoryPath)
+        );
+
+        await cachedResultsMng.deleteProcessingResults(assay);
     }
 }
