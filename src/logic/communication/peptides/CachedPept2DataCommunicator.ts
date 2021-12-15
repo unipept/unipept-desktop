@@ -2,14 +2,15 @@ import {
     CountTable,
     Pept2DataCommunicator,
     Peptide,
-    PeptideData, PeptideTrust,
+    PeptideData,
+    PeptideTrust,
     ProgressListener,
-    ProteomicsAssay, SearchConfiguration
+    ProteomicsAssay,
+    SearchConfiguration
 } from "unipept-web-components";
 import { ShareableMap } from "shared-memory-datastructures";
 import CachedResultsManager from "@/logic/filesystem/assay/processed/CachedResultsManager";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
-import { PeptideTrustProcessor } from "unipept-web-components";
 import PeptideTrustManager from "@/logic/filesystem/trust/PeptideTrustManager";
 
 /**
@@ -56,7 +57,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
                 this.assay.getSearchConfiguration()
             );
 
-            return new Promise<ShareableMap<Peptide, PeptideData>>(resolve => resolve([data, trust]));
+            return new Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]>(resolve => resolve([data, trust]));
         }
     }
 }

@@ -2,7 +2,7 @@ import {
     CountTable,
     Pept2DataCommunicator,
     Peptide,
-    PeptideData,
+    PeptideData, PeptideTrust,
     ProgressListener,
     SearchConfiguration
 } from "unipept-web-components";
@@ -38,14 +38,15 @@ export default class LocalPept2DataCommunicator extends Pept2DataCommunicator {
         countTable: CountTable<Peptide>,
         configuration: SearchConfiguration,
         progressListener?: ProgressListener
-    ): Promise<ShareableMap<Peptide, PeptideData>> {
+    ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
         // Start up the web component of the web browser.
         const dockerCommunicator = new DockerCommunicator();
         await dockerCommunicator.startDatabase(
             path.join(this.customDatabaseLocation, "databases", this.customDatabase.name)
         );
         await dockerCommunicator.startWebComponent();
-        const result: ShareableMap<Peptide, PeptideData> = await super.process(
+        // @ts-ignore
+        const result: [ShareableMap<Peptide, PeptideData>, PeptideTrust] = await super.process(
             countTable,
             configuration,
             progressListener
@@ -53,6 +54,6 @@ export default class LocalPept2DataCommunicator extends Pept2DataCommunicator {
         await dockerCommunicator.stopWebComponent();
         await dockerCommunicator.stopDatabase();
 
-        return new Promise<ShareableMap<Peptide, PeptideData>>((resolve) => resolve(result));
+        return new Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]>((resolve) => resolve(result));
     }
 }

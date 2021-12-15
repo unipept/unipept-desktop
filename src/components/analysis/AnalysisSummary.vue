@@ -95,7 +95,7 @@
                         <div class="d-flex justify-center align-center mt-4">
                             <tooltip message="Reanalyse this assay">
                                 <v-btn
-                                    :disabled="progress !== 1 || !cacheIsValid"
+                                    :disabled="!analysisReady || (cacheIsValid && !isDirty)"
                                     color="primary"
                                     @click="update()"
                                     class="mr-2"
@@ -136,12 +136,13 @@ import {
     Pept2DataCommunicator,
     ExportResultsButton,
     NetworkConfiguration,
-    Tooltip
+    Tooltip, Study, Assay
 } from "unipept-web-components";
 
 import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip }
@@ -153,6 +154,10 @@ export default class AnalysisSummary extends Vue {
     private equateIl: boolean = true;
     private filterDuplicates: boolean = true;
     private missedCleavage: boolean = false;
+
+    private originalEquateIl: boolean = true;
+    private originalFilterDuplicates: boolean = true;
+    private originalMissedCleavage: boolean = false;
 
     private cacheIsValid: boolean = true;
     // We are currently still checking if the provided cache is valid or not...
@@ -168,15 +173,15 @@ export default class AnalysisSummary extends Vue {
         return NetworkConfiguration.BASE_URL;
     }
 
-    get peptideCountTable(): CountTable<Peptide> {
-        return undefined;
-        // return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    get analysisReady(): boolean {
+        return this.$store.getters.assayData(this.assay)?.analysisReady;
     }
 
-    get progress(): number {
-        return 0;
-        // const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        // return assayData ? assayData.analysisMetaData.progress : 0;
+    // Did something change about the settings selected by the user in comparison to the current settings?
+    get isDirty(): boolean {
+        return this.originalEquateIl !== this.equateIl ||
+            this.originalFilterDuplicates !== this.filterDuplicates ||
+            this.originalMissedCleavage !== this.missedCleavage
     }
 
     private async mounted() {
@@ -191,6 +196,10 @@ export default class AnalysisSummary extends Vue {
             this.equateIl = config.equateIl;
             this.filterDuplicates = config.filterDuplicates;
             this.missedCleavage = config.enableMissingCleavageHandling;
+
+            this.originalEquateIl = config.equateIl;
+            this.originalFilterDuplicates = config.filterDuplicates;
+            this.originalMissedCleavage = config.enableMissingCleavageHandling;
         }
     }
 
@@ -210,6 +219,23 @@ export default class AnalysisSummary extends Vue {
 
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
+        this.assay.setSearchConfiguration(config);
+
+        // We need to retrieve the name of the study with which this assay is associated to be able to write data to the
+        // filesystem.
+        const study = this.$store.getters.studies.filter(
+            (s: Study) => s.getAssays().some(
+                (a: Assay) => a.getId() === this.assay.getId()
+            )
+        )[0];
+
+        const assayWriter = new AssayFileSystemDataWriter(
+            `${this.$store.getters.projectLocation}/${study.getName()}`,
+            this.$store.getters.dbManager,
+            study
+        );
+        this.assay.accept(assayWriter);
+
         this.$store.dispatch("analyseAssay", this.assay);
     }
 

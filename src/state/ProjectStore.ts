@@ -70,6 +70,8 @@ const projectMutations: MutationTree<ProjectState> = {
         state.projectName = name;
         state.projectLocation = location;
         state.dbManager = dbManager;
+
+        console.log("Set project location to: " + state.projectLocation);
     }
 };
 
@@ -95,7 +97,6 @@ const projectActions: ActionTree<ProjectState, any> = {
         }
 
         const name = path.basename(projectDirectory);
-
 
         store.commit("SET_PROJECT", [name, projectDirectory, dbManager]);
 

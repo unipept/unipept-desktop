@@ -56,7 +56,7 @@ export default class ProjectManager  {
         const studies = [];
 
         for (const directory of subDirectories) {
-            studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager));
+            studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager, projectLocation));
         }
 
         if (addToRecents) {
@@ -89,7 +89,11 @@ export default class ProjectManager  {
         return new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
     }
 
-    private async loadStudy(directory: string, dbManager: DatabaseManager): Promise<Study> {
+    private async loadStudy(
+        directory: string,
+        dbManager: DatabaseManager,
+        projectLocation: string
+    ): Promise<Study> {
         if (!directory.endsWith("/")) {
             directory += "/";
         }
@@ -114,7 +118,7 @@ export default class ProjectManager  {
         await study.accept(studyWriter);
 
         // Read all assays from this study
-        const studyReader = new StudyFileSystemDataReader(directory, dbManager, store.getters.projectLocation);
+        const studyReader = new StudyFileSystemDataReader(directory, dbManager, projectLocation);
         await study.accept(studyReader);
 
         return study;

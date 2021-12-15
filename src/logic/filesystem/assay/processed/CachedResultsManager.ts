@@ -207,12 +207,20 @@ export default class CachedResultsManager {
 
         // Write both buffers to a binary file.
         const buffers: ArrayBuffer[] = filteredDataset.getBuffers();
+        console.log("WRITE:");
+        console.log("INDEX:");
+        console.log(buffers[0]);
+        console.log("DATA:");
+        console.log(buffers[1]);
 
         const bufferDirectory = this.getBufferDirectory();
         await mkdirp(bufferDirectory);
 
         const indexBufferPath = this.getIndexBufferPath(assay);
         const dataBufferPath = this.getDataBufferPath(assay);
+
+        console.log("Index path: " + indexBufferPath);
+        console.log("Data path: " + dataBufferPath);
 
         try {
             // Remove previous versions of this file's persistent storage.
@@ -234,9 +242,18 @@ export default class CachedResultsManager {
         const indexBufferPath = this.getIndexBufferPath(assay);
         const dataBufferPath = this.getDataBufferPath(assay);
 
+        console.log("Index path: " + indexBufferPath);
+        console.log("Data path: " + dataBufferPath);
+
         try {
             const indexBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(indexBufferPath));
             const dataBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(dataBufferPath));
+
+            console.log("READ:");
+            console.log("INDEX:");
+            console.log(indexBuffer);
+            console.log("DATA:");
+            console.log(dataBuffer);
 
             const output = new ShareableMap<Peptide, PeptideData>(0, 0, new PeptideDataSerializer());
             output.setBuffers(indexBuffer, dataBuffer);

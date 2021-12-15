@@ -23,6 +23,8 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
     }
 
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
+        console.log("Visit from writer...");
+
         // Write search configuration to database
         const config = mpAssay.getSearchConfiguration();
 

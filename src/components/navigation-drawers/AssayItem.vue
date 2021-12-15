@@ -175,8 +175,8 @@ import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import { ShareableMap } from "shared-memory-datastructures";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -360,6 +360,7 @@ export default class AssayItem extends Vue {
         // Also copy configuration for this assay.
         const newAssay = new ProteomicsAssay(uuidv4());
         newAssay.setName(assayName);
+
         const originalSearchConfig = this.assay.getSearchConfiguration();
         const searchConfiguration = new SearchConfiguration(
             originalSearchConfig.equateIl,
@@ -367,12 +368,12 @@ export default class AssayItem extends Vue {
             originalSearchConfig.enableMissingCleavageHandling
         );
         newAssay.setSearchConfiguration(searchConfiguration);
-        const metadataWriter = new AssayFileSystemMetaDataWriter(
+        const dataWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
             this.$store.getters.dbManager,
             this.study
         );
-        await newAssay.accept(metadataWriter);
+        await newAssay.accept(dataWriter);
 
         await fs.copyFile(
             `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,

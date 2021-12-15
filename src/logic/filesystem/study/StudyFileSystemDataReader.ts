@@ -1,10 +1,8 @@
 import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
 import * as fs from "fs";
 import path from "path";
-import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException } from "unipept-web-components";
-import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 import { Database } from "better-sqlite3";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";

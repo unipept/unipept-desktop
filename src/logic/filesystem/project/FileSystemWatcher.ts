@@ -8,11 +8,9 @@ import FileSystemStudyVisitor from "@/logic/filesystem/study/FileSystemStudyVisi
 import StudyFileSystemDataWriter from "@/logic/filesystem/study/StudyFileSystemDataWriter";
 import { Study, ProteomicsAssay, Assay } from "unipept-web-components";
 import ErrorListener from "../ErrorListener";
-import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import StudyFileSystemDataReader from "@/logic/filesystem/study/StudyFileSystemDataReader";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 
 /**
  * The FileSystemWatcher is responsible for the synchronization of a project with the disk. It watches the filesystem
