@@ -196,31 +196,14 @@ export default class CachedResultsManager {
      * @private
      */
     private async writeShareableMap(assay: ProteomicsAssay, pept2Data: ShareableMap<String, PeptideData>) {
-        // Filter dataset for peptides that only occur in this assay.
-        const filteredDataset = new ShareableMap(undefined, undefined, new PeptideDataSerializer());
-        for (const peptide of assay.getPeptides()) {
-            const result = pept2Data.get(peptide);
-            if (result) {
-                filteredDataset.set(peptide, result);
-            }
-        }
-
         // Write both buffers to a binary file.
-        const buffers: ArrayBuffer[] = filteredDataset.getBuffers();
-        console.log("WRITE:");
-        console.log("INDEX:");
-        console.log(buffers[0]);
-        console.log("DATA:");
-        console.log(buffers[1]);
+        const buffers: ArrayBuffer[] = pept2Data.getBuffers();
 
         const bufferDirectory = this.getBufferDirectory();
         await mkdirp(bufferDirectory);
 
         const indexBufferPath = this.getIndexBufferPath(assay);
         const dataBufferPath = this.getDataBufferPath(assay);
-
-        console.log("Index path: " + indexBufferPath);
-        console.log("Data path: " + dataBufferPath);
 
         try {
             // Remove previous versions of this file's persistent storage.
@@ -242,21 +225,14 @@ export default class CachedResultsManager {
         const indexBufferPath = this.getIndexBufferPath(assay);
         const dataBufferPath = this.getDataBufferPath(assay);
 
-        console.log("Index path: " + indexBufferPath);
-        console.log("Data path: " + dataBufferPath);
-
         try {
             const indexBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(indexBufferPath));
             const dataBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(dataBufferPath));
 
-            console.log("READ:");
-            console.log("INDEX:");
-            console.log(indexBuffer);
-            console.log("DATA:");
-            console.log(dataBuffer);
-
             const output = new ShareableMap<Peptide, PeptideData>(0, 0, new PeptideDataSerializer());
             output.setBuffers(indexBuffer, dataBuffer);
+
+            // console.log(output);
 
             return output;
         } catch (error) {
