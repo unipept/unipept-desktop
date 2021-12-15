@@ -23,11 +23,6 @@
                                 </div>
                                 <div class="subtitle-2">Last analysed on {{ getHumanReadableAssayDate() }}</div>
 
-                                <!-- Show information about the analysis source -->
-                                <div>
-
-                                </div>
-
                                 <!-- Show information about the validity status of this assay's cache -->
                                 <div>
                                     <div v-if="cacheValidityLoading" class="d-flex justify-center">
@@ -45,6 +40,24 @@
                                             come to effect.
                                         </span>
                                     </div>
+                                </div>
+                                <!-- Show currently selected analysis source and possibility to change it, if requested -->
+                                <div>
+
+                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource">
+                                        <div>
+                                            <v-icon small class="mr-1">mdi-web</v-icon>
+                                            <span class="mr-1">{{ analysisSourceDescription }}</span>
+                                            <a>(Click to change)</a>
+                                        </div>
+                                        <template v-slot:input>
+                                            <analysis-source-select
+                                                v-model="currentAnalysisSource"
+                                                :items="renderableSources"
+                                                class="my-6">
+                                            </analysis-source-select>
+                                        </template>
+                                    </v-edit-dialog>
                                 </div>
 <!--                                <div :class="assay.getDatabaseVersion() !== dbVersion ? 'alert' : ''">-->
 <!--                                    <tooltip-->
@@ -136,16 +149,22 @@ import {
     Pept2DataCommunicator,
     ExportResultsButton,
     NetworkConfiguration,
-    Tooltip, Study, Assay
+    Tooltip, Study, Assay, OnlineAnalysisSource, AnalysisSource
 } from "unipept-web-components";
 
 import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
+import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
+import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelect.vue";
+import { CustomDatabaseInfo } from "@/state/DockerStore";
+import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
+import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 
 @Component({
-    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip }
+    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
 })
 export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
@@ -158,6 +177,12 @@ export default class AnalysisSummary extends Vue {
     private originalEquateIl: boolean = true;
     private originalFilterDuplicates: boolean = true;
     private originalMissedCleavage: boolean = false;
+
+    private analysisSource: AnalysisSource = null;
+    private originalAnalysisSource: AnalysisSource = null;
+
+    private currentAnalysisSource: RenderableAnalysisSource = null;
+    private renderableSources: RenderableAnalysisSource[] = [];
 
     private cacheIsValid: boolean = true;
     // We are currently still checking if the provided cache is valid or not...
@@ -184,7 +209,38 @@ export default class AnalysisSummary extends Vue {
             this.originalMissedCleavage !== this.missedCleavage
     }
 
-    private async mounted() {
+    get isOnlineAnalysisSource(): boolean {
+        return this.analysisSource instanceof CachedOnlineAnalysisSource ||
+            this.analysisSource instanceof OnlineAnalysisSource;
+    }
+
+    get analysisSourceDescription(): string {
+        const analysisSource = this.analysisSource;
+        if (this.isOnlineAnalysisSource) {
+            return `${(analysisSource as OnlineAnalysisSource).endpoint} - online`;
+        } else {
+            return `${(analysisSource as CachedCustomDbAnalysisSource).customDatabase.name} - local database`;
+        }
+    }
+
+    private created() {
+        // Reset the current state of the component when it is reopened.
+        this.renderableSources.push({
+            type: "online",
+            title: "Online Unipept service",
+            subtitle: "https://unipept.ugent.be"
+        });
+
+        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
+            if (dbInfo.database.complete) {
+                this.renderableSources.push({
+                    type: "local",
+                    title: dbInfo.database.name,
+                    subtitle: `${dbInfo.database.entries} UniProt-entries`
+                });
+            }
+        }
+
         this.onAssayChanged();
         this.checkCacheValidity();
     }
@@ -200,6 +256,25 @@ export default class AnalysisSummary extends Vue {
             this.originalEquateIl = config.equateIl;
             this.originalFilterDuplicates = config.filterDuplicates;
             this.originalMissedCleavage = config.enableMissingCleavageHandling;
+
+            this.analysisSource = this.assay.getAnalysisSource();
+            this.originalAnalysisSource = this.analysisSource;
+
+            if (this.analysisSource instanceof OnlineAnalysisSource || this.analysisSource instanceof CachedOnlineAnalysisSource) {
+                this.currentAnalysisSource = {
+                    type: "online",
+                    title: "Online Unipept service",
+                    subtitle: this.analysisSource.endpoint
+                }
+            } else {
+                const customDb = (this.analysisSource as CachedCustomDbAnalysisSource).customDatabase;
+
+                return {
+                    type: "local",
+                    title: customDb.name,
+                    subtitle: `${customDb.entries} UniProt-entries`
+                }
+            }
         }
     }
 
@@ -217,9 +292,35 @@ export default class AnalysisSummary extends Vue {
         this.cacheValidityLoading = false;
     }
 
+    private async updateAnalysisSource(): Promise<void> {
+        if (this.currentAnalysisSource.type === "online") {
+            this.analysisSource = new CachedOnlineAnalysisSource(
+                this.currentAnalysisSource.subtitle,
+                this.assay,
+                this.$store.getters.dbManager,
+                this.$store.getters.projectLocation
+            );
+        } else {
+            const configMng = new ConfigurationManager();
+            const config = await configMng.readConfiguration();
+
+            this.analysisSource = new CachedCustomDbAnalysisSource(
+                this.assay,
+                this.$store.getters.dbManager,
+                this.$store.getters.databases.find(
+                    (d: CustomDatabaseInfo) => d.database.name === this.currentAnalysisSource.title
+                ),
+                config.customDbStorageLocation,
+                this.$store.getters.projectLocation
+            );
+        }
+    }
+
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
         this.assay.setSearchConfiguration(config);
+
+        this.assay.setAnalysisSource(this.analysisSource);
 
         // We need to retrieve the name of the study with which this assay is associated to be able to write data to the
         // filesystem.

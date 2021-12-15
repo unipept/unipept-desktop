@@ -415,14 +415,12 @@ export default class CreateAssayDialog extends Vue {
                 assay.setAnalysisSource(analysisSource);
 
                 try {
-                    console.log("Path: " + `${this.$store.getters.projectLocation}/${this.study.getName()}`);
                     // Write assay to filesystem
                     const assayFileWriter = new AssayFileSystemDataWriter(
                         `${this.$store.getters.projectLocation}/${this.study.getName()}`,
                         this.$store.getters.dbManager,
                         this.study
                     );
-                    console.log("Write from create assay.");
                     await assay.accept(assayFileWriter);
                 } catch (err) {
                     console.error(err);

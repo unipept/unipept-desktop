@@ -44,6 +44,9 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
+import { AnalysisSource, OnlineAnalysisSource } from "unipept-web-components";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
+import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 
 export type RenderableAnalysisSource = {
     type: "online" | "local",
