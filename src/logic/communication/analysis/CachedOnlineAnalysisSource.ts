@@ -21,7 +21,7 @@ export default class CachedOnlineAnalysisSource implements AnalysisSource {
         const dbVersion = await metadataCommunicator.getCurrentUniprotVersion();
 
         const hash = crypto.createHash("sha256");
-        hash.update(this.endpoint + dbVersion);
+        hash.update(this.endpoint + dbVersion + this.assay.getId());
 
         return hash.digest("base64");
     }

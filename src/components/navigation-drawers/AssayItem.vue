@@ -177,6 +177,7 @@ import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { ShareableMap } from "shared-memory-datastructures";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -368,6 +369,17 @@ export default class AssayItem extends Vue {
             originalSearchConfig.enableMissingCleavageHandling
         );
         newAssay.setSearchConfiguration(searchConfiguration);
+
+        const copyOfSource = await AnalysisSourceSerializer.deserializeAnalysisSource(
+            AnalysisSourceSerializer.serializeAnalysisSource(this.assay.getAnalysisSource()),
+            newAssay,
+            this.$store.getters.dbManager,
+            this.$store.getters.projectLocation
+        );
+        newAssay.setAnalysisSource(copyOfSource);
+
+        newAssay.setPeptides(this.assay.getPeptides());
+
         const dataWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
             this.$store.getters.dbManager,
@@ -379,6 +391,10 @@ export default class AssayItem extends Vue {
             `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,
             `${this.$store.getters.projectLocation}${this.study.getName()}/${assayName}.pep`,
         );
+
+        this.$store.dispatch("addAssay", newAssay);
+        this.study.addAssay(newAssay);
+        this.$store.dispatch("analyseAssay", newAssay);
     }
 
     private async removeAssay() {
@@ -388,6 +404,9 @@ export default class AssayItem extends Vue {
             this.$store.getters.dbManager
         );
         await this.assay.accept(assayDestroyer);
+        // Also remove the assay from the store
+        this.study.removeAssay(this.assay);
+        this.$store.dispatch("removeAssay", this.assay);
     }
 }
 </script>

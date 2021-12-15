@@ -46,7 +46,6 @@ export default class CachedResultsManager {
 
         // First, check if metadata for this assay is present in the database.
         if (!row) {
-            console.log("Metadata not present");
             return false;
         }
 
@@ -60,14 +59,12 @@ export default class CachedResultsManager {
             serializedSearchConfig.filterDuplicates !== assayConfig.filterDuplicates ||
             serializedSearchConfig.enableMissingCleavageHandling !== assayConfig.enableMissingCleavageHandling
         ) {
-            console.log("Search config different");
             return false;
         }
 
         // Third, check if the fingerprint of the stored AnalysisSource is the same as the current AnalysisSource.
         const fingerprint = row.fingerprint;
         if (!(await assay.getAnalysisSource().verifyEquality(fingerprint))) {
-            console.log("Fingerprint not available");
             return false;
         }
 
@@ -76,7 +73,6 @@ export default class CachedResultsManager {
         const peptideTrust = await trustManager.readTrust(assay.getId());
 
         if (!peptideTrust) {
-            console.log("Trust row not available");
             return false;
         }
 
@@ -231,8 +227,6 @@ export default class CachedResultsManager {
 
             const output = new ShareableMap<Peptide, PeptideData>(0, 0, new PeptideDataSerializer());
             output.setBuffers(indexBuffer, dataBuffer);
-
-            // console.log(output);
 
             return output;
         } catch (error) {
