@@ -59,43 +59,6 @@
                                         </template>
                                     </v-edit-dialog>
                                 </div>
-<!--                                <div :class="assay.getDatabaseVersion() !== dbVersion ? 'alert' : ''">-->
-<!--                                    <tooltip-->
-<!--                                        v-if="assay.getDatabaseVersion() !== dbVersion"-->
-<!--                                        message="-->
-<!--                                        The database version that was used to analyse this assay does not correspond-->
-<!--                                        to the version currently available at the chosen endpoint.-->
-<!--                                    ">-->
-<!--                                        <v-icon-->
-<!--                                            @click="() => {}"-->
-<!--                                            size="20"-->
-<!--                                            color="red">-->
-<!--                                            mdi-alert-outline-->
-<!--                                        </v-icon>-->
-<!--                                    </tooltip>-->
-<!--                                    {{ assay.getDatabaseVersion() }}-->
-<!--                                </div>-->
-<!--                                <div :class="assay.getEndpoint() !== endpoint ? 'alert' : ''">-->
-<!--                                    <tooltip-->
-<!--                                        v-if="assay.getEndpoint() !== endpoint"-->
-<!--                                        message="-->
-<!--                                        The endpoint that was used to analyse this assay does not correspond-->
-<!--                                        to the currently selected endpoint.-->
-<!--                                    ">-->
-<!--                                        <v-icon-->
-<!--                                            @click="() => {}"-->
-<!--                                            size="20"-->
-<!--                                            color="red">-->
-<!--                                            mdi-alert-outline-->
-<!--                                        </v-icon>-->
-<!--                                    </tooltip>-->
-<!--                                    {{ assay.getEndpoint() }}-->
-<!--                                </div>-->
-<!--                                <div v-if="dirty" class="alert mt-4">-->
-<!--                                    Either the selected endpoint, the supported UniProt database version or the selected-->
-<!--                                    search settings changed since the last time you analysed this assay. It is-->
-<!--                                    recommended that you reanalyse this assay.-->
-<!--                                </div>-->
                             </div>
                         </div>
                         <search-settings-form
@@ -357,7 +320,7 @@ export default class AnalysisSummary extends Vue {
             "December"
         ]
 
-        return `${months[date.getMonth()]} ${date.getDate()} at ${date.getHours()}:${date.getMinutes()}`;
+        return `${months[date.getMonth()]} ${date.getDate()} at ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     }
 }
 </script>

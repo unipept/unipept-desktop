@@ -180,7 +180,7 @@ export default class App extends Vue implements ErrorListener {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev + this.$store.getters["assayData"](currentAssay).progress.value, 0
+                (prev: number, currentAssay: Assay) => prev + this.$store.getters["assayData"](currentAssay).originalProgress.value, 0
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }

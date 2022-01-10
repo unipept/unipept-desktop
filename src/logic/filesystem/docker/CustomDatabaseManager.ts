@@ -90,7 +90,7 @@ export default class CustomDatabaseManager {
         const path = this.metadataPath(dbRootFolder, db);
         // Make sure that the path to the database that we want to build actually exists, before trying to write the
         // metadata file to it.
-        mkdirp(dirname(path));
+        await mkdirp(dirname(path));
         return fs.writeFile(path, JSON.stringify(db));
     }
 

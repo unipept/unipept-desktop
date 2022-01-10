@@ -229,7 +229,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
             store.commit("ADD_DATABASE", customDb);
 
             const customDbMng = new CustomDatabaseManager();
-            customDbMng.updateMetadata(configuration.customDbStorageLocation, customDb);
+            await customDbMng.updateMetadata(configuration.customDbStorageLocation, customDb);
 
             if (!store.getters.constructionInProgress) {
                 await startDatabaseConstruction(store, customDb, configuration);

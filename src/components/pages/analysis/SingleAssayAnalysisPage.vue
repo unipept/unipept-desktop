@@ -17,10 +17,10 @@
         </v-row>
         <v-row>
             <v-col>
-<!--                <functional-summary-card-->
-<!--                    :assay="activeAssay"-->
-<!--                    :analysisInProgress="true">-->
-<!--                </functional-summary-card>-->
+                <functional-summary-card
+                    :assay="activeAssay"
+                    :analysisInProgress="true">
+                </functional-summary-card>
             </v-col>
         </v-row>
     </div>

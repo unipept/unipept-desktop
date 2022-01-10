@@ -190,7 +190,7 @@ export default class AnalysisPage extends Vue {
         // const item = this.activeAssay?.progress;
         // item.currentValue = 45;
         // return item;
-        return this.activeAssay?.progress;
+        return this.activeAssay?.originalProgress;
     }
 
     private reanalyse() {
