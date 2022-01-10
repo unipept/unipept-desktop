@@ -372,7 +372,6 @@ export default class SettingsPage extends Vue {
 
         if (chosenPath && chosenPath.filePaths.length > 0) {
             this.customDbStorageLocation = chosenPath.filePaths[0];
-            console.log("Setting directory path to: " + this.customDbStorageLocation);
         }
     }
 
