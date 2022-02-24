@@ -146,7 +146,7 @@ const { dialog } = electron.remote;
         isProcessing: {
             get(): boolean {
                 return this.study.getAssays().some(
-                    (a: Assay) => this.$store.getters["assayData"](a).analysisMetaData.progress !== 1
+                    (a: Assay) => this.$store.getters.assayData(a).analysisInProgress
                 );
             }
         }

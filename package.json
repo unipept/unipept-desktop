@@ -1,6 +1,6 @@
 {
   "name": "unipept-desktop",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "author": "Unipept Team (Ghent University)",
   "description": "A desktop equivalent of unipept.ugent.be. This app aims at high-throughput analysis of metaproteomics samples.",

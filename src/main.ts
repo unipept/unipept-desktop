@@ -2,7 +2,7 @@ import Vue from "vue"
 import App from "./App.vue"
 import vuetify from "./plugins/vuetify";
 
-import { ConfigurationStore, AssayStoreFactory } from "unipept-web-components";
+import { ConfigurationStore, AssayStoreFactory, SinglePeptideStoreFactory } from "unipept-web-components";
 
 import Vuex, { ActionContext } from "vuex";
 import VueRouter from "vue-router";
@@ -42,10 +42,12 @@ Vue.use(vueFullscreen);
 
 
 const assayStoreFactory = new AssayStoreFactory();
+const singlePeptideStoreFactory = new SinglePeptideStoreFactory();
 
 export const store = new Vuex.Store({
     modules: {
         assay: assayStoreFactory.constructAssayStore(),
+        singlePeptide: singlePeptideStoreFactory.constructSinglePeptideStoreFactory("https://api.unipept.ugent.be"),
         configuration: ConfigurationStore,
         desktopConfiguration: DesktopConfigurationStore,
         comparative: ComparativeStore,

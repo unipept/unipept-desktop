@@ -140,6 +140,7 @@ import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
 import CreateAssayDialog from "@/components/assay/CreateAssayDialog.vue";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
+import { Watch } from "vue-property-decorator";
 
 @Component({
     components: {
