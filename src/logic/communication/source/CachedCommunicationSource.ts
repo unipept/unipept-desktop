@@ -11,7 +11,7 @@ import {
     NcbiResponseCommunicator
 } from "unipept-web-components";
 
-import CachedPept2DataCommunicator from "@/logic/communication/raw/CachedPept2DataCommunicator";
+import CachedPept2DataCommunicator from "@/logic/communication/peptides/CachedPept2DataCommunicator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import CachedEcResponseCommunicator from "@/logic/communication/functional/CachedEcResponseCommunicator";
 import CachedGoResponseCommunicator from "@/logic/communication/functional/CachedGoResponseCommunicator";

@@ -5,123 +5,138 @@
             @contextmenu="showContextMenu()"
             :class="{
                 'assay-item': true,
-                'assay-item--selected': !selectable && activeAssay && activeAssay.getId() === assay.getId(),
-                'assay-item--error': !isValidAssayName || errorStatus
+                'assay-item--selected': !selectable && activeAssay && activeAssay.assay.getId() === assay.getId(),
+                'assay-item--error': !isValidAssayName || errorStatus,
+                'd-flex': true
             }">
-            <div v-if="isValidAssayName && !errorStatus && !cancelStatus">
-                <v-tooltip bottom v-if="progress !== 1">
+
+            <!-- Icon at the start of the assay item -->
+            <div class="mr-2">
+                <!-- Show an error if the name of the assay is incorrect. -->
+                <v-tooltip v-if="errorStatus || nameError !== ''" position="bottom" open-delay="500">
                     <template v-slot:activator="{ on }">
-                        <v-progress-circular
-                            :rotate="-90" :size="18"
-                            :value="progress * 100"
-                            v-on="on"
-                            color="primary">
-                        </v-progress-circular>
+                        <v-icon
+                            size="20"
+                            color="red"
+                            v-on="on">
+                            mdi-alert-outline
+                        </v-icon>
                     </template>
-                    <span>{{ Math.round(progress * 100) }}%</span>
+                    <span>{{ errorMessage }}</span>
                 </v-tooltip>
-                <div style="display: flex; flex-direction: row; margin-left: auto; height: 32px;" v-else-if="selectable">
-                    <tooltip message="Add assay to comparative analysis." position="bottom">
+
+                <!-- Show a distinct status if the analysis of the assay has been cancelled. -->
+                <v-tooltip v-else-if="cancelStatus" bottom open-delay="500">
+                    <template v-slot:activator="{ on }">
+                        <v-icon
+                            @click="reanalyse()"
+                            size="20"
+                            v-on="on">
+                            mdi-cancel
+                        </v-icon>
+                    </template>
+                    <span>The analysis for this assay has been cancelled. Click here to restart the analysis.</span>
+                </v-tooltip>
+
+                <span v-else-if="!analysisReady">
+                    <v-progress-circular v-if="analysisInProgress" size="20" indeterminate color="primary"></v-progress-circular>
+
+                    <v-tooltip v-else bottom open-delay="500">
+                        <template v-slot:activator="{ on }">
+                            <v-icon size="18" v-on="on">
+                                mdi-progress-clock
+                            </v-icon>
+                        </template>
+                        <span>This assay is queued for processing.</span>
+                    </v-tooltip>
+                </span>
+
+                <!--
+                    If we get here, the assay has been analysed and we either show a checkbox (for multi select), or
+                    we show the default assay icon.
+                -->
+                <v-tooltip v-else-if="selectable" bottom open-delay="500">
+                    <template v-slot:activator="{ on }">
                         <v-checkbox
+                            v-on="on"
                             v-model="selected"
                             class="mr-0 pr-0"
                             @change="clickCheckbox"
                             dense
                             hide-details
                             @click.native.stop
-                            :disabled="progress !== 1">
+                            :disabled="!analysisReady">
                         </v-checkbox>
-                    </tooltip>
-                </div>
-                <v-icon
-                    v-else
-                    color="#424242"
-                    size="20"
-                    class="assay-icon">
+                    </template>
+                    <span>
+                        Add assay to comparative analysis.
+                    </span>
+                </v-tooltip>
+
+                <v-icon v-else size="20">
                     mdi-text-box-outline
                 </v-icon>
             </div>
-            <tooltip
-                v-if="!isValidAssayName"
-                :message="nameError"
-                position="bottom">
-                <v-icon
-                    @click="() => {}"
-                    size="20"
-                    color="red">
-                    mdi-alert-outline
-                </v-icon>
-            </tooltip>
-            <tooltip
-                v-if="errorStatus"
-                message="A network communication error occurred while processing this assay. Click here to try again."
-                position="bottom">
-                <v-icon
-                    @click="reanalyse()"
-                    size="20"
-                    color="red">
-                    mdi-restart-alert
-                </v-icon>
-            </tooltip>
-            <tooltip
-                v-if="cancelStatus"
-                message="The analysis for this assay has been cancelled. Click here to restart the analysis."
-                position="bottom">
-                <v-icon
-                    @click="reanalyse()"
-                    size="20">
-                    mdi-cancel
-                </v-icon>
-            </tooltip>
-            <span
-                v-if="!isEditingAssayName"
-                v-on:dblclick="enableAssayEdit()"
-                class="assay-name">
-                {{ assay.getName() }}
-            </span>
-            <input
-                v-else
-                v-model="assayName"
-                v-on:blur="disableAssayEdit()"
-                v-on:keyup.enter="disableAssayEdit()"
-                :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
-                type="text"/>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-if="progress === 1">
-                <tooltip message="Display experiment summary." position="bottom">
-                    <v-icon
-                        @click="experimentSummaryActive = true"
-                        v-on:click.stop
-                        color="#424242"
-                        size="20">
-                        mdi-information-outline
-                    </v-icon>
-                </tooltip>
+
+            <!-- Name of the assay -->
+            <div class="flex-grow-1">
+                <!-- Simply display the name if editing is disabled -->
+                <span
+                    v-if="!isEditingAssayName"
+                    v-on:dblclick="enableAssayEdit()"
+                    class="assay-name">
+                    {{ assay.getName() }}
+                </span>
+
+                <!-- Input field when editing the name is enabled. -->
+                <input
+                    v-else
+                    v-model="assayName"
+                    v-on:blur="disableAssayEdit()"
+                    v-on:keyup.enter="disableAssayEdit()"
+                    :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
+                    type="text" />
             </div>
-            <div
-                style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;"
-                v-else-if="cancelStatus">
-                <v-icon
-                    color="#424242"
-                    size="20"
-                    disabled>
-                    mdi-close
-                </v-icon>
-            </div>
-            <div style="display: flex; flex-direction: row; margin-left: auto; margin-right: 8px;" v-else>
-                <tooltip message="Cancel analysis" position="bottom">
-                    <v-icon
-                        @click="cancelAnalysis()"
-                        v-on:click.stop color="#424242"
-                        size="20">
-                        mdi-stop-circle-outline
-                    </v-icon>
-                </tooltip>
+
+            <!-- Icon on the right side of the item -->
+            <div>
+                <!-- When the assay has been fully processed, we show the info button to open up the peptide summary -->
+                <v-tooltip v-if="analysisReady" bottom open-delay="500">
+                    <template v-slot:activator="{ on }">
+                        <v-icon
+                            @click="experimentSummaryActive = true"
+                            size="20"
+                            class="mr-4"
+                            v-on="on">
+                            mdi-information-outline
+                        </v-icon>
+                    </template>
+                    <span>Display experiment summary.</span>
+                </v-tooltip>
+
+                <!-- Otherwise, we show a button that allows the user to stop the analysis of this assay -->
+                <v-tooltip v-else bottom open-delay="500">
+                    <template v-slot:activator="{ on }">
+                        <v-icon
+                            @click="cancelAnalysis()"
+                            v-on:click.stop color="#424242"
+                            size="20"
+                            class="mr-4"
+                            v-on="on">
+                            mdi-stop-circle-outline
+                        </v-icon>
+                    </template>
+                    <span>Cancel analysis for this assay.</span>
+                </v-tooltip>
             </div>
         </div>
+
         <experiment-summary-dialog
             :peptide-trust="peptideTrust"
             :active.sync="experimentSummaryActive">
         </experiment-summary-dialog>
+
+        <!-- Dialog for assay deletion confirmation -->
         <v-dialog v-model="removeConfirmationActive" width="600">
             <v-card>
                 <v-card-title>Confirm assay deletion</v-card-title>
@@ -135,6 +150,7 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
+
     </div>
 </template>
 
@@ -148,18 +164,20 @@ import {
     Study,
     ProteomicsAssay,
     SearchConfiguration,
-    Pept2DataCommunicator,
     CountTable,
     Peptide,
     Assay,
-    AssayData
+    AssayAnalysisStatus,
+    PeptideData
 } from "unipept-web-components";
 
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 import { promises as fs } from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
+import { ShareableMap } from "shared-memory-datastructures";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
@@ -204,32 +222,31 @@ export default class AssayItem extends Vue {
         this.onValueChanged();
     }
 
-    get activeAssay(): ProteomicsAssay {
+    get activeAssay(): AssayAnalysisStatus {
         return this.$store.getters.activeAssay;
     }
 
-    get progress(): number {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData ? assayData.analysisMetaData.progress : 0;
+    get analysisReady(): boolean {
+        return this.$store.getters.assayData(this.assay)?.analysisReady || false;
     }
 
-    get peptideCountTable(): CountTable<Peptide> {
-        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    get analysisInProgress(): boolean {
+        return this.$store.getters.assayData(this.assay)?.analysisInProgress || false;
     }
 
     get errorStatus(): boolean {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData?.analysisMetaData.status === "error";
+        const assayData: AssayAnalysisStatus = this.$store.getters.assayData(this.assay);
+        return assayData?.error.status;
+    }
+
+    get errorMessage(): boolean {
+        return this.$store.getters.assayData(this.assay)?.error.message || this.nameError;
     }
 
     get cancelStatus(): boolean {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData?.analysisMetaData.status === "cancelled";
-    }
-
-    get pept2dataCommunicator(): Pept2DataCommunicator {
-        const processingResult = this.$store.getters.assayData(this.assay);
-        return processingResult?.communicationSource?.getPept2DataCommunicator();
+        return false;
+        // const assayData: AssayData = this.$store.getters.assayData(this.assay);
+        // return assayData?.analysisMetaData.status === "cancelled";
     }
 
     private cancelAnalysis() {
@@ -310,27 +327,15 @@ export default class AssayItem extends Vue {
         this.assayName = this.assay.getName();
     }
 
-    @Watch("pept2dataCommunicator", { immediate: true })
-    private async computePeptideTrust(): Promise<void> {
-        if (this.assay && this.pept2dataCommunicator) {
-            const processingResult = this.$store.getters.assayData(this.assay);
-            const countTable = processingResult?.peptideCountTable;
-            this.peptideTrust = await this.pept2dataCommunicator.getPeptideTrust(
-                countTable,
-                this.assay.getSearchConfiguration()
-            );
-        }
-    }
-
     private reanalyse() {
-        this.$store.dispatch("processAssay", [this.assay, true, this.assay.getSearchConfiguration()]);
+        this.$store.dispatch("analyseAssay", this.assay);
     }
 
     private selectAssay() {
         if (this.selectable) {
             this.clickCheckbox();
         } else {
-            this.$emit("select-assay", this.assay);
+            this.$store.dispatch("activateAssay", this.assay);
         }
     }
 
@@ -356,6 +361,7 @@ export default class AssayItem extends Vue {
         // Also copy configuration for this assay.
         const newAssay = new ProteomicsAssay(uuidv4());
         newAssay.setName(assayName);
+
         const originalSearchConfig = this.assay.getSearchConfiguration();
         const searchConfiguration = new SearchConfiguration(
             originalSearchConfig.equateIl,
@@ -363,17 +369,32 @@ export default class AssayItem extends Vue {
             originalSearchConfig.enableMissingCleavageHandling
         );
         newAssay.setSearchConfiguration(searchConfiguration);
-        const metadataWriter = new AssayFileSystemMetaDataWriter(
+
+        const copyOfSource = await AnalysisSourceSerializer.deserializeAnalysisSource(
+            AnalysisSourceSerializer.serializeAnalysisSource(this.assay.getAnalysisSource()),
+            newAssay,
+            this.$store.getters.dbManager,
+            this.$store.getters.projectLocation
+        );
+        newAssay.setAnalysisSource(copyOfSource);
+
+        newAssay.setPeptides(this.assay.getPeptides());
+
+        const dataWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
             this.$store.getters.dbManager,
             this.study
         );
-        await newAssay.accept(metadataWriter);
+        await newAssay.accept(dataWriter);
 
         await fs.copyFile(
             `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,
             `${this.$store.getters.projectLocation}${this.study.getName()}/${assayName}.pep`,
         );
+
+        this.$store.dispatch("addAssay", newAssay);
+        this.study.addAssay(newAssay);
+        this.$store.dispatch("analyseAssay", newAssay);
     }
 
     private async removeAssay() {
@@ -383,6 +404,9 @@ export default class AssayItem extends Vue {
             this.$store.getters.dbManager
         );
         await this.assay.accept(assayDestroyer);
+        // Also remove the assay from the store
+        this.study.removeAssay(this.assay);
+        this.$store.dispatch("removeAssay", this.assay);
     }
 }
 </script>
@@ -392,6 +416,7 @@ export default class AssayItem extends Vue {
 
     .assay-item .v-input--selection-controls__input {
         margin-right: 0 !important;
+        max-width: 40px;
     }
 
     .assay-icon {

@@ -6,6 +6,7 @@ import { ProgressListener } from "unipept-web-components";
 import yauzl, { Entry, ZipFile } from "yauzl";
 import { Readable } from "stream";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import sqlite3 from "better-sqlite3";
 
 const { app } = require("electron").remote;
 
@@ -22,7 +23,7 @@ export default class StaticDatabaseManager {
     public static readonly STATIC_DB_VERSION_POINTER = "https://raw.githubusercontent.com/unipept/make-database/master/workflows/static_database/version.txt";
     public static readonly STATIC_DB_URL = "https://github.com/unipept/make-database/releases/latest/download/";
 
-    private static dbManager: DatabaseManager;
+    private static db: sqlite3.Database;
 
     /**
      * Check if the most recent version of the static information database is present in the userdata folder. If the
@@ -174,11 +175,12 @@ export default class StaticDatabaseManager {
      * Returns an instance of the static database that can be queried immediately. Throws an error if the static
      * database file seems not to be present.
      */
-    public getDatabaseManager(): DatabaseManager {
-        if (!StaticDatabaseManager.dbManager) {
-            StaticDatabaseManager.dbManager = new DatabaseManager(this.getDatabasePath());
+    public getDatabase(): sqlite3.Database {
+        if (!StaticDatabaseManager.db) {
+            StaticDatabaseManager.db = new sqlite3(this.getDatabasePath());
         }
-        return StaticDatabaseManager.dbManager;
+
+        return StaticDatabaseManager.db;
     }
 
     public getDatabasePath(): string {

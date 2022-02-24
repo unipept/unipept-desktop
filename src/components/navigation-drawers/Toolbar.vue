@@ -61,6 +61,17 @@
                         </v-list-item-content>
                     </v-list-item>
                     <v-list-item
+                        :class="{'v-list-item--active': $route.path.includes('/databases')}"
+                        link
+                        @click="navigate('/databases', false)">
+                        <v-list-item-icon>
+                            <v-icon>mdi-database-cog</v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                            <v-list-item-title>Custom databases</v-list-item-title>
+                        </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item
                         :class="{'v-list-item--active': $route.path === '/settings'}"
                         link
                         @click="navigate('/settings', false)">
@@ -74,12 +85,6 @@
                 </v-list>
             </div>
         </v-navigation-drawer>
-        <div class="toolbar-content" :class="{'open': !isMini}" :style="{'width': toolbarWidth +'px'}" ref="toolbar">
-            <div class="toolbar-container">
-                <project-explorer></project-explorer>
-            </div>
-            <div class="v-navigation-drawer__border" style="width: 10px; cursor: col-resize;"></div>
-        </div>
     </div>
 </template>
 
@@ -88,12 +93,10 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import { Tooltip } from "unipept-web-components";
-import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue";
 
 @Component({
     components: {
         Tooltip,
-        ProjectExplorer
     },
     computed: {
         isMini: {
@@ -104,13 +107,8 @@ import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue
     }
 })
 export default class Toolbar extends Vue {
-    private minToolbarWidth: number = 169;
     private originalToolbarWidth: number = 210;
     private toolbarWidth: number = this.originalToolbarWidth;
-
-    mounted() {
-        this.setupDraggableToolbar();
-    }
 
     private navigate(routeToGo: string, activateSidebar: boolean) {
         if (this.$route.path !== routeToGo) {
@@ -118,67 +116,11 @@ export default class Toolbar extends Vue {
         }
     }
 
-    private setupDraggableToolbar() {
-        const toolbar = this.$refs.toolbar as Element;
-        const drawerBorder = toolbar.querySelector(".v-navigation-drawer__border");
 
-        let initialMousePos: number = 0;
-
-        const mouseMoveListener = (moveE: MouseEvent) => {
-            const xDifference = initialMousePos - moveE.x;
-            const computedWidth = this.originalToolbarWidth -1 * xDifference;
-            if (computedWidth >= this.minToolbarWidth) {
-                this.toolbarWidth = computedWidth;
-            }
-        };
-
-        drawerBorder.addEventListener("mousedown", (e: MouseEvent) => {
-            initialMousePos = e.x;
-            document.addEventListener("mousemove", mouseMoveListener);
-        });
-
-        document.addEventListener("mouseup", (e: MouseEvent) => {
-            // Reset start position for next mousedown-event
-            this.originalToolbarWidth = this.toolbarWidth;
-            document.removeEventListener("mousemove", mouseMoveListener);
-        });
-    }
-
-    @Watch("toolbarWidth")
-    private onToolbarWidthChanged(newWidth: number) {
-        this.$emit("update:toolbar-width", newWidth);
-    }
 }
 </script>
 
 <style lang="less">
-    .toolbar-content {
-        height: 100%;
-        position: fixed;
-        left: 55px;
-        background-color: white;
-        border-right: 1px solid rgba(0, 0, 0, 0.12);
-        display: none;
-    }
-
-    .toolbar-content.open {
-        display: block;
-    }
-
-    .toolbar-content .v-list-item__action {
-        min-width: 48px;
-    }
-
-    .toolbar-content .v-list-item__action span:first-child {
-        margin-right: 8px;
-    }
-
-    .toolbar-container {
-        padding-top: 64px;
-        height: 100%;
-        overflow-y: auto;
-    }
-
     .container-after-titlebar .toolbar-container {
         height: calc(100% - 30px);
     }

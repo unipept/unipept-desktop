@@ -22,42 +22,42 @@
                                     {{ peptideTrust.searchedPeptides }} peptides in assay
                                 </div>
                                 <div class="subtitle-2">Last analysed on {{ getHumanReadableAssayDate() }}</div>
-                                <div :class="assay.getDatabaseVersion() !== dbVersion ? 'alert' : ''">
-                                    <tooltip
-                                        v-if="assay.getDatabaseVersion() !== dbVersion"
-                                        message="
-                                        The database version that was used to analyse this assay does not correspond
-                                        to the version currently available at the chosen endpoint.
-                                    ">
-                                        <v-icon
-                                            @click="() => {}"
-                                            size="20"
-                                            color="red">
-                                            mdi-alert-outline
-                                        </v-icon>
-                                    </tooltip>
-                                    {{ assay.getDatabaseVersion() }}
+
+                                <!-- Show information about the validity status of this assay's cache -->
+                                <div>
+                                    <div v-if="cacheValidityLoading" class="d-flex justify-center">
+                                        <span class="text--secondary">
+                                            Checking cache validity...
+                                        </span>
+                                    </div>
+                                    <div v-else-if="cacheIsValid">
+                                        <span>Analysis is up-to-date, no need to restart the analysis.</span>
+                                    </div>
+                                    <div v-else>
+                                        <span class="red--text">
+                                            Something about the selected analysis source changed since the last time
+                                            this assay has been analysed. Restart the analysis for these changes to
+                                            come to effect.
+                                        </span>
+                                    </div>
                                 </div>
-                                <div :class="assay.getEndpoint() !== endpoint ? 'alert' : ''">
-                                    <tooltip
-                                        v-if="assay.getEndpoint() !== endpoint"
-                                        message="
-                                        The endpoint that was used to analyse this assay does not correspond
-                                        to the currently selected endpoint.
-                                    ">
-                                        <v-icon
-                                            @click="() => {}"
-                                            size="20"
-                                            color="red">
-                                            mdi-alert-outline
-                                        </v-icon>
-                                    </tooltip>
-                                    {{ assay.getEndpoint() }}
-                                </div>
-                                <div v-if="dirty" class="alert mt-4">
-                                    Either the selected endpoint, the supported UniProt database version or the selected
-                                    search settings changed since the last time you analysed this assay. It is
-                                    recommended that you reanalyse this assay.
+                                <!-- Show currently selected analysis source and possibility to change it, if requested -->
+                                <div>
+
+                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource">
+                                        <div>
+                                            <v-icon small class="mr-1">mdi-web</v-icon>
+                                            <span class="mr-1">{{ analysisSourceDescription }}</span>
+                                            <a>(Click to change)</a>
+                                        </div>
+                                        <template v-slot:input>
+                                            <analysis-source-select
+                                                v-model="currentAnalysisSource"
+                                                :items="renderableSources"
+                                                class="my-6">
+                                            </analysis-source-select>
+                                        </template>
+                                    </v-edit-dialog>
                                 </div>
                             </div>
                         </div>
@@ -71,7 +71,7 @@
                         <div class="d-flex justify-center align-center mt-4">
                             <tooltip message="Reanalyse this assay">
                                 <v-btn
-                                    :disabled="progress !== 1 || !dirty"
+                                    :disabled="!analysisReady || (cacheIsValid && !isDirty)"
                                     color="primary"
                                     @click="update()"
                                     class="mr-2"
@@ -111,16 +111,23 @@ import {
     PeptideTrust,
     Pept2DataCommunicator,
     ExportResultsButton,
-    AssayData,
     NetworkConfiguration,
-    Tooltip
+    Tooltip, Study, Assay, OnlineAnalysisSource, AnalysisSource
 } from "unipept-web-components";
 
 import PeptideSummaryTable from "@/components/analysis/PeptideSummaryTable.vue";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
+import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
+import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
+import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelect.vue";
+import { CustomDatabaseInfo } from "@/state/DockerStore";
+import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
+import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 
 @Component({
-    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip }
+    components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
 })
 export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
@@ -130,36 +137,75 @@ export default class AnalysisSummary extends Vue {
     private filterDuplicates: boolean = true;
     private missedCleavage: boolean = false;
 
-    private peptideTrust: PeptideTrust = null;
-    private dbVersion: string = "";
+    private originalEquateIl: boolean = true;
+    private originalFilterDuplicates: boolean = true;
+    private originalMissedCleavage: boolean = false;
 
-    get dirty(): boolean {
-        const currentConfig = this.assay.getSearchConfiguration();
+    private analysisSource: AnalysisSource = null;
+    private originalAnalysisSource: AnalysisSource = null;
 
-        return this.assay.getDatabaseVersion() !== this.dbVersion ||
-            this.assay.getEndpoint() !== this.endpoint ||
-            currentConfig.equateIl !== this.equateIl ||
-            currentConfig.filterDuplicates !== this.filterDuplicates ||
-            currentConfig.enableMissingCleavageHandling !== this.missedCleavage;
+    private currentAnalysisSource: RenderableAnalysisSource = null;
+    private renderableSources: RenderableAnalysisSource[] = [];
+
+    private cacheIsValid: boolean = true;
+    // We are currently still checking if the provided cache is valid or not...
+    private cacheValidityLoading: boolean = true;
+
+    private searchConfigIsValid: boolean = true;
+
+    get peptideTrust(): PeptideTrust {
+        return this.$store.getters.assayData(this.assay)?.peptideTrust;
     }
 
     get endpoint(): string {
         return NetworkConfiguration.BASE_URL;
     }
 
-    get peptideCountTable(): CountTable<Peptide> {
-        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+    get analysisReady(): boolean {
+        return this.$store.getters.assayData(this.assay)?.analysisReady;
     }
 
-    get progress(): number {
-        const assayData: AssayData = this.$store.getters.assayData(this.assay);
-        return assayData ? assayData.analysisMetaData.progress : 0;
+    // Did something change about the settings selected by the user in comparison to the current settings?
+    get isDirty(): boolean {
+        return this.originalEquateIl !== this.equateIl ||
+            this.originalFilterDuplicates !== this.filterDuplicates ||
+            this.originalMissedCleavage !== this.missedCleavage
     }
 
-    private async mounted() {
-        this.dbVersion = await MetadataCommunicator.getRemoteUniprotVersion();
+    get isOnlineAnalysisSource(): boolean {
+        return this.analysisSource instanceof CachedOnlineAnalysisSource ||
+            this.analysisSource instanceof OnlineAnalysisSource;
+    }
+
+    get analysisSourceDescription(): string {
+        const analysisSource = this.analysisSource;
+        if (this.isOnlineAnalysisSource) {
+            return `${(analysisSource as OnlineAnalysisSource).endpoint} - online`;
+        } else {
+            return `${(analysisSource as CachedCustomDbAnalysisSource).customDatabase.name} - local database`;
+        }
+    }
+
+    private created() {
+        // Reset the current state of the component when it is reopened.
+        this.renderableSources.push({
+            type: "online",
+            title: "Online Unipept service",
+            subtitle: "https://unipept.ugent.be"
+        });
+
+        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
+            if (dbInfo.database.complete) {
+                this.renderableSources.push({
+                    type: "local",
+                    title: dbInfo.database.name,
+                    subtitle: `${dbInfo.database.entries} UniProt-entries`
+                });
+            }
+        }
+
         this.onAssayChanged();
-        this.onPeptideCountTableChanged();
+        this.checkCacheValidity();
     }
 
     @Watch("assay")
@@ -169,24 +215,92 @@ export default class AnalysisSummary extends Vue {
             this.equateIl = config.equateIl;
             this.filterDuplicates = config.filterDuplicates;
             this.missedCleavage = config.enableMissingCleavageHandling;
+
+            this.originalEquateIl = config.equateIl;
+            this.originalFilterDuplicates = config.filterDuplicates;
+            this.originalMissedCleavage = config.enableMissingCleavageHandling;
+
+            this.analysisSource = this.assay.getAnalysisSource();
+            this.originalAnalysisSource = this.analysisSource;
+
+            if (this.analysisSource instanceof OnlineAnalysisSource || this.analysisSource instanceof CachedOnlineAnalysisSource) {
+                this.currentAnalysisSource = {
+                    type: "online",
+                    title: "Online Unipept service",
+                    subtitle: this.analysisSource.endpoint
+                }
+            } else {
+                const customDb = (this.analysisSource as CachedCustomDbAnalysisSource).customDatabase;
+
+                return {
+                    type: "local",
+                    title: customDb.name,
+                    subtitle: `${customDb.entries} UniProt-entries`
+                }
+            }
         }
     }
 
-    @Watch("peptideCountTable")
-    private async onPeptideCountTableChanged() {
-        if (this.peptideCountTable) {
-            const communicator: Pept2DataCommunicator =
-                this.$store.getters.assayData(this.assay)?.communicationSource.getPept2DataCommunicator();
-            this.peptideTrust = await communicator?.getPeptideTrust(
-                this.peptideCountTable,
-                this.assay.getSearchConfiguration()
+    private async checkCacheValidity(): Promise<void> {
+        this.cacheValidityLoading = true;
+        const metadataMng = new StorageMetadataManager(this.$store.getters.dbManager);
+        const metadata = await metadataMng.readMetadata(this.assay.getId());
+
+        if (metadata) {
+            this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+        } else {
+            this.cacheIsValid = false;
+        }
+
+        this.cacheValidityLoading = false;
+    }
+
+    private async updateAnalysisSource(): Promise<void> {
+        if (this.currentAnalysisSource.type === "online") {
+            this.analysisSource = new CachedOnlineAnalysisSource(
+                this.currentAnalysisSource.subtitle,
+                this.assay,
+                this.$store.getters.dbManager,
+                this.$store.getters.projectLocation
+            );
+        } else {
+            const configMng = new ConfigurationManager();
+            const config = await configMng.readConfiguration();
+
+            this.analysisSource = new CachedCustomDbAnalysisSource(
+                this.assay,
+                this.$store.getters.dbManager,
+                this.$store.getters.databases.find(
+                    (d: CustomDatabaseInfo) => d.database.name === this.currentAnalysisSource.title
+                ),
+                config.customDbStorageLocation,
+                this.$store.getters.projectLocation
             );
         }
     }
 
     private update() {
         const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
-        this.$store.dispatch("processAssay", [this.assay, true, config]);
+        this.assay.setSearchConfiguration(config);
+
+        this.assay.setAnalysisSource(this.analysisSource);
+
+        // We need to retrieve the name of the study with which this assay is associated to be able to write data to the
+        // filesystem.
+        const study = this.$store.getters.studies.filter(
+            (s: Study) => s.getAssays().some(
+                (a: Assay) => a.getId() === this.assay.getId()
+            )
+        )[0];
+
+        const assayWriter = new AssayFileSystemDataWriter(
+            `${this.$store.getters.projectLocation}/${study.getName()}`,
+            this.$store.getters.dbManager,
+            study
+        );
+        this.assay.accept(assayWriter);
+
+        this.$store.dispatch("analyseAssay", this.assay);
     }
 
     private getHumanReadableAssayDate(): string {
@@ -206,7 +320,7 @@ export default class AnalysisSummary extends Vue {
             "December"
         ]
 
-        return `${months[date.getMonth()]} ${date.getDate()} at ${date.getHours()}:${date.getMinutes()}`;
+        return `${months[date.getMonth()]} ${date.getDate()} at ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
     }
 }
 </script>

@@ -4,12 +4,13 @@ import { ProteomicsAssay, IOException, QueueManager } from "unipept-web-componen
 import SearchConfigFileSystemDestroyer from "@/logic/filesystem/configuration/SearchConfigFileSystemDestroyer";
 import { Database } from "better-sqlite3";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import CachedResultsManager from "@/logic/filesystem/assay/processed/CachedResultsManager";
+import path from "path";
 
 /**
  * Removes both the metadata and raw data for an assay.
  */
 export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
-
     constructor(
         directoryPath: string,
         dbManager: DatabaseManager,
@@ -22,27 +23,29 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
      * @throws {IOException}
      */
     public async visitProteomicsAssay(assay: ProteomicsAssay): Promise<void> {
+        const assayPath: string = `${this.directoryPath}${assay.getName()}.pep`;
+
         try {
-            const path: string = `${this.directoryPath}${assay.getName()}.pep`;
-
-            try {
-                await fs.unlink(path);
-            } catch (err) {
-                // File does no longer exist, which is not an issue here.
-            }
-
-            const assayId = assay.getId();
-
-            await this.dbManager.performQuery<void>((db: Database) => {
-                db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assayId);
-                db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assayId);
-                db.prepare("DELETE FROM assays WHERE `id` = ?").run(assayId);
-            });
-
-            const configDestroyer = new SearchConfigFileSystemDestroyer(this.dbManager);
-            configDestroyer.visitSearchConfiguration(assay.getSearchConfiguration());
-        } catch (e) {
-            throw new IOException(e);
+            await fs.unlink(assayPath);
+        } catch (err) {
+            // File does no longer exist, which is not an issue here.
         }
+
+        const assayId = assay.getId();
+
+        await this.dbManager.performQuery<void>((db: Database) => {
+            db.prepare("DELETE FROM peptide_trust WHERE `assay_id` = ?").run(assayId);
+            db.prepare("DELETE FROM storage_metadata WHERE `assay_id` = ?").run(assayId);
+            db.prepare("DELETE FROM assays WHERE `id` = ?").run(assayId);
+            db.prepare("DELETE FROM search_configuration WHERE `id` = ?").run(assay.getSearchConfiguration().id)
+        });
+
+        // Also delete cached results that might have possibly been created for this assay
+        const cachedResultsMng = new CachedResultsManager(
+            this.dbManager,
+            path.dirname(this.directoryPath)
+        );
+
+        await cachedResultsMng.deleteProcessingResults(assay);
     }
 }

@@ -5,42 +5,40 @@ import { Database } from "better-sqlite3";
 
 export default class CachedInterproResponseCommunicator extends InterproResponseCommunicator {
     private static codeToResponses: Map<InterproCode, InterproResponse> = new Map<InterproCode, InterproResponse>();
-    private readonly dbManager: DatabaseManager;
+    private readonly db: Database;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            this.dbManager = staticDatabaseManager.getDatabaseManager();
+            this.db = staticDatabaseManager.getDatabase();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
         }
     }
 
     public async process(codes: string[]): Promise<void> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.process(codes as unknown as string[]);
         }
 
-        await this.dbManager.performQuery<void>((db: Database) => {
-            const stmt = db.prepare("SELECT * FROM interpro_entries WHERE `code` = ?");
+        const stmt = this.db.prepare("SELECT * FROM interpro_entries WHERE `code` = ?");
 
-            for (const code of codes) {
-                const row = stmt.get(code.substr(4));
+        for (const code of codes) {
+            const row = stmt.get(code.substr(4));
 
-                if (row) {
-                    CachedInterproResponseCommunicator.codeToResponses.set(code, {
-                        code: "IPR:" + row.code,
-                        name: row.name,
-                        category: row.category
-                    });
-                }
+            if (row) {
+                CachedInterproResponseCommunicator.codeToResponses.set(code, {
+                    code: "IPR:" + row.code,
+                    name: row.name,
+                    category: row.category
+                });
             }
-        });
+        }
     }
 
     public getResponse(code: InterproCode): InterproResponse {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponse(code as unknown as string);
         }
 
@@ -48,7 +46,7 @@ export default class CachedInterproResponseCommunicator extends InterproResponse
     }
 
     public getResponseMap(): Map<InterproCode, InterproResponse> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponseMap();
         }
 

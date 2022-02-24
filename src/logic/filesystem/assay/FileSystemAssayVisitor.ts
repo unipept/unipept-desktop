@@ -7,18 +7,17 @@ import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
  * local filesystem. By referencing a
  */
 export default abstract class FileSystemAssayVisitor implements AssayVisitor {
-    protected directoryPath: string;
-    protected readonly dbManager: DatabaseManager;
-
     /**
      * @param directoryPath path to the parent directory of this assay.
      * @param dbManager The database-object that keeps track of metadata for the assays.
      */
-    constructor(directoryPath: string, dbManager: DatabaseManager) {
-        if (!directoryPath.endsWith("/")) {
-            directoryPath += "/";
+    protected constructor(
+        protected directoryPath: string,
+        protected readonly dbManager: DatabaseManager
+    ) {
+        if (!this.directoryPath.endsWith("/")) {
+            this.directoryPath += "/";
         }
-        this.directoryPath = directoryPath;
         this.dbManager = dbManager;
     }
 

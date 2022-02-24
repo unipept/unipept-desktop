@@ -9,10 +9,11 @@ const electron = require("electron");
 const app = electron.remote.app;
 
 import path from "path";
+import DatabaseMigratorV2ToV3 from "@/logic/filesystem/database/DatabaseMigratorV2ToV3";
 
 export default class DatabaseManager {
     // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
-    // a "SQLBusyException" to b§e thrown. By increasing the timeout to a value, larger than the time it should take
+    // a "SQLBusyException" to be thrown. By increasing the timeout to a value larger than the time it should take
     // to execute these transactions, these errors can be avoided.
     public static readonly DB_TIMEOUT: number = 15000;
 
@@ -27,7 +28,8 @@ export default class DatabaseManager {
     // Maps each schema index onto the db-migrator that can be used to update the db to the next schema version.
     private readonly migrations: (() => DatabaseMigrator)[] = [
         () => new DatabaseMigratorV0ToV1(),
-        () => new DatabaseMigratorV1ToV2(path.dirname(this.dbLocation))
+        () => new DatabaseMigratorV1ToV2(path.dirname(this.dbLocation)),
+        () => new DatabaseMigratorV2ToV3(path.dirname(this.dbLocation))
     ];
 
     constructor(
@@ -86,6 +88,7 @@ export default class DatabaseManager {
      */
     private checkAndUpgradeSchema(): void {
         for (let currentSchema: number = this.schemaVersion; currentSchema < Schema.LATEST_VERSION; currentSchema++) {
+            console.log(currentSchema);
             this.migrations[currentSchema]().upgrade(this.db);
             this.db.pragma("user_version = " + (currentSchema + 1));
         }

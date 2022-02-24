@@ -6,10 +6,10 @@
         :items-per-page="5"
         :server-items-length="totalItems"
         :options.sync="options"
-        :loading="loading || computeProgress !== 1"
-        :loading-text="'Loading items: ' + Math.round(computeProgress * 100) + '%'">
+        :loading="loading"
+        loading-text="Loading items...">
         <template v-slot:progress>
-            <v-progress-linear :value="computeProgress * 100" height="2"></v-progress-linear>
+            <v-progress-linear indeterminate height="2"></v-progress-linear>
         </template>
         <template v-slot:item.peptide="{ item }">
             <div class="sequence-value" :title="item.peptide">
@@ -25,18 +25,19 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import { ProteomicsAssay, CountTable, Peptide, AssayData } from "unipept-web-components";
+import { ProteomicsAssay, CountTable, Peptide, Ontology, NcbiId, NcbiTaxon, PeptideData } from "unipept-web-components";
 import { DataOptions } from "vuetify";
-import { ItemType } from "@/state/PeptideSummaryTable.worker";
+import { ShareableMap } from "shared-memory-datastructures";
+
+export type PeptideSummary = {
+    peptide: string,
+    count: number,
+    lca: string,
+    rank: string
+};
 
 @Component({
     computed: {
-        progress: {
-            get(): number {
-                const assayData: AssayData = this.$store.getters.assayData(this.assay);
-                return assayData ? assayData.analysisMetaData.progress : 0;
-            }
-        },
         headers: {
             get() {
                 return [
@@ -44,23 +45,27 @@ import { ItemType } from "@/state/PeptideSummaryTable.worker";
                         text: "Peptide",
                         align: "start",
                         value: "peptide",
-                        width: "30%"
+                        width: "25%",
+                        sortable: true
                     },
                     {
                         text: "Occurrence",
                         align: "start",
                         value: "count",
-                        width: "15%"
+                        width: "20%",
+                        sortable: true
                     }, {
                         text: "Lowest common ancestor",
                         align: "start",
                         value: "lca",
-                        width: "35%"
+                        width: "35%",
+                        sortable: false
                     }, {
                         text: "Rank",
                         align: "start",
                         value: "rank",
-                        width: "20%"
+                        width: "20%",
+                        sortable: false
                     }
                 ];
             }
@@ -71,52 +76,91 @@ export default class PeptideSummaryTable extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
 
-    private items: ItemType[] = [];
+    private items: PeptideSummary[] = [];
     private options = {};
 
-    private loading: boolean = false;
-
-    get computeProgress(): number {
-        return this.$store.getters["peptideSummary/getProgress"](this.assay);
-    }
+    private loading: boolean = true;
 
     get totalItems(): number {
         return this.peptideCountTable?.totalCount;
     }
 
     get peptideCountTable(): CountTable<Peptide> {
-        return this.$store.getters.assayData(this.assay)?.peptideCountTable;
+        return this.$store.getters.assayData(this.assay)?.originalData?.peptideCountTable;
+    }
+
+    get lcaOntology(): Ontology<NcbiId, NcbiTaxon> {
+        return this.$store.getters.assayData(this.assay)?.ncbiOntology;
+    }
+
+    get pept2Data(): ShareableMap<Peptide, PeptideData> {
+        return this.$store.getters.assayData(this.assay)?.pept2Data;
     }
 
     @Watch("options", { deep: true })
-    private async onOptionsChanged(newOptions: DataOptions) {
-        this.loading = true;
-        if (this.computeProgress === 1) {
-            this.items = await this.$store.getters["peptideSummary/getSummaryItems"](this.assay, newOptions);
+    private async onOptionsChanged(options: DataOptions) {
+        if (this.assay && this.peptideCountTable) {
+            this.loading = true;
+            const computedItems = [];
+
+            const start = options.itemsPerPage * (options.page - 1);
+            const end = Math.min(options.itemsPerPage * options.page, this.peptideCountTable.getOntologyIds().length);
+
+            let peptides = this.peptideCountTable.getOntologyIds();
+            if (options.sortBy.length > 0) {
+                if (options.sortBy[0] === "count") {
+                    peptides = peptides.sort((a: Peptide, b: Peptide) =>
+                        this.peptideCountTable.getCounts(b) - this.peptideCountTable.getCounts(a)
+                    );
+                } else if (options.sortBy[0] === "peptide") {
+                    // Simple sort alphabetically
+                    peptides = peptides.sort();
+                }
+            }
+
+            if (options.sortDesc.length > 0 && options.sortDesc[0]) {
+                peptides = peptides.reverse();
+            }
+
+            for (const peptide of peptides.slice(start, end)) {
+                const response = this.pept2Data.get(peptide);
+                let lcaName = "N/A";
+                let rank = "N/A"
+
+                if (response) {
+                    const taxon = this.lcaOntology.getDefinition(response.lca);
+                    lcaName = taxon ? taxon.name : lcaName;
+                    rank = taxon ? taxon.rank : rank;
+                }
+
+                computedItems.push({
+                    peptide,
+                    count: this.peptideCountTable.getCounts(peptide),
+                    lca: lcaName,
+                    rank
+                })
+            }
+
+            this.items.splice(0, this.items.length);
+            this.items.push(...computedItems);
+
+            this.loading = false;
         }
-        this.loading = false;
     }
 
     @Watch("assay")
     @Watch("peptideCountTable", { immediate: true })
-    @Watch("computeProgress")
-    private async onProgressChanged() {
-        if (this.computeProgress === 1) {
-            await this.onOptionsChanged({
-                page: 1,
-                itemsPerPage: 5,
-                sortBy: [],
-                sortDesc: [],
-                multiSort: false,
-                mustSort: false,
-                groupBy: [],
-                groupDesc: []
-            });
-        }
-
-        if (this.computeProgress === 0) {
-            this.items.splice(0, this.items.length);
-        }
+    private async onInputChanged() {
+        await this.onOptionsChanged({
+            page: 1,
+            itemsPerPage: 5,
+            sortBy: [],
+            sortDesc: [],
+            multiSort: false,
+            mustSort: false,
+            groupBy: [],
+            groupDesc: []
+        });
     }
 
     private openPeptide(peptide: Peptide): void {

@@ -6,41 +6,39 @@ import { Database } from "better-sqlite3";
 export default class CachedEcResponseCommunicator extends EcResponseCommunicator {
     private static codeToResponses: Map<EcCode, EcResponse> = new Map<EcCode, EcResponse>();
     private static processing: Promise<Map<EcCode, EcResponse>>;
-    private readonly dbManager: DatabaseManager;
+    private readonly db: Database;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            this.dbManager = staticDatabaseManager.getDatabaseManager();
+            this.db = staticDatabaseManager.getDatabase();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
         }
     }
 
     public async process(codes: EcCode[]): Promise<void> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.process(codes);
         }
 
-        await this.dbManager.performQuery<void>((db: Database) => {
-            const stmt = db.prepare("SELECT * FROM ec_numbers WHERE `code` = ?");
+        const stmt = this.db.prepare("SELECT * FROM ec_numbers WHERE `code` = ?");
 
-            for (const code of codes) {
-                const row = stmt.get(code.substr(3));
+        for (const code of codes) {
+            const row = stmt.get(code.substr(3));
 
-                if (row) {
-                    CachedEcResponseCommunicator.codeToResponses.set(code, {
-                        code: "EC:" + row.code,
-                        name: row.name
-                    });
-                }
+            if (row) {
+                CachedEcResponseCommunicator.codeToResponses.set(code, {
+                    code: "EC:" + row.code,
+                    name: row.name
+                });
             }
-        });
+        }
     }
 
     public getResponse(code: EcCode): EcResponse {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponse(code);
         }
 
@@ -48,7 +46,7 @@ export default class CachedEcResponseCommunicator extends EcResponseCommunicator
     }
 
     public getResponseMap(): Map<EcCode, EcResponse> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponseMap();
         }
 

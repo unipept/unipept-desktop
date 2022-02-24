@@ -8,9 +8,7 @@ import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsMana
 import { Study, IOException } from "unipept-web-components";
 import { Database as DatabaseType } from "better-sqlite3";
 import { v4 as uuidv4 } from "uuid";
-import StudyFileSystemMetaDataWriter from "@/logic/filesystem/study/StudyFileSystemMetaDataWriter";
-import FileSystemStudyChangeListener from "@/logic/filesystem/study/FileSystemStudyChangeListener";
-import FileSystemAssayChangeListener from "@/logic/filesystem/assay/FileSystemAssayChangeListener";
+import StudyFileSystemDataWriter from "@/logic/filesystem/study/StudyFileSystemDataWriter";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import Utils from "@/logic/Utils";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
@@ -21,7 +19,7 @@ const app = electron.remote.app;
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";
     // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
-    // a "SQLBusyException" to b§e thrown. By increasing the timeout to a value, larger than the time it should take
+    // a "SQLBusyException" to be thrown. By increasing the timeout to a value, larger than the time it should take
     // to execute these transactions, these errors can be avoided.
     public static readonly DB_TIMEOUT: number = 15000;
 
@@ -58,7 +56,7 @@ export default class ProjectManager  {
         const studies = [];
 
         for (const directory of subDirectories) {
-            studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager));
+            studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager, projectLocation));
         }
 
         if (addToRecents) {
@@ -66,13 +64,6 @@ export default class ProjectManager  {
         }
 
         await store.dispatch("initializeProject", [projectLocation, dbManager, studies]);
-
-        for (const study of studies) {
-            for (const assay of study.getAssays()) {
-                assay.addChangeListener(new FileSystemAssayChangeListener(study));
-            }
-            study.addChangeListener(new FileSystemStudyChangeListener());
-        }
     }
 
     /**
@@ -98,7 +89,11 @@ export default class ProjectManager  {
         return new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
     }
 
-    private async loadStudy(directory: string, dbManager: DatabaseManager): Promise<Study> {
+    private async loadStudy(
+        directory: string,
+        dbManager: DatabaseManager,
+        projectLocation: string
+    ): Promise<Study> {
         if (!directory.endsWith("/")) {
             directory += "/";
         }
@@ -119,11 +114,11 @@ export default class ProjectManager  {
 
         study.setName(studyName);
 
-        const studyWriter = new StudyFileSystemMetaDataWriter(directory, dbManager);
+        const studyWriter = new StudyFileSystemDataWriter(directory, dbManager);
         await study.accept(studyWriter);
 
         // Read all assays from this study
-        const studyReader = new StudyFileSystemDataReader(directory, dbManager);
+        const studyReader = new StudyFileSystemDataReader(directory, dbManager, projectLocation);
         await study.accept(studyReader);
 
         return study;

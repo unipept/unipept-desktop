@@ -7,7 +7,7 @@ import { Database } from "better-sqlite3";
 /**
  * Class that's able to fully serialize a Study-object to the local filesystem.
  */
-export default class StudyFileSystemMetaDataWriter extends FileSystemStudyVisitor {
+export default class StudyFileSystemDataWriter extends FileSystemStudyVisitor {
     public async visitStudy(study: Study): Promise<void> {
         try {
             // Make study directory if it does not exist yet...

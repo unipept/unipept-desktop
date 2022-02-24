@@ -3,4 +3,6 @@ export default interface Configuration {
     useNativeTitlebar: boolean;
     maxLongRunningTasks: number;
     maxParallelRequests: number;
+    dockerConfigurationSettings: string;
+    customDbStorageLocation: string;
 }

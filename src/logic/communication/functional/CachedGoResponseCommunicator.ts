@@ -6,42 +6,40 @@ import { Database } from "better-sqlite3";
 export default class CachedGoResponseCommunicator extends GoResponseCommunicator {
     private static codeToResponses: Map<GoCode, GoResponse> = new Map<GoCode, GoResponse>();
     private static processing: Promise<Map<GoCode, GoResponse>>;
-    private readonly dbManager: DatabaseManager;
+    private readonly db: Database;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            this.dbManager = staticDatabaseManager.getDatabaseManager();
+            this.db = staticDatabaseManager.getDatabase();
         } catch (err) {
             console.warn("Gracefully falling back to online communicators...");
         }
     }
 
     public async process(codes: string[]): Promise<void> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.process(codes);
         }
 
-        await this.dbManager.performQuery<void>((db: Database) => {
-            const stmt = db.prepare("SELECT * FROM go_terms WHERE `code` = ?");
+        const stmt = this.db.prepare("SELECT * FROM go_terms WHERE `code` = ?");
 
-            for (const code of codes) {
-                const row = stmt.get(code);
+        for (const code of codes) {
+            const row = stmt.get(code);
 
-                if (row) {
-                    CachedGoResponseCommunicator.codeToResponses.set(code, {
-                        code: row.code,
-                        namespace: row.namespace,
-                        name: row.name
-                    });
-                }
+            if (row) {
+                CachedGoResponseCommunicator.codeToResponses.set(code, {
+                    code: row.code,
+                    namespace: row.namespace,
+                    name: row.name
+                });
             }
-        });
+        }
     }
 
     public getResponse(code: string): GoResponse {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponse(code);
         }
 
@@ -49,7 +47,7 @@ export default class CachedGoResponseCommunicator extends GoResponseCommunicator
     }
 
     public getResponseMap(): Map<GoCode, GoResponse> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponseMap();
         }
 

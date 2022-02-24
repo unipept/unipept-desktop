@@ -45,7 +45,7 @@ import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 })
 export default class SingleAssayAnalysisPage extends Vue {
     get activeAssay(): ProteomicsAssay {
-        return this.$store.getters.activeAssay;
+        return this.$store.getters.activeAssay?.assay;
     }
 
     private onUpdateSelectedTaxonId(id: number) {

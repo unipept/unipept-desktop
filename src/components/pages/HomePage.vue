@@ -100,6 +100,7 @@ import UpdateNotesDialog from "@/components/dialogs/UpdateNotesDialog.vue";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import Utils from "@/logic/Utils";
 import { OpenDialogOptions } from "electron";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
 const electron = require("electron");
 const { dialog } = electron.remote;

@@ -16,12 +16,12 @@
                         Use the arrow keys on your keyboard to move around and try to eat the apple, without biting your own
                         tale.
                     </p>
-                    <div>
+                    <div class="d-flex justify-center">
                         <v-btn class="ma-1" depressed @click="moveUp()">
                             <v-icon dark>mdi-chevron-up</v-icon>
                         </v-btn>
                     </div>
-                    <div>
+                    <div class="d-flex justify-center">
                         <v-btn class="ma-1" depressed @click="moveLeft()">
                             <v-icon dark>mdi-chevron-left</v-icon>
                         </v-btn>
@@ -43,6 +43,9 @@
                 </canvas>
             </v-col>
         </v-row>
+        <div class="d-flex justify-center mt-8">
+            <a @click="deactivateSnake">Close</a>
+        </div>
     </v-container>
 </template>
 
@@ -65,6 +68,8 @@ export default class Snake extends Vue {
 
     private grid = 16;
     private count = 0;
+
+    private animationFrameListener: number = -1;
 
     private snake: {x: number, y: number, dx: number, dy: number, cells: CellType[], maxCells: number} = {
         x: 160,
@@ -100,7 +105,6 @@ export default class Snake extends Vue {
         });
     }
 
-
     private async activateSnake(): Promise<void> {
         this.snakeActive = true;
 
@@ -108,7 +112,15 @@ export default class Snake extends Vue {
 
         this.canvas = this.$refs.snake as HTMLCanvasElement;
         this.context = this.canvas.getContext("2d");
-        requestAnimationFrame(this.loop);
+        this.animationFrameListener = requestAnimationFrame(this.loop);
+    }
+
+    private async deactivateSnake(): Promise<void> {
+        this.snakeActive = false;
+        if (this.animationFrameListener >= 0) {
+            cancelAnimationFrame(this.animationFrameListener);
+            this.animationFrameListener = -1;
+        }
     }
 
     // get random whole numbers in a specific range
@@ -119,7 +131,7 @@ export default class Snake extends Vue {
 
     // game loop
     private loop() {
-        requestAnimationFrame(this.loop);
+        this.animationFrameListener = requestAnimationFrame(this.loop);
 
         // slow game loop to 15 fps instead of 60 (60/15 = 4)
         if (++this.count < 4) {

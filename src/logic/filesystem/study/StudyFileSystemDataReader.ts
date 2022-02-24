@@ -1,12 +1,11 @@
 import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
 import * as fs from "fs";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
-import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
 import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException } from "unipept-web-components";
-import AssayFileSystemMetaDataReader from "@/logic/filesystem/assay/AssayFileSystemMetaDataReader";
 import { Database } from "better-sqlite3";
+import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 
 
 /**
@@ -17,6 +16,14 @@ import { Database } from "better-sqlite3";
  * @author Pieter Verschaffelt
  */
 export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
+    constructor(
+        studyPath: string,
+        dbManager: DatabaseManager,
+        private readonly projectLocation: string
+    ) {
+        super(studyPath, dbManager);
+    }
+
     public async visitStudy(study: Study): Promise<void> {
         try {
             // Try to read all assays and replace current assays where necessary.
@@ -31,7 +38,7 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
 
                 const row = await this.dbManager.performQuery<any>((db: Database) => {
                     return db.prepare(
-                        "SELECT * FROM assays WHERE `name`=? and `study_id`=?"
+                        "SELECT * FROM assays WHERE `name` = ? and `study_id` = ?"
                     ).get(assayName, study.getId());
                 });
 
@@ -40,14 +47,14 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
                     assay = new ProteomicsAssay(row.id);
                     assay.setName(assayName);
 
-                    const assayVisitor = new AssayFileSystemMetaDataReader(this.studyPath, this.dbManager);
+                    const assayVisitor = new AssayFileSystemDataReader(this.studyPath, this.dbManager, this.projectLocation);
                     await assay.accept(assayVisitor);
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.
-                    assay = new ProteomicsAssay(uuidv4());
+                    assay = new ProteomicsAssay();
                     assay.setName(assayName);
 
-                    const assayVisitor: AssayVisitor = new AssayFileSystemMetaDataWriter(
+                    const assayVisitor: AssayVisitor = new AssayFileSystemDataWriter(
                         this.studyPath,
                         this.dbManager,
                         study
@@ -55,15 +62,7 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
                     await assay.accept(assayVisitor);
                 }
 
-                // Also read in any data related to this assay.
-                try {
-                    const dataReader: AssayVisitor = new AssayFileSystemDataReader(this.studyPath, this.dbManager);
-                    await assay.accept(dataReader);
-
-                    study.addAssay(assay);
-                } catch (err) {
-                    // Do nothing...
-                }
+                study.addAssay(assay);
             }
         } catch (err) {
             throw new IOException(err);

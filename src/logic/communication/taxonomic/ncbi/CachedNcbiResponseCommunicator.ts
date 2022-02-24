@@ -5,32 +5,36 @@ import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import { NcbiRank } from "unipept-web-components/src/business/ontology/taxonomic/ncbi/NcbiRank";
 
 export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunicator {
-    private readonly dbManager: DatabaseManager;
+    private readonly db: Database;
     private static codesProcessed: Map<NcbiId, NcbiResponse> = new Map<NcbiId, NcbiResponse>();
+
+    private static staticDbProgress: Promise<NcbiId[]>;
+    private static worker: Worker;
 
     constructor() {
         super();
         try {
             const staticDatabaseManager = new StaticDatabaseManager();
-            this.dbManager = staticDatabaseManager.getDatabaseManager();
+            this.db = staticDatabaseManager.getDatabase();
         } catch (err) {
+            console.error(err);
             console.warn("Gracefully falling back to online communicators...");
         }
     }
 
     public async process(codes: NcbiId[]): Promise<void> {
-        if (!this.dbManager) {
+        if (!this.db) {
             await super.process(codes);
         } else {
             const ranks = Object.values(NcbiRank).map(rank => rank.replace(" ", "_"));
             const lineagesToExtract: NcbiId[] = [];
 
-            await this.dbManager.performQuery<void>((db: Database) => {
-                const extractStmt = db.prepare(
-                    "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
-                );
+            let extractStmt = this.db.prepare(
+                "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
+            );
 
-                for (const id of codes) {
+            for (const id of codes) {
+                if (id) {
                     const row = extractStmt.get(id);
                     if (row) {
                         const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
@@ -44,16 +48,16 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
                         });
                     }
                 }
-            });
+            }
 
-            await this.dbManager.performQuery<void>((db: Database) => {
-                const extractStmt = db.prepare(
-                    "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
-                );
+            extractStmt = this.db.prepare(
+                "SELECT * FROM taxons INNER JOIN lineages ON taxons.id = lineages.taxon_id WHERE `id` = ?"
+            );
 
-                for (const id of lineagesToExtract.filter(
-                    (c) => !CachedNcbiResponseCommunicator.codesProcessed.has(c)
-                )) {
+            for (const id of lineagesToExtract.filter(
+                (c) => !CachedNcbiResponseCommunicator.codesProcessed.has(c)
+            )) {
+                if (id) {
                     const row = extractStmt.get(id);
                     if (row) {
                         const lineage = ranks.map(rank => row[rank]).map(el => el === "\\N" ? null : el);
@@ -66,21 +70,60 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
                         });
                     }
                 }
-            });
+            }
         }
     }
 
     public getResponse(id: NcbiId): NcbiResponse {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponse(id);
         }
         return CachedNcbiResponseCommunicator.codesProcessed.get(id);
     }
 
     public getResponseMap(): Map<NcbiId, NcbiResponse> {
-        if (!this.dbManager) {
+        if (!this.db) {
             return super.getResponseMap();
         }
         return CachedNcbiResponseCommunicator.codesProcessed;
+    }
+
+    /**
+     * Returns the amount of NCBI taxa that are known to the database underlying the application. An optional filter
+     * string can be given that allows the database to be filtered by all taxa that contain a specific text in their
+     * name.
+     *
+     * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
+     * function.
+     */
+    public getNcbiCount(nameFilter: string = ""): number {
+        return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name LIKE ?")
+            .get(`%${nameFilter}%`)["COUNT(id)"];
+    }
+
+    /**
+     * Returns a slice of all NCBI id's from the database starting from row number start (inclusive) and ending at end
+     * (exclusive). Note that if a specific name filter is given, only taxa that contain this text as portion of their
+     * name will be returned.
+     *
+     * @param start First NCBI id that should be included in the result (inclusive).
+     * @param end First NCBI id that should not be included in the result (exclusive).
+     * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
+     * function.
+     * @param sortBy Which taxon property should be used to sort the table?
+     * @param sortDescending Sort according to ascending or descending values in the selected column?
+     */
+    public getNcbiRange(
+        start: number,
+        end: number,
+        nameFilter: string = "",
+        sortBy: "id" | "name" | "rank" = "id",
+        sortDescending: boolean = true
+    ): NcbiId[] {
+        return this.db.prepare(
+            `SELECT id, name, rank FROM taxons WHERE name LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
+        )
+            .all(`%${nameFilter}%`, end - start, start)
+            .map((item: any) => item.id);
     }
 }

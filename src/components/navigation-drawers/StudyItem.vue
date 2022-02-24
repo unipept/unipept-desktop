@@ -54,30 +54,16 @@
                     </template>
                     <span>{{ nameError }}</span>
                 </v-tooltip>
-                <v-menu v-if="assaysInProgress.length === 0">
-                    <template v-slot:activator="{ on: menu }">
-                        <v-tooltip bottom>
-                            <template v-slot:activator="{ on: tooltip }">
-                                <v-icon
-                                    color="#424242"
-                                    size="20"
-                                    v-on="{ ...tooltip, ...menu }">
-                                    mdi-file-plus-outline
-                                </v-icon>
-                            </template>
-                            <span>Create a new assay</span>
-                        </v-tooltip>
+                <v-tooltip bottom>
+                    <template v-slot:activator="{ on: tooltip }">
+                        <v-btn text icon @click="createAssay">
+                            <v-icon color="#424242" size="20" v-on="{ ...tooltip }">
+                                mdi-file-plus-outline
+                            </v-icon>
+                        </v-btn>
                     </template>
-                    <v-list>
-                        <v-list-item @click="showCreateAssayDialog = true">
-                            <v-list-item-title>From peptides</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item @click="createFromFile()">
-                            <v-list-item-title>From file</v-list-item-title>
-                        </v-list-item>
-                    </v-list>
-                </v-menu>
-                <v-progress-circular v-else indeterminate :size="16" color="primary"></v-progress-circular>
+                    <span>Create a new assay</span>
+                </v-tooltip>
             </div>
         </div>
         <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
@@ -92,20 +78,6 @@
                 v-on:select-assay="onSelectAssay">
             </assay-item>
         </div>
-        <v-dialog v-model="showCreateAssayDialog" v-if="study && showCreateAssayDialog" max-width="800">
-            <v-card>
-                <v-card-title>
-                    Create assay
-                </v-card-title>
-                <v-card-text>
-                    <create-assay
-                        :study="study"
-                        v-on:create-assay="onCreateAssay"
-                        v-on:cancel="showCreateAssayDialog = false">
-                    </create-assay>
-                </v-card-text>
-            </v-card>
-        </v-dialog>
         <search-configuration-dialog
             v-model="showSearchConfigDialog"
             :assays="searchConfigAssays"
@@ -127,18 +99,24 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
-import { CreateDatasetCard, Tooltip, Assay, Study, ProteomicsAssay } from "unipept-web-components";
-import CreateAssay from "./../assay/CreateAssay.vue";
+import {
+    CreateDatasetCard,
+    Tooltip,
+    Assay,
+    Study,
+    ProteomicsAssay,
+    NetworkConfiguration
+} from "unipept-web-components";
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
 import { v4 as uuidv4 } from "uuid";
-import { AssayFileSystemMetaDataWriter } from "@/logic/filesystem/assay/AssayFileSystemMetaDataWriter";
 import path from "path";
 import { isText, isBinary, getEncoding } from "istextorbinary";
 import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 
 
 const { remote } = require("electron");
@@ -154,7 +132,6 @@ const { dialog } = electron.remote;
         SearchConfigurationDialog,
         ConfirmDeletionDialog,
         CreateDatasetCard,
-        CreateAssay,
         Tooltip,
         AssayItem
     },
@@ -169,7 +146,7 @@ const { dialog } = electron.remote;
         isProcessing: {
             get(): boolean {
                 return this.study.getAssays().some(
-                    (a: Assay) => this.$store.getters["assayData"](a).analysisMetaData.progress !== 1
+                    (a: Assay) => this.$store.getters.assayData(a).analysisInProgress
                 );
             }
         }
@@ -334,145 +311,13 @@ export default class StudyItem extends Vue {
         await this.study.accept(studyDestroyer);
     }
 
-    private async createFromFile() {
-        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
-            properties: ["openFile", "multiSelections"],
-            defaultPath: this.previousDirectory
-        });
-
-        this.binaryFilesList.splice(0, this.binaryFilesList.length);
-
-        const assaysToProcess: ProteomicsAssay[] = [];
-        const paths: string[] = [];
-        if (chosenPath && chosenPath["filePaths"] && chosenPath["filePaths"].length > 0) {
-            this.searchConfigAssays.splice(0, this.searchConfigAssays.length);
-            for (const filePath of chosenPath["filePaths"]) {
-                if (!filePath.endsWith(".pep") && !isText(filePath)) {
-                    this.binaryFilesList.push(filePath);
-                    continue;
-                }
-
-                let assayName = path.basename(filePath).replace(/\.[^/.]+$/, "");
-                assayName = this.generateUniqueAssayName(assayName);
-
-                this.previousDirectory = path.dirname(filePath);
-
-                this.assaysInProgress.push(assayName);
-
-                // First ask the user for the desired search configuration that should be applied for this assay and
-                // write it to the db.
-                const assay = new ProteomicsAssay(uuidv4());
-                assay.setName(assayName);
-                assaysToProcess.push(assay);
-
-                paths.push(filePath);
-            }
-
-            // Did we detect any binary files? Then we should show the error dialog...
-            if (this.binaryFilesList.length > 0) {
-                this.showBinaryFilesError = true;
-                return;
-            }
-
-            this.requestSearchSettings(assaysToProcess, async(cancelled: boolean) => {
-                if (cancelled) {
-                    this.assaysInProgress.splice(0, this.assaysInProgress.length);
-                } else {
-                    for (let i = 0; i < assaysToProcess.length; i++) {
-                        const assay = assaysToProcess[i];
-                        const filePath = paths[i];
-
-                        // Write metadata to disk
-                        const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                            `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                            this.$store.getters.dbManager,
-                            this.study
-                        );
-
-                        await assay.accept(metaDataWriter);
-
-                        await fs.copyFile(
-                            filePath,
-                            this.$store.getters.projectLocation + this.study.getName() + "/" + assay.getName() + ".pep"
-                        )
-                    }
-                }
-            });
-        }
-    }
-
-    private onCreateAssay(assay: ProteomicsAssay) {
-        this.showCreateAssayDialog = false;
-
-        // First ask the user for the desired search configuration that should be applied for this assay and write it to
-        // the db.
-        this.requestSearchSettings([assay], async(cancelled: boolean) => {
-            if (cancelled) {
-                this.assaysInProgress.splice(0, this.assaysInProgress.length);
-            } else {
-                let assayName = assay.getName();
-                if (assayName === "") {
-                    assayName = "Unknown";
-                }
-
-                assayName = this.generateUniqueAssayName(assayName);
-                assay.setName(assayName);
-
-                // Write metadata to disk
-                const metaDataWriter = new AssayFileSystemMetaDataWriter(
-                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                    this.$store.getters.dbManager,
-                    this.study
-                );
-
-                await assay.accept(metaDataWriter);
-
-                // Write the assay to disk. It will automatically be picked up by the file system watchers
-                const assaySerializer = new AssayFileSystemDataWriter(
-                    `${this.$store.getters.projectLocation}${this.study.getName()}`,
-                    this.$store.getters.dbManager
-                );
-
-                await assay.accept(assaySerializer);
-            }
-        })
-    }
-
-    private requestSearchSettings(assays: ProteomicsAssay[], callback: (cancelled: boolean) => Promise<void>) {
-        this.searchConfigAssays.splice(0, this.searchConfigAssays.length);
-        this.searchConfigAssays.push(...assays);
-        this.searchConfigCallback = callback;
-        this.showSearchConfigDialog = true;
-    }
-
     private async onSelectAssay(assay: Assay) {
         await this.$store.dispatch("activateAssay", assay);
     }
 
-    /**
-     * Check to see if an assay with the requested name already exists for this study. If this is the case, a counter
-     * will be added to the requestedName making it unique. The counter will be incremented until the name is completely
-     * unique.
-     *
-     * @param requestedName Assay name that we are trying to make unique by adding a counter.
-     */
-    private generateUniqueAssayName(requestedName: string): string {
-        // Check if assay with same name already exists in the list of assays for this study. If so, change the name
-        // to make it unique.
-        let otherAssayWithName = this.study.getAssays().find(a => a.getName() === requestedName);
-        if (otherAssayWithName) {
-            // Append a number to the assay to make it unique. An assay with this name might again already exist, which
-            // is why we need to check for uniqueness in a loop.
-            let counter = 1;
-            let newName: string;
-            while (otherAssayWithName) {
-                newName = `${requestedName} (${counter})`;
-                otherAssayWithName = this.study.getAssays().find((a: ProteomicsAssay) => a.getName() === newName);
-                counter++;
-            }
-            requestedName = newName;
-        }
-        return requestedName;
+    private createAssay() {
+        // Emit event to indicate that we want to create a new assay
+        this.$emit("createAssay", this.study);
     }
 }
 </script>

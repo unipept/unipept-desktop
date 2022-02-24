@@ -96,15 +96,15 @@ const projectActions: ActionTree<ProjectState, any> = {
 
         const name = path.basename(projectDirectory);
 
-
         store.commit("SET_PROJECT", [name, projectDirectory, dbManager]);
 
         for (const study of studies) {
             for (const assay of study.getAssays()) {
                 await store.dispatch("addAssay", assay);
                 store.dispatch(
-                    "processAssay",
-                    [assay, false, (assay as ProteomicsAssay).getSearchConfiguration()]);
+                    "analyseAssay",
+                    assay
+                );
             }
         }
 

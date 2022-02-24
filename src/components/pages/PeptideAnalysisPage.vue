@@ -19,33 +19,49 @@
                 </v-card>
             </v-col>
         </v-row>
-        <v-row>
-            <v-col>
-                <v-card>
-                    <v-card-text>
-                        <single-peptide-summary
-                            v-if="peptide"
-                            :communication-source="communicationSource"
-                            :peptide="peptide"
-                            :equate-il="equateIl">
-                        </single-peptide-summary>
-                        <div v-else>
+
+        <div v-if="!peptide">
+            <v-row>
+                <v-col>
+                    <v-card>
+                        <v-card-text>
                             <div class="display-1">Tryptic peptide analysis</div>
                             <div class="subtitle-1">Enter a peptide above to continue...</div>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-        </v-row>
-        <v-row>
-            <v-col>
-                <single-peptide-analysis-card
-                    :communication-source="communicationSource"
-                    :equate-il="equateIl"
-                    :peptide="peptide">
-                </single-peptide-analysis-card>
-            </v-col>
-        </v-row>
+                        </v-card-text>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </div>
+
+        <div v-else-if="isAnalysisInProgress">
+            <v-row>
+                <v-col>
+                    <v-card>
+                        <v-card-text class="d-flex flex-column align-center">
+                            <v-progress-circular indeterminate color="primary" size="40" />
+                            <span>Processing your request...</span>
+                        </v-card-text>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </div>
+
+        <div v-else>
+            <v-row>
+                <v-col>
+                    <v-card>
+                        <v-card-text>
+                            <single-peptide-summary />
+                        </v-card-text>
+                    </v-card>
+                </v-col>
+            </v-row>
+            <v-row>
+                <v-col>
+                    <single-peptide-analysis-card />
+                </v-col>
+            </v-row>
+        </div>
     </v-container>
 </template>
 
@@ -54,7 +70,7 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import {
     CommunicationSource,
-    DefaultCommunicationSource, Pept2DataCommunicator, Peptide,
+    DefaultCommunicationSource, NetworkConfiguration, Pept2DataCommunicator, Peptide,
     SinglePeptideAnalysisCard,
     SinglePeptideSummary
 } from "unipept-web-components";
@@ -69,23 +85,19 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
     components: { SinglePeptideAnalysisCard, SinglePeptideSummary }
 })
 export default class PeptideAnalysisPage extends Vue {
-    private communicationSource: CommunicationSource = new ConfigureableCommunicationSource(
-        new Pept2DataCommunicator(),
-        new CachedGoResponseCommunicator(),
-        new CachedEcResponseCommunicator(),
-        new CachedInterproResponseCommunicator(),
-        new CachedNcbiResponseCommunicator()
-    );
-
     private peptideModel: Peptide = "";
     private equateIlModel: boolean = false;
 
     get peptide(): Peptide {
-        return this.$store.getters["peptideSummary/selectedPeptide"];
+        return this.$store.getters.peptideStatus.peptide;
     }
 
     get equateIl(): boolean {
-        return this.$store.getters["peptideSummary/equateIl"];
+        return this.$store.getters.peptideStatus.equateIl;
+    }
+
+    get isAnalysisInProgress(): boolean {
+        return this.$store.getters.peptideStatus.analysisInProgress;
     }
 
     private mounted() {
@@ -94,7 +106,7 @@ export default class PeptideAnalysisPage extends Vue {
     }
 
     private openPeptide() {
-        this.$store.dispatch("peptideSummary/setPeptide", [this.peptideModel, this.equateIlModel]);
+        this.$store.dispatch("analyseSinglePeptide", [this.peptideModel, this.equateIlModel]);
     }
 }
 </script>

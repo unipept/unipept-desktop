@@ -11,7 +11,6 @@
             <!-- Navigation drawer for managing the currently selected peptides / experiments / etc. Is positioned on
                  the left side -->
             <Toolbar
-                v-on:activate-dataset="onActivateDataset"
                 v-on:update:toolbar-width="onToolbarWidthUpdated">
             </Toolbar>
 
@@ -79,9 +78,11 @@ import {
     Assay,
     ProteomicsAssay,
     NetworkConfiguration,
-    AssayData,
-    QueueManager
+    QueueManager,
+    AssayAnalysisStatus
 } from "unipept-web-components";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import BootstrapApplication from "@/logic/application/BootstrapApplication";
 
 const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
@@ -101,8 +102,8 @@ const { app } = require("electron").remote;
         assaysInProgress: {
             get(): Assay[] {
                 return this.$store.getters.assays
-                    .filter((a: AssayData) => a.analysisMetaData.progress < 1)
-                    .map((a: AssayData) => a.assay);
+                    .filter((a: AssayAnalysisStatus) => !a.analysisReady)
+                    .map((a: AssayAnalysisStatus) => a.assay);
             }
         },
         isMini: {
@@ -124,6 +125,7 @@ export default class App extends Vue implements ErrorListener {
     private updatedColor: string = "info";
 
     private toolbarWidth: number = 210;
+
     // Has this component been initialized before?
     private static previouslyInitialized: boolean = false;
 
@@ -182,7 +184,7 @@ export default class App extends Vue implements ErrorListener {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev + this.$store.getters.assayData(currentAssay).analysisMetaData.progress, 0
+                (prev: number, currentAssay: Assay) => prev + this.$store.getters["assayData"](currentAssay).originalProgress.value, 0
             ) / assays.length;
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
         }
@@ -196,14 +198,8 @@ export default class App extends Vue implements ErrorListener {
         this.loading = true;
         let configurationManager = new ConfigurationManager();
         try {
-            let config: Configuration = await configurationManager.readConfiguration();
-            NetworkConfiguration.BASE_URL = config.apiSource;
-            // Make sure that the old Unipept URL is no longer being used...
-            if (NetworkConfiguration.BASE_URL === "https://unipept.ugent.be") {
-                NetworkConfiguration.BASE_URL = "https://api.unipept.ugent.be";
-            }
-            NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
-            QueueManager.initializeQueue(config.maxLongRunningTasks);
+            const appBootstrap = new BootstrapApplication(this.$store);
+            appBootstrap.loadApplicationComponents();
         } catch (err) {
             // TODO: show a proper error message to the user in case this happens
             console.error(err)
@@ -217,10 +213,6 @@ export default class App extends Vue implements ErrorListener {
 
     private onToolbarWidthUpdated(newValue: number) {
         this.toolbarWidth = newValue;
-    }
-
-    private onActivateDataset(value: ProteomicsAssay) {
-        this.$store.dispatch("setActiveDataset", value);
     }
 }
 </script>

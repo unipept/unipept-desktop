@@ -96,7 +96,7 @@ import {
     AllNormalizer,
     NormalizationSelector,
     DefaultCommunicationSource,
-    CommunicationSource
+    CommunicationSource, NetworkConfiguration
 } from "unipept-web-components";
 
 import { Prop, Watch } from "vue-property-decorator";
@@ -120,7 +120,7 @@ import CollapsableCard from "@/components/pages/CollapsableCard.vue";
 export default class ComparativeAnalysisPage extends Vue {
     private selectedItems: MultiAssayDataSourceItem[] = [];
     private normalizer: Normalizer = new AllNormalizer();
-    private communicationSource: CommunicationSource = new DefaultCommunicationSource();
+    private communicationSource: CommunicationSource = new DefaultCommunicationSource(NetworkConfiguration.BASE_URL);
 
     private updateSelectedItems(newItems: MultiAssayDataSourceItem[]) {
         this.selectedItems.length = 0;
