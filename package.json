@@ -33,7 +33,7 @@
     "@types/node": "^12.12.6",
     "@types/uuid": "^8.3.0",
     "@types/yauzl": "^2.9.1",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "babel-polyfill": "^6.26.0",
     "backtrace-js": "0.0.12",
     "backtrace-node": "^1.0.8",
