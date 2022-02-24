@@ -40,6 +40,7 @@
     "better-sqlite3": "^7.1.2",
     "chokidar": "^3.3.1",
     "core-js": "^2.6.9",
+    "dns": "^0.2.2",
     "dockerode": "^3.3.0",
     "electron-devtools-installer": "^3.1.1",
     "electron-log": "^4.2.2",
