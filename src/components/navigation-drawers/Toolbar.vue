@@ -60,17 +60,17 @@
                             <v-list-item-title>Single peptide analysis</v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
-                    <v-list-item
-                        :class="{'v-list-item--active': $route.path.includes('/databases')}"
-                        link
-                        @click="navigate('/databases', false)">
-                        <v-list-item-icon>
-                            <v-icon>mdi-database-cog</v-icon>
-                        </v-list-item-icon>
-                        <v-list-item-content>
-                            <v-list-item-title>Custom databases</v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
+<!--                    <v-list-item-->
+<!--                        :class="{'v-list-item&#45;&#45;active': $route.path.includes('/databases')}"-->
+<!--                        link-->
+<!--                        @click="navigate('/databases', false)">-->
+<!--                        <v-list-item-icon>-->
+<!--                            <v-icon>mdi-database-cog</v-icon>-->
+<!--                        </v-list-item-icon>-->
+<!--                        <v-list-item-content>-->
+<!--                            <v-list-item-title>Custom databases</v-list-item-title>-->
+<!--                        </v-list-item-content>-->
+<!--                    </v-list-item>-->
                     <v-list-item
                         :class="{'v-list-item--active': $route.path === '/settings'}"
                         link

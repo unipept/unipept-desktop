@@ -80,131 +80,131 @@
                                 </v-container>
                             </v-card-text>
                         </v-card>
-                        <h2 class="mx-auto settings-category-title">Storage</h2>
-                        <v-card>
-                            <v-card-text>
-                                <v-container fluid>
-                                    <v-row>
-                                        <v-col cols="8">
-                                            <div class="settings-title">Database storage location</div>
-                                            <div class="settings-text">
-                                                Indicates where the application should store custom database files? Note
-                                                that these files can grow quite large in size, depending on the amount
-                                                and size of the custom databases you are planning to use. For large
-                                                databases, at least 100GiB of free space is required.
-                                            </div>
-                                        </v-col>
-                                        <v-col cols="4">
-                                            <v-text-field
-                                                single-line
-                                                filled
-                                                readonly
-                                                v-model="customDbStorageLocation"
-                                                :rules="customDbStorageLocationRules"
-                                                prepend-inner-icon="mdi-folder-outline"
-                                                @click="openDbStorageFileDialog">
-                                            </v-text-field>
-                                        </v-col>
-                                    </v-row>
-                                </v-container>
-                            </v-card-text>
-                        </v-card>
-                        <h2 class="mx-auto settings-category-title">Docker</h2>
-                        <v-card>
-                            <v-card-text>
-                                <v-container fluid>
-                                    <v-row>
-                                        <v-col cols="12">
-                                            <span class="settings-text">
-                                                This application requires a connection with a local Docker installation
-                                                in order to provide custom protein database functionality. If you
-                                                currently don't have Docker installed locally, you can download it for
-                                                free from <a @click="openInBrowser('https://www.docker.com/products/docker-desktop')">the Docker website</a>.
-                                                We recommend using Docker Desktop, which automatically comes with
-                                                Docker Engine (which in turn is required by this application in order
-                                                to allow easy communication with the Docker daemon.
-                                            </span>
-                                        </v-col>
-                                    </v-row>
-                                    <v-row>
-                                        <v-col cols="12">
-                                            <div class="settings-title">Connection settings</div>
-                                            <span class="settings-text">
-                                                Provide a valid configuration that's required to connect to your local
-                                                Docker installation. All valid configuration options, that will be
-                                                accepted by this application can be found
-                                                <a @click="openInBrowser('https://github.com/apocas/dockerode#getting-started')">
-                                                here</a>. Please note that the default settings provided by this
-                                                application work in most cases, you only need to change this
-                                                configuration if no connection to your local Docker installation can be
-                                                made.
-                                            </span>
-                                        </v-col>
-                                    </v-row>
-                                    <v-row>
-                                        <v-col cols="12">
-                                            <v-textarea filled :rules="dockerConfigRules" v-model="dockerConnectionSettings" :rows="2" v-on:blur="updateDockerConnection" />
-                                        </v-col>
-                                    </v-row>
-                                    <v-row>
-                                        <v-col cols="12">
-                                            <div class="settings-title">
-                                                Docker availability
-                                            </div>
-                                            <a class="settings-text" @click="retrieveDockerInfo">
-                                                Click to refresh status
-                                            </a>
-                                        </v-col>
-                                    </v-row>
-                                    <v-row>
-                                        <v-col cols="12" style="min-height: 132px;">
-                                            <div v-if="dockerInfoLoading" class="d-flex flex-column align-center">
-                                                <v-progress-circular color="primary" indeterminate></v-progress-circular>
-                                                <span>Checking connection with Docker</span>
-                                            </div>
-                                            <div v-else class="d-flex">
-                                                <div style="max-width: 120px;" class="ml-4 mr-8">
-                                                    <v-img v-if="dockerInfo" src="@/assets/images/docker/docker_available.svg"/>
-                                                    <v-img v-else src="@/assets/images/docker/docker_na.svg"/>
-                                                </div>
-                                                <div class="settings-text" v-if="dockerInfo">
-                                                    <div>
-                                                        <strong>Architecture:</strong> {{ dockerInfo.Architecture }}
-                                                    </div>
-                                                    <div>
-                                                        <strong>CPUs available:</strong> {{ dockerInfo.NCPU }}
-                                                    </div>
-                                                    <div>
-                                                        <strong>Total memory available: </strong>
-                                                        {{ dockerInfo.MemTotal }} bytes
-                                                        ({{ (dockerInfo.MemTotal / (Math.pow(2,30))).toFixed(2) }} GiB)
-                                                    </div>
-                                                    <div>
-                                                        <strong>OS type:</strong>
-                                                        {{ dockerInfo.OSType }} ({{ dockerInfo.KernelVersion }})
-                                                    </div>
-                                                    <div>
-                                                        <strong>Docker server version:</strong>
-                                                        {{ dockerInfo.ServerVersion }}
-                                                    </div>
-                                                    <div>
-                                                        <strong>ID:</strong> {{ dockerInfo.ID }}
-                                                    </div>
-                                                </div>
-                                                <span class="settings-text" v-else>
-                                                    We were unable to connect to your local Docker installation. Please
-                                                    verify that Docker engine has been properly installed on your
-                                                    system, that it is currently running and that the configuration
-                                                    provided above is correct. Remember to check your firewall settings
-                                                    if Docker seems to be running perfectly, but no connection can be
-                                                    established.
-                                                </span>
-                                            </div>
-                                        </v-col>
-                                    </v-row>
-                                </v-container>
-                            </v-card-text>
-                        </v-card>
+<!--                        <h2 class="mx-auto settings-category-title">Storage</h2>-->
+<!--                        <v-card>-->
+<!--                            <v-card-text>-->
+<!--                                <v-container fluid>-->
+<!--                                    <v-row>-->
+<!--                                        <v-col cols="8">-->
+<!--                                            <div class="settings-title">Database storage location</div>-->
+<!--                                            <div class="settings-text">-->
+<!--                                                Indicates where the application should store custom database files? Note-->
+<!--                                                that these files can grow quite large in size, depending on the amount-->
+<!--                                                and size of the custom databases you are planning to use. For large-->
+<!--                                                databases, at least 100GiB of free space is required.-->
+<!--                                            </div>-->
+<!--                                        </v-col>-->
+<!--                                        <v-col cols="4">-->
+<!--                                            <v-text-field-->
+<!--                                                single-line-->
+<!--                                                filled-->
+<!--                                                readonly-->
+<!--                                                v-model="customDbStorageLocation"-->
+<!--                                                :rules="customDbStorageLocationRules"-->
+<!--                                                prepend-inner-icon="mdi-folder-outline"-->
+<!--                                                @click="openDbStorageFileDialog">-->
+<!--                                            </v-text-field>-->
+<!--                                        </v-col>-->
+<!--                                    </v-row>-->
+<!--                                </v-container>-->
+<!--                            </v-card-text>-->
+<!--                        </v-card>-->
+<!--                        <h2 class="mx-auto settings-category-title">Docker</h2>-->
+<!--                        <v-card>-->
+<!--                            <v-card-text>-->
+<!--                                <v-container fluid>-->
+<!--                                    <v-row>-->
+<!--                                        <v-col cols="12">-->
+<!--                                            <span class="settings-text">-->
+<!--                                                This application requires a connection with a local Docker installation-->
+<!--                                                in order to provide custom protein database functionality. If you-->
+<!--                                                currently don't have Docker installed locally, you can download it for-->
+<!--                                                free from <a @click="openInBrowser('https://www.docker.com/products/docker-desktop')">the Docker website</a>.-->
+<!--                                                We recommend using Docker Desktop, which automatically comes with-->
+<!--                                                Docker Engine (which in turn is required by this application in order-->
+<!--                                                to allow easy communication with the Docker daemon.-->
+<!--                                            </span>-->
+<!--                                        </v-col>-->
+<!--                                    </v-row>-->
+<!--                                    <v-row>-->
+<!--                                        <v-col cols="12">-->
+<!--                                            <div class="settings-title">Connection settings</div>-->
+<!--                                            <span class="settings-text">-->
+<!--                                                Provide a valid configuration that's required to connect to your local-->
+<!--                                                Docker installation. All valid configuration options, that will be-->
+<!--                                                accepted by this application can be found-->
+<!--                                                <a @click="openInBrowser('https://github.com/apocas/dockerode#getting-started')">-->
+<!--                                                here</a>. Please note that the default settings provided by this-->
+<!--                                                application work in most cases, you only need to change this-->
+<!--                                                configuration if no connection to your local Docker installation can be-->
+<!--                                                made.-->
+<!--                                            </span>-->
+<!--                                        </v-col>-->
+<!--                                    </v-row>-->
+<!--                                    <v-row>-->
+<!--                                        <v-col cols="12">-->
+<!--                                            <v-textarea filled :rules="dockerConfigRules" v-model="dockerConnectionSettings" :rows="2" v-on:blur="updateDockerConnection" />-->
+<!--                                        </v-col>-->
+<!--                                    </v-row>-->
+<!--                                    <v-row>-->
+<!--                                        <v-col cols="12">-->
+<!--                                            <div class="settings-title">-->
+<!--                                                Docker availability-->
+<!--                                            </div>-->
+<!--                                            <a class="settings-text" @click="retrieveDockerInfo">-->
+<!--                                                Click to refresh status-->
+<!--                                            </a>-->
+<!--                                        </v-col>-->
+<!--                                    </v-row>-->
+<!--                                    <v-row>-->
+<!--                                        <v-col cols="12" style="min-height: 132px;">-->
+<!--                                            <div v-if="dockerInfoLoading" class="d-flex flex-column align-center">-->
+<!--                                                <v-progress-circular color="primary" indeterminate></v-progress-circular>-->
+<!--                                                <span>Checking connection with Docker</span>-->
+<!--                                            </div>-->
+<!--                                            <div v-else class="d-flex">-->
+<!--                                                <div style="max-width: 120px;" class="ml-4 mr-8">-->
+<!--                                                    <v-img v-if="dockerInfo" src="@/assets/images/docker/docker_available.svg"/>-->
+<!--                                                    <v-img v-else src="@/assets/images/docker/docker_na.svg"/>-->
+<!--                                                </div>-->
+<!--                                                <div class="settings-text" v-if="dockerInfo">-->
+<!--                                                    <div>-->
+<!--                                                        <strong>Architecture:</strong> {{ dockerInfo.Architecture }}-->
+<!--                                                    </div>-->
+<!--                                                    <div>-->
+<!--                                                        <strong>CPUs available:</strong> {{ dockerInfo.NCPU }}-->
+<!--                                                    </div>-->
+<!--                                                    <div>-->
+<!--                                                        <strong>Total memory available: </strong>-->
+<!--                                                        {{ dockerInfo.MemTotal }} bytes-->
+<!--                                                        ({{ (dockerInfo.MemTotal / (Math.pow(2,30))).toFixed(2) }} GiB)-->
+<!--                                                    </div>-->
+<!--                                                    <div>-->
+<!--                                                        <strong>OS type:</strong>-->
+<!--                                                        {{ dockerInfo.OSType }} ({{ dockerInfo.KernelVersion }})-->
+<!--                                                    </div>-->
+<!--                                                    <div>-->
+<!--                                                        <strong>Docker server version:</strong>-->
+<!--                                                        {{ dockerInfo.ServerVersion }}-->
+<!--                                                    </div>-->
+<!--                                                    <div>-->
+<!--                                                        <strong>ID:</strong> {{ dockerInfo.ID }}-->
+<!--                                                    </div>-->
+<!--                                                </div>-->
+<!--                                                <span class="settings-text" v-else>-->
+<!--                                                    We were unable to connect to your local Docker installation. Please-->
+<!--                                                    verify that Docker engine has been properly installed on your-->
+<!--                                                    system, that it is currently running and that the configuration-->
+<!--                                                    provided above is correct. Remember to check your firewall settings-->
+<!--                                                    if Docker seems to be running perfectly, but no connection can be-->
+<!--                                                    established.-->
+<!--                                                </span>-->
+<!--                                            </div>-->
+<!--                                        </v-col>-->
+<!--                                    </v-row>-->
+<!--                                </v-container>-->
+<!--                            </v-card-text>-->
+<!--                        </v-card>-->
                     </div>
                 </v-col>
             </v-row>
