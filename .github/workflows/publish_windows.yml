@@ -14,12 +14,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16
-      - name: Build/release Electron app
-        uses: samuelmeuli/action-electron-builder@v1
-        with:
-          github_token: ${{ secrets.GH_TOKEN }}
-          use_vue_cli: true
-          windows_certs: ${{ secrets.windows_certs }}
-          windows_certs_password: ${{ secrets.windows_certs_password }}
-          release: true
-
+      - name: Build application for ${{ matrix.os }}
+        run: npm run electron:publish
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CSC_LINK: ${{ secrets.windows_certs }}
+          CSC_KEY_PASSWORD: ${{ secrets.windows_certs_password }}
