@@ -316,8 +316,9 @@ export default class SettingsPage extends Vue {
     @Watch("configuration.maxParallelRequests")
     @Watch("configuration.dockerConnectionSettings")
     private async saveChanges(): Promise<void> {
-        NetworkConfiguration.BASE_URL = this.configuration.apiSource;
-        NetworkConfiguration.PARALLEL_API_REQUESTS = this.configuration.maxParallelRequests;
+        NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
+        // NetworkConfiguration.BASE_URL = this.configuration.apiSource;
+        // NetworkConfiguration.PARALLEL_API_REQUESTS = this.configuration.maxParallelRequests;
         // Update docker connection
     }
 

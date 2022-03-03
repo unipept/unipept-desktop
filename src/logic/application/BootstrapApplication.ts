@@ -34,12 +34,14 @@ export default class BootstrapApplication {
     }
 
     private initializeApi(config: Configuration): void {
-        NetworkConfiguration.BASE_URL = config.apiSource;
+        NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
 
-        // Make sure that the old Unipept URL is no longer being used...
-        if (NetworkConfiguration.BASE_URL === "https://unipept.ugent.be") {
-            NetworkConfiguration.BASE_URL = "https://api.unipept.ugent.be";
-        }
+        // NetworkConfiguration.BASE_URL = config.apiSource;
+        //
+        // // Make sure that the old Unipept URL is no longer being used...
+        // if (NetworkConfiguration.BASE_URL === "https://unipept.ugent.be") {
+        //     NetworkConfiguration.BASE_URL = "https://api.unipept.ugent.be";
+        // }
 
         NetworkConfiguration.PARALLEL_API_REQUESTS = config.maxParallelRequests;
     }

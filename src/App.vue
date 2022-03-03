@@ -99,11 +99,9 @@ const { app } = require("electron").remote;
                 return this.$store.getters.useNativeTitlebar;
             }
         },
-        assaysInProgress: {
-            get(): Assay[] {
-                return this.$store.getters.assays
-                    .filter((a: AssayAnalysisStatus) => !a.analysisReady)
-                    .map((a: AssayAnalysisStatus) => a.assay);
+        activeAssay: {
+            get(): AssayAnalysisStatus {
+                return this.$store.getters.activeAssay;
             }
         },
         isMini: {
@@ -178,15 +176,14 @@ export default class App extends Vue implements ErrorListener {
         this.errorDialog = true;
     }
 
-    @Watch("assaysInProgress")
-    private assaysInProgressChanged(assays: Assay[]) {
-        if (!assays || assays.length === 0) {
+    @Watch("activeAssay")
+    private activeAssayChanged(assay: AssayAnalysisStatus) {
+        if (assay.analysisReady) {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
-            const average: number = assays.reduce(
-                (prev: number, currentAssay: Assay) => prev + this.$store.getters["assayData"](currentAssay).originalProgress.value, 0
-            ) / assays.length;
-            electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(average);
+            electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(
+                this.$store.getters.activeAssay.originalProgress.currentValue
+            );
         }
     }
 
