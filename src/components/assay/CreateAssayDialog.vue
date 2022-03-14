@@ -338,7 +338,7 @@ export default class CreateAssayDialog extends Vue {
         this.renderableSources.push({
             type: "online",
             title: "Online Unipept service",
-            subtitle: "https://rick.ugent.be"
+            subtitle: "http://localhost:3000"
         });
 
         for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
