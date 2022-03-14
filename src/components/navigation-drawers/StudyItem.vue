@@ -117,6 +117,7 @@ import path from "path";
 import { isText, isBinary, getEncoding } from "istextorbinary";
 import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
+import StudyManager from "@/logic/filesystem/study/StudyManager";
 
 
 const { remote } = require("electron");
@@ -267,8 +268,11 @@ export default class StudyItem extends Vue {
         this.isEditingStudyName = true;
     }
 
-    private disableStudyEdit() {
+    private async disableStudyEdit() {
         if (this.checkStudyNameValidity()) {
+            // First write the changes to this study to disk.
+            const studyManager = new StudyManager(this.$store.getters.dbManager, this.$store.getters.projectLocation);
+            await studyManager.renameStudy(this.study, this.study.getName(), this.studyName);
             this.study.setName(this.studyName);
             this.isEditingStudyName = false;
         }
