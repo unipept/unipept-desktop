@@ -164,7 +164,7 @@ export default class PeptideSummaryTable extends Vue {
     }
 
     private openPeptide(peptide: Peptide): void {
-        this.$store.dispatch("peptideSummary/setPeptide", [peptide, this.assay.getSearchConfiguration().equateIl]);
+        this.$store.dispatch("analyseSinglePeptide", [peptide, this.assay.getSearchConfiguration().equateIl]);
         this.$router.push("/peptide/single");
     }
 }
