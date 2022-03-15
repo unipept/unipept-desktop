@@ -1,8 +1,8 @@
-import schema_v3 from "raw-loader!@/db/schemas/schema_v3.sql";
+import schema_v4 from "raw-loader!@/db/schemas/schema_v4.sql";
 
 export default class Schema {
-    public static LATEST_VERSION: number = 3;
-    public static LATEST_SCHEMA: string = schema_v3;
+    public static LATEST_VERSION: number = 4;
+    public static LATEST_SCHEMA: string = schema_v4;
 }
 
 // Type definitions for all the different rows in the database schema.

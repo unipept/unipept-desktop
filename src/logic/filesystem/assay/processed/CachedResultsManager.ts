@@ -23,6 +23,7 @@ import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigMa
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 import StorageMetadata from "@/logic/filesystem/metadata/StorageMetadata";
 import PeptideTrustManager from "@/logic/filesystem/trust/PeptideTrustManager";
+import BufferUtils from "@/logic/filesystem/BufferUtils";
 
 export default class CachedResultsManager {
     constructor(
@@ -188,19 +189,6 @@ export default class CachedResultsManager {
         }
     }
 
-    private arrayBufferToBuffer(buffer: ArrayBuffer): Buffer {
-        return Buffer.from(buffer);
-    }
-
-    private bufferToSharedArrayBuffer(buf: Buffer): SharedArrayBuffer {
-        const ab = new SharedArrayBuffer(buf.length);
-        const view = new Uint8Array(ab);
-        for (let i = 0; i < buf.length; ++i) {
-            view[i] = buf[i];
-        }
-        return ab;
-    }
-
     /**
      * Write the given assay and the corresponding data to the filesystem.
      *
@@ -239,8 +227,8 @@ export default class CachedResultsManager {
         const dataBufferPath = this.getDataBufferPath(assay);
 
         try {
-            const indexBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(indexBufferPath));
-            const dataBuffer = this.bufferToSharedArrayBuffer(await fs.readFile(dataBufferPath));
+            const indexBuffer = BufferUtils.bufferToSharedArrayBuffer(await fs.readFile(indexBufferPath));
+            const dataBuffer = BufferUtils.bufferToSharedArrayBuffer(await fs.readFile(dataBufferPath));
 
             const output = new ShareableMap<Peptide, PeptideData>(0, 0, new PeptideDataSerializer());
             output.setBuffers(indexBuffer, dataBuffer);
