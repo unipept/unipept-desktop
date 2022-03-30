@@ -5,7 +5,7 @@
             <v-list two-line>
                 <v-list-item
                     v-for="recentProject of recentProjects"
-                    :key="recentProject.name"
+                    :key="recentProject.path"
                     @click="openPreviouslyLoadedProject(recentProject.path)">
                     <v-list-item-content>
                         <v-list-item-title>{{ recentProject.name }}</v-list-item-title>
