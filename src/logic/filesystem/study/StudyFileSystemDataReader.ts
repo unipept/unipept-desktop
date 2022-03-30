@@ -2,10 +2,11 @@ import FileSystemStudyVisitor from "./FileSystemStudyVisitor";
 import * as fs from "fs";
 import path from "path";
 import AssayFileSystemDataReader from "@/logic/filesystem/assay/AssayFileSystemDataReader";
-import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException } from "unipept-web-components";
+import { Study, Assay, ProteomicsAssay, AssayVisitor, IOException, NetworkConfiguration } from "unipept-web-components";
 import { Database } from "better-sqlite3";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 
 
 /**
@@ -34,7 +35,7 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
             for (const file of files.filter(name => name.endsWith(".pep"))) {
                 const assayName: string = path.basename(file).replace(".pep", "");
 
-                let assay: Assay;
+                let assay: ProteomicsAssay;
 
                 const row = await this.dbManager.performQuery<any>((db: Database) => {
                     return db.prepare(
@@ -54,12 +55,15 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
                     assay = new ProteomicsAssay();
                     assay.setName(assayName);
 
-                    const assayVisitor: AssayVisitor = new AssayFileSystemDataWriter(
+                    const assayReader = new AssayFileSystemDataReader(this.studyPath, this.dbManager, this.projectLocation);
+                    await assay.accept(assayReader);
+
+                    const assayWriter: AssayVisitor = new AssayFileSystemDataWriter(
                         this.studyPath,
                         this.dbManager,
                         study
                     );
-                    await assay.accept(assayVisitor);
+                    await assay.accept(assayWriter);
                 }
 
                 study.addAssay(assay);
