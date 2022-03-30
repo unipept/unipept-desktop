@@ -42,8 +42,6 @@ export default class DatabaseMigratorV2ToV3 implements DatabaseMigrator {
             });
         }
 
-        console.log(JSON.stringify(assays));
-
         const studyData = database.prepare(
             "SELECT * FROM studies"
         ).all();
