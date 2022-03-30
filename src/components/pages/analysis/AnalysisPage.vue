@@ -8,11 +8,16 @@
                 'float': 'right'
             }">
 
+            <v-alert type="warning" class="ma-2" v-if="isDemoProjectActive">
+                You are currently browsing the demo project. Changes made to this project will not be saved.
+            </v-alert>
+
             <!-- Show analysis results for the currently selected assay if it's ready with processing -->
             <v-container
                 v-if="!errorStatus && activeAssay && activeAssay.analysisReady"
                 fluid
                 class="pt-0">
+
                 <router-view></router-view>
             </v-container>
 
@@ -142,6 +147,8 @@ import CreateAssayDialog from "@/components/assay/CreateAssayDialog.vue";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 import { Watch } from "vue-property-decorator";
 
+const { app } = require("electron").remote;
+
 @Component({
     components: {
         ProgressReportSummary,
@@ -192,6 +199,12 @@ export default class AnalysisPage extends Vue {
         // item.currentValue = 45;
         // return item;
         return this.activeAssay?.originalProgress;
+    }
+
+    get isDemoProjectActive(): boolean {
+        const projectLocation: string = this.$store.getters.projectLocation;
+        const tempPath: string = app.getPath("temp");
+        return projectLocation && projectLocation.includes(tempPath);
     }
 
     private reanalyse() {
