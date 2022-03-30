@@ -1,5 +1,13 @@
 import FileSystemAssayVisitor from "@/logic/filesystem/assay/FileSystemAssayVisitor";
-import { ProteomicsAssay, IOException, QueueManager, Assay, Study, SearchConfiguration } from "unipept-web-components";
+import {
+    ProteomicsAssay,
+    IOException,
+    QueueManager,
+    Assay,
+    Study,
+    SearchConfiguration,
+    NetworkConfiguration
+} from "unipept-web-components";
 import { promises as fs } from "fs";
 import Worker from "worker-loader?inline=fallback!./AssayFileSystemDataReader.worker";
 import { Database } from "better-sqlite3";
@@ -10,6 +18,7 @@ import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
+import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     private static inProgress: Promise<string[]>;
@@ -67,7 +76,6 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
 
             const searchConfigMng = new SearchConfigManager(this.dbManager);
 
-            mpAssay.setName(assayRow.name);
             mpAssay.setSearchConfiguration(await searchConfigMng.readSearchConfig(assayRow.configuration_id));
             mpAssay.setAnalysisSource(
                 await AnalysisSourceSerializer.deserializeAnalysisSource(
@@ -82,8 +90,15 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
                 mpAssay.setDate(metadata.analysisDate);
             }
         } else {
-            // Throw an exception, the assay was not found in the database
-            throw new IOException("Requested assay was not found in the database!");
+            mpAssay.setSearchConfiguration(new SearchConfiguration());
+            mpAssay.setAnalysisSource(
+                new CachedOnlineAnalysisSource(
+                    NetworkConfiguration.BASE_URL,
+                    mpAssay,
+                    this.dbManager,
+                    this.projectLocation
+                )
+            );
         }
     }
 }

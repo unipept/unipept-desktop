@@ -22,9 +22,6 @@
                     'left': isMini ? '55px' : (toolbarWidth + 55) + 'px'
                 }"
                 class="main-container">
-                <v-alert type="warning" class="ma-2" v-if="isDemoProjectActive">
-                    You are currently browsing the demo project. Changes made to this project will not be saved.
-                </v-alert>
                 <router-view style="min-height: 100%;"></router-view>
                 <v-dialog v-model="errorDialog" persistent max-width="600">
                     <v-card>
@@ -129,12 +126,6 @@ export default class App extends Vue implements ErrorListener {
 
     private showHomePageDialog: boolean = true;
     private errorDialog: boolean = false;
-
-    get isDemoProjectActive(): boolean {
-        const projectLocation: string = this.$store.getters.projectLocation;
-        const tempPath: string = app.getPath("temp");
-        return projectLocation && projectLocation.includes(tempPath);
-    }
 
     async mounted() {
         // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation
