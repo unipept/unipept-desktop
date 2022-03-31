@@ -1,5 +1,5 @@
 <template>
-    <v-card v-if="assay && peptideTrust">
+    <v-card v-if="assay && originalPeptideTrust">
         <v-card-title>
             {{ assay.getName() }}
         </v-card-title>
@@ -18,8 +18,19 @@
                             <div class="flex-grow-1 d-flex align-start flex-column ml-12">
                                 <div class="title">Metaproteomics sample</div>
                                 <div class="subtitle-1">
-                                    {{ peptideTrust.matchedPeptides }} peptides found,
-                                    {{ peptideTrust.searchedPeptides }} peptides in assay
+                                    {{ originalPeptideTrust.matchedPeptides }} peptides found,
+                                    {{ originalPeptideTrust.searchedPeptides }} peptides in assay
+                                </div>
+                                <div>
+                                    <span v-if="!filteredPeptideTrust">
+                                        Applying filter...
+                                    </span>
+                                    <span v-else-if="isFilterApplied">
+                                        {{ filteredPeptideTrust.matchedPeptides }} peptides in current selection
+                                    </span>
+                                    <span v-else>
+                                        No filter applied
+                                    </span>
                                 </div>
                                 <div class="subtitle-2">Last analysed on {{ getHumanReadableAssayDate() }}</div>
 
@@ -153,8 +164,16 @@ export default class AnalysisSummary extends Vue {
 
     private searchConfigIsValid: boolean = true;
 
-    get peptideTrust(): PeptideTrust {
-        return this.$store.getters.assayData(this.assay)?.peptideTrust;
+    get originalPeptideTrust(): PeptideTrust {
+        return this.$store.getters.assayData(this.assay)?.originalData?.trust;
+    }
+
+    get filteredPeptideTrust(): PeptideTrust {
+        return this.$store.getters.assayData(this.assay)?.filteredData?.trust;
+    }
+
+    get isFilterApplied(): boolean {
+        return this.$store.getters.assayData(this.assay)?.filterId !== 1;
     }
 
     get endpoint(): string {
