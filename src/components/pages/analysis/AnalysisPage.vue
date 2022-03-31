@@ -13,7 +13,7 @@
             </v-alert>
 
             <v-alert
-                v-if="isFilterActive"
+                v-if="isFilterActive && filteredTrust"
                 class="ma-2"
                 type="info">
                 <v-row dense align="center">
