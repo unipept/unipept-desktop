@@ -81,12 +81,14 @@ export default class PeptideSummaryTable extends Vue {
 
     private loading: boolean = true;
 
+    private showFiltered: boolean = false;
+
     get totalItems(): number {
         return this.peptideCountTable?.totalCount;
     }
 
     get peptideCountTable(): CountTable<Peptide> {
-        return this.$store.getters.assayData(this.assay)?.originalData?.peptideCountTable;
+        return this.$store.getters.assayData(this.assay)?.filteredData?.peptideCountTable;
     }
 
     get lcaOntology(): Ontology<NcbiId, NcbiTaxon> {

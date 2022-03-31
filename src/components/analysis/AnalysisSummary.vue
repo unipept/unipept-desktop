@@ -90,12 +90,14 @@
                                     Update
                                 </v-btn>
                             </tooltip>
-                            <export-results-button :assay="assay" button-text="Export results"></export-results-button>
                         </div>
                     </v-col>
+
                     <v-col sm="12" lg="6">
-                        <peptide-summary-table :assay="assay">
-                        </peptide-summary-table>
+                        <peptide-summary-table :assay="assay" />
+                        <div class="d-flex justify-center">
+                            <export-results-button :assay="assay" button-text="Export results" />
+                        </div>
                     </v-col>
                 </v-row>
             </v-container>
