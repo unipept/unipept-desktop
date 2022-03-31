@@ -12,6 +12,26 @@
                 You are currently browsing the demo project. Changes made to this project will not be saved.
             </v-alert>
 
+            <v-alert
+                v-if="isFilterActive"
+                class="ma-2"
+                type="info">
+                <v-row dense align="center">
+                    <v-col class="grow">
+                        <b>
+                            Filtered results:
+                        </b>
+                        these results are limited to the {{ this.filteredTrust.matchedPeptides }} peptides specific to
+                        <b>
+                            {{ this.filteredNcbiTaxon.name }} ({{this.filteredNcbiTaxon.rank}})
+                        </b>
+                    </v-col>
+                    <v-col class="shrink">
+                        <v-btn @click="resetFilter" color="white" class="black--text" x-small>Reset filter</v-btn>
+                    </v-col>
+                </v-row>
+            </v-alert>
+
             <!-- Show analysis results for the currently selected assay if it's ready with processing -->
             <v-container
                 v-if="!errorStatus && activeAssay && activeAssay.analysisReady"
@@ -138,7 +158,14 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { ProteomicsAssay, AssayAnalysisStatus, StringUtils, Study, ProgressReport } from "unipept-web-components";
+import {
+    ProteomicsAssay,
+    AssayAnalysisStatus,
+    StringUtils,
+    Study,
+    ProgressReport,
+    PeptideTrust, NcbiTaxon, Ontology, NcbiId
+} from "unipept-web-components";
 import Snake from "@/components/games/Snake.vue";
 import Toolbar from "@/components/navigation-drawers/Toolbar.vue";
 import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue";
@@ -207,6 +234,26 @@ export default class AnalysisPage extends Vue {
         return projectLocation && projectLocation.includes(tempPath);
     }
 
+    get filteredId(): NcbiId {
+        return this.activeAssay?.filterId;
+    }
+
+    get isFilterActive(): boolean {
+        return this.filteredId !== 1;
+    }
+
+    get filteredTrust(): PeptideTrust {
+        return this.activeAssay?.filteredData?.trust;
+    }
+
+    get ncbiOntology(): Ontology<NcbiId, NcbiTaxon> {
+        return this.activeAssay?.ncbiOntology;
+    }
+
+    get filteredNcbiTaxon(): NcbiTaxon {
+        return this.ncbiOntology.getDefinition(this.filteredId);
+    }
+
     private reanalyse() {
         if (this.activeAssay) {
             this.$store.dispatch("analyseAssay", this.activeAssay.assay);
@@ -230,6 +277,10 @@ export default class AnalysisPage extends Vue {
 
     private msToTimeString(ms: number) {
         return StringUtils.secondsToTimeString(ms / 1000);
+    }
+
+    private resetFilter() {
+        this.$store.dispatch("filterAssayByTaxon", [this.activeAssay.assay, 1]);
     }
 }
 </script>
