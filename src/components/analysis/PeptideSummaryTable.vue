@@ -23,7 +23,7 @@
                             @click:clear="clearSearch"
                             @keydown.enter="performSearch">
                         </v-text-field>
-                        <v-btn small class="mr-6" @click="performSearch">
+                        <v-btn small class="mr-6" @click="performSearch" :disabled="loading">
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
                     </div>
@@ -41,7 +41,14 @@
             </div>
         </template>
         <template v-slot:item.lca="{ item }">
-            <div :title="item.lca" v-html="highlightFilter(item.lca, currentSearch)"></div>
+            <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                    <div v-on="on">
+                        <a @click="filterByLca(item.lcaId)" v-html="highlightFilter(item.lca, currentSearch)"></a>
+                    </div>
+                </template>
+                <span>Click to filter results by this organism.</span>
+            </v-tooltip>
         </template>
         <template v-slot:item.rank="{ item }">
             <div :title="item.rank" v-html="highlightFilter(item.rank, currentSearch)"></div>
@@ -61,7 +68,8 @@ export type PeptideSummary = {
     peptide: string,
     count: number,
     lca: string,
-    rank: string
+    rank: string,
+    lcaId: NcbiId
 };
 
 @Component({
@@ -162,6 +170,15 @@ export default class PeptideSummaryTable extends Vue {
         return html;
     }
 
+    /**
+     * Apply the current filter state of the application to the NCBI ID that's given as an argument to this function.
+     *
+     * @param filterId
+     */
+    private filterByLca(filterId: NcbiId): void {
+        this.$store.dispatch("filterAssayByTaxon", [this.assay, filterId]);
+    }
+
     private async clearSearch() {
         this.search = "";
         this.performSearch();
@@ -169,7 +186,8 @@ export default class PeptideSummaryTable extends Vue {
 
     private async performSearch() {
         this.loading = true;
-        if (this.search === "") {
+        if (!this.search) {
+            this.search = "";
             this.peptides = this.peptideCountTable.getOntologyIds();
         } else {
             const lowercaseSearch = this.search.toLowerCase();
@@ -244,7 +262,8 @@ export default class PeptideSummaryTable extends Vue {
                     peptide,
                     count: this.peptideCountTable.getCounts(peptide),
                     lca: lcaName,
-                    rank
+                    rank,
+                    lcaId: response.lca
                 })
             }
 
@@ -258,6 +277,7 @@ export default class PeptideSummaryTable extends Vue {
     @Watch("assay")
     @Watch("peptideCountTable", { immediate: true })
     private async onInputChanged() {
+        this.search = "";
         await this.performSearch();
     }
 
