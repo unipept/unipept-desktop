@@ -124,9 +124,9 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         sortDescending: boolean = true
     ): NcbiId[] {
         return this.db.prepare(
-            `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND rank LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
+            `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND rank = ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
         )
-            .all(`%${nameFilter}%`, `%${rankFilter.toLowerCase()}%`, end - start, start)
+            .all(`%${nameFilter}%`, rankFilter.toLowerCase(), end - start, start)
             .map((item: any) => item.id);
     }
 }

@@ -102,6 +102,7 @@
                             impact on the size and performance of the resulting database. More taxa equals larger
                             databases and increased lookup time.
                         </div>
+<!--                        <taxa-tree></taxa-tree>-->
                         <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
 
                         <div class="d-flex justify-end mb-2">
@@ -190,6 +191,7 @@ import axios from "axios";
 
 import https from "https";
 import TaxaBrowser from "@/components/taxon/TaxaBrowser.vue";
+import TaxaTree from "@/components/taxon/TaxaTree.vue";
 import {
     CountTable,
     LcaCountTableProcessor,
@@ -202,8 +204,9 @@ import {
 import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+
 @Component({
-    components: { TaxaBrowser }
+    components: { TaxaBrowser, TaxaTree }
 })
 export default class CreateCustomDatabase extends Vue {
     @Prop({ required: true })
