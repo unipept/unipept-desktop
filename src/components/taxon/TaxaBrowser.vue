@@ -21,13 +21,28 @@
                 <td></td>
                 <td></td>
                 <td>
-                    <v-text-field
-                        dense
-                        hide-details
-                        v-model="search"
-                        label="Filter"
-                        class="my-4"
-                    ></v-text-field>
+                    <div class="d-flex align-center">
+                        <v-text-field
+                            dense
+                            hide-details
+                            clearable
+                            v-model="search"
+                            label="Filter"
+                            class="my-4 mr-2"
+                            :loading="filterLoading"
+                            @keydown.enter="filterByName"
+                            @click:clear="clearFilter"/>
+                        <v-btn small @click="filterByName" :loading="filterLoading">
+                            <v-icon>
+                                mdi-magnify
+                            </v-icon>
+                        </v-btn>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-center">
+                        <v-select :items="ranks" v-model="selectedRank"></v-select>
+                    </div>
                 </td>
                 <td colspan="4"></td>
             </tr>
@@ -38,7 +53,7 @@
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { DefaultCommunicationSource, NcbiId, NcbiOntologyProcessor, NcbiTaxon, Ontology } from "unipept-web-components";
+import { DefaultCommunicationSource, NcbiId, NcbiOntologyProcessor, NcbiRank, NcbiTaxon, Ontology } from "unipept-web-components";
 import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import { Prop, Watch } from "vue-property-decorator";
@@ -74,6 +89,9 @@ export default class TaxaBrowser extends Vue {
         }
     ];
 
+    private ranks: string[] = ["All"].concat([...Object.keys(NcbiRank)]);
+    private selectedRank: string = "All";
+
     private search: string = "";
 
     private taxaCount: number = 0;
@@ -81,13 +99,13 @@ export default class TaxaBrowser extends Vue {
 
     private loading: boolean = true;
 
+    private filterLoading: boolean = false;
+
     // @ts-ignore
     private options: DataOptions = {};
 
     private ncbiCommunicator: CachedNcbiResponseCommunicator;
     private ncbiOntologyProcessor: NcbiOntologyProcessor;
-
-    private searchDebounceTimer: NodeJS.Timeout;
 
     private selectedItems: NcbiTaxon[] = [];
 
@@ -99,20 +117,33 @@ export default class TaxaBrowser extends Vue {
         this.loading = false;
     }
 
-    @Watch("search")
-    private async onSearchChanged(): Promise<void> {
-        if (this.searchDebounceTimer) {
-            clearTimeout(this.searchDebounceTimer);
-        }
+    private async clearFilter(): Promise<void> {
+        this.search = "";
+        await this.filterByName();
+    }
 
-        this.searchDebounceTimer = setTimeout(() => {
-            this.taxaCount = this.ncbiCommunicator.getNcbiCount(this.search);
-            this.searchDebounceTimer = null;
-        }, 500);
+    private async filterByName(): Promise<void> {
+        this.filterLoading = true;
+        this.taxaCount = this.ncbiCommunicator.getNcbiCount(
+            this.search,
+            this.selectedRank === "All" ? "" : this.selectedRank
+        );
+        await this.onOptionsChanged();
+        this.filterLoading = false;
+    }
+
+    @Watch("selectedRank")
+    private async filterByRank(): Promise<void> {
+        this.filterLoading = true;
+        this.taxaCount = this.ncbiCommunicator.getNcbiCount(
+            this.search,
+            this.selectedRank === "All" ? "" : this.selectedRank
+        );
+        await this.onOptionsChanged();
+        this.filterLoading = false;
     }
 
     @Watch("options")
-    @Watch("search")
     private async onOptionsChanged(): Promise<void> {
         if (this.ncbiOntologyProcessor && !this.loading) {
             const { sortBy, sortDesc, page, itemsPerPage } = this.options;
@@ -121,6 +152,7 @@ export default class TaxaBrowser extends Vue {
                 itemsPerPage * (page - 1),
                 itemsPerPage * page,
                 this.search,
+                this.selectedRank === "All" ? "" : this.selectedRank,
                 (sortBy.length > 0 ? sortBy[0] : undefined) as "id" | "name" | "rank",
                 sortDesc.length > 0 ? sortDesc[0] : undefined
             );

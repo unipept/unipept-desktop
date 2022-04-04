@@ -95,10 +95,11 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
      *
      * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
      * function.
+     * @param rankFilter Only look for taxa that are associated with this given rank.
      */
-    public getNcbiCount(nameFilter: string = ""): number {
-        return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name LIKE ?")
-            .get(`%${nameFilter}%`)["COUNT(id)"];
+    public getNcbiCount(nameFilter: string = "", rankFilter: string = ""): number {
+        return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name LIKE ? AND rank LIKE ?")
+            .get(`%${nameFilter}%`, `%${rankFilter}%`)["COUNT(id)"];
     }
 
     /**
@@ -110,6 +111,7 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
      * @param end First NCBI id that should not be included in the result (exclusive).
      * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
      * function.
+     * @param rankFilter Only look for taxa that are associated with this given rank.
      * @param sortBy Which taxon property should be used to sort the table?
      * @param sortDescending Sort according to ascending or descending values in the selected column?
      */
@@ -117,13 +119,14 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         start: number,
         end: number,
         nameFilter: string = "",
+        rankFilter: string,
         sortBy: "id" | "name" | "rank" = "id",
         sortDescending: boolean = true
     ): NcbiId[] {
         return this.db.prepare(
-            `SELECT id, name, rank FROM taxons WHERE name LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
+            `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND rank LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
         )
-            .all(`%${nameFilter}%`, end - start, start)
+            .all(`%${nameFilter}%`, `%${rankFilter.toLowerCase()}%`, end - start, start)
             .map((item: any) => item.id);
     }
 }
