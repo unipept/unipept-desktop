@@ -9,9 +9,9 @@
         :loading="loading"
         loading-text="Loading items...">
         <template v-slot:footer.prepend>
-            <v-tooltip bottom>
+            <v-tooltip bottom open-delay="500">
                 <template v-slot:activator="{ on, attrs }">
-                    <div v-on="on" class="d-flex align-center flex-grow-1">
+                    <div v-on="on" class="d-flex align-center">
                         <v-text-field
                             v-model="search"
                             dense
@@ -21,7 +21,8 @@
                             clearable
                             :disabled="loading"
                             @click:clear="clearSearch"
-                            @keydown.enter="performSearch">
+                            @keydown.enter="performSearch"
+                            style="max-width: 175px;">
                         </v-text-field>
                         <v-btn small class="mr-6" @click="performSearch" :disabled="loading">
                             <v-icon>mdi-magnify</v-icon>
@@ -41,7 +42,7 @@
             </div>
         </template>
         <template v-slot:item.lca="{ item }">
-            <v-tooltip bottom>
+            <v-tooltip bottom open-delay="500">
                 <template v-slot:activator="{ on, attrs }">
                     <div v-on="on">
                         <a @click="filterByLca(item.lcaId)" v-html="highlightFilter(item.lca, currentSearch)"></a>
