@@ -10,6 +10,7 @@
                 <single-dataset-visualizations-card
                     :assay="activeAssay"
                     :analysisInProgress="true"
+                    :filter-id="filterId"
                     v-on:update-selected-term="onUpdateSelectedTerm"
                     v-on:update-selected-taxon-id="onUpdateSelectedTaxonId">
                 </single-dataset-visualizations-card>
@@ -32,7 +33,7 @@ import Component from "vue-class-component";
 import {
     ProteomicsAssay,
     SingleDatasetVisualizationsCard,
-    FunctionalSummaryCard
+    FunctionalSummaryCard, NcbiId
 } from "unipept-web-components";
 import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 
@@ -46,6 +47,10 @@ import AnalysisSummary from "@/components/analysis/AnalysisSummary.vue";
 export default class SingleAssayAnalysisPage extends Vue {
     get activeAssay(): ProteomicsAssay {
         return this.$store.getters.activeAssay?.assay;
+    }
+
+    get filterId(): NcbiId {
+        return this.$store.getters.activeAssay?.filterId;
     }
 
     private onUpdateSelectedTaxonId(id: number) {
