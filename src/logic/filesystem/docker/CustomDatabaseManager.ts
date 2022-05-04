@@ -31,10 +31,12 @@ export default class CustomDatabaseManager {
                 // Check if a metadata file is present in the folder that was found. If it is present, we should read
                 // the database name and other metadata from this file.
                 try {
-                    const metadata = JSON.parse(await fs.readFile(
-                        path.join(dbRootFolder, "databases", dir, "metadata.json"),
-                        { encoding: "utf-8" }
-                    ));
+                    const metadata = JSON.parse(
+                        await fs.readFile(
+                            this.metadataPath(dbRootFolder, dir),
+                            { encoding: "utf-8" }
+                        )
+                    );
 
                     databases.push(
                         new CustomDatabase(
@@ -87,10 +89,10 @@ export default class CustomDatabaseManager {
      * @param db CustomDatabase object for which the metadata should be updated.
      */
     public async updateMetadata(dbRootFolder: string, db: CustomDatabase): Promise<void> {
-        const path = this.metadataPath(dbRootFolder, db);
+        const path = this.metadataPath(dbRootFolder, db.name);
         // Make sure that the path to the database that we want to build actually exists, before trying to write the
-        // metadata file to it.
-        await mkdirp(dirname(path));
+        // metadata file to it.d .
+        await fs.mkdir(dirname(path), { recursive:true })
         return fs.writeFile(path, JSON.stringify(db));
     }
 
@@ -128,9 +130,10 @@ export default class CustomDatabaseManager {
      *
      * @param dbRootFolder The root folder in which all custom database information for the complete application is
      * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
-     * @param db CustomDatabase object for which the path to it's metadata file on the filesystem should be constructed.
+     * @param dbName Name of the custom database for which the path to it's metadata file on the filesystem should be
+     * constructed.
      */
-    private metadataPath(dbRootFolder: string, db: CustomDatabase): string {
-        return path.join(dbRootFolder, "databases", db.name, "metadata.json");
+    private metadataPath(dbRootFolder: string, dbName: string): string {
+        return path.join(dbRootFolder, "databases", dbName, "metadata", "metadata.json");
     }
 }

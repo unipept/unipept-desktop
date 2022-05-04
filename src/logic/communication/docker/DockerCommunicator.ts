@@ -2,6 +2,7 @@ import Dockerode  from "dockerode";
 import { NcbiId, ProgressListener } from "unipept-web-components";
 import ProgressInspectorStream from "@/logic/communication/docker/ProgressInspectorStream";
 import { promises as fs } from "fs";
+import path from "path";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
@@ -13,7 +14,9 @@ export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
     private static readonly WEB_CONTAINER_NAME = "unipept_web";
 
-    public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({ socketPath: "/var/run/docker.sock" });
+    public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({
+        socketPath: "/var/run/docker.sock"
+    });
     public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
         protocol: "tcp",
         host: "127.0.0.1",
@@ -67,36 +70,43 @@ export default class DockerCommunicator {
         await fs.rmdir(databaseFolder, { recursive: true });
         await mkdirp(databaseFolder);
 
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-custom-db:1.1.1",
-                [],
-                new ProgressInspectorStream(progressListener, () => resolve(), (n: number) => customDb.entries = n),
-                {
-                    Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                    Env: [
-                        "MYSQL_ROOT_PASSWORD=unipept",
-                        "MYSQL_DATABASE=unipept",
-                        "MYSQL_USER=unipept",
-                        "MYSQL_PASSWORD=unipept",
-                        `DB_TYPES=${customDb.sourceTypes.join(",")}`,
-                        `DB_SOURCES=${customDb.sources.join(",")}`,
-                        `FILTER_TAXA=${customDb.taxa.join(",")}`
-                    ],
-                    PortBindings: {
-                        "3306/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: "3306"
-                        }]
-                    },
-                    Binds: [
-                        // Mount the folder in which the MySQL-specific database files will be kept
-                        `${databaseFolder}:/var/lib/mysql`,
-                        // Mount the folder in which the reusable database index structure will be kept
-                        `${indexFolder}:/data`
-                    ]
-                }
-            );
+        await new Promise<void>(async(resolve, reject) => {
+            try {
+                await DockerCommunicator.connection.run(
+                    "pverscha/unipept-database:1.0.0",
+                    [],
+                    new ProgressInspectorStream(progressListener, () => resolve(), (n: number) => customDb.entries = n),
+                    {
+                        Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
+                        Env: [
+                            "MYSQL_ROOT_PASSWORD=unipept",
+                            "MYSQL_DATABASE=unipept",
+                            "MYSQL_USER=unipept",
+                            "MYSQL_PASSWORD=unipept",
+                            `DB_TYPES=${customDb.sourceTypes.join(",")}`,
+                            `DB_SOURCES=${customDb.sources.join(",")}`,
+                            `FILTER_TAXA=${customDb.taxa.join(",")}`
+                        ],
+                        PortBindings: {
+                            "3306/tcp": [{
+                                HostIP: "0.0.0.0",
+                                HostPort: "3306"
+                            }]
+                        },
+                        Binds: [
+                            // Mount the folder in which the MySQL-specific database files will be kept
+                            `${databaseFolder}:/var/lib/mysql`,
+                            // Mount the folder in which the reusable database index structure will be kept
+                            `${indexFolder}:/data`
+                        ]
+                    }
+                );
+
+                // If resolve has not yet been called, we call it here.
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
         });
 
         customDb.complete = true;

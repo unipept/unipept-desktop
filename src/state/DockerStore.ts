@@ -12,7 +12,12 @@ type CustomDatabaseInfo = {
     database: CustomDatabase,
     progress: ProgressReport,
     // Whether the database has been constructed successfully.
-    ready: boolean
+    ready: boolean,
+    error: {
+        status: boolean,
+        message: string,
+        object: Error
+    }
 };
 
 export { CustomDatabaseInfo };
@@ -35,20 +40,14 @@ const progressSteps: string[] = [
 
 export interface CustomDatabaseState {
     databases: CustomDatabaseInfo[],
-    // A list of all custom database objects that are queued for construction. Once the previous database has been
-    // built, the next one can be retrieved from this list and should start it's construction. This list is populated
-    // when the application starts.
-    queue: CustomDatabase[],
     // Is the construction process for at least one database currently in progress?
     constructionInProgress: boolean
 }
 
 const databaseState: CustomDatabaseState = {
     databases: [],
-    queue: [],
     constructionInProgress: false
 }
-
 
 const databaseGetters: GetterTree<CustomDatabaseState, any> = {
     databases(state: CustomDatabaseState): CustomDatabaseInfo[] {
@@ -57,10 +56,6 @@ const databaseGetters: GetterTree<CustomDatabaseState, any> = {
 
     databaseInfo(state: CustomDatabaseState): (db: CustomDatabase) => CustomDatabaseInfo | undefined {
         return (db: CustomDatabase) => state.databases.find(d => d.database.name === db.name);
-    },
-
-    queue(state: CustomDatabaseState): CustomDatabase[] {
-        return state.queue;
     },
 
     constructionInProgress(state: CustomDatabaseState): boolean {
@@ -83,21 +78,26 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
                 currentValue: -1,
                 eta: -1
             },
-            ready: false
+            ready: false,
+            error: {
+                status: false,
+                message: "",
+                object: undefined
+            }
         });
     },
 
     UPDATE_DATABASE_PROGRESS(
         state: CustomDatabaseState,
-        [database, step, value]: [CustomDatabase, number, number]
+        [database, value, progress_step]: [CustomDatabase, number, number]
     ) {
         const dbObj = state.databases.find(db => db.database.name === database.name);
         dbObj.progress.currentValue = value;
-        dbObj.progress.currentStep = step;
+        dbObj.progress.currentStep = progress_step;
 
         const time = new Date().getTime();
 
-        for (let i = step - 1; i > 0; i--) {
+        for (let i = progress_step - 1; i > 0; i--) {
             if (dbObj.progress.endTimes[i] === 0) {
                 dbObj.progress.endTimes[i] = time;
             }
@@ -107,8 +107,8 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
             }
         }
 
-        if (dbObj.progress.startTimes[step] === 0) {
-            dbObj.progress.startTimes[step] = time;
+        if (dbObj.progress.startTimes[progress_step] === 0) {
+            dbObj.progress.startTimes[progress_step] = time;
         }
     },
 
@@ -143,27 +143,14 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         dbObj.ready = status;
     },
 
-    INITIALIZE_QUEUE(
+    UPDATE_DATABASE_ERROR(
         state: CustomDatabaseState,
-        queueContents: CustomDatabase[]
+        [database, errorStatus, errorMsg, errorObj]: [CustomDatabase, boolean, string, Error]
     ) {
-        state.queue.splice(0, state.queue.length);
-        state.queue.push(...queueContents);
-    },
-
-    ADD_TO_QUEUE(
-        state: CustomDatabaseState,
-        db: CustomDatabase
-    ) {
-        state.queue.push(db);
-    },
-
-    REMOVE_FROM_QUEUE(
-        state: CustomDatabaseState,
-        db: CustomDatabase
-    ) {
-        const idx = state.queue.findIndex(c => c.name === db.name);
-        state.queue.splice(idx, 1);
+        const dbObj = state.databases.find(db => db.database.name === database.name);
+        dbObj.error.status = errorStatus;
+        dbObj.error.message = errorMsg;
+        dbObj.error.object = errorObj;
     },
 
     UPDATE_CONSTRUCTION_STATUS(
@@ -188,7 +175,12 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
                     currentValue: -1,
                     eta: -1
                 },
-                ready: true
+                ready: true,
+                error: {
+                    status: false,
+                    message: "",
+                    object: undefined
+                }
             });
         }
     }
@@ -230,11 +222,16 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
 
             const customDbMng = new CustomDatabaseManager();
             await customDbMng.updateMetadata(configuration.customDbStorageLocation, customDb);
-
-            if (!store.getters.constructionInProgress) {
-                await startDatabaseConstruction(store, customDb, configuration);
-            }
         }
+    },
+
+    reanalyzeDb(
+        store: ActionContext<CustomDatabaseState, any>,
+        dbName: string
+    ) {
+        const dbObj = store.state.databases.find(db => db.database.name === dbName);
+        store.commit("UPDATE_DATABASE_ERROR", [dbObj.database, false, "", undefined]);
+        store.commit("UPDATE_DATABASE_STATUS", [dbObj.database, false]);
     },
 
     initializeQueue(
@@ -244,15 +241,17 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         for (const db of queue) {
             store.commit("ADD_DATABASE", db);
         }
-        store.commit("INITIALIZE_QUEUE", queue);
 
         setInterval(
             async() => {
                 if (!store.getters.constructionInProgress) {
                     // If no databases are currently being constructed, and at least one database is waiting in the
                     // queue, we should start the construction process for this database.
-                    if (store.getters.queue.length > 0) {
-                        await startDatabaseConstruction(store, store.getters.queue[0], configuration);
+                    const scheduledDatabases = store.getters.databases.filter(
+                        (db: CustomDatabaseInfo) => !db.ready && !db.error.status
+                    );
+                    if (scheduledDatabases.length > 0) {
+                        await startDatabaseConstruction(store, scheduledDatabases[0].database, configuration);
                     }
                 }
             },
@@ -276,19 +275,25 @@ const startDatabaseConstruction = async function(
     store.commit("UPDATE_CONSTRUCTION_STATUS", true);
 
     const dockerCommunicator = new DockerCommunicator();
-    await dockerCommunicator.buildDatabase(
-        customDb,
-        path.join(configuration.customDbStorageLocation, "databases", customDb.name),
-        path.join(configuration.customDbStorageLocation, "index"),
-        (step, value, progress_step) => {
-            store.commit("UPDATE_DATABASE_PROGRESS", [customDb, step, value, progress_step]);
-        }
-    );
+    try {
+        await dockerCommunicator.buildDatabase(
+            customDb,
+            path.join(configuration.customDbStorageLocation, "databases", customDb.name, "data"),
+            path.join(configuration.customDbStorageLocation, "index"),
+            (step, value, progress_step) => {
+                store.commit("UPDATE_DATABASE_PROGRESS", [customDb, value, progress_step]);
+            }
+        );
 
-    const customManager = new CustomDatabaseManager();
-    customManager.updateMetadata(configuration.customDbStorageLocation, customDb);
+        const customManager = new CustomDatabaseManager();
+        await customManager.updateMetadata(configuration.customDbStorageLocation, customDb);
 
-    store.commit("UPDATE_DATABASE_STATUS", [customDb, true]);
+        store.commit("UPDATE_DATABASE_STATUS", [customDb, true]);
+    } catch (err) {
+        store.commit("UPDATE_DATABASE_ERROR", [customDb, true, err.message, err]);
+    } finally {
+        store.commit("UPDATE_CONSTRUCTION_STATUS", false);
+    }
 }
 
 export const customDatabaseStore = {

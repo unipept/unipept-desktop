@@ -25,19 +25,48 @@
                                 </template>
                                 <template v-slot:item.status="{ item }">
                                     <td>
-                                        <tooltip message="Database is ready." v-if="item.ready">
-                                            <v-icon color="success">mdi-check</v-icon>
-                                        </tooltip>
-                                        <tooltip :message="item.progress.step" v-else>
-                                            <v-icon>mdi-progress-clock</v-icon>
-                                        </tooltip>
+                                        <v-tooltip bottom v-if="item.error.status" open-delay="500">
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <v-icon color="error" v-on="on">mdi-alert-circle</v-icon>
+                                            </template>
+                                            <span>Database construction failed. Please try again.</span>
+                                        </v-tooltip>
+                                        <v-tooltip bottom v-else-if="item.ready" open-delay="500">
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <v-icon color="success">mdi-check</v-icon>
+                                            </template>
+                                            <span>Database is ready</span>
+                                        </v-tooltip>
+                                        <v-tooltip v-else>
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <v-icon>mdi-progress-clock</v-icon>
+                                            </template>
+                                            <span>{{ item.progress.step }}</span>
+                                        </v-tooltip>
                                     </td>
                                 </template>
                                 <template
                                     v-slot:expanded-item="{ headers, item }">
                                     <td :colspan="headers.length">
                                         <div class="my-2">
-                                            <div v-if="item.ready" class="d-flex flex-column align-center py-4">
+                                            <div v-if="item.error.status">
+                                                <v-alert prominent type="error" text>
+                                                    <div class="mb-4">
+                                                        An unexpected error has occurred during this database build.
+                                                        Details about this specific error are shown below. You can
+                                                        <a @click="restartBuild(item.database.name)">restart</a> the analysis to try again. If
+                                                        you believe that this error is not the result of a user action,
+                                                        then please contact us and provide the error details below. Make
+                                                        sure to check your internet connection before continuing.
+                                                    </div>
+
+                                                    <div class="font-weight-bold">Error details</div>
+                                                    <div>
+                                                        {{ item.error.object ? item.error.object.stack : errorMessage }}
+                                                    </div>
+                                                </v-alert>
+                                            </div>
+                                            <div v-else-if="item.ready" class="d-flex flex-column align-center py-4">
                                                 <v-avatar color="green">
                                                     <v-icon dark>mdi-check</v-icon>
                                                 </v-avatar>
@@ -48,7 +77,7 @@
                                                 </div>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
-                                                <progress-report-summary :db="item.database"/>
+                                                <progress-report-summary :progress-report="item.progress" />
                                             </div>
                                         </div>
                                     </td>
@@ -131,6 +160,11 @@ export default class CustomDatabasePage extends Vue {
     ];
 
     private expandedItems: [] = [];
+
+    private async restartBuild(dbName: string): Promise<void> {
+        console.log("DB Name: " + dbName);
+        this.$store.dispatch("reanalyzeDb", dbName);
+    }
 }
 </script>
 
