@@ -119,14 +119,22 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         start: number,
         end: number,
         nameFilter: string = "",
-        rankFilter: string,
+        rankFilter: string = undefined,
         sortBy: "id" | "name" | "rank" = "id",
-        sortDescending: boolean = true
+        sortDescending: boolean = false
     ): NcbiId[] {
-        return this.db.prepare(
-            `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND rank = ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
-        )
-            .all(`%${nameFilter}%`, rankFilter.toLowerCase(), end - start, start)
-            .map((item: any) => item.id);
+        if (rankFilter) {
+            return this.db.prepare(
+                `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND rank = ? ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+            )
+                .all(`%${nameFilter}%`, rankFilter.toLowerCase(), end - start, start)
+                .map((item: any) => item.id);
+        } else {
+            return this.db.prepare(
+                `SELECT id, name, rank FROM taxons WHERE name LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+            )
+                .all(`%${nameFilter}%`, end - start, start)
+                .map((item: any) => item.id);
+        }
     }
 }

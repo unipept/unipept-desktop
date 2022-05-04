@@ -148,6 +148,8 @@ export default class TaxaBrowser extends Vue {
         if (this.ncbiOntologyProcessor && !this.loading) {
             const { sortBy, sortDesc, page, itemsPerPage } = this.options;
 
+            console.log(sortDesc);
+
             const ncbis = this.ncbiCommunicator.getNcbiRange(
                 itemsPerPage * (page - 1),
                 itemsPerPage * page,
