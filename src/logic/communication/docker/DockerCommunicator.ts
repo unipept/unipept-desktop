@@ -144,8 +144,20 @@ export default class DockerCommunicator {
     /**
      * Stop all of the running Docker database containers associated with the Unipept Desktop application.
      */
-    public stopDatabase(): Promise<void> {
-        return this.stopContainer(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+    public async stopDatabase(): Promise<void> {
+        while ((await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined) {
+            await this.stopContainer(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+        }
+    }
+
+    /**
+     * Checks if the database container is currently running and active. This means that the communicator is going to
+     * check if a container with the BUILD_DB identifier is currently active.
+     *
+     * @return true if the database is active, false otherwise.
+     */
+    public async isDatabaseActive(): Promise<boolean> {
+        return (await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined;
     }
 
     /**

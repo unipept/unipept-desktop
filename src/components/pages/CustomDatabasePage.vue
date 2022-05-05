@@ -6,12 +6,42 @@
                     <h2 class="mx-auto settings-category-title">Custom databases</h2>
                     <v-card>
                         <v-card-text>
+                            <v-alert type="error" prominent text v-if="dockerConnectionError">
+                                Could not connect to the Docker deamon. Make sure that all
+                                <router-link to="/settings">connection settings</router-link> are properly configured
+                                before building a database.
+                            </v-alert>
+
+                            <v-alert type="warning" prominent text v-if="buildInProgressError">
+                                <div>
+                                    Docker is still processing a Unipept database that was started outside of this
+                                    application. The application can only continue with constructing databases if no
+                                    such zombie processes are active.
+                                </div>
+
+                                <v-divider class="my-2 warning" style="opacity: 0.22"></v-divider>
+
+                                <v-row align="center" no-gutters>
+                                    <v-col class="grow">
+                                        Click "force stop" to stop this zombie process immediately and return the
+                                        control to this application.
+                                    </v-col>
+                                    <v-col class="shrink">
+                                        <v-btn
+                                            color="warning"
+                                            outlined
+                                            @click="forceStop()"
+                                            :loading="forceStopInProgress">
+                                            Force stop
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                            </v-alert>
+
                             <div>
                                 Below you can find a list of all custom databases that are currently registered to this
                                 application. To create a new custom database, press the floating button in the lower
                                 right corner. A wizard will guide you through the custom database construction process.
-                                Please note that Docker must be configured correctly in the
-                                <router-link to="/settings">settings</router-link> before new databases can be created.
                             </div>
                             <v-data-table
                                 :headers="headers"
@@ -20,12 +50,30 @@
                                 :items="databases"
                                 item-key="database.name">
                                 <template v-slot:item.actions="{ item }">
-                                    <v-icon small>mdi-delete</v-icon>
-                                    <v-icon small>mdi-information</v-icon>
+                                    <v-btn icon small :disabled="item.ready && !item.cancelled">
+                                        <v-icon small v-if="item.error.status" @click="restartBuild(item.database.name)">
+                                            mdi-restart
+                                        </v-icon>
+                                        <v-icon small v-else @click="stopDatabase(item.database.name)">
+                                            mdi-stop
+                                        </v-icon>
+                                    </v-btn>
+                                    <v-btn icon small>
+                                        <v-icon small>mdi-delete</v-icon>
+                                    </v-btn>
+                                    <v-btn icon small>
+                                        <v-icon small>mdi-information</v-icon>
+                                    </v-btn>
                                 </template>
                                 <template v-slot:item.status="{ item }">
                                     <td>
-                                        <v-tooltip bottom v-if="item.error.status" open-delay="500">
+                                        <v-tooltip v-if="item.cancelled" open-delay="500">
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <v-icon color="warning" v-on="on">mdi-cancel</v-icon>
+                                            </template>
+                                            <span>Database construction was cancelled by the user.</span>
+                                        </v-tooltip>
+                                        <v-tooltip bottom v-else-if="item.error.status" open-delay="500">
                                             <template v-slot:activator="{ on, attrs }">
                                                 <v-icon color="error" v-on="on">mdi-alert-circle</v-icon>
                                             </template>
@@ -33,13 +81,13 @@
                                         </v-tooltip>
                                         <v-tooltip bottom v-else-if="item.ready" open-delay="500">
                                             <template v-slot:activator="{ on, attrs }">
-                                                <v-icon color="success">mdi-check</v-icon>
+                                                <v-icon color="success" v-on="on">mdi-check</v-icon>
                                             </template>
                                             <span>Database is ready</span>
                                         </v-tooltip>
                                         <v-tooltip v-else>
                                             <template v-slot:activator="{ on, attrs }">
-                                                <v-icon>mdi-progress-clock</v-icon>
+                                                <v-icon v-on="on">mdi-progress-clock</v-icon>
                                             </template>
                                             <span>{{ item.progress.step }}</span>
                                         </v-tooltip>
@@ -49,7 +97,17 @@
                                     v-slot:expanded-item="{ headers, item }">
                                     <td :colspan="headers.length">
                                         <div class="my-2">
-                                            <div v-if="item.error.status">
+                                            <div v-if="item.cancelled" class="d-flex flex-column align-center py-4">
+                                                <v-avatar color="warning">
+                                                    <v-icon dark>mdi-cancel</v-icon>
+                                                </v-avatar>
+                                                <div class="mt-2">
+                                                    You cancelled the construction of this database. You can
+                                                    <a @click="restartBuild(item.database.name)">restart</a> the
+                                                    analysis when you are ready to continue.
+                                                </div>
+                                            </div>
+                                            <div v-else-if="item.error.status">
                                                 <v-alert prominent type="error" text>
                                                     <div class="mb-4">
                                                         An unexpected error has occurred during this database build.
@@ -120,6 +178,13 @@ import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.v
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
 
+    private dockerConnectionError: boolean = false;
+    private buildInProgressError: boolean = false;
+
+    private dockerCheckTimeout: NodeJS.Timeout;
+
+    private forceStopInProgress: boolean = false;
+
     private headers = [
         {
             text: "Status",
@@ -161,9 +226,57 @@ export default class CustomDatabasePage extends Vue {
 
     private expandedItems: [] = [];
 
+    private async mounted(): Promise<void> {
+        this.dockerCheckTimeout = setInterval(async() => {
+            this.dockerConnectionError = !(await this.checkDockerConnection());
+            if (!this.dockerConnectionError) {
+                this.buildInProgressError = await this.checkZombieBuildInProgress();
+            }
+        }, 1000);
+    }
+
+    private beforeDestroy(): void {
+        if (this.dockerCheckTimeout) {
+            clearInterval(this.dockerCheckTimeout);
+        }
+    }
+
+    private async checkDockerConnection(): Promise<boolean> {
+        const dockerCommunicator = new DockerCommunicator();
+
+        try {
+            await dockerCommunicator.getDockerInfo();
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if a zombie database construction process is still running in the Docker daemon.
+     */
+    private async checkZombieBuildInProgress(): Promise<boolean> {
+        if (this.$store.getters.constructionInProgress) {
+            return false;
+        }
+
+        const dockerCommunicator = new DockerCommunicator();
+        return await dockerCommunicator.isDatabaseActive();
+    }
+
     private async restartBuild(dbName: string): Promise<void> {
-        console.log("DB Name: " + dbName);
         this.$store.dispatch("reanalyzeDb", dbName);
+    }
+
+    private async stopDatabase(dbName: string): Promise<void> {
+        this.$store.dispatch("stopDatabase", dbName);
+    }
+
+    private async forceStop(): Promise<void> {
+        this.forceStopInProgress = true;
+        const dockerCommunicator = new DockerCommunicator();
+        await dockerCommunicator.stopDatabase();
+        this.forceStopInProgress = false;
     }
 }
 </script>

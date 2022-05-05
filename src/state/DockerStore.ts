@@ -13,6 +13,8 @@ type CustomDatabaseInfo = {
     progress: ProgressReport,
     // Whether the database has been constructed successfully.
     ready: boolean,
+    // Was the construction of this custom database cancelled?
+    cancelled: boolean,
     error: {
         status: boolean,
         message: string,
@@ -78,6 +80,7 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
                 currentValue: -1,
                 eta: -1
             },
+            cancelled: false,
             ready: false,
             error: {
                 status: false,
@@ -160,6 +163,14 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         state.constructionInProgress = inProgress;
     },
 
+    UPDATE_DATABASE_CANCELLATION_STATUS(
+        state: CustomDatabaseState,
+        [database, cancellationStatus]: [CustomDatabase, boolean]
+    ) {
+        const dbObj = state.databases.find(db => db.database.name === database.name);
+        dbObj.cancelled = cancellationStatus;
+    },
+
     ADD_TO_DB_LIST(
         state: CustomDatabaseState,
         list: CustomDatabase[]
@@ -175,6 +186,7 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
                     currentValue: -1,
                     eta: -1
                 },
+                cancelled: false,
                 ready: true,
                 error: {
                     status: false,
@@ -225,6 +237,25 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         }
     },
 
+    stopDatabase: {
+        root: false,
+        async handler(
+            store: ActionContext<CustomDatabaseState, any>,
+            dbName: string
+        ) {
+            const dbObj = store.state.databases.find(db => db.database.name === dbName);
+
+            this.commit(
+                "UPDATE_DATABASE_CANCELLATION_STATUS",
+                [dbObj.database, true]
+            );
+            this.commit("UPDATE_DATABASE_STATUS", [dbObj.database, true]);
+
+            const dockerCommunicator = new DockerCommunicator();
+            await dockerCommunicator.stopDatabase();
+        }
+    },
+
     reanalyzeDb(
         store: ActionContext<CustomDatabaseState, any>,
         dbName: string
@@ -242,9 +273,11 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
             store.commit("ADD_DATABASE", db);
         }
 
+        const dockerCommunicator = new DockerCommunicator();
+
         setInterval(
             async() => {
-                if (!store.getters.constructionInProgress) {
+                if (!store.getters.constructionInProgress && !(await dockerCommunicator.isDatabaseActive())) {
                     // If no databases are currently being constructed, and at least one database is waiting in the
                     // queue, we should start the construction process for this database.
                     const scheduledDatabases = store.getters.databases.filter(
