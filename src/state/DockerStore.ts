@@ -1,6 +1,6 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { ActionContext, ActionTree, GetterTree, MutationTree } from "vuex";
-import { NcbiId, ProgressReport } from "unipept-web-components";
+import { NcbiId, ProgressReport, ProgressReportHelper } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import Vue from "vue";
 import { queue } from "async";
@@ -72,14 +72,7 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
     ) {
         state.databases.push({
             database: database,
-            progress: {
-                steps: progressSteps,
-                startTimes: new Array(progressSteps.length).fill(0),
-                endTimes: new Array(progressSteps.length).fill(0),
-                currentStep: 0,
-                currentValue: -1,
-                eta: -1
-            },
+            progress: ProgressReportHelper.constructProgressReportObject(progressSteps),
             cancelled: false,
             ready: false,
             error: {
@@ -100,7 +93,7 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
 
         const time = new Date().getTime();
 
-        for (let i = progress_step - 1; i > 0; i--) {
+        for (let i = progress_step - 1; i >= 0; i--) {
             if (dbObj.progress.endTimes[i] === 0) {
                 dbObj.progress.endTimes[i] = time;
             }
@@ -113,6 +106,14 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         if (dbObj.progress.startTimes[progress_step] === 0) {
             dbObj.progress.startTimes[progress_step] = time;
         }
+    },
+
+    ADD_DATABASE_LOG(
+        state: CustomDatabaseState,
+        [database, logLine]: [CustomDatabase, string]
+    ) {
+        const dbObj = state.databases.find(db => db.database.name === database.name);
+        dbObj.progress.logs.push(logLine);
     },
 
     UPDATE_DATABASE_STATUS(
@@ -178,14 +179,7 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         for (const db of list) {
             state.databases.push({
                 database: db,
-                progress: {
-                    steps: progressSteps,
-                    startTimes: new Array(progressSteps.length).fill(0),
-                    endTimes: new Array(progressSteps.length).fill(0),
-                    currentStep: 0,
-                    currentValue: -1,
-                    eta: -1
-                },
+                progress: ProgressReportHelper.constructProgressReportObject(progressSteps),
                 cancelled: false,
                 ready: true,
                 error: {
@@ -315,6 +309,9 @@ const startDatabaseConstruction = async function(
             path.join(configuration.customDbStorageLocation, "index"),
             (step, value, progress_step) => {
                 store.commit("UPDATE_DATABASE_PROGRESS", [customDb, value, progress_step]);
+            },
+            (line: string) => {
+                store.commit("ADD_DATABASE_LOG", [customDb, line])
             }
         );
 

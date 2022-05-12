@@ -7,7 +7,7 @@
                     <v-card>
                         <v-card-text>
                             <v-alert type="error" prominent text v-if="dockerConnectionError">
-                                Could not connect to the Docker deamon. Make sure that all
+                                Could not connect to the Docker daemon. Make sure that all
                                 <router-link to="/settings">connection settings</router-link> are properly configured
                                 before building a database.
                             </v-alert>
@@ -112,16 +112,24 @@
                                                     <div class="mb-4">
                                                         An unexpected error has occurred during this database build.
                                                         Details about this specific error are shown below. You can
-                                                        <a @click="restartBuild(item.database.name)">restart</a> the analysis to try again. If
-                                                        you believe that this error is not the result of a user action,
-                                                        then please contact us and provide the error details below. Make
-                                                        sure to check your internet connection before continuing.
+                                                        <a @click="restartBuild(item.database.name)">restart</a> the
+                                                        analysis to try again. If you believe that this error is not the
+                                                        result of a user action, then please contact us and provide the
+                                                        error details below. Make sure to check your internet connection
+                                                        before continuing.
+
                                                     </div>
 
-                                                    <div class="font-weight-bold">Error details</div>
-                                                    <div>
-                                                        {{ item.error.object ? item.error.object.stack : errorMessage }}
-                                                    </div>
+                                                    <div class="font-weight-bold">Application error details</div>
+                                                    <textarea
+                                                        :value="item.error.object ? item.error.object.stack : this.errorMessage"
+                                                        class="logview pa-2"
+                                                        disabled />
+                                                    <div class="font-weight-bold mt-4">Database build logs</div>
+                                                    <textarea
+                                                        :value="item.progress.logs.join('\n')"
+                                                        class="logview pa-2"
+                                                        disabled />
                                                 </v-alert>
                                             </div>
                                             <div v-else-if="item.ready" class="d-flex flex-column align-center py-4">
@@ -282,5 +290,11 @@ export default class CustomDatabasePage extends Vue {
 </script>
 
 <style scoped>
-
+.logview {
+    background-color: black;
+    color: white;
+    font-family: "Roboto mono", monospace;
+    width: 100%;
+    min-height: 200px;
+}
 </style>

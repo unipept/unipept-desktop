@@ -1,18 +1,34 @@
 import * as stream from "stream";
 
 export default class ProgressInspectorStream extends stream.Writable {
+    /**
+     * @param progressReporter A callback that's called when the progress value needs to be updated. The first parameter
+     * contains a description of the step that's being performed, the second parameter denotes the current progress
+     * value for this step and the last parameter provides the index that corresponds to this step (i.e. is this the
+     * i'th step?).
+     * @param onReadyListener A callback that's called when the container indicates that it's done processing.
+     * @param entryCountReporter A callback that's called with the amount of UniProt entries that are eventually
+     * present in the database.
+     * @param logReporter A callback that's called everytime a new line of log content is read.
+     */
     constructor(
         private readonly progressReporter: (step: string, progress: number, progress_step: number) => void,
         private readonly onReadyListener: () => void,
-        private readonly entryCountReporter: (n: number) => void
+        private readonly entryCountReporter: (n: number) => void,
+        private readonly logReporter: (line: string) => void
     ) {
         super();
     }
 
     _write(chunk: any, enc: string, callback: any) {
-        console.log(chunk.toString());
+        const lines = chunk
+            .toString()
+            .split("\n")
+            .map((l: string) => l.trimEnd()).filter((l: string) => l !== "");
 
-        const lines = chunk.toString().split("\n");
+        for (const line of lines) {
+            this.logReporter(line);
+        }
 
         const progressReports: [string, number, number][] = lines
             .filter((l: string) => l.includes("PROGRESS"))
@@ -30,7 +46,7 @@ export default class ProgressInspectorStream extends stream.Writable {
             this.entryCountReporter(parseInt(chunk.toString().split("##")[1]));
         }
 
-        // If this text appears in the Docker logs, we now that the server has been started.
+        // If this text appears in the Docker logs, we know that the server has been started.
         if (
             chunk.toString().includes(
                 "X Plugin ready for connections."

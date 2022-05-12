@@ -50,12 +50,15 @@ export default class DockerCommunicator {
      * empty.
      * @param indexFolder Folder in which the constructed database index structure should be kept.
      * @param progressListener A callback function that can be used to monitor the progress of building the database.
+     * @param logReporter A callback that's called whenever a new line of log content is produced by the underlying
+     * container.
      */
     public async buildDatabase(
         customDb: CustomDatabase,
         databaseFolder: string,
         indexFolder: string,
-        progressListener: (step: string, progress: number, progress_step: number) => void
+        progressListener: (step: string, progress: number, progress_step: number) => void,
+        logReporter: (logLine: string) => void
     ): Promise<void> {
         if (!DockerCommunicator.connection) {
             throw new Error("Connection to Docker daemon has not been initialized.");
@@ -75,7 +78,12 @@ export default class DockerCommunicator {
                 await DockerCommunicator.connection.run(
                     "pverscha/unipept-database:1.0.0",
                     [],
-                    new ProgressInspectorStream(progressListener, () => resolve(), (n: number) => customDb.entries = n),
+                    new ProgressInspectorStream(
+                        progressListener,
+                        () => resolve(),
+                        (n: number) => customDb.entries = n,
+                        logReporter
+                    ),
                     {
                         Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
                         Env: [
