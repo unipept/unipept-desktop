@@ -266,6 +266,10 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
         store.commit("UPDATE_DATABASE_ERROR", [dbObj.database, false, "", undefined]);
         store.commit("RESET_DATABASE_LOG", dbObj.database);
         store.commit("UPDATE_DATABASE_STATUS", [dbObj.database, false]);
+        store.commit(
+            "UPDATE_DATABASE_CANCELLATION_STATUS",
+            [dbObj.database, false]
+        );
     },
 
     initializeQueue(

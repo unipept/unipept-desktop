@@ -62,9 +62,14 @@
             class="pa-2"
             @change="onLogsChanged"/>
         <div class="ml-4" v-if="withLogs">
-            <v-btn icon outlined @click="logViewEnabled = !logViewEnabled">
-                <v-icon>mdi-text-box-outline</v-icon>
-            </v-btn>
+            <v-tooltip bottom open-delay="500">
+                <template v-slot:activator="{ on, attrs }">
+                    <v-btn icon outlined @click="toggleLogView" v-on="on">
+                        <v-icon>mdi-text-box-outline</v-icon>
+                    </v-btn>
+                </template>
+                <span>Toggle logs</span>
+            </v-tooltip>
         </div>
     </div>
 </template>
@@ -114,6 +119,11 @@ export default class ProgressReportSummary extends Vue {
                 logArea.scrollTop = logArea.scrollHeight;
             });
         }
+    }
+
+    private toggleLogView() {
+        this.logViewEnabled = !this.logViewEnabled;
+        this.onLogsChanged();
     }
 
     private msToTimeString(ms: number) {

@@ -291,7 +291,7 @@ export default class CustomDatabasePage extends Vue {
 
 <style scoped>
 .logview {
-    background-color: black;
+    background-color: #1a1a1a;
     color: white;
     font-family: "Roboto mono", monospace;
     width: 100%;
