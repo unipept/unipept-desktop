@@ -143,7 +143,7 @@
                                                 </div>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
-                                                <progress-report-summary :progress-report="item.progress" />
+                                                <progress-report-summary :progress-report="item.progress" :with-logs="true" />
                                             </div>
                                         </div>
                                     </td>

@@ -116,6 +116,14 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         dbObj.progress.logs.push(logLine);
     },
 
+    RESET_DATABASE_LOG(
+        state: CustomDatabaseState,
+        database: CustomDatabase
+    ) {
+        const dbObj = state.databases.find(db => db.database.name === database.name);
+        dbObj.progress.logs.splice(0, dbObj.progress.logs.length);
+    },
+
     UPDATE_DATABASE_STATUS(
         state: CustomDatabaseState,
         [database, status]: [CustomDatabase, boolean]
@@ -256,6 +264,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
     ) {
         const dbObj = store.state.databases.find(db => db.database.name === dbName);
         store.commit("UPDATE_DATABASE_ERROR", [dbObj.database, false, "", undefined]);
+        store.commit("RESET_DATABASE_LOG", dbObj.database);
         store.commit("UPDATE_DATABASE_STATUS", [dbObj.database, false]);
     },
 

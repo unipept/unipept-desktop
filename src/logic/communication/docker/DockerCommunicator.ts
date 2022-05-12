@@ -131,7 +131,7 @@ export default class DockerCommunicator {
             DockerCommunicator.connection.run(
                 "pverscha/unipept-custom-db:1.1.1",
                 [],
-                new ProgressInspectorStream((step: string, progress: number) => {}, () => resolve(), () => {}),
+                new ProgressInspectorStream((s: string, p: number) => {}, () => resolve(), () => {}, () => {}),
                 {
                     Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
                     PortBindings: {
