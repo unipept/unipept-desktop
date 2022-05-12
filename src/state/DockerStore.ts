@@ -228,7 +228,7 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
                 databaseSources,
                 databaseTypes,
                 taxa,
-                0,
+                -1,
                 dbVersion
             );
 

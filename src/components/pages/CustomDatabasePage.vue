@@ -49,6 +49,10 @@
                                 :expanded.sync="expandedItems"
                                 :items="databases"
                                 item-key="database.name">
+                                <template v-slot:item.database.entries="{ item }">
+                                    <span v-if="item.database.entries === -1">N/A</span>
+                                    <span v-else>{{ item.database.entries }}</span>
+                                </template>
                                 <template v-slot:item.actions="{ item }">
                                     <v-btn icon small :disabled="item.ready && !item.cancelled">
                                         <v-icon small v-if="item.error.status" @click="restartBuild(item.database.name)">
