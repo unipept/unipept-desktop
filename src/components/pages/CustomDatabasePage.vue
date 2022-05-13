@@ -48,7 +48,22 @@
                                 show-expand
                                 :expanded.sync="expandedItems"
                                 :items="databases"
-                                item-key="database.name">
+                                item-key="database.name"
+                                :loading="loading">
+                                <template v-slot:item.database.taxa="{ item }">
+                                    <span v-if="loading">
+                                        Loading...
+                                    </span>
+                                    <div v-else class="taxa-filter">
+                                        {{
+                                            item.database.taxa
+                                                .map(t => ncbiOntology.getDefinition(t))
+                                                .filter(i => i !== undefined)
+                                                .map(i => i.name)
+                                                .join(", ")
+                                        }}
+                                    </div>
+                                </template>
                                 <template v-slot:item.database.entries="{ item }">
                                     <span v-if="item.database.entries === -1">N/A</span>
                                     <span v-else>{{ item.database.entries }}</span>
@@ -172,10 +187,11 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatabase.vue";
-import { Tooltip } from "unipept-web-components";
+import { NcbiId, NcbiOntologyProcessor, NcbiTaxon, Ontology, Tooltip } from "unipept-web-components";
 import { CustomDatabaseInfo } from "@/state/DockerStore";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
+import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 
 @Component({
     components: { ProgressReportSummary, CreateCustomDatabase, Tooltip },
@@ -196,6 +212,8 @@ export default class CustomDatabasePage extends Vue {
     private dockerCheckTimeout: NodeJS.Timeout;
 
     private forceStopInProgress: boolean = false;
+
+    private loading: boolean = true;
 
     private headers = [
         {
@@ -237,8 +255,20 @@ export default class CustomDatabasePage extends Vue {
     ];
 
     private expandedItems: [] = [];
+    private ncbiOntology: Ontology<NcbiId, NcbiTaxon>;
+
+    get databases(): CustomDatabaseInfo[] {
+        return [...Object.values(this.$store.getters.databases)] as CustomDatabaseInfo[];
+    }
 
     private async mounted(): Promise<void> {
+        this.loading = true;
+        const ncbiProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
+        this.ncbiOntology = await ncbiProcessor.getOntologyByIds(
+            this.databases.map(d => d.database.taxa).flat()
+        );
+        this.loading = false;
+
         this.dockerCheckTimeout = setInterval(async() => {
             this.dockerConnectionError = !(await this.checkDockerConnection());
             if (!this.dockerConnectionError) {
@@ -300,5 +330,12 @@ export default class CustomDatabasePage extends Vue {
     font-family: "Roboto mono", monospace;
     width: 100%;
     min-height: 200px;
+}
+
+.taxa-filter {
+    max-width: 200px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 </style>
