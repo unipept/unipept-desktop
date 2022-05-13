@@ -57,7 +57,10 @@
                     </div>
 
                     <div class="font-weight-bold">Error details</div>
-                    <div>{{ errorObject ? errorObject.stack : errorMessage }}</div>
+                    <textarea
+                        :value="errorObject ? errorObject.stack : this.errorMessage"
+                        class="logview pa-2"
+                        disabled />
                 </v-alert>
 
                 <!-- Show message that informs the user that the analysis of this assay has been cancelled. -->
@@ -308,5 +311,13 @@ export default class AnalysisPage extends Vue {
         display: flex;
         justify-content: center;
         /*align-items: center;*/
+    }
+
+    .logview {
+        background-color: #1a1a1a;
+        color: white;
+        font-family: "Roboto mono", monospace;
+        width: 100%;
+        min-height: 300px;
     }
 </style>

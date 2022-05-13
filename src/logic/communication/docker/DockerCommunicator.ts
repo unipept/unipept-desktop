@@ -127,25 +127,38 @@ export default class DockerCommunicator {
     }
 
     public async startDatabase(databaseLocation: string): Promise<void> {
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-custom-db:1.1.1",
-                [],
-                new ProgressInspectorStream((s: string, p: number) => {}, () => resolve(), () => {}, () => {}),
-                {
-                    Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                    PortBindings: {
-                        "3306/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: "3306"
-                        }]
-                    },
-                    Binds: [
-                        // Mount the folder in which the MySQL-specific database files will be kept
-                        `${databaseLocation}:/var/lib/mysql`
-                    ]
-                }
-            );
+        return new Promise<void>(async(resolve, reject) => {
+            try {
+                databaseLocation = path.join(databaseLocation, "data");
+                await DockerCommunicator.connection.run(
+                    "pverscha/unipept-database:1.0.0",
+                    [],
+                    new ProgressInspectorStream(
+                        (s: string, p: number) => {},
+                        () => resolve(),
+                        () => {},
+                        () => {}
+                    ),
+                    {
+                        Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
+                        PortBindings: {
+                            "3306/tcp": [{
+                                HostIP: "0.0.0.0",
+                                HostPort: "3306"
+                            }]
+                        },
+                        Env: [
+                            "MYSQL_ROOT_PASSWORD=unipept"
+                        ],
+                        Binds: [
+                            // Mount the folder in which the MySQL-specific database files will be kept
+                            `${databaseLocation}:/var/lib/mysql`
+                        ]
+                    }
+                );
+            } catch (err) {
+                reject(err);
+            }
         });
     }
 
@@ -244,9 +257,9 @@ export default class DockerCommunicator {
         const containerInfo = await this.getContainerByName(name);
 
         if (containerInfo) {
-            return new Promise<void>((resolve) => {
-                DockerCommunicator.connection.getContainer(containerInfo.Id).stop(resolve);
-            });
+            const container = DockerCommunicator.connection.getContainer(containerInfo.Id);
+            await container.stop();
+            await container.remove();
         }
     }
 }

@@ -5,6 +5,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { serialize } from "v8";
 
 export default class AnalysisSourceSerializer {
     public static serializeAnalysisSource(source: AnalysisSource): string {
@@ -23,6 +24,7 @@ export default class AnalysisSourceSerializer {
     ): Promise<AnalysisSource> {
         let analysisSource: AnalysisSource;
         if (serializedSource.startsWith("cdb://")) {
+            console.log("serializedSource ==> " + serializedSource);
             const dbName = serializedSource.replace("cdb://", "");
 
             const configMng = new ConfigurationManager();
@@ -32,6 +34,9 @@ export default class AnalysisSourceSerializer {
             const customDb = (await customDbManager.listAllDatabases(customDbLocation)).filter(
                 (db: CustomDatabase) => db.name === dbName
             )[0];
+
+            console.log("Custom db here:");
+            console.log(await customDbManager.listAllDatabases(customDbLocation));
 
             analysisSource = new CachedCustomDbAnalysisSource(
                 assay,

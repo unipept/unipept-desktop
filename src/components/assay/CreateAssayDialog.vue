@@ -406,7 +406,7 @@ export default class CreateAssayDialog extends Vue {
                         this.$store.getters.dbManager,
                         this.$store.getters.databases.find(
                             (d: CustomDatabaseInfo) => d.database.name === placeholder.analysisSource.title
-                        ),
+                        ).database,
                         config.customDbStorageLocation,
                         this.$store.getters.projectLocation
                     );
