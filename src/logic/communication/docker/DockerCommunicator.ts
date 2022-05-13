@@ -73,6 +73,9 @@ export default class DockerCommunicator {
         await fs.rmdir(databaseFolder, { recursive: true });
         await mkdirp(databaseFolder);
 
+        console.log("IndexFolder: ");
+        console.log(indexFolder);
+
         await new Promise<void>(async(resolve, reject) => {
             try {
                 await DockerCommunicator.connection.run(
@@ -105,7 +108,7 @@ export default class DockerCommunicator {
                             // Mount the folder in which the MySQL-specific database files will be kept
                             `${databaseFolder}:/var/lib/mysql`,
                             // Mount the folder in which the reusable database index structure will be kept
-                            `${indexFolder}:/data`
+                            `${indexFolder}:/index`
                         ]
                     }
                 );
