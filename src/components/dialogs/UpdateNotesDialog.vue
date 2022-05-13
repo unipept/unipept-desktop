@@ -77,8 +77,6 @@ export default class UpdateNotesDialog extends Vue {
                     releaseNotes += await communicator.getReleaseNotes(release) + "\n\n";
                 }
 
-                console.log(releaseNotes);
-
                 this.releaseContent = marked(releaseNotes);
             } catch (error) {
                 this.releaseContent = "Could not load release notes. Make sure you're connected to the internet."

@@ -24,7 +24,6 @@ export default class AnalysisSourceSerializer {
     ): Promise<AnalysisSource> {
         let analysisSource: AnalysisSource;
         if (serializedSource.startsWith("cdb://")) {
-            console.log("serializedSource ==> " + serializedSource);
             const dbName = serializedSource.replace("cdb://", "");
 
             const configMng = new ConfigurationManager();
@@ -34,9 +33,6 @@ export default class AnalysisSourceSerializer {
             const customDb = (await customDbManager.listAllDatabases(customDbLocation)).filter(
                 (db: CustomDatabase) => db.name === dbName
             )[0];
-
-            console.log("Custom db here:");
-            console.log(await customDbManager.listAllDatabases(customDbLocation));
 
             analysisSource = new CachedCustomDbAnalysisSource(
                 assay,
