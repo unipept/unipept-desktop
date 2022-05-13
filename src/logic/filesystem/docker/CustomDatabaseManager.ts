@@ -2,6 +2,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { promises as fs } from "fs";
 import path, { dirname } from "path";
 import mkdirp from "mkdirp";
+import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 
 /**
  * This class is responsible for managing the custom databases that are currently created by some of the users and to
@@ -27,7 +28,8 @@ export default class CustomDatabaseManager {
     public async listAllDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
         const databases = [];
         for (const dir of (await fs.readdir(path.join(dbRootFolder, "databases")))) {
-            if ((await fs.lstat(path.join(dbRootFolder, "databases", dir))).isDirectory()) {
+            const dbPath = path.join(dbRootFolder, "databases", dir);
+            if ((await fs.lstat(dbPath)).isDirectory()) {
                 // Check if a metadata file is present in the folder that was found. If it is present, we should read
                 // the database name and other metadata from this file.
                 try {
@@ -38,6 +40,8 @@ export default class CustomDatabaseManager {
                         )
                     );
 
+                    const dbSize = await FileSystemUtils.getSize(dbPath);
+
                     databases.push(
                         new CustomDatabase(
                             metadata.name,
@@ -46,7 +50,8 @@ export default class CustomDatabaseManager {
                             metadata.taxa,
                             metadata.entries,
                             metadata.databaseVersion,
-                            metadata.complete
+                            metadata.complete,
+                            dbSize
                         )
                     );
                 } catch (e) {

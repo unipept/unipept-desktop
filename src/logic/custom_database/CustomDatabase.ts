@@ -11,7 +11,8 @@ export default class CustomDatabase {
         public entries: number,
         public readonly databaseVersion: string,
         // Has the database successfully been built?
-        public complete: boolean = false
+        public complete: boolean = false,
+        public sizeOnDisk: number = -1
     ) {}
 
     /**

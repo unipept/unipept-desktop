@@ -66,7 +66,14 @@
                                 </template>
                                 <template v-slot:item.database.entries="{ item }">
                                     <span v-if="item.database.entries === -1">N/A</span>
-                                    <span v-else>{{ item.database.entries }}</span>
+                                    <span v-else>{{ toHumanReadableNumber(item.database.entries) }}</span>
+                                </template>
+                                <template v-slot:item.database.sizeOnDisk="{ item }">
+                                    <span>
+                                        {{
+                                            toHumanReadableNumber(Math.round(item.database.sizeOnDisk / 1024 ** 2))
+                                        }} MiB
+                                    </span>
                                 </template>
                                 <template v-slot:item.actions="{ item }">
                                     <v-btn icon x-small :disabled="item.ready && !item.cancelled" class="mx-1">
@@ -194,7 +201,7 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatabase.vue";
-import { NcbiId, NcbiOntologyProcessor, NcbiTaxon, Ontology, Tooltip } from "unipept-web-components";
+import { NcbiId, NcbiOntologyProcessor, NcbiTaxon, Ontology, StringUtils, Tooltip } from "unipept-web-components";
 import { CustomDatabaseInfo } from "@/state/DockerStore";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
@@ -250,10 +257,16 @@ export default class CustomDatabasePage extends Vue {
             value: "database.taxa"
         },
         {
-            text: "Number of entries",
+            text: "UniProt records",
             align: "start",
             sortable: true,
             value: "database.entries"
+        },
+        {
+            text: "Size on disk",
+            align: "start",
+            sortable: true,
+            value: "database.sizeOnDisk"
         },
         {
             text: "Actions",
@@ -344,6 +357,10 @@ export default class CustomDatabasePage extends Vue {
         const dockerCommunicator = new DockerCommunicator();
         await dockerCommunicator.stopDatabase();
         this.forceStopInProgress = false;
+    }
+
+    private toHumanReadableNumber(n: number): string {
+        return StringUtils.toHumanReadableNumber(n);
     }
 }
 </script>
