@@ -96,6 +96,11 @@ export default class CustomDatabaseManager {
         return fs.writeFile(path, JSON.stringify(db));
     }
 
+    public async deleteDatabase(dbRootFolder: string, db: CustomDatabase): Promise<void> {
+        const dbPath = path.join(dbRootFolder, "databases", db.name);
+        await fs.rmdir(dbPath, { recursive: true });
+    }
+
     /**
      * Returns the most appropriate URL that can be used to download the specific UniProt database. This function will
      * automatically take into account the current location of the user and point the user to the closest FTP mirror.

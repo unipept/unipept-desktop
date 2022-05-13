@@ -2,7 +2,7 @@
     <v-container fluid>
         <v-row>
             <v-col>
-                <div style="max-width: 1200px; margin: auto;">
+                <div style="max-width: 1400px; margin: auto;">
                     <h2 class="mx-auto settings-category-title">Custom databases</h2>
                     <v-card>
                         <v-card-text>
@@ -69,19 +69,24 @@
                                     <span v-else>{{ item.database.entries }}</span>
                                 </template>
                                 <template v-slot:item.actions="{ item }">
-                                    <v-btn icon small :disabled="item.ready && !item.cancelled">
-                                        <v-icon small v-if="item.error.status" @click="restartBuild(item.database.name)">
+                                    <v-btn icon x-small :disabled="item.ready && !item.cancelled" class="mx-1">
+                                        <v-icon v-if="item.error.status" @click="restartBuild(item.database.name)">
                                             mdi-restart
                                         </v-icon>
-                                        <v-icon small v-else @click="stopDatabase(item.database.name)">
+                                        <v-icon v-else @click="stopDatabase(item.database.name)">
                                             mdi-stop
                                         </v-icon>
                                     </v-btn>
-                                    <v-btn icon small>
-                                        <v-icon small>mdi-delete</v-icon>
+                                    <v-btn
+                                        icon
+                                        x-small
+                                        class="mx-1"
+                                        @click="deleteDatabase(item.database.name)"
+                                        :loading="dbsBeingDeleted.indexOf(item.database.name) !== -1">
+                                        <v-icon>mdi-delete</v-icon>
                                     </v-btn>
-                                    <v-btn icon small>
-                                        <v-icon small>mdi-information</v-icon>
+                                    <v-btn icon x-small class="mx-1">
+                                        <v-icon>mdi-information</v-icon>
                                     </v-btn>
                                 </template>
                                 <template v-slot:item.status="{ item }">
@@ -162,7 +167,9 @@
                                                 </div>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
-                                                <progress-report-summary :progress-report="item.progress" :with-logs="true" />
+                                                <progress-report-summary
+                                                    :progress-report="item.progress"
+                                                    :with-logs="true" />
                                             </div>
                                         </div>
                                     </td>
@@ -192,6 +199,8 @@ import { CustomDatabaseInfo } from "@/state/DockerStore";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
+import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import { Watch } from "vue-property-decorator";
 
 @Component({
     components: { ProgressReportSummary, CreateCustomDatabase, Tooltip },
@@ -257,17 +266,24 @@ export default class CustomDatabasePage extends Vue {
     private expandedItems: [] = [];
     private ncbiOntology: Ontology<NcbiId, NcbiTaxon>;
 
+    private dbsBeingDeleted: string[] = [];
+
     get databases(): CustomDatabaseInfo[] {
         return [...Object.values(this.$store.getters.databases)] as CustomDatabaseInfo[];
     }
 
-    private async mounted(): Promise<void> {
+    @Watch("databases")
+    private async databasesUpdated() {
         this.loading = true;
         const ncbiProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
         this.ncbiOntology = await ncbiProcessor.getOntologyByIds(
             this.databases.map(d => d.database.taxa).flat()
         );
         this.loading = false;
+    }
+
+    private async mounted(): Promise<void> {
+        await this.databasesUpdated();
 
         this.dockerCheckTimeout = setInterval(async() => {
             this.dockerConnectionError = !(await this.checkDockerConnection());
@@ -311,7 +327,16 @@ export default class CustomDatabasePage extends Vue {
     }
 
     private async stopDatabase(dbName: string): Promise<void> {
-        this.$store.dispatch("stopDatabase", dbName);
+        return this.$store.dispatch("stopDatabase", dbName);
+    }
+
+    private async deleteDatabase(dbName: string): Promise<void> {
+        this.dbsBeingDeleted.push(dbName);
+        const configMng = new ConfigurationManager();
+        const config = await configMng.readConfiguration();
+        await this.stopDatabase(dbName);
+        await this.$store.dispatch("deleteDb", [dbName, config]);
+        this.dbsBeingDeleted.splice(this.dbsBeingDeleted.indexOf(dbName), 1);
     }
 
     private async forceStop(): Promise<void> {

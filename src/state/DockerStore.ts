@@ -83,6 +83,17 @@ const databaseMutations: MutationTree<CustomDatabaseState> = {
         });
     },
 
+    REMOVE_DATABASE(
+        state: CustomDatabaseState,
+        database: CustomDatabase
+    ) {
+        const index = state.databases.findIndex(db => db.database.name === database.name);
+
+        if (index !== -1) {
+            state.databases.splice(index, 1);
+        }
+    },
+
     UPDATE_DATABASE_PROGRESS(
         state: CustomDatabaseState,
         [database, value, progress_step]: [CustomDatabase, number, number]
@@ -222,7 +233,6 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
             // TODO change to correct most recent version, retrieved from the Expasy FTP server.
             const dbVersion = "2021.3";
 
-            // TODO count exact number of entries that will be present in this database.
             const customDb = new CustomDatabase(
                 dbName,
                 databaseSources,
@@ -270,6 +280,19 @@ const databaseActions: ActionTree<CustomDatabaseState, any> = {
             "UPDATE_DATABASE_CANCELLATION_STATUS",
             [dbObj.database, false]
         );
+    },
+
+    deleteDb(
+        store: ActionContext<CustomDatabaseState, any>,
+        [dbName, configuration]: [string, Configuration]
+    ) {
+        const dbObj = store.state.databases.find(db => db.database.name === dbName);
+        // First try to remove the database from the filesystem
+        const customDbManager = new CustomDatabaseManager();
+        customDbManager.deleteDatabase(
+            configuration.customDbStorageLocation,
+            dbObj.database
+        ).then(() => store.commit("REMOVE_DATABASE", dbObj.database));
     },
 
     initializeQueue(
