@@ -1,7 +1,6 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { promises as fs } from "fs";
 import path, { dirname } from "path";
-import mkdirp from "mkdirp";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 
 /**

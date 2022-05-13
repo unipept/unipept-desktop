@@ -73,9 +73,6 @@ export default class DockerCommunicator {
         await fs.rmdir(databaseFolder, { recursive: true });
         await mkdirp(databaseFolder);
 
-        console.log("IndexFolder: ");
-        console.log(indexFolder);
-
         await new Promise<void>(async(resolve, reject) => {
             try {
                 await DockerCommunicator.connection.run(
@@ -123,10 +120,10 @@ export default class DockerCommunicator {
         customDb.complete = true;
 
         // Now, stop this container
-        const buildContainer = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
-        return new Promise<void>(
-            resolve => DockerCommunicator.connection.getContainer(buildContainer!.Id).stop(resolve)
-        );
+        const buildContainerInfo = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+        const container = DockerCommunicator.connection.getContainer(buildContainerInfo!.Id);
+        await container.stop();
+        await container.remove();
     }
 
     public async startDatabase(databaseLocation: string): Promise<void> {

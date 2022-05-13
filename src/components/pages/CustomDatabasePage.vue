@@ -69,7 +69,10 @@
                                     <span v-else>{{ toHumanReadableNumber(item.database.entries) }}</span>
                                 </template>
                                 <template v-slot:item.database.sizeOnDisk="{ item }">
-                                    <span>
+                                    <span v-if="item.database.sizeOnDisk === -1">
+                                        N/A
+                                    </span>
+                                    <span v-else>
                                         {{
                                             toHumanReadableNumber(Math.round(item.database.sizeOnDisk / 1024 ** 2))
                                         }} MiB
