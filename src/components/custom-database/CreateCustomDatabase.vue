@@ -191,7 +191,6 @@ import axios from "axios";
 
 import https from "https";
 import TaxaBrowser from "@/components/taxon/TaxaBrowser.vue";
-import TaxaTree from "@/components/taxon/TaxaTree.vue";
 import {
     CountTable,
     LcaCountTableProcessor,
@@ -206,7 +205,7 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 
 @Component({
-    components: { TaxaBrowser, TaxaTree }
+    components: { TaxaBrowser }
 })
 export default class CreateCustomDatabase extends Vue {
     @Prop({ required: true })
