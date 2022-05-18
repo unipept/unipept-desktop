@@ -50,7 +50,10 @@ export default class CustomDatabaseManager {
                             metadata.databaseVersion,
                             metadata.entries,
                             metadata.complete,
-                            dbSize
+                            dbSize,
+                            metadata.cancelled,
+                            metadata.progress,
+                            metadata.error
                         )
                     );
                 } catch (e) {

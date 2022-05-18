@@ -322,7 +322,7 @@ export default class CustomDatabasePage extends Vue {
      * Returns true if a zombie database construction process is still running in the Docker daemon.
      */
     private async checkZombieBuildInProgress(): Promise<boolean> {
-        if (this.$store.getters.constructionInProgress) {
+        if (this.$store.getters["customDatabases/constructionInProgress"]) {
             return false;
         }
 

@@ -1,10 +1,11 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { ActionContext, ActionTree, GetterTree, Module, MutationTree } from "vuex";
-import { NcbiId, ProgressReport, ProgressReportHelper } from "unipept-web-components";
+import { NcbiId } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import Configuration from "@/logic/configuration/Configuration";
 import * as path from "path";
 import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
+import { data } from "jquery";
 
 export interface CustomDatabaseState {
     databases: CustomDatabase[],
@@ -14,13 +15,13 @@ export interface CustomDatabaseState {
 
 export default class CustomDatabaseStoreFactory {
     private configuration: Configuration;
+    private customDbManager: CustomDatabaseManager;
 
     public constructCustomDatabaseStore(): Module<CustomDatabaseState, any> {
         const databaseState: CustomDatabaseState = {
             databases: [],
             constructionInProgress: false
         }
-
 
         const databaseGetters: GetterTree<CustomDatabaseState, any> = {
             databases(state: CustomDatabaseState): CustomDatabase[] {
@@ -184,22 +185,52 @@ export default class CustomDatabaseStoreFactory {
         const databaseActions: ActionTree<CustomDatabaseState, any> = {
             buildDatabase: {
                 root: false,
-                handler: this.buildDatabase
+                handler: async(
+                    store: ActionContext<CustomDatabaseState, any>,
+                    [
+                        dbName,
+                        databaseSources,
+                        databaseTypes,
+                        taxa
+                    ]: [
+                        string,
+                        string[],
+                        string[],
+                        NcbiId[]
+                    ]
+                ) => {
+                    await this.buildDatabase(store, [dbName, databaseSources, databaseTypes, taxa]);
+                }
             },
 
             stopDatabase: {
                 root: false,
-                handler: this.stopDatabase
+                handler: async(
+                    store: ActionContext<CustomDatabaseState, any>,
+                    dbName: string
+                ) => {
+                    await this.stopDatabase(store, dbName);
+                }
             },
 
             reanalyzeDatabase: {
                 root: false,
-                handler: this.reanalyzeDatabase
+                handler: async(
+                    store: ActionContext<CustomDatabaseState, any>,
+                    dbName: string
+                ) => {
+                    await this.reanalyzeDatabase(store, dbName);
+                }
             },
 
             deleteDatabase: {
                 root: false,
-                handler: this.deleteDatabase
+                handler: async(
+                    store: ActionContext<CustomDatabaseState, any>,
+                    dbName: string
+                ) => {
+                    await this.deleteDatabase(store, dbName);
+                }
             },
 
             /**
@@ -208,7 +239,12 @@ export default class CustomDatabaseStoreFactory {
              */
             initializeDatabaseQueue: {
                 root: false,
-                handler: this.initializeDatabaseQueue
+                handler: async(
+                    store: ActionContext<CustomDatabaseState, any>,
+                    config: Configuration
+                ) => {
+                    await this.initializeDatabaseQueue(store, config);
+                }
             }
         }
 
@@ -235,20 +271,20 @@ export default class CustomDatabaseStoreFactory {
                 path.join(this.configuration.customDbStorageLocation, "index"),
                 (step, value, progress_step) => {
                     store.commit("CUSTOM_DB_UPDATE_PROGRESS", [customDb, value, progress_step]);
+                    this.updateMetadata(customDb);
                 },
                 (line: string) => {
-                    store.commit("CUSTOM_DB_UPDATE_LOG", [customDb, line])
+                    store.commit("CUSTOM_DB_UPDATE_LOG", [customDb, line]);
+                    this.updateMetadata(customDb);
                 }
             );
-
-            const customManager = new CustomDatabaseManager();
-            await customManager.updateMetadata(this.configuration.customDbStorageLocation, customDb);
 
             store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [customDb, true]);
         } catch (err) {
             store.commit("CUSTOM_DB_UPDATE_ERROR", [customDb, true, err.message, err]);
         } finally {
             store.commit("CUSTOM_DB_UPDATE_GLOBAL_CONSTRUCTION_STATUS", false);
+            await this.updateMetadata(customDb);
         }
     }
 
@@ -258,8 +294,8 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         this.configuration = config;
 
-        const customDbMng = new CustomDatabaseManager();
-        const dbList = await customDbMng.listAllDatabases(this.configuration.customDbStorageLocation);
+        this.customDbManager = new CustomDatabaseManager();
+        const dbList = await this.customDbManager.listAllDatabases(this.configuration.customDbStorageLocation);
 
         for (const db of dbList) {
             store.commit("CUSTOM_DB_ADD_DATABASE_OBJECT", db);
@@ -278,10 +314,11 @@ export default class CustomDatabaseStoreFactory {
                     const scheduledDatabases = store.getters.databases.filter(
                         (db: CustomDatabase) => !db.ready && !db.error.status
                     );
+
                     if (scheduledDatabases.length > 0) {
                         await this.startDatabaseConstruction(
                             store,
-                            scheduledDatabases[0].database
+                            scheduledDatabases[0]
                         );
                     }
                 }
@@ -300,8 +337,8 @@ export default class CustomDatabaseStoreFactory {
         const customDbManager = new CustomDatabaseManager();
         customDbManager.deleteDatabase(
             this.configuration.customDbStorageLocation,
-            dbObj.database
-        ).then(() => store.commit("REMOVE_DATABASE", dbObj.database));
+            dbObj
+        ).then(() => store.commit("CUSTOM_DB_REMOVE_DATABASE", dbObj));
     }
 
     private async reanalyzeDatabase(
@@ -314,9 +351,11 @@ export default class CustomDatabaseStoreFactory {
         store.commit("CUSTOM_DB_RESET_LOG", dbObj);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, false]);
         store.commit(
-            "UPDATE_DATABASE_CANCELLATION_STATUS",
+            "CUSTOM_DB_UPDATE_CANCELLATION_STATUS",
             [dbObj, false]
         );
+
+        await this.updateMetadata(dbObj);
     }
 
     private async stopDatabase(
@@ -330,6 +369,8 @@ export default class CustomDatabaseStoreFactory {
 
         const dockerCommunicator = new DockerCommunicator();
         await dockerCommunicator.stopDatabase();
+
+        await this.updateMetadata(dbObj);
     }
 
     private async buildDatabase(
@@ -338,14 +379,12 @@ export default class CustomDatabaseStoreFactory {
             dbName,
             databaseSources,
             databaseTypes,
-            taxa,
-            configuration
+            taxa
         ]: [
             string,
             string[],
             string[],
-            NcbiId[],
-            Configuration
+            NcbiId[]
         ]
     ): Promise<void> {
         store.commit("CUSTOM_DB_ADD_DATABASE", [
@@ -356,8 +395,10 @@ export default class CustomDatabaseStoreFactory {
         ]);
 
         const dbObj = store.getters.database(dbName);
+        await this.updateMetadata(dbObj);
+    }
 
-        const customDbMng = new CustomDatabaseManager();
-        await customDbMng.updateMetadata(configuration.customDbStorageLocation, dbObj);
+    private updateMetadata(dbObj: CustomDatabase): Promise<void> {
+        return this.customDbManager.updateMetadata(this.configuration.customDbStorageLocation, dbObj);
     }
 }
