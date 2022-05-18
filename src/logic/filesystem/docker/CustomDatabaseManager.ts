@@ -47,8 +47,8 @@ export default class CustomDatabaseManager {
                             metadata.sources,
                             metadata.sourceTypes,
                             metadata.taxa,
-                            metadata.entries,
                             metadata.databaseVersion,
+                            metadata.entries,
                             metadata.complete,
                             dbSize
                         )
@@ -60,27 +60,6 @@ export default class CustomDatabaseManager {
             }
         }
         return databases;
-    }
-
-    /**
-     * Returns a list of all custom databases that are completely built.
-     *
-     * @param dbRootFolder The root folder in which all custom database information for the complete application is
-     * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
-     */
-    public async listAllBuildDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
-        return (await this.listAllDatabases(dbRootFolder)).filter(c => c.complete);
-    }
-
-    /**
-     * Returns a list of all databases that are incomplete or missing at least part of their data files. These databases
-     * should probably be rebuild before trying to use them!
-     *
-     * @param dbRootFolder The root folder in which all custom database information for the complete application is
-     * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
-     */
-    public async listAllIncompleteDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
-        return (await this.listAllDatabases(dbRootFolder)).filter(c => !c.complete);
     }
 
     /**

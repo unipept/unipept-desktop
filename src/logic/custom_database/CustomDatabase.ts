@@ -1,5 +1,27 @@
-import { NcbiId } from "unipept-web-components";
+import { NcbiId, ProgressReport, ProgressReportHelper } from "unipept-web-components";
 import crypto from "crypto";
+
+const progressSteps: string[] = [
+    "Creating taxon tables",
+    "Initializing database build process",
+    "Downloading database",
+    "Processing chunks",
+    "Started building main database tables",
+    "Calculating lowest common ancestors",
+    "Calculating functional annotations",
+    "Sorting peptides",
+    "Creating sequence table",
+    "Fetching EC numbers",
+    "Fetching GO terms",
+    "Fetching InterPro entries",
+    "Filling database and computing indices"
+];
+
+export type DatabaseErrorStatus = {
+    status: boolean,
+    message: string,
+    object: Error
+}
 
 export default class CustomDatabase {
     constructor(
@@ -7,12 +29,19 @@ export default class CustomDatabase {
         public readonly sources: string[],
         public readonly sourceTypes: string[],
         public readonly taxa: NcbiId[],
-        // Amount of entries that are present in this filtered database.
-        public entries: number,
         public readonly databaseVersion: string,
+        // Amount of entries that are present in this filtered database.
+        public entries: number = -1,
         // Has the database successfully been built?
-        public complete: boolean = false,
-        public sizeOnDisk: number = -1
+        public ready: boolean = false,
+        public sizeOnDisk: number = -1,
+        public cancelled: boolean = false,
+        public readonly progress: ProgressReport = ProgressReportHelper.constructProgressReportObject(progressSteps),
+        public readonly error: DatabaseErrorStatus = {
+            status: false,
+            message: "",
+            object: undefined
+        }
     ) {}
 
     /**

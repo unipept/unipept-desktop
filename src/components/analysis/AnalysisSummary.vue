@@ -135,9 +135,9 @@ import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemD
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelect.vue";
-import { CustomDatabaseInfo } from "@/state/DockerStore";
 import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
@@ -215,12 +215,12 @@ export default class AnalysisSummary extends Vue {
             subtitle: "https://unipept.ugent.be"
         });
 
-        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
-            if (dbInfo.database.complete) {
+        for (const dbInfo of (this.$store.getters["customDatabases/databases"] as CustomDatabase[])) {
+            if (dbInfo.ready) {
                 this.renderableSources.push({
                     type: "local",
-                    title: dbInfo.database.name,
-                    subtitle: `${dbInfo.database.entries} UniProt-entries`
+                    title: dbInfo.name,
+                    subtitle: `${dbInfo.entries} UniProt-entries`
                 });
             }
         }
@@ -291,9 +291,7 @@ export default class AnalysisSummary extends Vue {
             this.analysisSource = new CachedCustomDbAnalysisSource(
                 this.assay,
                 this.$store.getters.dbManager,
-                this.$store.getters.databases.find(
-                    (d: CustomDatabaseInfo) => d.database.name === this.currentAnalysisSource.title
-                ),
+                this.$store.getters["customDatabases/database"](this.currentAnalysisSource.title),
                 config.customDbStorageLocation,
                 this.$store.getters.projectLocation
             );

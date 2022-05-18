@@ -117,7 +117,7 @@ export default class DockerCommunicator {
             }
         });
 
-        customDb.complete = true;
+        customDb.ready = true;
 
         // Now, stop this container
         const buildContainerInfo = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);

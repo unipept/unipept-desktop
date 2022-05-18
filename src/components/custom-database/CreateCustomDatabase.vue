@@ -285,7 +285,7 @@ export default class CreateCustomDatabase extends Vue {
         const configManager = new ConfigurationManager();
 
         this.$store.dispatch(
-            "buildDatabase",
+            "customDatabases/buildDatabase",
             [
                 this.databaseName,
                 this.selectedSources.map(source => (sourceUrlMap as any)[source]),

@@ -48,15 +48,15 @@
                                 show-expand
                                 :expanded.sync="expandedItems"
                                 :items="databases"
-                                item-key="database.name"
+                                item-key="name"
                                 :loading="loading">
-                                <template v-slot:item.database.taxa="{ item }">
+                                <template v-slot:item.taxa="{ item }">
                                     <span v-if="loading">
                                         Loading...
                                     </span>
                                     <div v-else class="taxa-filter">
                                         {{
-                                            item.database.taxa
+                                            item.taxa
                                                 .map(t => ncbiOntology.getDefinition(t))
                                                 .filter(i => i !== undefined)
                                                 .map(i => i.name)
@@ -64,26 +64,26 @@
                                         }}
                                     </div>
                                 </template>
-                                <template v-slot:item.database.entries="{ item }">
-                                    <span v-if="item.database.entries === -1">N/A</span>
-                                    <span v-else>{{ toHumanReadableNumber(item.database.entries) }}</span>
+                                <template v-slot:item.entries="{ item }">
+                                    <span v-if="item.entries === -1">N/A</span>
+                                    <span v-else>{{ toHumanReadableNumber(item.entries) }}</span>
                                 </template>
-                                <template v-slot:item.database.sizeOnDisk="{ item }">
-                                    <span v-if="item.database.sizeOnDisk === -1">
+                                <template v-slot:item.sizeOnDisk="{ item }">
+                                    <span v-if="item.sizeOnDisk === -1">
                                         N/A
                                     </span>
                                     <span v-else>
                                         {{
-                                            toHumanReadableNumber(Math.round(item.database.sizeOnDisk / 1024 ** 2))
+                                            toHumanReadableNumber(Math.round(item.sizeOnDisk / 1024 ** 2))
                                         }} MiB
                                     </span>
                                 </template>
                                 <template v-slot:item.actions="{ item }">
                                     <v-btn icon x-small :disabled="item.ready && !item.cancelled" class="mx-1">
-                                        <v-icon v-if="item.error.status" @click="restartBuild(item.database.name)">
+                                        <v-icon v-if="item.error.status" @click="restartBuild(item.name)">
                                             mdi-restart
                                         </v-icon>
-                                        <v-icon v-else @click="stopDatabase(item.database.name)">
+                                        <v-icon v-else @click="stopDatabase(item.name)">
                                             mdi-stop
                                         </v-icon>
                                     </v-btn>
@@ -91,8 +91,8 @@
                                         icon
                                         x-small
                                         class="mx-1"
-                                        @click="deleteDatabase(item.database.name)"
-                                        :loading="dbsBeingDeleted.indexOf(item.database.name) !== -1">
+                                        @click="deleteDatabase(item.name)"
+                                        :loading="dbsBeingDeleted.indexOf(item.name) !== -1">
                                         <v-icon>mdi-delete</v-icon>
                                     </v-btn>
                                     <v-btn icon x-small class="mx-1">
@@ -137,7 +137,7 @@
                                                 </v-avatar>
                                                 <div class="mt-2">
                                                     You cancelled the construction of this database. You can
-                                                    <a @click="restartBuild(item.database.name)">restart</a> the
+                                                    <a @click="restartBuild(item.name)">restart</a> the
                                                     analysis when you are ready to continue.
                                                 </div>
                                             </div>
@@ -146,7 +146,7 @@
                                                     <div class="mb-4">
                                                         An unexpected error has occurred during this database build.
                                                         Details about this specific error are shown below. You can
-                                                        <a @click="restartBuild(item.database.name)">restart</a> the
+                                                        <a @click="restartBuild(item.name)">restart</a> the
                                                         analysis to try again. If you believe that this error is not the
                                                         result of a user action, then please contact us and provide the
                                                         error details below. Make sure to check your internet connection
@@ -205,7 +205,6 @@ import Component from "vue-class-component";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CreateCustomDatabase from "@/components/custom-database/CreateCustomDatabase.vue";
 import { NcbiId, NcbiOntologyProcessor, NcbiTaxon, Ontology, StringUtils, Tooltip } from "unipept-web-components";
-import { CustomDatabaseInfo } from "@/state/DockerStore";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
@@ -213,14 +212,7 @@ import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
 
 @Component({
-    components: { ProgressReportSummary, CreateCustomDatabase, Tooltip },
-    computed: {
-        databases: {
-            get(): CustomDatabaseInfo[] {
-                return [...Object.values(this.$store.getters.databases)] as CustomDatabaseInfo[];
-            }
-        }
-    }
+    components: { ProgressReportSummary, CreateCustomDatabase, Tooltip }
 })
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
@@ -245,31 +237,31 @@ export default class CustomDatabasePage extends Vue {
             text: "Name",
             align: "start",
             sortable: true,
-            value: "database.name"
+            value: "name"
         },
         {
             text: "Source",
             align: "start",
             sortable: true,
-            value: "database.sourceTypes"
+            value: "sourceTypes"
         },
         {
             text: "Taxa filter",
             align: "start",
             sortable: true,
-            value: "database.taxa"
+            value: "taxa"
         },
         {
             text: "UniProt records",
             align: "start",
             sortable: true,
-            value: "database.entries"
+            value: "entries"
         },
         {
             text: "Size on disk",
             align: "start",
             sortable: true,
-            value: "database.sizeOnDisk"
+            value: "sizeOnDisk"
         },
         {
             text: "Actions",
@@ -284,8 +276,8 @@ export default class CustomDatabasePage extends Vue {
 
     private dbsBeingDeleted: string[] = [];
 
-    get databases(): CustomDatabaseInfo[] {
-        return [...Object.values(this.$store.getters.databases)] as CustomDatabaseInfo[];
+    get databases(): CustomDatabase[] {
+        return this.$store.getters["customDatabases/databases"];
     }
 
     @Watch("databases")
@@ -293,7 +285,7 @@ export default class CustomDatabasePage extends Vue {
         this.loading = true;
         const ncbiProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
         this.ncbiOntology = await ncbiProcessor.getOntologyByIds(
-            this.databases.map(d => d.database.taxa).flat()
+            this.databases.map(d => d.taxa).flat()
         );
         this.loading = false;
     }
@@ -339,19 +331,17 @@ export default class CustomDatabasePage extends Vue {
     }
 
     private async restartBuild(dbName: string): Promise<void> {
-        this.$store.dispatch("reanalyzeDb", dbName);
+        this.$store.dispatch("customDatabases/reanalyzeDatabase", dbName);
     }
 
     private async stopDatabase(dbName: string): Promise<void> {
-        return this.$store.dispatch("stopDatabase", dbName);
+        return this.$store.dispatch("customDatabases/stopDatabase", dbName);
     }
 
     private async deleteDatabase(dbName: string): Promise<void> {
         this.dbsBeingDeleted.push(dbName);
-        const configMng = new ConfigurationManager();
-        const config = await configMng.readConfiguration();
         await this.stopDatabase(dbName);
-        await this.$store.dispatch("deleteDb", [dbName, config]);
+        await this.$store.dispatch("customDatabases/deleteDatabase", dbName);
         this.dbsBeingDeleted.splice(this.dbsBeingDeleted.indexOf(dbName), 1);
     }
 
