@@ -46,7 +46,10 @@
                                             label="Database name"
                                             hint="Give your database a name to easily recognize it."
                                             persistent-hint
-                                            :rules="[value => !! value || 'Provide a valid name for your database']"
+                                            :rules="[
+                                                value => !! value || 'Provide a valid name for your database',
+                                                value => isDbNameUnique(value) || 'Another database with this name already exists'
+                                            ]"
                                             v-model="databaseName">
                                         </v-text-field>
                                     </v-col>
@@ -203,6 +206,7 @@ import {
 import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 
 @Component({
     components: { TaxaBrowser }
@@ -239,6 +243,17 @@ export default class CreateCustomDatabase extends Vue {
         this.onValueChanged();
         this.selectedMirror = this.getMostSuitableMirror();
         await this.retrieveUniProtVersions();
+    }
+
+    /**
+     * Checks if the provided database name is unique (i.e. does not already exists). Databases with the same name
+     * cannot exist at the same time due to compatibility issues.
+     *
+     * @param name The name of the database for which uniqueness should be tested.
+     * @return true if this database name is not yet taken.
+     */
+    private isDbNameUnique(name: string): boolean {
+        return ! this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
     }
 
     private updateSelectedTaxa(value: NcbiTaxon[]): void {
