@@ -98,7 +98,10 @@
                                 </v-edit-dialog>
                             </template>
                             <template v-slot:item.name="props">
-                                <v-edit-dialog :return-value.sync="props.item.name">
+                                <v-edit-dialog
+                                    :return-value.sync="props.item.name"
+                                    @open="nameProp = props.item.name"
+                                    @close="props.item.name = nameProp">
                                     <v-text-field
                                         v-model="props.item.name"
                                         hide-details
@@ -108,7 +111,7 @@
                                     </v-text-field>
                                     <template v-slot:input>
                                         <v-text-field
-                                            v-model="props.item.name"
+                                            v-model="nameProp"
                                             label="Edit name"
                                             single-line>
                                         </v-text-field>
@@ -236,6 +239,8 @@ export default class CreateAssayDialog extends Vue {
 
     private errorActive: boolean = false;
     private errorMessage: string = "";
+
+    private nameProp: string = "";
 
     // The previous directory that was used to load an assay from.
     // (Is required to open the file dialog in the same directory on Linux)
