@@ -156,7 +156,7 @@
 
                                                     <div class="font-weight-bold">Application error details</div>
                                                     <textarea
-                                                        :value="item.error.object ? item.error.object.stack : this.errorMessage"
+                                                        :value="item.error.message"
                                                         class="logview pa-2"
                                                         disabled />
                                                     <div class="font-weight-bold mt-4">Database build logs</div>
@@ -166,7 +166,14 @@
                                                         disabled />
                                                 </v-alert>
                                             </div>
-                                            <div v-else-if="item.ready" class="d-flex flex-column align-center py-4">
+                                            <div v-else class="d-flex flex-column align-center py-4">
+                                                <progress-report-summary
+                                                    :progress-report="item.progress"
+                                                    :with-logs="true" />
+                                            </div>
+                                            <div
+                                                v-if="!item.error.status && !item.cancelled && item.ready"
+                                                class="d-flex flex-column align-center py-4">
                                                 <v-avatar color="green">
                                                     <v-icon dark>mdi-check</v-icon>
                                                 </v-avatar>
@@ -175,11 +182,6 @@
                                                     used as part of an analysis. Head over to the analysis page and
                                                     open up a new sample to get started.
                                                 </div>
-                                            </div>
-                                            <div v-else class="d-flex flex-column align-center py-4">
-                                                <progress-report-summary
-                                                    :progress-report="item.progress"
-                                                    :with-logs="true" />
                                             </div>
                                         </div>
                                     </td>

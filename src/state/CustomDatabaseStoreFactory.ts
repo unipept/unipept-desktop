@@ -281,7 +281,12 @@ export default class CustomDatabaseStoreFactory {
 
             store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [customDb, true]);
         } catch (err) {
-            store.commit("CUSTOM_DB_UPDATE_ERROR", [customDb, true, err.message, err]);
+            store.commit("CUSTOM_DB_UPDATE_ERROR", [
+                customDb,
+                true,
+                err.stack,
+                err
+            ]);
         } finally {
             store.commit("CUSTOM_DB_UPDATE_GLOBAL_CONSTRUCTION_STATUS", false);
             await this.updateMetadata(customDb);
