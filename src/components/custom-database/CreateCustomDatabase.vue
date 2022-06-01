@@ -310,6 +310,22 @@ export default class CreateCustomDatabase extends Vue {
             ]
         );
         this.dialogActive = false;
+
+        // After a database construction was started, we need to reset this wizard and prepare it for the next user.
+        this.resetWizard();
+    }
+
+    /**
+     * Reset the database construction wizard in this dialog to it's initial state.
+     */
+    private resetWizard(): void {
+        this.currentStep = 1;
+        this.selectedTaxa.splice(0, this.selectedTaxa.length);
+        this.databaseName = "";
+        this.selectedSources.splice(0, this.selectedSources.length);
+        this.selectedVersion = "Current";
+        this.error = false;
+        (this.$refs.databaseForm as any).reset();
     }
 
     /**
