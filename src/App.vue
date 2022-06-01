@@ -169,7 +169,7 @@ export default class App extends Vue implements ErrorListener {
 
     @Watch("activeAssay")
     private activeAssayChanged(assay: AssayAnalysisStatus) {
-        if (assay.analysisReady) {
+        if (!assay || assay.analysisReady) {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
             electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(
