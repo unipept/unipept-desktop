@@ -1,5 +1,11 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { ExecException } from "child_process";
+
+export type DiskStats = {
+    total: number,
+    free: number
+}
 
 export default class FileSystemUtils {
     public static async deleteRecursive(path: string): Promise<void> {
@@ -32,5 +38,41 @@ export default class FileSystemUtils {
         } else {
             return stats.size;
         }
+    }
+
+    public static async getDiskStats(folder: string): Promise<DiskStats | undefined> {
+        const { exec } = require("child_process");
+
+        if (process.platform === "darwin") {
+            const [stdout, stderr] = await new Promise<[string, string]>(
+                (resolve, reject) =>  {
+                    exec(
+                        `df -B1 ${folder}`,
+                        (err: ExecException | null, stdout: string, stderr: string) =>  {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve([stdout, stderr]);
+                            }
+                        }
+                    );
+                }
+            );
+
+            if (stderr) {
+                return undefined;
+            } else {
+                // Try to parse the output
+                const lines = stdout.split("\n");
+                const fields = lines[1].split(/\s+/);
+
+                return {
+                    total: Number.parseInt(fields[3]) + Number.parseInt(fields[2]),
+                    free: Number.parseInt(fields[3])
+                }
+            }
+        }
+
+        return undefined;
     }
 }

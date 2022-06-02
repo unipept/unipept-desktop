@@ -187,7 +187,9 @@
                                     </td>
                                 </template>
                             </v-data-table>
-                            <div class="d-flex justify-end mt-4">
+                            <div class="d-flex flex-row align-center mt-4">
+                                <disk-usage-bar class="flex-grow-1 my-1" :folder="databaseFolder" style="max-width: 700px;" />
+                                <v-spacer></v-spacer>
                                 <v-btn color="primary" @click="createDatabaseDialog = true">
                                     Create custom database
                                 </v-btn>
@@ -212,9 +214,10 @@ import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.v
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
+import DiskUsageBar from "@/components/filesystem/DiskUsageBar.vue";
 
 @Component({
-    components: { ProgressReportSummary, CreateCustomDatabase, Tooltip }
+    components: { DiskUsageBar, ProgressReportSummary, CreateCustomDatabase, Tooltip }
 })
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
@@ -278,18 +281,10 @@ export default class CustomDatabasePage extends Vue {
 
     private dbsBeingDeleted: string[] = [];
 
+    private databaseFolder: string = "";
+
     get databases(): CustomDatabase[] {
         return this.$store.getters["customDatabases/databases"];
-    }
-
-    @Watch("databases")
-    private async databasesUpdated() {
-        this.loading = true;
-        const ncbiProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
-        this.ncbiOntology = await ncbiProcessor.getOntologyByIds(
-            this.databases.map(d => d.taxa).flat()
-        );
-        this.loading = false;
     }
 
     private async mounted(): Promise<void> {
@@ -301,12 +296,27 @@ export default class CustomDatabasePage extends Vue {
                 this.buildInProgressError = await this.checkZombieBuildInProgress();
             }
         }, 1000);
+
+        const configurationMng = new ConfigurationManager();
+        const config = await configurationMng.readConfiguration();
+
+        this.databaseFolder = config.customDbStorageLocation;
     }
 
     private beforeDestroy(): void {
         if (this.dockerCheckTimeout) {
             clearInterval(this.dockerCheckTimeout);
         }
+    }
+
+    @Watch("databases")
+    private async databasesUpdated() {
+        this.loading = true;
+        const ncbiProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
+        this.ncbiOntology = await ncbiProcessor.getOntologyByIds(
+            this.databases.map(d => d.taxa).flat()
+        );
+        this.loading = false;
     }
 
     private async checkDockerConnection(): Promise<boolean> {
