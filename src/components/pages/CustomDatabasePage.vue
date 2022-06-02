@@ -131,6 +131,18 @@
                                     v-slot:expanded-item="{ headers, item }">
                                     <td :colspan="headers.length">
                                         <div class="my-2">
+                                            <div
+                                                v-if="!item.error.status && !item.cancelled && item.ready"
+                                                class="d-flex flex-column align-center py-4">
+                                                <v-avatar color="green">
+                                                    <v-icon dark>mdi-check</v-icon>
+                                                </v-avatar>
+                                                <div class="mt-2">
+                                                    This custom database has been constructed successfully and can be
+                                                    used as part of an analysis. Head over to the analysis page and
+                                                    open up a new sample to get started.
+                                                </div>
+                                            </div>
                                             <div v-if="item.cancelled" class="d-flex flex-column align-center py-4">
                                                 <v-avatar color="warning">
                                                     <v-icon dark>mdi-cancel</v-icon>
@@ -170,18 +182,6 @@
                                                 <progress-report-summary
                                                     :progress-report="item.progress"
                                                     :with-logs="true" />
-                                            </div>
-                                            <div
-                                                v-if="!item.error.status && !item.cancelled && item.ready"
-                                                class="d-flex flex-column align-center py-4">
-                                                <v-avatar color="green">
-                                                    <v-icon dark>mdi-check</v-icon>
-                                                </v-avatar>
-                                                <div class="mt-2">
-                                                    This custom database has been constructed successfully and can be
-                                                    used as part of an analysis. Head over to the analysis page and
-                                                    open up a new sample to get started.
-                                                </div>
                                             </div>
                                         </div>
                                     </td>

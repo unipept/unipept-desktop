@@ -145,6 +145,8 @@ export default class CustomDatabaseStoreFactory {
                             progressObj.endTimes[i] = time;
                         }
                     }
+
+                    progressObj.currentStep = progressObj.steps.length + 1;
                 } else {
                     // Reset progress values
                     for (let i = 0; i < progressObj.steps.length; i++) {

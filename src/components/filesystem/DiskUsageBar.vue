@@ -3,12 +3,15 @@
         <div v-if="error">
             Disk space information not available
         </div>
+        <div v-else-if="loading">
+            Loading disk space information...
+        </div>
         <div v-else>
             <div class="d-flex">
                 <div :style="{
                 'background-color': '#1976d2',
                 'height': '15px',
-                'flex': (100 - totalFreeSpacePercentage),
+                'flex': (100 - spaceUsedByFolderPercentage - totalFreeSpacePercentage),
                 'text-align': 'center',
                 'color': 'white'
             }"
@@ -31,11 +34,17 @@
             </div>
             <div class="d-flex align-center">
                 <div style="width: 15px; height: 15px; background-color: #1976d2;" class="ma-2"></div>
-                <span>{{ Math.round((totalDiskSpace - totalFreeSpace) / (1024 ** 3)) }} GiB used space</span>
+                <span>
+                    {{ Math.round((totalDiskSpace - totalFreeSpace - spaceUsedByFolder) / (1024 ** 3)) }} GiB used space
+                </span>
                 <div style="width: 15px; height: 15px; background-color: #ff5722;" class="ma-2"></div>
-                <span>{{ Math.round((spaceUsedByFolder) / (1024 ** 3)) }} GiB used by the application</span>
+                <span>
+                    {{ Math.round((spaceUsedByFolder) / (1024 ** 3)) }} GiB used by the application
+                </span>
                 <div style="width: 15px; height: 15px; background-color: #cecece;" class="ma-2"></div>
-                <span>{{ Math.round((totalFreeSpace) / (1024 ** 3)) }} GiB free space</span>
+                <span>
+                    {{ Math.round((totalFreeSpace) / (1024 ** 3)) }} GiB free space
+                </span>
             </div>
         </div>
     </div>
@@ -61,15 +70,18 @@ export default class DiskUsageBar extends Vue {
     private spaceUsedByFolder: number = 0;
     private spaceUsedByFolderPercentage: number = 0;
 
+    private loading: boolean = true;
     private error: boolean = false;
 
     private interval: NodeJS.Timeout;
 
     private async mounted() {
+        this.loading = true;
         await this.update();
         this.interval = setInterval(() => {
             this.update();
         }, 1000);
+        this.loading = false;
     }
 
     private async beforeDestroy() {

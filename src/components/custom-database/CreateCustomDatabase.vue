@@ -322,10 +322,11 @@ export default class CreateCustomDatabase extends Vue {
         this.currentStep = 1;
         this.selectedTaxa.splice(0, this.selectedTaxa.length);
         this.databaseName = "";
+        (this.$refs.databaseForm as any).reset();
         this.selectedSources.splice(0, this.selectedSources.length);
         this.selectedVersion = "Current";
+        this.selectedMirror = "EU (Expasy)";
         this.error = false;
-        (this.$refs.databaseForm as any).reset();
     }
 
     /**

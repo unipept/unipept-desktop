@@ -94,7 +94,7 @@ export default class ProgressReportSummary extends Vue {
     /**
      * Did the user ask this component to be able to view logs?
      */
-    private logViewEnabled: boolean = false;
+    private logViewEnabled: boolean = true;
 
     private currentTime: number = new Date().getTime();
 
