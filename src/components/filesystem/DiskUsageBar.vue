@@ -94,6 +94,7 @@ export default class DiskUsageBar extends Vue {
         if (this.folder) {
             try {
                 const spaceReport = await FileSystemUtils.getDiskStats(this.folder);
+
                 this.totalDiskSpace = spaceReport.total;
                 this.totalFreeSpace = spaceReport.free;
 

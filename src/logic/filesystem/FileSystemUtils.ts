@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { ExecException } from "child_process";
+import {exec, ExecException} from "child_process";
 
 export type DiskStats = {
     total: number,
@@ -70,6 +70,38 @@ export default class FileSystemUtils {
                     total: Number.parseInt(fields[3]) + Number.parseInt(fields[2]),
                     free: Number.parseInt(fields[3])
                 }
+            }
+        } else if (process.platform === "win32") {
+            const [stdout, stderr] = await new Promise<[string, string]>(
+                (resolve, reject) =>  {
+                    exec(
+                        "wmic logicaldisk get size,freespace,caption",
+                        (err: ExecException | null, stdout: string, stderr: string) =>  {
+                            if (err) {
+                                reject(err);
+                            } else {
+                                resolve([stdout, stderr]);
+                            }
+                        }
+                    );
+                }
+            );
+
+            if (stderr) {
+                return undefined;
+            }
+
+            // Drive identification information is always given as the first part of the path in Windows
+            const driveLetter = folder.slice(0, 2);
+
+            const lines = stdout.split("\n").map(l => l.trimEnd());
+            const requestedLine = lines.find(l => l.startsWith(driveLetter));
+
+            const fields = requestedLine.split(/\s+/);
+
+            return {
+                total: Number.parseInt(fields[2]),
+                free: Number.parseInt(fields[1])
             }
         }
 
