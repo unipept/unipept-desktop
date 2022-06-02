@@ -49,7 +49,7 @@ export default class CustomDatabaseManager {
                             metadata.taxa,
                             metadata.databaseVersion,
                             metadata.entries,
-                            metadata.complete,
+                            metadata.ready,
                             dbSize,
                             metadata.cancelled,
                             metadata.progress,
