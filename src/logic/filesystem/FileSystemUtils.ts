@@ -43,7 +43,7 @@ export default class FileSystemUtils {
     public static async getDiskStats(folder: string): Promise<DiskStats | undefined> {
         const { exec } = require("child_process");
 
-        if (process.platform === "darwin") {
+        if (process.platform === "darwin" || process.platform === "linux") {
             const [stdout, stderr] = await new Promise<[string, string]>(
                 (resolve, reject) =>  {
                     exec(
