@@ -6,6 +6,7 @@ import Configuration from "@/logic/configuration/Configuration";
 import * as path from "path";
 import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
 import { data } from "jquery";
+import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 
 export interface CustomDatabaseState {
     databases: CustomDatabase[],
@@ -267,9 +268,11 @@ export default class CustomDatabaseStoreFactory {
 
         const dockerCommunicator = new DockerCommunicator();
         try {
+            const dbPath = path.join(this.configuration.customDbStorageLocation, "databases", customDb.name, "data");
+
             await dockerCommunicator.buildDatabase(
                 customDb,
-                path.join(this.configuration.customDbStorageLocation, "databases", customDb.name, "data"),
+                dbPath,
                 path.join(this.configuration.customDbStorageLocation, "index"),
                 (step, value, progress_step) => {
                     store.commit("CUSTOM_DB_UPDATE_PROGRESS", [customDb, value, progress_step]);
@@ -280,6 +283,8 @@ export default class CustomDatabaseStoreFactory {
                     this.updateMetadata(customDb);
                 }
             );
+
+            customDb.sizeOnDisk = await FileSystemUtils.getSize(dbPath);
 
             store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [customDb, true]);
         } catch (err) {
