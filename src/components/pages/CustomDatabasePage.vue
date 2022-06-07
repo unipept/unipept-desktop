@@ -177,15 +177,9 @@
                                                     </div>
 
                                                     <div class="font-weight-bold">Application error details</div>
-                                                    <textarea
-                                                        :value="item.error.message"
-                                                        class="logview pa-2"
-                                                        disabled />
+                                                    <error-detail-viewer :message="item.error.message"/>
                                                     <div class="font-weight-bold mt-4">Database build logs</div>
-                                                    <textarea
-                                                        :value="item.progress.logs.join('\n')"
-                                                        class="logview pa-2"
-                                                        disabled />
+                                                    <error-detail-viewer :message="item.progress.logs.join('\n')" />
                                                 </v-alert>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
@@ -225,9 +219,10 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
 import DiskUsageBar from "@/components/filesystem/DiskUsageBar.vue";
+import ErrorDetailViewer from "@/components/error/ErrorDetailViewer.vue";
 
 @Component({
-    components: { DiskUsageBar, ProgressReportSummary, CreateCustomDatabase, Tooltip }
+    components: { ErrorDetailViewer, DiskUsageBar, ProgressReportSummary, CreateCustomDatabase, Tooltip }
 })
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
@@ -390,7 +385,7 @@ export default class CustomDatabasePage extends Vue {
 
 <style scoped>
 .logview {
-    background-color: #1a1a1a;
+    background-color: #1a1a1a !important;
     color: white;
     font-family: "Roboto mono", monospace;
     width: 100%;
