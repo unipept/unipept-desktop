@@ -38,6 +38,16 @@
                                 </v-row>
                             </v-alert>
 
+                            <v-alert type="warning" prominent text v-if="lowOnMemoryWarning">
+                                <div>
+                                    Warning: not enough memory
+                                    ({{ (availableMemoryAmount / (1024 ** 3)).toFixed(2) }} GiB) has been allocated to
+                                    the Docker daemon. You could try and continue to build a database, but the database
+                                    construction process could fail. Make sure that at least 6 GiB of memory is
+                                    available for the Docker daemon.
+                                </div>
+                            </v-alert>
+
                             <div>
                                 Below you can find a list of all custom databases that are currently registered to this
                                 application. To create a new custom database, press the floating button in the lower
@@ -167,15 +177,9 @@
                                                     </div>
 
                                                     <div class="font-weight-bold">Application error details</div>
-                                                    <textarea
-                                                        :value="item.error.message"
-                                                        class="logview pa-2"
-                                                        disabled />
+                                                    <error-detail-viewer :message="item.error.message"/>
                                                     <div class="font-weight-bold mt-4">Database build logs</div>
-                                                    <textarea
-                                                        :value="item.progress.logs.join('\n')"
-                                                        class="logview pa-2"
-                                                        disabled />
+                                                    <error-detail-viewer :message="item.progress.logs.join('\n')" />
                                                 </v-alert>
                                             </div>
                                             <div v-else class="d-flex flex-column align-center py-4">
@@ -215,15 +219,20 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
 import DiskUsageBar from "@/components/filesystem/DiskUsageBar.vue";
+import ErrorDetailViewer from "@/components/error/ErrorDetailViewer.vue";
 
 @Component({
-    components: { DiskUsageBar, ProgressReportSummary, CreateCustomDatabase, Tooltip }
+    components: { ErrorDetailViewer, DiskUsageBar, ProgressReportSummary, CreateCustomDatabase, Tooltip }
 })
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
 
     private dockerConnectionError: boolean = false;
     private buildInProgressError: boolean = false;
+
+    private lowOnMemoryWarning: boolean = false;
+    // The amount of memory that's currently allocated to the Docker daemon.
+    private availableMemoryAmount: number = 0;
 
     private dockerCheckTimeout: NodeJS.Timeout;
 
@@ -323,7 +332,11 @@ export default class CustomDatabasePage extends Vue {
         const dockerCommunicator = new DockerCommunicator();
 
         try {
-            await dockerCommunicator.getDockerInfo();
+            const dockerInfo = await dockerCommunicator.getDockerInfo();
+            this.availableMemoryAmount = dockerInfo.MemTotal;
+
+            this.lowOnMemoryWarning = this.availableMemoryAmount < 6 * (1024 ** 3);
+
             return true;
         } catch (e) {
             return false;
@@ -372,7 +385,7 @@ export default class CustomDatabasePage extends Vue {
 
 <style scoped>
 .logview {
-    background-color: #1a1a1a;
+    background-color: #1a1a1a !important;
     color: white;
     font-family: "Roboto mono", monospace;
     width: 100%;

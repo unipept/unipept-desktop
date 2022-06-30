@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import {exec, ExecException} from "child_process";
+import { exec, ExecException } from "child_process";
 
 export type DiskStats = {
     total: number,
@@ -43,7 +43,7 @@ export default class FileSystemUtils {
     public static async getDiskStats(folder: string): Promise<DiskStats | undefined> {
         const { exec } = require("child_process");
 
-        if (process.platform === "darwin") {
+        if (process.platform === "darwin" || process.platform === "linux") {
             const [stdout, stderr] = await new Promise<[string, string]>(
                 (resolve, reject) =>  {
                     exec(
