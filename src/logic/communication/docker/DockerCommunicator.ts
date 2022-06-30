@@ -18,10 +18,8 @@ export default class DockerCommunicator {
         socketPath: "/var/run/docker.sock"
     });
     public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
-        protocol: "tcp",
-        host: "127.0.0.1",
-        port: 2376
-    });
+        socketPath: "//./pipe/docker_engine"
+    })
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
