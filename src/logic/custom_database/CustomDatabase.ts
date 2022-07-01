@@ -2,6 +2,7 @@ import { NcbiId, ProgressReport, ProgressReportHelper } from "unipept-web-compon
 import crypto from "crypto";
 
 const progressSteps: string[] = [
+    "Fetching required Docker images",
     "Creating taxon tables",
     "Initializing database build process",
     "Downloading database",

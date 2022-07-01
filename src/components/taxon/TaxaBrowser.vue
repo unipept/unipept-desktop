@@ -70,7 +70,7 @@ export default class TaxaBrowser extends Vue {
             sortable: false
         },
         {
-            text: "Taxon ID",
+            text: "NCBI ID",
             align: "start",
             value: "id",
             width: "15%"
