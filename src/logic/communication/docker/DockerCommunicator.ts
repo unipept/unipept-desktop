@@ -23,6 +23,9 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.0";
+    public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
+
     public static connection: Dockerode;
 
     public static initializeConnection(config: Dockerode.DockerOptions) {
@@ -71,10 +74,48 @@ export default class DockerCommunicator {
         await fs.rmdir(databaseFolder, { recursive: true });
         await mkdirp(databaseFolder);
 
+        console.log("Pulling image for database from hub...");
+        await new Promise<void>(
+            async(resolve, reject) => {
+                DockerCommunicator.connection.pull(
+                    DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
+                    function(err: any, stream: any) {
+                        if (err) {
+                            reject(err);
+                        }
+
+                        DockerCommunicator.connection.modem.followProgress(
+                            stream,
+                            // onFinished
+                            (err: any, output: any) => {
+                                console.log("Finish");
+                                console.log(output);
+                                if (err) {
+                                    reject(err);
+                                }
+                                resolve();
+                            },
+                            // onProgress
+                            (progressEvent: any) => {
+                                console.log("progress");
+                                console.log(progressEvent);
+                            }
+                        );
+                    }
+                );
+            }
+        );
+
+        // Perform the same check for the Unipept web container
+        // if (!DockerCommunicator.connection.getImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME)) {
+        //     await DockerCommunicator.connection.pull(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
+        // }
+
+
         await new Promise<void>(async(resolve, reject) => {
             try {
                 await DockerCommunicator.connection.run(
-                    "pverscha/unipept-database:1.0.0",
+                    DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
                     [],
                     new ProgressInspectorStream(
                         progressListener,
