@@ -78,6 +78,9 @@ export default class DockerCommunicator {
         // Pull the database image
         await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
 
+        console.log(`DB-Folder: ${databaseFolder}`);
+        console.log(`Index: ${indexFolder}`);
+
         await new Promise<void>(async(resolve, reject) => {
             try {
                 await DockerCommunicator.connection.run(
@@ -106,12 +109,14 @@ export default class DockerCommunicator {
                                 HostPort: "3306"
                             }]
                         },
-                        Binds: [
-                            // Mount the folder in which the MySQL-specific database files will be kept
-                            `${databaseFolder}:/var/lib/mysql`,
-                            // Mount the folder in which the reusable database index structure will be kept
-                            `${indexFolder}:/index`
-                        ]
+                        HostConfig: {
+                            Binds: [
+                                // Mount the folder in which the MySQL-specific database files will be kept
+                                `${databaseFolder}:/var/lib/mysql`,
+                                // Mount the folder in which the reusable database index structure will be kept
+                                `${indexFolder}:/index`
+                            ]
+                        }
                     }
                 );
 
@@ -155,10 +160,12 @@ export default class DockerCommunicator {
                         Env: [
                             "MYSQL_ROOT_PASSWORD=unipept"
                         ],
-                        Binds: [
-                            // Mount the folder in which the MySQL-specific database files will be kept
-                            `${databaseLocation}:/var/lib/mysql`
-                        ]
+                        HostConfig: {
+                            Binds: [
+                                // Mount the folder in which the MySQL-specific database files will be kept
+                                `${databaseLocation}:/var/lib/mysql`
+                            ]
+                        }
                     }
                 );
             } catch (err) {
