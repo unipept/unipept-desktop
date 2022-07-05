@@ -3,8 +3,13 @@
         <v-card>
             <v-card-title>
                 Create custom database
+                <v-spacer></v-spacer>
+                <v-btn icon @click="dialogActive = false">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
             </v-card-title>
-            <v-card-text v-if="error" class="d-flex flex-column align-center">
+            <v-divider></v-divider>
+            <v-card-text v-if="error" class="d-flex flex-column align-center mt-2">
                 <v-icon x-large color="error" class="mb-4">
                     mdi-alert-circle
                 </v-icon>
@@ -20,70 +25,88 @@
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
                 <span>Looking up all current UniProt versions...</span>
             </v-card-text>
-            <v-card-text v-else>
-                <v-form ref="databaseForm">
-                    <v-container fluid>
-                        <v-row>
-                            <v-col cols="12">
-                                <v-text-field
-                                    dense
-                                    label="Database name"
-                                    hint="Give your database a name to easily recognize it."
-                                    persistent-hint
-                                    :rules="[
+            <v-card-text v-else class="mt-2">
+                <v-stepper v-model="currentStep" vertical flat>
+                    <v-stepper-step step="1" :complete="currentStep > 1">
+                        Database details
+                        <small>Provide basic construction details</small>
+                    </v-stepper-step>
+
+                    <v-stepper-content step="1">
+                        <v-form ref="databaseForm">
+                            <v-container fluid>
+                                <v-row>
+                                    <v-col cols="12">
+                                        <v-text-field
+                                            dense
+                                            label="Database name"
+                                            hint="Give your database a name to easily recognize it."
+                                            persistent-hint
+                                            :rules="[
                                         value => !! value || 'Provide a valid name for your database',
                                         value => isDbNameUnique(value) || 'Another database with this name already exists'
                                     ]"
-                                    v-model="databaseName">
-                                </v-text-field>
-                            </v-col>
-                            <v-col cols="6">
-                                <v-select
-                                    dense
-                                    label="Database sources"
-                                    hint="Select all database sources that should be filtered."
-                                    v-model="selectedSources"
-                                    :rules="[selectedSources.length > 0 || 'At least one source should be selected']"
-                                    persistent-hint
-                                    multiple
-                                    :items="sources">
-                                </v-select>
-                            </v-col>
-                            <v-col cols="6">
-                                <v-select
-                                    dense
-                                    label="Database version"
-                                    :items="versions"
-                                    v-model="selectedVersion"
-                                    :rules="[value => !! value || 'You must select a UniProt source']"
-                                    hint="Select the version of the UniProt source that should be processed."
-                                    persistent-hint>
-                                </v-select>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col cols="12">
-                                <div>
-                                    <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
-                                </div>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col cols="12">
-                                <v-sheet outlined>
-                                    <v-chip-group active-class="primary--text" column>
-                                        <v-chip>Test</v-chip>
-                                    </v-chip-group>
-                                </v-sheet>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col cols="12" class="d-flex justify-center">
-                                <v-btn color="primary" @click="buildDatabase()">Build database</v-btn>
-                            </v-col>
-                        </v-row>
-                    </v-container>
-                </v-form>
+                                            v-model="databaseName">
+                                        </v-text-field>
+                                    </v-col>
+                                    <v-col cols="6">
+                                        <v-select
+                                            dense
+                                            label="Database sources"
+                                            hint="Select all database sources that should be filtered."
+                                            v-model="selectedSources"
+                                            :rules="[selectedSources.length > 0 || 'At least one source should be selected']"
+                                            persistent-hint
+                                            multiple
+                                            :items="sources">
+                                        </v-select>
+                                    </v-col>
+                                    <v-col cols="6">
+                                        <v-select
+                                            dense
+                                            label="Database version"
+                                            :items="versions"
+                                            v-model="selectedVersion"
+                                            :rules="[value => !! value || 'You must select a UniProt source']"
+                                            hint="Select the version of the UniProt source that should be processed."
+                                            persistent-hint>
+                                        </v-select>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col cols="12">
+                                        <v-btn color="primary" @click="validateAndContinue">Continue</v-btn>
+                                    </v-col>
+                                </v-row>
+                            </v-container>
+                        </v-form>
+                    </v-stepper-content>
+
+                    <v-stepper-step step="2" :complete="currentStep > 2">
+                        Filter
+                        <small>Select which organisms will be present in the output database</small>
+                    </v-stepper-step>
+
+                    <v-stepper-content step="2">
+                        <v-container>
+                            <v-row>
+                                <v-col cols="12">
+                                    <div>
+                                        <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
+                                    </div>
+                                </v-col>
+                            </v-row>
+                            <v-row>
+                                <v-col cols="12">
+                                    <v-btn class="mr-2" @click="currentStep = 1">Go back</v-btn>
+                                    <v-btn color="primary" @click="buildDatabase()">Build database</v-btn>
+                                </v-col>
+                            </v-row>
+                        </v-container>
+                    </v-stepper-content>
+                </v-stepper>
+
+
             </v-card-text>
         </v-card>
     </v-dialog>
@@ -387,6 +410,12 @@ export default class CreateCustomDatabase extends Vue {
         }
 
         const configManager = new ConfigurationManager();
+
+        // No filtering should be applied in this case (which means we pass only the root to the construction step of
+        // the database).
+        if (this.selectedTaxa.length === 0) {
+            this.selectedTaxa.push(new NcbiTaxon(1, "root", "dummy", []));
+        }
 
         this.$store.dispatch(
             "customDatabases/buildDatabase",

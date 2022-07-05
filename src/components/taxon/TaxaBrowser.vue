@@ -1,53 +1,101 @@
 <template>
-    <v-data-table
-        :headers="headers"
-        :items="taxa"
-        :server-items-length="taxaCount"
-        :loading="loading"
-        :options.sync="options"
-        dense>
-        <template v-slot:item.action="{ item }">
-            <v-simple-checkbox
-                color="primary"
-                :value="selectedItems.findIndex(val => val.id === item.id) !== -1"
-                v-on:input="selectItem(item)">
-            </v-simple-checkbox>
-        </template>
-        <template v-slot:footer.prepend>
-            <span>{{ selectedItems.length }} taxa selected</span>
-        </template>
-        <template v-slot:body.append>
-            <tr>
-                <td></td>
-                <td></td>
-                <td>
-                    <div class="d-flex align-center">
-                        <v-text-field
-                            dense
-                            hide-details
-                            clearable
-                            v-model="search"
-                            label="Filter"
-                            class="my-4 mr-2"
-                            :loading="filterLoading"
-                            @keydown.enter="filterByName"
-                            @click:clear="clearFilter"/>
-                        <v-btn small @click="filterByName" :loading="filterLoading">
-                            <v-icon>
-                                mdi-magnify
-                            </v-icon>
-                        </v-btn>
+    <div>
+        <div class="mb-4">
+            <h3>Taxa selected for filtering</h3>
+            <div class="text-caption">
+                Only UniProt-records that are associated with an organism that is a child of one of these chosen
+                taxa will be retained in the resulting database.
+            </div>
+            <div class="my-2">
+                <div v-if="selectedItems.length === 0" style="text-align: center">
+                    <div>No taxa selected yet. No filtering will be applied.</div>
+                    <div class="text-caption">
+                        Use the search bar below to find taxa that can be used for filtering.
                     </div>
-                </td>
-                <td>
-                    <div class="d-flex align-center">
-                        <v-select :items="ranks" v-model="selectedRank"></v-select>
-                    </div>
-                </td>
-                <td colspan="4"></td>
-            </tr>
-        </template>
-    </v-data-table>
+                </div>
+                <v-chip-group v-else column>
+                    <v-chip close v-for="taxon in selectedItems" :key="taxon.id" @click:close="selectItem(taxon)">
+                        {{ taxon.name }}
+                    </v-chip>
+                </v-chip-group>
+            </div>
+        </div>
+
+        <div>
+            <h3>Search for taxa</h3>
+            <div class="text-caption">
+                Enter a keyword to search for taxa. You can search by name, NCBI identifier or rank.
+            </div>
+            <div>
+                <v-text-field
+                    prepend-icon="mdi-magnify"
+                    label="Search"
+                    v-model="search"
+                    clearable
+                    @keydown.enter="filterByName"
+                    @click:clear="clearFilter">
+                </v-text-field>
+            </div>
+            <v-data-table
+                :headers="headers"
+                :items="taxa"
+                :items-per-page="5"
+                :server-items-length="taxaCount"
+                :loading="loading"
+                :options.sync="options"
+                dense>
+                <template v-slot:item.action="{ item }">
+                    <v-btn
+                        color="primary"
+                        x-small
+                        text
+                        @click="selectItem(item)"
+                        :disabled="isParentOrSelfSelected(item)">
+                        <v-icon x-small>mdi-plus</v-icon>
+                        Add
+                    </v-btn>
+                    <!--                <v-simple-checkbox-->
+                    <!--                    color="primary"-->
+                    <!--                    :value="selectedItems.findIndex(val => val.id === item.id) !== -1"-->
+                    <!--                    v-on:input="selectItem(item)">-->
+                    <!--                </v-simple-checkbox>-->
+                </template>
+<!--                <template v-slot:footer.prepend>-->
+<!--                    <span>{{ selectedItems.length }} taxa selected</span>-->
+<!--                </template>-->
+<!--                <template v-slot:body.prepend>-->
+<!--                    <tr>-->
+<!--                        <td></td>-->
+<!--                        <td>-->
+<!--                            <div class="d-flex align-center">-->
+<!--                                <v-text-field-->
+<!--                                    dense-->
+<!--                                    hide-details-->
+<!--                                    clearable-->
+<!--                                    v-model="search"-->
+<!--                                    label="Filter"-->
+<!--                                    class="my-4 mr-2"-->
+<!--                                    :loading="filterLoading"-->
+<!--                                    @keydown.enter="filterByName"-->
+<!--                                    @click:clear="clearFilter"/>-->
+<!--                                <v-btn small @click="filterByName" :loading="filterLoading">-->
+<!--                                    <v-icon>-->
+<!--                                        mdi-magnify-->
+<!--                                    </v-icon>-->
+<!--                                </v-btn>-->
+<!--                            </div>-->
+<!--                        </td>-->
+<!--                        <td>-->
+<!--                            <div class="d-flex align-center">-->
+<!--                                <v-select :items="ranks" v-model="selectedRank"></v-select>-->
+<!--                            </div>-->
+<!--                        </td>-->
+<!--                        <td colspan="4"></td>-->
+<!--                    </tr>-->
+<!--                </template>-->
+            </v-data-table>
+        </div>
+    </div>
 </template>
 
 <script lang="ts">
@@ -62,13 +110,6 @@ import { DataOptions } from "vuetify";
 @Component
 export default class TaxaBrowser extends Vue {
     private headers = [
-        {
-            text: "",
-            align: "left",
-            value: "action",
-            width: "2%",
-            sortable: false
-        },
         {
             text: "NCBI ID",
             align: "start",
@@ -86,6 +127,13 @@ export default class TaxaBrowser extends Vue {
             align: "start",
             value: "rank",
             width: "38%"
+        },
+        {
+            text: "",
+            align: "left",
+            value: "action",
+            width: "2%",
+            sortable: false
         }
     ];
 
@@ -128,6 +176,7 @@ export default class TaxaBrowser extends Vue {
             this.search,
             this.selectedRank === "All" ? "" : this.selectedRank
         );
+        this.options.page = 1;
         await this.onOptionsChanged();
         this.filterLoading = false;
     }
@@ -178,6 +227,24 @@ export default class TaxaBrowser extends Vue {
         } else {
             this.selectedItems.splice(idx, 1);
         }
+    }
+
+    /**
+     * This function will detect whether the given taxon is already directly or indirectly selected. It can be
+     * indirectly selected through one of the other items if this taxon is a child in the NCBI taxonomy of one of
+     * those already selected taxa.
+     *
+     * @param item The taxon for which we want to find out if it is already selected or not.
+     */
+    private isParentOrSelfSelected(item: NcbiTaxon): boolean {
+        if (this.selectedItems.find(t => t.id === item.id)) {
+            return true;
+        }
+
+        const currentRankIdx = [...Object.values(NcbiRank)]
+            .map((r: string) => r.toLowerCase())
+            .indexOf(item.rank.toLowerCase());
+        return this.selectedItems.some(t => item.lineage.includes(t.id));
     }
 }
 </script>
