@@ -14,7 +14,13 @@
                     </div>
                 </div>
                 <v-chip-group v-else column>
-                    <v-chip close v-for="taxon in selectedItems" :key="taxon.id" @click:close="selectItem(taxon)">
+                    <v-chip
+                        v-for="taxon in selectedItems"
+                        close
+                        :key="taxon.id"
+                        @click:close="selectItem(taxon)"
+                        :color="getRankColor(taxon.rank)"
+                        dark>
                         {{ taxon.name }}
                     </v-chip>
                 </v-chip-group>
@@ -54,45 +60,16 @@
                         <v-icon x-small>mdi-plus</v-icon>
                         Add
                     </v-btn>
-                    <!--                <v-simple-checkbox-->
-                    <!--                    color="primary"-->
-                    <!--                    :value="selectedItems.findIndex(val => val.id === item.id) !== -1"-->
-                    <!--                    v-on:input="selectItem(item)">-->
-                    <!--                </v-simple-checkbox>-->
                 </template>
-<!--                <template v-slot:footer.prepend>-->
-<!--                    <span>{{ selectedItems.length }} taxa selected</span>-->
-<!--                </template>-->
-<!--                <template v-slot:body.prepend>-->
-<!--                    <tr>-->
-<!--                        <td></td>-->
-<!--                        <td>-->
-<!--                            <div class="d-flex align-center">-->
-<!--                                <v-text-field-->
-<!--                                    dense-->
-<!--                                    hide-details-->
-<!--                                    clearable-->
-<!--                                    v-model="search"-->
-<!--                                    label="Filter"-->
-<!--                                    class="my-4 mr-2"-->
-<!--                                    :loading="filterLoading"-->
-<!--                                    @keydown.enter="filterByName"-->
-<!--                                    @click:clear="clearFilter"/>-->
-<!--                                <v-btn small @click="filterByName" :loading="filterLoading">-->
-<!--                                    <v-icon>-->
-<!--                                        mdi-magnify-->
-<!--                                    </v-icon>-->
-<!--                                </v-btn>-->
-<!--                            </div>-->
-<!--                        </td>-->
-<!--                        <td>-->
-<!--                            <div class="d-flex align-center">-->
-<!--                                <v-select :items="ranks" v-model="selectedRank"></v-select>-->
-<!--                            </div>-->
-<!--                        </td>-->
-<!--                        <td colspan="4"></td>-->
-<!--                    </tr>-->
-<!--                </template>-->
+                <template v-slot:item.rank="{ item }">
+                    <div class="d-flex align-center">
+                        <div
+                            style="height: 10px; width: 10px; border-radius: 50%;"
+                            :class="`mr-2 ${getRankColor(item.rank)}`">
+                        </div>
+                        <div>{{ item.rank }}</div>
+                    </div>
+                </template>
             </v-data-table>
         </div>
     </div>
@@ -135,6 +112,39 @@ export default class TaxaBrowser extends Vue {
             width: "2%",
             sortable: false
         }
+    ];
+
+    private rankColors: string[] = [
+        "red",
+        "red darken-4",
+        "pink",
+        "pink darken-4",
+        "purple",
+        "purple darken-4",
+        "deep-purple",
+        "deep-purple darken-4",
+        "indigo",
+        "indigo darken-4",
+        "blue",
+        "blue darken-4",
+        "light-blue",
+        "light-blue darken-4",
+        "cyan",
+        "cyan darken-4",
+        "teal",
+        "teal darken-4",
+        "green",
+        "green darken-4",
+        "light-green",
+        "light-green darken 4",
+        "lime darken-1",
+        "lime darken-4",
+        "amber",
+        "amber darken-4",
+        "orange",
+        "orange darken-4",
+        "deep-orange",
+        "deep-orange darken-4"
     ];
 
     private ranks: string[] = ["All"].concat([...Object.keys(NcbiRank)]);
@@ -218,6 +228,11 @@ export default class TaxaBrowser extends Vue {
     @Watch("selectedItems")
     private onSelectedItemsChanged(): void {
         this.$emit("input", this.selectedItems);
+    }
+
+    private getRankColor(rank: string): string {
+        const idx = Object.values(NcbiRank).findIndex(r => r === rank);
+        return this.rankColors[idx % this.rankColors.length];
     }
 
     private selectItem(item: NcbiTaxon): void {

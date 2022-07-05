@@ -105,7 +105,7 @@
                                         :loading="dbsBeingDeleted.indexOf(item.name) !== -1">
                                         <v-icon>mdi-delete</v-icon>
                                     </v-btn>
-                                    <v-btn icon x-small class="mx-1">
+                                    <v-btn icon x-small class="mx-1" @click="showDbInformation(item)">
                                         <v-icon>mdi-information</v-icon>
                                     </v-btn>
                                 </template>
@@ -198,7 +198,10 @@
                                     Create custom database
                                 </v-btn>
                             </div>
-                            <create-custom-database v-model="createDatabaseDialog"></create-custom-database>
+                            <create-custom-database v-model="createDatabaseDialog" />
+                            <custom-database-information-dialog
+                                v-model="databaseInformationDialog"
+                                :custom-database="selectedCustomDb" />
                         </v-card-text>
                     </v-card>
                 </div>
@@ -220,12 +223,21 @@ import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
 import DiskUsageBar from "@/components/filesystem/DiskUsageBar.vue";
 import ErrorDetailViewer from "@/components/error/ErrorDetailViewer.vue";
+import CustomDatabaseInformationDialog from "@/components/custom-database/CustomDatabaseInformationDialog.vue";
 
 @Component({
-    components: { ErrorDetailViewer, DiskUsageBar, ProgressReportSummary, CreateCustomDatabase, Tooltip }
+    components: {
+        CustomDatabaseInformationDialog,
+        ErrorDetailViewer,
+        DiskUsageBar,
+        ProgressReportSummary,
+        CreateCustomDatabase,
+        Tooltip
+    }
 })
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
+    private databaseInformationDialog: boolean = false;
 
     private dockerConnectionError: boolean = false;
     private buildInProgressError: boolean = false;
@@ -239,6 +251,8 @@ export default class CustomDatabasePage extends Vue {
     private forceStopInProgress: boolean = false;
 
     private loading: boolean = true;
+
+    private selectedCustomDb: CustomDatabase = null;
 
     private headers = [
         {
@@ -375,6 +389,11 @@ export default class CustomDatabasePage extends Vue {
         const dockerCommunicator = new DockerCommunicator();
         await dockerCommunicator.stopDatabase();
         this.forceStopInProgress = false;
+    }
+
+    private showDbInformation(db: CustomDatabase): void {
+        this.selectedCustomDb = db;
+        this.databaseInformationDialog = true;
     }
 
     private toHumanReadableNumber(n: number): string {
