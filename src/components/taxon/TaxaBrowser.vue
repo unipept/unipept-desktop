@@ -1,12 +1,47 @@
 <template>
     <div>
         <div class="mb-4">
-            <h3>Taxa selected for filtering</h3>
-            <div class="text-caption">
-                Only UniProt-records that are associated with an organism that is a child of one of these chosen
-                taxa will be retained in the resulting database.
+            <div class="d-flex">
+                <div class="flex-grow-1">
+                    <h3>Taxa selected for filtering</h3>
+                    <div class="text-caption">
+                        Only UniProt-records that are associated with an organism that is a child of one of these chosen
+                        taxa will be retained in the resulting database.
+                    </div>
+                </div>
+                <v-tooltip bottom open-delay="500">
+                    <template v-slot:activator="{ on, attrs }">
+                        <v-btn outlined v-on="on" @click="clearSelection" color="red" class="mr-2">
+                            <v-icon>mdi-close</v-icon>
+                        </v-btn>
+                    </template>
+                    <span>Clear selection</span>
+                </v-tooltip>
+                <v-tooltip bottom open-delay="500">
+                    <template v-slot:activator="{ on, attrs }">
+                        <v-btn color="primary" outlined v-on="on" @click="importTaxaFromFile" :loading="importLoading">
+                            <v-icon>mdi-file-upload-outline</v-icon>
+                        </v-btn>
+                    </template>
+                    <span>Import taxa for filtering from file.</span>
+                </v-tooltip>
+
             </div>
             <div class="my-2">
+                <!-- This error is shown whenever the complete taxa import file could not be read properly -->
+                <div v-if="parseError">
+                    <v-alert type="error" text dismissible @input="parseError = false">
+                        An error occurred while trying to parse the file you provided. Make sure that this is a valid
+                        text file that contains one NCBI taxon ID per line and the filesystem is readable.
+                    </v-alert>
+                </div>
+                <!-- This error is shown when not all the selected taxa for the import could be processed.-->
+                <div v-else-if="importWarning">
+                    <v-alert type="warning" text dismissible @input="importWarning = false">
+                        Warning: the following NCBI ID's were not found and could not be imported:
+                        {{ failedImports.join(", ") }}.
+                    </v-alert>
+                </div>
                 <div v-if="selectedItems.length === 0" style="text-align: center">
                     <div>No taxa selected yet. No filtering will be applied.</div>
                     <div class="text-caption">
@@ -83,6 +118,10 @@ import CachedCommunicationSource from "@/logic/communication/source/CachedCommun
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import { Prop, Watch } from "vue-property-decorator";
 import { DataOptions } from "vuetify";
+import { promises as fs } from "fs";
+
+const electron = require("electron");
+const { dialog } = electron.remote;
 
 @Component
 export default class TaxaBrowser extends Vue {
@@ -159,6 +198,13 @@ export default class TaxaBrowser extends Vue {
 
     private filterLoading: boolean = false;
 
+    private importLoading: boolean = false;
+
+    private parseError: boolean = false;
+    private importWarning: boolean = false;
+    // List of taxon identifiers that could not be imported properly
+    private failedImports: string[] = []
+
     // @ts-ignore
     private options: DataOptions = {};
 
@@ -173,6 +219,10 @@ export default class TaxaBrowser extends Vue {
         this.ncbiOntologyProcessor = new NcbiOntologyProcessor(this.ncbiCommunicator);
         this.taxaCount = this.ncbiCommunicator.getNcbiCount();
         this.loading = false;
+    }
+
+    private clearSelection(): void {
+        this.selectedItems.splice(0, this.selectedItems.length);
     }
 
     private async clearFilter(): Promise<void> {
@@ -256,10 +306,56 @@ export default class TaxaBrowser extends Vue {
             return true;
         }
 
-        const currentRankIdx = [...Object.values(NcbiRank)]
-            .map((r: string) => r.toLowerCase())
-            .indexOf(item.rank.toLowerCase());
         return this.selectedItems.some(t => item.lineage.includes(t.id));
+    }
+
+    private async importTaxaFromFile(): Promise<void> {
+        this.importLoading = true;
+        this.importWarning = false;
+        this.parseError = false;
+
+        try {
+            const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
+                properties: ["openFile"]
+            });
+
+            for (const path of chosenPath["filePaths"]) {
+                const content = await fs.readFile(path, "utf-8");
+                const lines = content.split("\n").map(l => l.trimEnd()).filter(l => l !== "");
+
+                if (!lines.every(l => /^[0-9]*$/.test(l))) {
+                    this.parseError = true;
+                    this.importLoading = false;
+                    return;
+                }
+
+                const taxaIds = lines.map(l => Number.parseInt(l));
+
+                const ontology: Ontology<NcbiId, NcbiTaxon> = await this.ncbiOntologyProcessor.getOntologyByIds(
+                    taxaIds
+                );
+
+                for (const taxon of taxaIds.map(id => ontology.getDefinition(id)).filter(t => t)) {
+                    // For each item we need to check if it already occurs in the selected items. If we perform this
+                    // check for every item from the file that needs to be imported, we can also make sure that no
+                    // doubles are inserted into the list.
+                    if (this.selectedItems.filter(x => x.id === taxon.id).length === 0) {
+                        this.selectedItems.push(taxon);
+                    }
+                }
+
+                this.failedImports.splice(0, this.failedImports.length);
+                this.failedImports.push(...taxaIds.filter(id => !ontology.getDefinition(id)).map(x => x.toString()));
+                if (this.failedImports.length > 0) {
+                    this.importWarning = true;
+                }
+            }
+        } catch (e) {
+            this.parseError = true;
+            console.error(e);
+        }
+
+        this.importLoading = false;
     }
 }
 </script>
