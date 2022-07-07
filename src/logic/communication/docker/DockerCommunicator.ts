@@ -23,7 +23,7 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.1";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.2";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
 
     public static connection: Dockerode;
@@ -76,10 +76,7 @@ export default class DockerCommunicator {
 
         progressListener("Fetching required Docker images", -1, 0);
         // Pull the database image
-        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
-
-        console.log(`DB-Folder: ${databaseFolder}`);
-        console.log(`Index: ${indexFolder}`);
+        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
 
         await new Promise<void>(async(resolve, reject) => {
             try {

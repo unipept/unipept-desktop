@@ -98,8 +98,13 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
      * @param rankFilter Only look for taxa that are associated with this given rank.
      */
     public getNcbiCount(nameFilter: string = "", rankFilter: string = ""): number {
-        return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name LIKE ? AND rank LIKE ? AND name != 'root'")
-            .get(`%${nameFilter}%`, `%${rankFilter}%`)["COUNT(id)"];
+        if (nameFilter !== "") {
+            return this.db.prepare("SELECT COUNT(id) FROM virtual_taxons WHERE name MATCH ? AND name != 'root'")
+                .get(nameFilter)["COUNT(id)"];
+        } else {
+            return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name != 'root'")
+                .get()["COUNT(id)"];
+        }
     }
 
     public getNcbiRangeNotStrict(
@@ -137,18 +142,28 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         sortBy: "id" | "name" | "rank" = "id",
         sortDescending: boolean = false
     ): NcbiId[] {
-        if (rankFilter) {
+        // if (rankFilter) {
+        //     return this.db.prepare(
+        //         `SELECT id FROM virtual_taxons WHERE name MATCH '?' AND name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+        //     )
+        //         .all(nameFilter, end - start, start)
+        //         .map((item: any) => item.id);
+        // } else {
+        if (nameFilter !== "") {
             return this.db.prepare(
-                `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND rank = ? AND name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+                `SELECT id FROM virtual_taxons WHERE name MATCH ? AND name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
             )
-                .all(`%${nameFilter}%`, rankFilter.toLowerCase(), end - start, start)
+                .all(nameFilter, end - start, start)
                 .map((item: any) => item.id);
         } else {
             return this.db.prepare(
-                `SELECT id, name, rank FROM taxons WHERE name LIKE ? AND name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+                `SELECT id FROM taxons WHERE name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
             )
-                .all(`%${nameFilter}%`, end - start, start)
+                .all(end - start, start)
                 .map((item: any) => item.id);
         }
+
+
+        // }
     }
 }
