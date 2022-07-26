@@ -23,7 +23,7 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.2";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.3";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
 
     public static connection: Dockerode;
@@ -127,10 +127,7 @@ export default class DockerCommunicator {
         customDb.ready = true;
 
         // Now, stop this container
-        const buildContainerInfo = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
-        const container = DockerCommunicator.connection.getContainer(buildContainerInfo!.Id);
-        await container.stop();
-        await container.remove();
+        await this.stopDatabase();
     }
 
     public async startDatabase(databaseLocation: string): Promise<void> {
@@ -176,7 +173,10 @@ export default class DockerCommunicator {
      */
     public async stopDatabase(): Promise<void> {
         while ((await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined) {
-            await this.stopContainer(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+            const containerInfo = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+            const container = DockerCommunicator.connection.getContainer(containerInfo!.Id);
+            await container.stop();
+            await container.remove();
         }
     }
 
@@ -215,8 +215,11 @@ export default class DockerCommunicator {
         });
     }
 
-    public stopWebComponent(): Promise<void> {
-        return this.stopContainer(DockerCommunicator.WEB_CONTAINER_NAME);
+    public async stopWebComponent(): Promise<void> {
+        const containerInfo = await this.getContainerByName(DockerCommunicator.WEB_CONTAINER_NAME);
+        const container = DockerCommunicator.connection.getContainer(containerInfo.Id);
+        await container.stop();
+        await container.remove();
     }
 
     /**

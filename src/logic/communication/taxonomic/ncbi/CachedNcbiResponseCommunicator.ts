@@ -107,20 +107,6 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
         }
     }
 
-    public getNcbiRangeNotStrict(
-        start: number,
-        end: number,
-        searchTerm: string = "",
-        sortBy: "id" | "name" | "rank" = "id",
-        sortDescending: boolean = false
-    ) {
-        return this.db.prepare(
-            `SELECT id, name, rank FROM taxons WHERE name LIKE ? OR rank LIKE ? OR id LIKE ? AND name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ? COLLATE NOCASE`
-        )
-            .all(`%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, end - start, start)
-            .map((item: any) => item.id);
-    }
-
     /**
      * Returns a slice of all NCBI id's from the database starting from row number start (inclusive) and ending at end
      * (exclusive). Note that if a specific name filter is given, only taxa that contain this text as portion of their
