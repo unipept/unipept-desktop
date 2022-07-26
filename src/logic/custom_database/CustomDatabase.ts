@@ -37,6 +37,7 @@ export default class CustomDatabase {
         public ready: boolean = false,
         public sizeOnDisk: number = -1,
         public cancelled: boolean = false,
+        public inProgress: boolean = false,
         public readonly progress: ProgressReport = ProgressReportHelper.constructProgressReportObject(progressSteps),
         public readonly error: DatabaseErrorStatus = {
             status: false,

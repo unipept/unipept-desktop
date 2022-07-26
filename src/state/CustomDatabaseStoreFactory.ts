@@ -265,6 +265,7 @@ export default class CustomDatabaseStoreFactory {
         customDb: CustomDatabase
     ): Promise<void> {
         store.commit("CUSTOM_DB_UPDATE_GLOBAL_CONSTRUCTION_STATUS", true);
+        customDb.inProgress = true;
 
         const dockerCommunicator = new DockerCommunicator();
         try {
@@ -304,6 +305,7 @@ export default class CustomDatabaseStoreFactory {
                 err
             ]);
         } finally {
+            customDb.inProgress = false;
             store.commit("CUSTOM_DB_UPDATE_GLOBAL_CONSTRUCTION_STATUS", false);
             await this.updateMetadata(customDb);
         }
@@ -385,11 +387,15 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         const dbObj = store.getters.database(dbName);
 
+        if (dbObj.inProgress) {
+            const dockerCommunicator = new DockerCommunicator();
+            await dockerCommunicator.stopDatabase();
+        }
+
         store.commit("CUSTOM_DB_UPDATE_CANCELLATION_STATUS", [dbObj, true]);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, true]);
 
-        const dockerCommunicator = new DockerCommunicator();
-        await dockerCommunicator.stopDatabase();
+        dbObj.inProgress = false;
 
         await this.updateMetadata(dbObj);
     }

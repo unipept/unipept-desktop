@@ -89,8 +89,13 @@
                                     </span>
                                 </template>
                                 <template v-slot:item.actions="{ item }">
-                                    <v-btn icon x-small :disabled="item.ready && !item.cancelled" class="mx-1">
-                                        <v-icon v-if="item.error.status" @click="restartBuild(item.name)">
+                                    <v-btn
+                                        icon
+                                        x-small
+                                        :disabled="item.ready && !item.cancelled"
+                                        class="mx-1"
+                                        :loading="!dbsBeingDeleted.includes(item.name) && dbsBeingStopped.includes(item.name)">
+                                        <v-icon v-if="item.error.status || item.cancelled" @click="restartBuild(item.name)">
                                             mdi-restart
                                         </v-icon>
                                         <v-icon v-else @click="stopDatabase(item.name)">
@@ -303,6 +308,7 @@ export default class CustomDatabasePage extends Vue {
     private ncbiOntology: Ontology<NcbiId, NcbiTaxon>;
 
     private dbsBeingDeleted: string[] = [];
+    private dbsBeingStopped: string[] = [];
 
     private databaseFolder: string = "";
 
@@ -374,7 +380,9 @@ export default class CustomDatabasePage extends Vue {
     }
 
     private async stopDatabase(dbName: string): Promise<void> {
-        return this.$store.dispatch("customDatabases/stopDatabase", dbName);
+        this.dbsBeingStopped.push(dbName);
+        await this.$store.dispatch("customDatabases/stopDatabase", dbName);
+        this.dbsBeingStopped.splice(this.dbsBeingStopped.indexOf(dbName), 1);
     }
 
     private async deleteDatabase(dbName: string): Promise<void> {

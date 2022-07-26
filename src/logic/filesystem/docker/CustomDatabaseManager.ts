@@ -52,6 +52,7 @@ export default class CustomDatabaseManager {
                             metadata.ready,
                             dbSize,
                             metadata.cancelled,
+                            metadata.inProgress,
                             metadata.progress,
                             metadata.error
                         )
