@@ -91,13 +91,14 @@
                 </ul>
             </div>
             <div>
+                <!-- Must use append-icon instead of clearable here, otherwise model is set to null -->
                 <v-text-field
                     prepend-icon="mdi-magnify"
                     label="Search"
                     v-model="search"
-                    clearable
-                    @keydown.enter="filterByName"
-                    @click:clear="clearFilter">
+                    append-icon="mdi-close"
+                    @keydown.enter="filterByName()"
+                    @click:append="clearFilter()">
                 </v-text-field>
             </div>
             <v-data-table

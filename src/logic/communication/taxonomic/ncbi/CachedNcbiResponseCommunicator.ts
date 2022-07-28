@@ -139,8 +139,5 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
                 .all(end - start, start)
                 .map((item: any) => item.id);
         }
-
-
-        // }
     }
 }
