@@ -16,7 +16,7 @@
                 <v-alert
                     v-if="isFilterActive && filteredTrust"
                     class="ma-2"
-                    type="info">
+                    type="warning">
                     <v-row dense align="center">
                         <v-col class="grow">
                             <b>
