@@ -1,7 +1,7 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { promises as fs } from "fs";
 import path, { dirname } from "path";
-import mkdirp from "mkdirp";
+import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 
 /**
  * This class is responsible for managing the custom databases that are currently created by some of the users and to
@@ -27,14 +27,19 @@ export default class CustomDatabaseManager {
     public async listAllDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
         const databases = [];
         for (const dir of (await fs.readdir(path.join(dbRootFolder, "databases")))) {
-            if ((await fs.lstat(path.join(dbRootFolder, "databases", dir))).isDirectory()) {
+            const dbPath = path.join(dbRootFolder, "databases", dir);
+            if ((await fs.lstat(dbPath)).isDirectory()) {
                 // Check if a metadata file is present in the folder that was found. If it is present, we should read
                 // the database name and other metadata from this file.
                 try {
-                    const metadata = JSON.parse(await fs.readFile(
-                        path.join(dbRootFolder, "databases", dir, "metadata.json"),
-                        { encoding: "utf-8" }
-                    ));
+                    const metadata = JSON.parse(
+                        await fs.readFile(
+                            this.metadataPath(dbRootFolder, dir),
+                            { encoding: "utf-8" }
+                        )
+                    );
+
+                    const dbSize = await FileSystemUtils.getSize(dbPath);
 
                     databases.push(
                         new CustomDatabase(
@@ -42,9 +47,14 @@ export default class CustomDatabaseManager {
                             metadata.sources,
                             metadata.sourceTypes,
                             metadata.taxa,
-                            metadata.entries,
                             metadata.databaseVersion,
-                            metadata.complete
+                            metadata.entries,
+                            metadata.ready,
+                            dbSize,
+                            metadata.cancelled,
+                            metadata.inProgress,
+                            metadata.progress,
+                            metadata.error
                         )
                     );
                 } catch (e) {
@@ -57,27 +67,6 @@ export default class CustomDatabaseManager {
     }
 
     /**
-     * Returns a list of all custom databases that are completely built.
-     *
-     * @param dbRootFolder The root folder in which all custom database information for the complete application is
-     * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
-     */
-    public async listAllBuildDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
-        return (await this.listAllDatabases(dbRootFolder)).filter(c => c.complete);
-    }
-
-    /**
-     * Returns a list of all databases that are incomplete or missing at least part of their data files. These databases
-     * should probably be rebuild before trying to use them!
-     *
-     * @param dbRootFolder The root folder in which all custom database information for the complete application is
-     * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
-     */
-    public async listAllIncompleteDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
-        return (await this.listAllDatabases(dbRootFolder)).filter(c => !c.complete);
-    }
-
-    /**
      * Overwrite the metadata information that's currently present in the filesystem for a specific database. Metadata
      * that was previously stored in this file for this database will be lost and replaced by the metadata provided
      * as an argument to this function.
@@ -87,11 +76,16 @@ export default class CustomDatabaseManager {
      * @param db CustomDatabase object for which the metadata should be updated.
      */
     public async updateMetadata(dbRootFolder: string, db: CustomDatabase): Promise<void> {
-        const path = this.metadataPath(dbRootFolder, db);
+        const path = this.metadataPath(dbRootFolder, db.name);
         // Make sure that the path to the database that we want to build actually exists, before trying to write the
-        // metadata file to it.
-        await mkdirp(dirname(path));
+        // metadata file to it.d .
+        await fs.mkdir(dirname(path), { recursive:true })
         return fs.writeFile(path, JSON.stringify(db));
+    }
+
+    public async deleteDatabase(dbRootFolder: string, db: CustomDatabase): Promise<void> {
+        const dbPath = path.join(dbRootFolder, "databases", db.name);
+        await fs.rmdir(dbPath, { recursive: true });
     }
 
     /**
@@ -128,9 +122,10 @@ export default class CustomDatabaseManager {
      *
      * @param dbRootFolder The root folder in which all custom database information for the complete application is
      * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
-     * @param db CustomDatabase object for which the path to it's metadata file on the filesystem should be constructed.
+     * @param dbName Name of the custom database for which the path to it's metadata file on the filesystem should be
+     * constructed.
      */
-    private metadataPath(dbRootFolder: string, db: CustomDatabase): string {
-        return path.join(dbRootFolder, "databases", db.name, "metadata.json");
+    private metadataPath(dbRootFolder: string, dbName: string): string {
+        return path.join(dbRootFolder, "databases", dbName, "metadata", "metadata.json");
     }
 }

@@ -6,7 +6,7 @@
             </v-alert>
             <v-row>
                 <v-col>
-                    <div style="max-width: 1200px; margin: auto;">
+                    <div style="max-width: 1400px; margin: auto;">
                         <h2 class="mx-auto settings-category-title">Connection settings</h2>
                         <v-card>
                             <v-card-text>

@@ -2,14 +2,19 @@
     <v-dialog max-width="1200px" v-model="dialogActive">
         <v-card>
             <v-card-title>
-                Create new custom database
+                Create custom database
+                <v-spacer></v-spacer>
+                <v-btn icon @click="dialogActive = false">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
             </v-card-title>
-            <v-card-text v-if="error" class="d-flex flex-column align-center">
+            <v-divider></v-divider>
+            <v-card-text v-if="error" class="d-flex flex-column align-center mt-2">
                 <v-icon x-large color="error" class="mb-4">
                     mdi-alert-circle
                 </v-icon>
                 <div>
-                    Could not retrieve a list of the current UniProt versions...
+                    Could not retrieve a list of the current UniProtKB versions...
                 </div>
                 <div>
                     Please <a @click="retrieveUniProtVersions">try again</a>
@@ -18,25 +23,16 @@
             </v-card-text>
             <v-card-text v-else-if="loading" class="d-flex flex-column align-center">
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                <span>Looking up all current UniProt versions...</span>
+                <span>Looking up all current UniProtKB versions...</span>
             </v-card-text>
-            <v-stepper v-else v-model="currentStep" outlined flat >
-                <v-stepper-header style="box-shadow: none; border-bottom: thin solid rgba(0,0,0,.12);">
-                    <v-stepper-step step="1" :complete="currentStep > 1" editable>
-                        General details
+            <v-card-text v-else class="mt-2">
+                <v-stepper v-model="currentStep" vertical flat>
+                    <v-stepper-step step="1" :complete="currentStep > 1">
+                        Database details
+                        <small>Provide basic construction details</small>
                     </v-stepper-step>
-                    <v-divider></v-divider>
-                    <v-stepper-step step="2" :complete="currentStep > 2" editable>
-                        Filter by taxa
-                    </v-stepper-step>
-                    <v-divider></v-divider>
-                    <v-stepper-step step="3" :complete="currentStep > 3" editable>
-                        Construction details
-                    </v-stepper-step>
-                </v-stepper-header>
 
-                <v-stepper-items>
-                    <v-stepper-content step="1" style="padding-top: 16px;">
+                    <v-stepper-content step="1">
                         <v-form ref="databaseForm">
                             <v-container fluid>
                                 <v-row>
@@ -46,139 +42,75 @@
                                             label="Database name"
                                             hint="Give your database a name to easily recognize it."
                                             persistent-hint
-                                            :rules="[value => !! value || 'Provide a valid name for your database']"
+                                            :rules="[
+                                                    value => !! value ||
+                                                        'Provide a valid name for your database',
+                                                    value => isDbNameUnique(value) ||
+                                                        'Another database with this name already exists'
+                                                ]"
                                             v-model="databaseName">
                                         </v-text-field>
                                     </v-col>
-                                    <v-col cols="12">
+                                    <v-col cols="6">
                                         <v-select
                                             dense
                                             label="Database sources"
                                             hint="Select all database sources that should be filtered."
                                             v-model="selectedSources"
-                                            :rules="[selectedSources.length > 0 || 'At least one source should be selected']"
+                                            :rules="[
+                                                    selectedSources.length > 0 ||
+                                                    'At least one source should be selected'
+                                                ]"
                                             persistent-hint
                                             multiple
                                             :items="sources">
                                         </v-select>
                                     </v-col>
-                                    <v-col cols="12">
+                                    <v-col cols="6">
                                         <v-select
                                             dense
                                             label="Database version"
                                             :items="versions"
                                             v-model="selectedVersion"
-                                            :rules="[value => !! value || 'You must select a UniProt source']"
-                                            hint="Select the version of the UniProt source that should be processed."
+                                            :rules="[value => !! value || 'You must select a UniProtKB source']"
+                                            hint="Select the version of the UniProtKB source that should be processed."
                                             persistent-hint>
                                         </v-select>
                                     </v-col>
                                 </v-row>
                                 <v-row>
                                     <v-col cols="12">
-                                        <v-select
-                                            dense
-                                            label="UniProt mirror"
-                                            :items="mirrors"
-                                            :rules="[value => !! value || 'You must select a UniProt mirror']"
-                                            v-model="selectedMirror"
-                                            persistent-hint
-                                            hint="Select the mirror that's closest to your physical location to help speed up the download process.">
-                                        </v-select>
+                                        <v-btn color="primary" @click="validateAndContinue">Continue</v-btn>
                                     </v-col>
                                 </v-row>
                             </v-container>
                         </v-form>
-                        <div class="d-flex justify-end mb-2">
-                            <v-btn color="primary" @click="validateAndContinue()">Continue</v-btn>
-                        </div>
                     </v-stepper-content>
+
+                    <v-stepper-step step="2" :complete="currentStep > 2">
+                        Filter
+                        <small>Select which organisms will be present in the output database</small>
+                    </v-stepper-step>
 
                     <v-stepper-content step="2">
-                        <div class="mb-3">
-                            The taxa that you select in this step determine which UniProt entries will be part of your
-                            final custom database. Note that all children of a specific taxon will also always be
-                            included in the final end result. Remember that the amount of selected taxa has a direct
-                            impact on the size and performance of the resulting database. More taxa equals larger
-                            databases and increased lookup time.
-                        </div>
-                        <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
-
-                        <div class="d-flex justify-end mb-2">
-                            <div class="flex-grow-1">
-                                <v-btn @click="currentStep = 1">Go back</v-btn>
-                            </div>
-                            <v-btn color="primary" @click="currentStep = 3">Continue</v-btn>
-                        </div>
+                        <v-container>
+                            <v-row>
+                                <v-col cols="12">
+                                    <div>
+                                        <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
+                                    </div>
+                                </v-col>
+                            </v-row>
+                            <v-row>
+                                <v-col cols="12">
+                                    <v-btn class="mr-2" @click="currentStep = 1">Go back</v-btn>
+                                    <v-btn color="primary" @click="buildDatabase()">Build database</v-btn>
+                                </v-col>
+                            </v-row>
+                        </v-container>
                     </v-stepper-content>
-
-                    <v-stepper-content step="3">
-                        <div class="mb-3">
-                            Below is a summary of all construction settings that you selected. Please confirm that these
-                            are correct before continuing the build process.
-                        </div>
-
-                        <h4>Database details</h4>
-                        <v-simple-table dense>
-                            <template v-slot:default>
-                                <tbody>
-                                <tr>
-                                    <td>Database name</td>
-                                    <td>{{ databaseName }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Database sources</td>
-                                    <td>{{ selectedSources.join(", ") }}</td>
-                                </tr>
-                                <tr>
-                                    <td>UniProt database version</td>
-                                    <td>{{ selectedVersion }}</td>
-                                </tr>
-                                <tr>
-                                    <td>UniProt mirror</td>
-                                    <td>{{ selectedMirror }}</td>
-                                </tr>
-                                </tbody>
-                            </template>
-                        </v-simple-table>
-
-                        <h4 class="mt-2">Selected taxa</h4>
-                        <div style="max-height: 300px; overflow: auto;">
-                            <v-simple-table dense>
-                                <template v-slot:default>
-                                    <thead>
-                                    <tr>
-                                        <th class="text-left">
-                                            ID
-                                        </th>
-                                        <th class="text-left">
-                                            Name
-                                        </th>
-                                        <th class="text-left">
-                                            Rank
-                                        </th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr v-for="item in selectedTaxa" :key="item.id">
-                                        <td>{{ item.id }}</td>
-                                        <td>{{ item.name }}</td>
-                                        <td>{{ item.rank }}</td>
-                                    </tr>
-                                    </tbody>
-                                </template>
-                            </v-simple-table>
-                        </div>
-
-                        <div class="d-flex justify-end mt-4 mb-2">
-                            <div class="flex-grow-1">
-                                <v-btn @click="currentStep = 2">Go back</v-btn>
-                            </div>
-                            <v-btn color="primary" @click="buildDatabase()">Build database</v-btn>
-                        </div>
-                    </v-stepper-content>
-                </v-stepper-items>
-            </v-stepper>
+                </v-stepper>
+            </v-card-text>
         </v-card>
     </v-dialog>
 </template>
@@ -190,24 +122,26 @@ import axios from "axios";
 
 import https from "https";
 import TaxaBrowser from "@/components/taxon/TaxaBrowser.vue";
-import {
-    CountTable,
-    LcaCountTableProcessor,
-    NcbiId,
-    NcbiOntologyProcessor,
-    NcbiTaxon,
-    Tree,
-    TreeNode
-} from "unipept-web-components";
+import { NcbiTaxon } from "unipept-web-components";
 import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+
 @Component({
     components: { TaxaBrowser }
 })
 export default class CreateCustomDatabase extends Vue {
     @Prop({ required: true })
     private value: boolean;
+    @Prop({ required: false, default: () => [] as string[] })
+    private selectedSourcesDefault: string[];
+    @Prop({ required: false, default: "" })
+    private databaseNameDefault: string;
+    @Prop({ required: false, default: "Current" })
+    private selectedVersionDefault: string;
+    @Prop({ required: false, default: () => [] as NcbiTaxon[] })
+    private selectedTaxaDefault: NcbiTaxon[];
 
     private dialogActive: boolean = false;
 
@@ -218,7 +152,7 @@ export default class CreateCustomDatabase extends Vue {
         "TrEMBL",
         "SwissProt"
     ];
-    private selectedSources: string[] = []
+    private selectedSources: string[] = [];
 
     private databaseName: string = "";
 
@@ -226,8 +160,8 @@ export default class CreateCustomDatabase extends Vue {
     private selectedMirror: string = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
-    private versions: String[] = [];
-    private selectedVersion: string = "Current";
+    private versions: string[] = [];
+    private selectedVersion: string = "";
 
     private selectedTaxa: NcbiTaxon[] = [];
 
@@ -239,6 +173,17 @@ export default class CreateCustomDatabase extends Vue {
         await this.retrieveUniProtVersions();
     }
 
+    /**
+     * Checks if the provided database name is unique (i.e. does not already exists). Databases with the same name
+     * cannot exist at the same time due to compatibility issues.
+     *
+     * @param name The name of the database for which uniqueness should be tested.
+     * @return true if this database name is not yet taken.
+     */
+    private isDbNameUnique(name: string): boolean {
+        return ! this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
+    }
+
     private updateSelectedTaxa(value: NcbiTaxon[]): void {
         this.selectedTaxa.splice(0, this.selectedTaxa.length);
         this.selectedTaxa.push(...value);
@@ -247,7 +192,7 @@ export default class CreateCustomDatabase extends Vue {
     private async retrieveUniProtVersions(): Promise<void> {
         try {
             this.loading = true;
-            const data = await new Promise<String>((resolve) => {
+            const data = await new Promise<string>((resolve) => {
                 let data = "";
                 https.get("https://ftp.uniprot.org/pub/databases/uniprot/previous_releases/", (res) => {
                     res.on("data", (chunk) => data += chunk);
@@ -259,9 +204,27 @@ export default class CreateCustomDatabase extends Vue {
                 this.versions.push(version.replace("release-", "").replace("_", "."));
             }
             this.versions.sort().reverse();
-            this.versions.unshift("Current");
+
+            // We also have to find out what the current version of UniProt is and add it to the list.
+            const latestVersionData = await new Promise<string>((resolve) => {
+                let data = "";
+                https.get("https://ftp.uniprot.org/pub/databases/uniprot/current_release/RELEASE.metalink", (res) => {
+                    res.on("data", (chunk) => data += chunk);
+                    res.on("end", () => resolve(data));
+                });
+            });
+
+            const lastVersion: string = latestVersionData
+                .split("\n")
+                .map(line => line.trim())
+                .filter(line => line.includes("<version>"))[0]
+                .replaceAll(/<\/*version>/g, "")
+                .replace("_", ".")
+
+            this.versions.unshift(lastVersion);
             this.loading = false;
         } catch (e) {
+            console.error(e);
             this.error = true;
         }
     }
@@ -282,17 +245,40 @@ export default class CreateCustomDatabase extends Vue {
 
         const configManager = new ConfigurationManager();
 
+        // No filtering should be applied in this case (which means we pass only the root to the construction step of
+        // the database).
+        if (this.selectedTaxa.length === 0) {
+            this.selectedTaxa.push(new NcbiTaxon(1, "root", "dummy", []));
+        }
+
         this.$store.dispatch(
-            "buildDatabase",
+            "customDatabases/buildDatabase",
             [
                 this.databaseName,
                 this.selectedSources.map(source => (sourceUrlMap as any)[source]),
                 this.selectedSources,
                 this.selectedTaxa.map(taxon => taxon.id),
-                await configManager.readConfiguration()
+                this.selectedVersion
             ]
         );
         this.dialogActive = false;
+
+        // After a database construction was started, we need to reset this wizard and prepare it for the next user.
+        this.resetWizard();
+    }
+
+    /**
+     * Reset the database construction wizard in this dialog to it's initial state.
+     */
+    private resetWizard(): void {
+        this.currentStep = 1;
+        this.selectedTaxa.splice(0, this.selectedTaxa.length);
+        this.databaseName = "";
+        (this.$refs.databaseForm as any).reset();
+        this.selectedSources.splice(0, this.selectedSources.length);
+        this.selectedVersion = this.sources[0];
+        this.selectedMirror = "EU (Expasy)";
+        this.error = false;
     }
 
     /**
@@ -314,6 +300,16 @@ export default class CreateCustomDatabase extends Vue {
 
     @Watch("value")
     private onValueChanged() {
+        if (this.value) {
+            // Reset to the default supplied values.
+            this.selectedSources.splice(0, this.selectedSources.length);
+            this.selectedSources.push(...this.selectedSourcesDefault);
+            this.databaseName = this.databaseNameDefault;
+            this.selectedVersion = this.selectedVersionDefault;
+            this.selectedTaxa.splice(0, this.selectedTaxa.length);
+            this.selectedTaxa.push(...this.selectedTaxaDefault);
+        }
+
         this.dialogActive = this.value;
     }
 

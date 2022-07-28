@@ -12,33 +12,37 @@
         <v-container fluid>
             <v-row>
                 <v-col>
-                    <v-card>
-                        <v-card-text class="mt-0">
-                            <v-text-field
-                                v-on:keyup.enter="openPeptide"
-                                class="pt-0"
-                                v-model="peptideModel"
-                                label="Peptide"
-                                single-line
-                                @click:append-outer="openPeptide"
-                                append-outer-icon="mdi-magnify"
-                                hide-details>
-                            </v-text-field>
-                            <v-checkbox hide-details label="Equate I/L" v-model="equateIlModel"></v-checkbox>
-                        </v-card-text>
-                    </v-card>
+                    <div style="max-width: 1400px; margin: auto;">
+                        <v-card>
+                            <v-card-text class="mt-0">
+                                <v-text-field
+                                    v-on:keyup.enter="openPeptide"
+                                    class="pt-0"
+                                    v-model="peptideModel"
+                                    label="Peptide"
+                                    single-line
+                                    @click:append-outer="openPeptide"
+                                    append-outer-icon="mdi-magnify"
+                                    hide-details>
+                                </v-text-field>
+                                <v-checkbox hide-details label="Equate I/L" v-model="equateIlModel"></v-checkbox>
+                            </v-card-text>
+                        </v-card>
+                    </div>
                 </v-col>
             </v-row>
 
             <div v-if="!peptide">
                 <v-row>
                     <v-col>
-                        <v-card>
-                            <v-card-text>
-                                <div class="display-1">Tryptic peptide analysis</div>
-                                <div class="subtitle-1">Enter a peptide above to continue...</div>
-                            </v-card-text>
-                        </v-card>
+                        <div style="max-width: 1400px; margin: auto;">
+                            <v-card>
+                                <v-card-text>
+                                    <div class="display-1">Tryptic peptide analysis</div>
+                                    <div class="subtitle-1">Enter a peptide above to continue...</div>
+                                </v-card-text>
+                            </v-card>
+                        </div>
                     </v-col>
                 </v-row>
             </div>
@@ -46,12 +50,14 @@
             <div v-else-if="isAnalysisInProgress">
                 <v-row>
                     <v-col>
-                        <v-card>
-                            <v-card-text class="d-flex flex-column align-center">
-                                <v-progress-circular indeterminate color="primary" size="40" />
-                                <span>Processing your request...</span>
-                            </v-card-text>
-                        </v-card>
+                        <div style="max-width: 1400px; margin: auto;">
+                            <v-card>
+                                <v-card-text class="d-flex flex-column align-center">
+                                    <v-progress-circular indeterminate color="primary" size="40" />
+                                    <span>Processing your request...</span>
+                                </v-card-text>
+                            </v-card>
+                        </div>
                     </v-col>
                 </v-row>
             </div>
@@ -59,11 +65,13 @@
             <div v-else-if="peptideErrorOccurred">
                 <v-row>
                     <v-col>
-                        <v-card>
-                            <v-card-text>
-                                <span>Information not available...</span>
-                            </v-card-text>
-                        </v-card>
+                        <div style="max-width: 1400px; margin: auto;">
+                            <v-card>
+                                <v-card-text>
+                                    <span>Information not available...</span>
+                                </v-card-text>
+                            </v-card>
+                        </div>
                     </v-col>
                 </v-row>
             </div>
@@ -71,16 +79,20 @@
             <div v-else>
                 <v-row>
                     <v-col>
-                        <v-card>
-                            <v-card-text>
-                                <single-peptide-summary />
-                            </v-card-text>
-                        </v-card>
+                        <div style="max-width: 1400px; margin: auto;">
+                            <v-card>
+                                <v-card-text>
+                                    <single-peptide-summary />
+                                </v-card-text>
+                            </v-card>
+                        </div>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col>
-                        <single-peptide-analysis-card />
+                        <div style="max-width: 1400px; margin: auto;">
+                            <single-peptide-analysis-card />
+                        </div>
                     </v-col>
                 </v-row>
             </div>

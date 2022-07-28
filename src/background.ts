@@ -7,6 +7,7 @@ import ConfigurationManager from "./logic/configuration/ConfigurationManager";
 import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 import installExtension, { VUEJS_DEVTOOLS } from "electron-devtools-installer"
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 const bt = require("backtrace-node");
 
 app.commandLine.appendSwitch("js-flags", "--max-old-space-size=4096 --expose_gc");
@@ -191,7 +192,34 @@ app.on("window-all-closed", () => {
     if (process.platform !== "darwin") {
         app.quit()
     }
-})
+});
+
+let shutdownStarted = false;
+let shutdownCompleted = false;
+app.on("before-quit", async(event) => {
+    if (!shutdownCompleted) {
+        event.preventDefault();
+    }
+
+    if (!shutdownStarted) {
+        shutdownStarted = true;
+
+        try {
+            const dockerCommunicator = new DockerCommunicator();
+
+            // Stop all the running database builds (if there are some still in progress).
+            const configMng = new ConfigurationManager();
+            const config = await configMng.readConfiguration();
+            DockerCommunicator.initializeConnection(JSON.parse(config.dockerConfigurationSettings));
+
+            await dockerCommunicator.stopWebComponent();
+            await dockerCommunicator.stopDatabase();
+        } finally {
+            shutdownCompleted = true;
+            app.quit();
+        }
+    }
+});
 
 app.on("activate", async() => {
     // On macOS it's common to re-create a window in the app when the

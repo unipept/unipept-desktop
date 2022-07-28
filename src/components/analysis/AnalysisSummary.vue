@@ -52,10 +52,10 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Show currently selected analysis source and possibility to change it, if requested -->
+                                <!-- Show currently selected analysis source and possibility to change it -->
                                 <div>
 
-                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource">
+                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource()">
                                         <div>
                                             <v-icon small class="mr-1">mdi-web</v-icon>
                                             <span class="mr-1">{{ analysisSourceDescription }}</span>
@@ -135,9 +135,9 @@ import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemD
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelect.vue";
-import { CustomDatabaseInfo } from "@/state/DockerStore";
 import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
@@ -156,6 +156,8 @@ export default class AnalysisSummary extends Vue {
 
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
+
+    private originalAnalysisSourceName: string = "";
 
     private currentAnalysisSource: RenderableAnalysisSource = null;
     private renderableSources: RenderableAnalysisSource[] = [];
@@ -190,7 +192,8 @@ export default class AnalysisSummary extends Vue {
     get isDirty(): boolean {
         return this.originalEquateIl !== this.equateIl ||
             this.originalFilterDuplicates !== this.filterDuplicates ||
-            this.originalMissedCleavage !== this.missedCleavage
+            this.originalMissedCleavage !== this.missedCleavage ||
+            this.originalAnalysisSourceName !== this.currentAnalysisSource.title
     }
 
     get isOnlineAnalysisSource(): boolean {
@@ -215,12 +218,12 @@ export default class AnalysisSummary extends Vue {
             subtitle: "https://unipept.ugent.be"
         });
 
-        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
-            if (dbInfo.database.complete) {
+        for (const dbInfo of (this.$store.getters["customDatabases/databases"] as CustomDatabase[])) {
+            if (dbInfo.ready) {
                 this.renderableSources.push({
                     type: "local",
-                    title: dbInfo.database.name,
-                    subtitle: `${dbInfo.database.entries} UniProt-entries`
+                    title: dbInfo.name,
+                    subtitle: `${dbInfo.entries} UniProtKB-entries`
                 });
             }
         }
@@ -244,7 +247,10 @@ export default class AnalysisSummary extends Vue {
             this.analysisSource = this.assay.getAnalysisSource();
             this.originalAnalysisSource = this.analysisSource;
 
-            if (this.analysisSource instanceof OnlineAnalysisSource || this.analysisSource instanceof CachedOnlineAnalysisSource) {
+            if (
+                this.analysisSource instanceof OnlineAnalysisSource ||
+                this.analysisSource instanceof CachedOnlineAnalysisSource
+            ) {
                 this.currentAnalysisSource = {
                     type: "online",
                     title: "Online Unipept service",
@@ -253,12 +259,14 @@ export default class AnalysisSummary extends Vue {
             } else {
                 const customDb = (this.analysisSource as CachedCustomDbAnalysisSource).customDatabase;
 
-                return {
+                this.currentAnalysisSource = {
                     type: "local",
                     title: customDb.name,
-                    subtitle: `${customDb.entries} UniProt-entries`
+                    subtitle: `${customDb.entries} UniProtKB-entries`
                 }
             }
+
+            this.originalAnalysisSourceName = this.currentAnalysisSource.title;
         }
     }
 
@@ -291,9 +299,7 @@ export default class AnalysisSummary extends Vue {
             this.analysisSource = new CachedCustomDbAnalysisSource(
                 this.assay,
                 this.$store.getters.dbManager,
-                this.$store.getters.databases.find(
-                    (d: CustomDatabaseInfo) => d.database.name === this.currentAnalysisSource.title
-                ),
+                this.$store.getters["customDatabases/database"](this.currentAnalysisSource.title),
                 config.customDbStorageLocation,
                 this.$store.getters.projectLocation
             );

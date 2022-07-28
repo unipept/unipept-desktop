@@ -5,6 +5,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { serialize } from "v8";
 
 export default class AnalysisSourceSerializer {
     public static serializeAnalysisSource(source: AnalysisSource): string {

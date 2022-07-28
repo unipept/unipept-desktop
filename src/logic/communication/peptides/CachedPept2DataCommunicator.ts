@@ -46,7 +46,30 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         } else {
             // If the data is not yet present in the local database, we first compute it and then store the result
             // in the local database.
-            const [data, trust] = await this.invalidCacheCommunicator.process(countTable, configuration, progressListener);
+            // If a request fails, we wait for a minute, try again and hope that the internet connection is restored
+            // during this period of time.
+            let data: ShareableMap<string, any>;
+            let trust: PeptideTrust;
+
+            try {
+                [data, trust] = await this.invalidCacheCommunicator.process(
+                    countTable,
+                    configuration,
+                    progressListener
+                );
+            } catch (err) {
+                // Wait for a minute, try again
+                await new Promise<void>((resolve) => {
+                    setTimeout(() => resolve(), 60 * 1000);
+                });
+
+                [data, trust] = await this.invalidCacheCommunicator.process(
+                    countTable,
+                    configuration,
+                    progressListener
+                );
+            }
+
             const dataMng = new CachedResultsManager(this.databaseMng, this.projectLocation);
 
             // @ts-ignore

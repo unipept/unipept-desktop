@@ -189,7 +189,6 @@ import {
     SearchConfiguration,
     ProteomicsAssay, OnlineAnalysisSource
 } from "unipept-web-components";
-import { CustomDatabaseInfo } from "@/state/DockerStore";
 import { promises as fs } from "fs";
 import { isText } from "istextorbinary";
 import path from "path";
@@ -199,6 +198,7 @@ import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnl
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 
 
 const electron = require("electron");
@@ -341,12 +341,12 @@ export default class CreateAssayDialog extends Vue {
             subtitle: "https://rick.ugent.be"
         });
 
-        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
-            if (dbInfo.database.complete) {
+        for (const dbInfo of (this.$store.getters["customDatabases/databases"] as CustomDatabase[])) {
+            if (dbInfo.ready) {
                 this.renderableSources.push({
                     type: "local",
-                    title: dbInfo.database.name,
-                    subtitle: `${dbInfo.database.entries} UniProt-entries`
+                    title: dbInfo.name,
+                    subtitle: `${dbInfo.entries} UniProtKB-entries`
                 });
             }
         }
@@ -404,9 +404,7 @@ export default class CreateAssayDialog extends Vue {
                     analysisSource = new CachedCustomDbAnalysisSource(
                         assay,
                         this.$store.getters.dbManager,
-                        this.$store.getters.databases.find(
-                            (d: CustomDatabaseInfo) => d.database.name === placeholder.analysisSource.title
-                        ),
+                        this.$store.getters["customDatabases/database"](placeholder.analysisSource.title),
                         config.customDbStorageLocation,
                         this.$store.getters.projectLocation
                     );

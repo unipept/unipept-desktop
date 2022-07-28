@@ -93,12 +93,19 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
      * string can be given that allows the database to be filtered by all taxa that contain a specific text in their
      * name.
      *
-     * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
+     * @param filter A portion of text that should be present in the name of all taxa that are returned by this
      * function.
-     */
-    public getNcbiCount(nameFilter: string = ""): number {
-        return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name LIKE ?")
-            .get(`%${nameFilter}%`)["COUNT(id)"];
+     * */
+    public getNcbiCount(filter: string = ""): number {
+        if (filter !== "") {
+            return this.db.prepare(
+                "SELECT COUNT(id) FROM virtual_taxons WHERE virtual_taxons MATCH ? AND name != 'root'"
+            )
+                .get(filter)["COUNT(id)"];
+        } else {
+            return this.db.prepare("SELECT COUNT(id) FROM taxons WHERE name != 'root'")
+                .get()["COUNT(id)"];
+        }
     }
 
     /**
@@ -108,22 +115,29 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
      *
      * @param start First NCBI id that should be included in the result (inclusive).
      * @param end First NCBI id that should not be included in the result (exclusive).
-     * @param nameFilter A portion of text that should be present in the name of all taxa that are returned by this
-     * function.
+     * @param filter Only rows for which either the id, the name or rank contain a portion of this filter are returned.
      * @param sortBy Which taxon property should be used to sort the table?
      * @param sortDescending Sort according to ascending or descending values in the selected column?
      */
     public getNcbiRange(
         start: number,
         end: number,
-        nameFilter: string = "",
+        filter: string = "",
         sortBy: "id" | "name" | "rank" = "id",
-        sortDescending: boolean = true
+        sortDescending: boolean = false
     ): NcbiId[] {
-        return this.db.prepare(
-            `SELECT id, name, rank FROM taxons WHERE name LIKE ? ORDER BY ${sortBy} ${ sortDescending ? "ASC": "DESC" } LIMIT ? OFFSET ?`
-        )
-            .all(`%${nameFilter}%`, end - start, start)
-            .map((item: any) => item.id);
+        if (filter !== "") {
+            return this.db.prepare(
+                `SELECT id FROM virtual_taxons WHERE virtual_taxons MATCH ? AND name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+            )
+                .all(filter, end - start, start)
+                .map((item: any) => item.id);
+        } else {
+            return this.db.prepare(
+                `SELECT id FROM taxons WHERE name != 'root' ORDER BY ${sortBy} ${ sortDescending ? "DESC": "ASC" } LIMIT ? OFFSET ?`
+            )
+                .all(end - start, start)
+                .map((item: any) => item.id);
+        }
     }
 }

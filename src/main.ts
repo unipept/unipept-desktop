@@ -10,7 +10,7 @@ import vueFullscreen from "vue-fullscreen";
 
 import { DesktopConfigurationStore } from "@/state/DesktopConfigurationStore";
 import { projectStore } from "@/state/ProjectStore";
-import { customDatabaseStore } from "@/state/DockerStore";
+import CustomDatabaseStoreFactory from "@/state/CustomDatabaseStoreFactory";
 import { ComparativeStore } from "@/state/ComparativeStore";
 
 import HomePage from "@/components/pages/HomePage.vue";
@@ -43,6 +43,7 @@ Vue.use(vueFullscreen);
 
 const assayStoreFactory = new AssayStoreFactory();
 const singlePeptideStoreFactory = new SinglePeptideStoreFactory();
+const customDatabaseStoreFactory = new CustomDatabaseStoreFactory();
 
 export const store = new Vuex.Store({
     modules: {
@@ -52,7 +53,7 @@ export const store = new Vuex.Store({
         desktopConfiguration: DesktopConfigurationStore,
         comparative: ComparativeStore,
         project: projectStore,
-        customDatabase: customDatabaseStore
+        customDatabases: customDatabaseStoreFactory.constructCustomDatabaseStore()
     }
 });
 

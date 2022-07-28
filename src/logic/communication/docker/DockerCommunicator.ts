@@ -1,26 +1,26 @@
 import Dockerode  from "dockerode";
-import { NcbiId, ProgressListener } from "unipept-web-components";
 import ProgressInspectorStream from "@/logic/communication/docker/ProgressInspectorStream";
 import { promises as fs } from "fs";
+import path from "path";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
-import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
-import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
-
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
     private static readonly WEB_CONTAINER_NAME = "unipept_web";
 
-    public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({ socketPath: "/var/run/docker.sock" });
-    public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
-        protocol: "tcp",
-        host: "127.0.0.1",
-        port: 2376
+    public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({
+        socketPath: "/var/run/docker.sock"
     });
+    public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
+        socketPath: "//./pipe/docker_engine"
+    })
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
+
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.4";
+    public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
 
     public static connection: Dockerode;
 
@@ -47,12 +47,15 @@ export default class DockerCommunicator {
      * empty.
      * @param indexFolder Folder in which the constructed database index structure should be kept.
      * @param progressListener A callback function that can be used to monitor the progress of building the database.
+     * @param logReporter A callback that's called whenever a new line of log content is produced by the underlying
+     * container.
      */
     public async buildDatabase(
         customDb: CustomDatabase,
         databaseFolder: string,
         indexFolder: string,
-        progressListener: (step: string, progress: number, progress_step: number) => void
+        progressListener: (step: string, progress: number, progress_step: number) => void,
+        logReporter: (logLine: string) => void
     ): Promise<void> {
         if (!DockerCommunicator.connection) {
             throw new Error("Connection to Docker daemon has not been initialized.");
@@ -67,75 +70,120 @@ export default class DockerCommunicator {
         await fs.rmdir(databaseFolder, { recursive: true });
         await mkdirp(databaseFolder);
 
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-custom-db:1.1.1",
-                [],
-                new ProgressInspectorStream(progressListener, () => resolve(), (n: number) => customDb.entries = n),
-                {
-                    Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                    Env: [
-                        "MYSQL_ROOT_PASSWORD=unipept",
-                        "MYSQL_DATABASE=unipept",
-                        "MYSQL_USER=unipept",
-                        "MYSQL_PASSWORD=unipept",
-                        `DB_TYPES=${customDb.sourceTypes.join(",")}`,
-                        `DB_SOURCES=${customDb.sources.join(",")}`,
-                        `FILTER_TAXA=${customDb.taxa.join(",")}`
-                    ],
-                    PortBindings: {
-                        "3306/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: "3306"
-                        }]
-                    },
-                    Binds: [
-                        // Mount the folder in which the MySQL-specific database files will be kept
-                        `${databaseFolder}:/var/lib/mysql`,
-                        // Mount the folder in which the reusable database index structure will be kept
-                        `${indexFolder}:/data`
-                    ]
-                }
-            );
+        progressListener("Fetching required Docker images", -1, 0);
+        // Pull the database image
+        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+
+        await new Promise<void>(async(resolve, reject) => {
+            try {
+                await DockerCommunicator.connection.run(
+                    DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
+                    [],
+                    new ProgressInspectorStream(
+                        progressListener,
+                        () => resolve(),
+                        (n: number) => customDb.entries = n,
+                        logReporter
+                    ),
+                    {
+                        Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
+                        Env: [
+                            "MYSQL_ROOT_PASSWORD=unipept",
+                            "MYSQL_DATABASE=unipept",
+                            "MYSQL_USER=unipept",
+                            "MYSQL_PASSWORD=unipept",
+                            `DB_TYPES=${customDb.sourceTypes.join(",")}`,
+                            `DB_SOURCES=${customDb.sources.join(",")}`,
+                            `FILTER_TAXA=${customDb.taxa.join(",")}`
+                        ],
+                        PortBindings: {
+                            "3306/tcp": [{
+                                HostIP: "0.0.0.0",
+                                HostPort: "3306"
+                            }]
+                        },
+                        HostConfig: {
+                            Binds: [
+                                // Mount the folder in which the MySQL-specific database files will be kept
+                                `${databaseFolder}:/var/lib/mysql`,
+                                // Mount the folder in which the reusable database index structure will be kept
+                                `${indexFolder}:/index`
+                            ]
+                        }
+                    }
+                );
+
+                // If resolve has not yet been called, we call it here.
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
         });
 
-        customDb.complete = true;
+        customDb.ready = true;
 
         // Now, stop this container
-        const buildContainer = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
-        return new Promise<void>(
-            resolve => DockerCommunicator.connection.getContainer(buildContainer!.Id).stop(resolve)
-        );
+        await this.stopDatabase();
     }
 
     public async startDatabase(databaseLocation: string): Promise<void> {
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-custom-db:1.1.1",
-                [],
-                new ProgressInspectorStream((step: string, progress: number) => {}, () => resolve(), () => {}),
-                {
-                    Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                    PortBindings: {
-                        "3306/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: "3306"
-                        }]
-                    },
-                    Binds: [
-                        // Mount the folder in which the MySQL-specific database files will be kept
-                        `${databaseLocation}:/var/lib/mysql`
-                    ]
-                }
-            );
+        return new Promise<void>(async(resolve, reject) => {
+            try {
+                databaseLocation = path.join(databaseLocation, "data");
+                await DockerCommunicator.connection.run(
+                    "pverscha/unipept-database:1.0.0",
+                    [],
+                    new ProgressInspectorStream(
+                        (s: string, p: number) => {},
+                        () => resolve(),
+                        () => {},
+                        () => {}
+                    ),
+                    {
+                        Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
+                        PortBindings: {
+                            "3306/tcp": [{
+                                HostIP: "0.0.0.0",
+                                HostPort: "3306"
+                            }]
+                        },
+                        Env: [
+                            "MYSQL_ROOT_PASSWORD=unipept"
+                        ],
+                        HostConfig: {
+                            Binds: [
+                                // Mount the folder in which the MySQL-specific database files will be kept
+                                `${databaseLocation}:/var/lib/mysql`
+                            ]
+                        }
+                    }
+                );
+            } catch (err) {
+                reject(err);
+            }
         });
     }
 
     /**
      * Stop all of the running Docker database containers associated with the Unipept Desktop application.
      */
-    public stopDatabase(): Promise<void> {
-        return this.stopContainer(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+    public async stopDatabase(): Promise<void> {
+        while ((await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined) {
+            const containerInfo = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+            const container = DockerCommunicator.connection.getContainer(containerInfo!.Id);
+            await container.stop();
+            await container.remove();
+        }
+    }
+
+    /**
+     * Checks if the database container is currently running and active. This means that the communicator is going to
+     * check if a container with the BUILD_DB identifier is currently active.
+     *
+     * @return true if the database is active, false otherwise.
+     */
+    public async isDatabaseActive(): Promise<boolean> {
+        return (await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined;
     }
 
     /**
@@ -143,9 +191,11 @@ export default class DockerCommunicator {
      * API service on port 3000 that can be connected to from this application.
      */
     public async startWebComponent(): Promise<void> {
+        await this.pullImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
+
         await new Promise<void>((resolve) => {
             DockerCommunicator.connection.run(
-                "pverscha/unipept-web:1.0.0",
+                DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME,
                 [],
                 new StringNotifierInspectorStream("Listening on", resolve),
                 {
@@ -161,8 +211,11 @@ export default class DockerCommunicator {
         });
     }
 
-    public stopWebComponent(): Promise<void> {
-        return this.stopContainer(DockerCommunicator.WEB_CONTAINER_NAME);
+    public async stopWebComponent(): Promise<void> {
+        const containerInfo = await this.getContainerByName(DockerCommunicator.WEB_CONTAINER_NAME);
+        const container = DockerCommunicator.connection.getContainer(containerInfo.Id);
+        await container.stop();
+        await container.remove();
     }
 
     /**
@@ -214,9 +267,37 @@ export default class DockerCommunicator {
         const containerInfo = await this.getContainerByName(name);
 
         if (containerInfo) {
-            return new Promise<void>((resolve) => {
-                DockerCommunicator.connection.getContainer(containerInfo.Id).stop(resolve);
-            });
+            const container = DockerCommunicator.connection.getContainer(containerInfo.Id);
+            await container.stop();
+            await container.remove();
         }
+    }
+
+    private pullImage(imageName: string): Promise<void> {
+        return new Promise<void>(
+            async(resolve, reject) => {
+                DockerCommunicator.connection.pull(
+                    imageName,
+                    function(err: any, stream: any) {
+                        if (err) {
+                            reject(err);
+                        }
+
+                        DockerCommunicator.connection.modem.followProgress(
+                            stream,
+                            // onFinished
+                            (err: any, output: any) => {
+                                if (err) {
+                                    reject(err);
+                                }
+                                resolve();
+                            },
+                            // onProgress
+                            (progressEvent: any) => {}
+                        );
+                    }
+                );
+            }
+        );
     }
 }
