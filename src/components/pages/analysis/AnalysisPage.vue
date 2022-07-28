@@ -8,29 +8,32 @@
                 'float': 'right'
             }">
 
-            <v-alert type="warning" class="ma-2" v-if="isDemoProjectActive">
-                You are currently browsing the demo project. Changes made to this project will not be saved.
-            </v-alert>
+            <div style="position: sticky; top: 64px; z-index: 100; background-color: white;" class="py-1">
+                <v-alert type="warning" class="ma-2" v-if="isDemoProjectActive">
+                    You are currently browsing the demo project. Changes made to this project will not be saved.
+                </v-alert>
 
-            <v-alert
-                v-if="isFilterActive && filteredTrust"
-                class="ma-2"
-                type="info">
-                <v-row dense align="center">
-                    <v-col class="grow">
-                        <b>
-                            Filtered results:
-                        </b>
-                        these results are limited to the {{ this.filteredTrust.matchedPeptides }} peptides specific to
-                        <b>
-                            {{ this.filteredNcbiTaxon.name }} ({{this.filteredNcbiTaxon.rank}})
-                        </b>
-                    </v-col>
-                    <v-col class="shrink">
-                        <v-btn @click="resetFilter" color="white" class="black--text" x-small>Reset filter</v-btn>
-                    </v-col>
-                </v-row>
-            </v-alert>
+                <v-alert
+                    v-if="isFilterActive && filteredTrust"
+                    class="ma-2"
+                    type="info">
+                    <v-row dense align="center">
+                        <v-col class="grow">
+                            <b>
+                                Filtered results:
+                            </b>
+                            these results are limited to the {{ this.filteredTrust.matchedPeptides }} peptides specific
+                            to
+                            <b>
+                                {{ this.filteredNcbiTaxon.name }} ({{this.filteredNcbiTaxon.rank}})
+                            </b>
+                        </v-col>
+                        <v-col class="shrink">
+                            <v-btn @click="resetFilter" color="white" class="black--text" x-small>Reset filter</v-btn>
+                        </v-col>
+                    </v-row>
+                </v-alert>
+            </div>
 
             <!-- Show analysis results for the currently selected assay if it's ready with processing -->
             <v-container
