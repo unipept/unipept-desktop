@@ -5,7 +5,7 @@
                 <div class="flex-grow-1">
                     <h3>Taxa selected for filtering</h3>
                     <div class="text-caption">
-                        Only UniProt-records that are associated with an organism that is a child of one of these chosen
+                        Only UniProtKB-records that are associated with an organism that is a child of one of these chosen
                         taxa will be retained in the resulting database.
                     </div>
                 </div>

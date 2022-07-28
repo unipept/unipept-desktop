@@ -300,7 +300,7 @@ export default class CustomDatabasePage extends Vue {
             value: "taxa"
         },
         {
-            text: "UniProt records",
+            text: "UniProtKB records",
             align: "start",
             sortable: true,
             value: "entries"

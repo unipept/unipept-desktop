@@ -14,7 +14,7 @@
                     mdi-alert-circle
                 </v-icon>
                 <div>
-                    Could not retrieve a list of the current UniProt versions...
+                    Could not retrieve a list of the current UniProtKB versions...
                 </div>
                 <div>
                     Please <a @click="retrieveUniProtVersions">try again</a>
@@ -23,7 +23,7 @@
             </v-card-text>
             <v-card-text v-else-if="loading" class="d-flex flex-column align-center">
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                <span>Looking up all current UniProt versions...</span>
+                <span>Looking up all current UniProtKB versions...</span>
             </v-card-text>
             <v-card-text v-else class="mt-2">
                 <v-stepper v-model="currentStep" vertical flat>
@@ -72,8 +72,8 @@
                                             label="Database version"
                                             :items="versions"
                                             v-model="selectedVersion"
-                                            :rules="[value => !! value || 'You must select a UniProt source']"
-                                            hint="Select the version of the UniProt source that should be processed."
+                                            :rules="[value => !! value || 'You must select a UniProtKB source']"
+                                            hint="Select the version of the UniProtKB source that should be processed."
                                             persistent-hint>
                                         </v-select>
                                     </v-col>

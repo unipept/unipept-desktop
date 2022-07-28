@@ -52,7 +52,7 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Show currently selected analysis source and possibility to change it, if requested -->
+                                <!-- Show currently selected analysis source and possibility to change it -->
                                 <div>
 
                                     <v-edit-dialog large save-text="Change" @save="updateAnalysisSource()">
@@ -223,7 +223,7 @@ export default class AnalysisSummary extends Vue {
                 this.renderableSources.push({
                     type: "local",
                     title: dbInfo.name,
-                    subtitle: `${dbInfo.entries} UniProt-entries`
+                    subtitle: `${dbInfo.entries} UniProtKB-entries`
                 });
             }
         }
@@ -247,7 +247,10 @@ export default class AnalysisSummary extends Vue {
             this.analysisSource = this.assay.getAnalysisSource();
             this.originalAnalysisSource = this.analysisSource;
 
-            if (this.analysisSource instanceof OnlineAnalysisSource || this.analysisSource instanceof CachedOnlineAnalysisSource) {
+            if (
+                this.analysisSource instanceof OnlineAnalysisSource ||
+                this.analysisSource instanceof CachedOnlineAnalysisSource
+            ) {
                 this.currentAnalysisSource = {
                     type: "online",
                     title: "Online Unipept service",
@@ -259,7 +262,7 @@ export default class AnalysisSummary extends Vue {
                 this.currentAnalysisSource = {
                     type: "local",
                     title: customDb.name,
-                    subtitle: `${customDb.entries} UniProt-entries`
+                    subtitle: `${customDb.entries} UniProtKB-entries`
                 }
             }
 

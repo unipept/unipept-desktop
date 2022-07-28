@@ -346,7 +346,7 @@ export default class CreateAssayDialog extends Vue {
                 this.renderableSources.push({
                     type: "local",
                     title: dbInfo.name,
-                    subtitle: `${dbInfo.entries} UniProt-entries`
+                    subtitle: `${dbInfo.entries} UniProtKB-entries`
                 });
             }
         }
