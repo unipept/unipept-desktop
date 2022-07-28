@@ -84,6 +84,10 @@
                         Look for all taxa whose ID starts with "1234" or whose name contains "1234":
                         <span class="inline-code">id:(^1234*) OR name:(1234)</span>
                     </li>
+                    <li>
+                        Look for all "Escherichia Coli" by using it's abbreviation:
+                        <span class="inline-code">e* coli</span>
+                    </li>
                 </ul>
             </div>
             <div>
