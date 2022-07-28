@@ -110,13 +110,25 @@
                                         :loading="dbsBeingDeleted.indexOf(item.name) !== -1">
                                         <v-icon>mdi-delete</v-icon>
                                     </v-btn>
-                                    <v-btn icon x-small class="mx-1" @click="showDbInformation(item)">
-                                        <v-icon>mdi-information</v-icon>
-                                    </v-btn>
+                                    <v-tooltip open-delay="500" bottom>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn
+                                                icon
+                                                x-small
+                                                class="mx-1"
+                                                v-on="on"
+                                                @click="copyDatabase(item)">
+                                                <v-icon>
+                                                    mdi-content-copy
+                                                </v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Duplicate this database.</span>
+                                    </v-tooltip>
                                 </template>
                                 <template v-slot:item.status="{ item }">
                                     <td>
-                                        <v-tooltip v-if="item.cancelled" open-delay="500">
+                                        <v-tooltip v-if="item.cancelled" open-delay="500" bottom>
                                             <template v-slot:activator="{ on, attrs }">
                                                 <v-icon color="warning" v-on="on">mdi-cancel</v-icon>
                                             </template>
@@ -199,14 +211,17 @@
                             <div class="d-flex flex-row align-center mt-4">
                                 <disk-usage-bar class="flex-grow-1 my-1" :folder="databaseFolder" style="max-width: 700px;" />
                                 <v-spacer></v-spacer>
-                                <v-btn color="primary" @click="createDatabaseDialog = true">
+                                <v-btn color="primary" @click="createNewDatabase()">
                                     Create custom database
                                 </v-btn>
                             </div>
-                            <create-custom-database v-model="createDatabaseDialog" />
-                            <custom-database-information-dialog
-                                v-model="databaseInformationDialog"
-                                :custom-database="selectedCustomDb" />
+                            <create-custom-database
+                                v-model="createDatabaseDialog"
+                                :database-name-default="databaseNameDefault"
+                                :selected-sources-default="selectedSourceDefault"
+                                :selected-taxa-default="selectedTaxaDefault"
+                                :selected-version-default="selectedVersionDefault"
+                            />
                         </v-card-text>
                     </v-card>
                 </div>
@@ -228,11 +243,9 @@ import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
 import DiskUsageBar from "@/components/filesystem/DiskUsageBar.vue";
 import ErrorDetailViewer from "@/components/error/ErrorDetailViewer.vue";
-import CustomDatabaseInformationDialog from "@/components/custom-database/CustomDatabaseInformationDialog.vue";
 
 @Component({
     components: {
-        CustomDatabaseInformationDialog,
         ErrorDetailViewer,
         DiskUsageBar,
         ProgressReportSummary,
@@ -242,7 +255,6 @@ import CustomDatabaseInformationDialog from "@/components/custom-database/Custom
 })
 export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
-    private databaseInformationDialog: boolean = false;
 
     private dockerConnectionError: boolean = false;
     private buildInProgressError: boolean = false;
@@ -257,7 +269,10 @@ export default class CustomDatabasePage extends Vue {
 
     private loading: boolean = true;
 
-    private selectedCustomDb: CustomDatabase = null;
+    private selectedSourceDefault: string[] = [];
+    private databaseNameDefault: string = "";
+    private selectedVersionDefault: string = "Current";
+    private selectedTaxaDefault: NcbiTaxon[] = [];
 
     private headers = [
         {
@@ -392,16 +407,54 @@ export default class CustomDatabasePage extends Vue {
         this.dbsBeingDeleted.splice(this.dbsBeingDeleted.indexOf(dbName), 1);
     }
 
+    private resetDatabaseDefaults(): void {
+        this.selectedSourceDefault.splice(0, this.selectedSourceDefault.length);
+        this.databaseNameDefault = "";
+        this.selectedVersionDefault = "Current";
+        this.selectedTaxaDefault.splice(0, this.selectedTaxaDefault.length);
+    }
+
+    private createNewDatabase(): void {
+        this.resetDatabaseDefaults();
+        this.createDatabaseDialog = true;
+    }
+
+    private async copyDatabase(db: CustomDatabase): Promise<void> {
+        this.resetDatabaseDefaults();
+
+        this.selectedSourceDefault.push(...db.sourceTypes);
+        this.databaseNameDefault = this.generateUniqueDbName(db.name);
+        this.selectedVersionDefault = db.databaseVersion;
+
+        const ncbiOntologyProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
+        this.selectedTaxaDefault.push(...(await ncbiOntologyProcessor.getOntologyByIds(db.taxa)).toMap().values());
+
+        this.createDatabaseDialog = true;
+    }
+
+    /**
+     * Generate a unique database name from the given parameter. The index number that corresponds this name will be
+     * increased by one until the new name does not already exist.
+     *
+     * @param dbName
+     */
+    private generateUniqueDbName(dbName: string): string {
+        let counter = 1;
+        let newName = `${dbName} (${counter})`;
+
+        while (this.databases.filter(db => db.name === newName).length !== 0) {
+            counter++;
+            newName = `${dbName} (${counter})`;
+        }
+
+        return newName;
+    }
+
     private async forceStop(): Promise<void> {
         this.forceStopInProgress = true;
         const dockerCommunicator = new DockerCommunicator();
         await dockerCommunicator.stopDatabase();
         this.forceStopInProgress = false;
-    }
-
-    private showDbInformation(db: CustomDatabase): void {
-        this.selectedCustomDb = db;
-        this.databaseInformationDialog = true;
     }
 
     private toHumanReadableNumber(n: number): string {

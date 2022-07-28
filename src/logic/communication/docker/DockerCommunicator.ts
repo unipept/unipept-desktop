@@ -1,14 +1,10 @@
 import Dockerode  from "dockerode";
-import { NcbiId, ProgressListener } from "unipept-web-components";
 import ProgressInspectorStream from "@/logic/communication/docker/ProgressInspectorStream";
 import { promises as fs } from "fs";
 import path from "path";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
-import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
-import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
-
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
@@ -23,7 +19,7 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.3";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.4";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
 
     public static connection: Dockerode;

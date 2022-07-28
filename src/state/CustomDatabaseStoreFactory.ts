@@ -45,17 +45,16 @@ export default class CustomDatabaseStoreFactory {
                     dbName,
                     databaseSources,
                     databaseTypes,
-                    taxa
+                    taxa,
+                    dbVersion
                 ]: [
                     string,
                     string[],
                     string[],
-                    NcbiId[]
+                    NcbiId[],
+                    string
                 ]
             ) {
-                // TODO change to correct most recent version, retrieved from the Expasy FTP server.
-                const dbVersion = "2021.3";
-
                 const db = new CustomDatabase(
                     dbName,
                     databaseSources,
@@ -194,15 +193,17 @@ export default class CustomDatabaseStoreFactory {
                         dbName,
                         databaseSources,
                         databaseTypes,
-                        taxa
+                        taxa,
+                        uniprotVersion
                     ]: [
                         string,
                         string[],
                         string[],
-                        NcbiId[]
+                        NcbiId[],
+                        string
                     ]
                 ) => {
-                    await this.buildDatabase(store, [dbName, databaseSources, databaseTypes, taxa]);
+                    await this.buildDatabase(store, [dbName, databaseSources, databaseTypes, taxa, uniprotVersion]);
                 }
             },
 
@@ -406,19 +407,22 @@ export default class CustomDatabaseStoreFactory {
             dbName,
             databaseSources,
             databaseTypes,
-            taxa
+            taxa,
+            uniprotVersion
         ]: [
             string,
             string[],
             string[],
-            NcbiId[]
+            NcbiId[],
+            string
         ]
     ): Promise<void> {
         store.commit("CUSTOM_DB_ADD_DATABASE", [
             dbName,
             databaseSources,
             databaseTypes,
-            taxa
+            taxa,
+            uniprotVersion
         ]);
 
         const dbObj = store.getters.database(dbName);

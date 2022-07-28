@@ -110,8 +110,6 @@
                         </v-container>
                     </v-stepper-content>
                 </v-stepper>
-
-
             </v-card-text>
         </v-card>
     </v-dialog>
@@ -124,15 +122,7 @@ import axios from "axios";
 
 import https from "https";
 import TaxaBrowser from "@/components/taxon/TaxaBrowser.vue";
-import {
-    CountTable,
-    LcaCountTableProcessor,
-    NcbiId,
-    NcbiOntologyProcessor,
-    NcbiTaxon,
-    Tree,
-    TreeNode
-} from "unipept-web-components";
+import { NcbiTaxon } from "unipept-web-components";
 import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
@@ -144,6 +134,14 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 export default class CreateCustomDatabase extends Vue {
     @Prop({ required: true })
     private value: boolean;
+    @Prop({ required: false, default: () => [] as string[] })
+    private selectedSourcesDefault: string[];
+    @Prop({ required: false, default: "" })
+    private databaseNameDefault: string;
+    @Prop({ required: false, default: "Current" })
+    private selectedVersionDefault: string;
+    @Prop({ required: false, default: () => [] as NcbiTaxon[] })
+    private selectedTaxaDefault: NcbiTaxon[];
 
     private dialogActive: boolean = false;
 
@@ -154,7 +152,7 @@ export default class CreateCustomDatabase extends Vue {
         "TrEMBL",
         "SwissProt"
     ];
-    private selectedSources: string[] = []
+    private selectedSources: string[] = [];
 
     private databaseName: string = "";
 
@@ -162,8 +160,8 @@ export default class CreateCustomDatabase extends Vue {
     private selectedMirror: string = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
-    private versions: String[] = [];
-    private selectedVersion: string = "Current";
+    private versions: string[] = [];
+    private selectedVersion: string = "";
 
     private selectedTaxa: NcbiTaxon[] = [];
 
@@ -194,7 +192,7 @@ export default class CreateCustomDatabase extends Vue {
     private async retrieveUniProtVersions(): Promise<void> {
         try {
             this.loading = true;
-            const data = await new Promise<String>((resolve) => {
+            const data = await new Promise<string>((resolve) => {
                 let data = "";
                 https.get("https://ftp.uniprot.org/pub/databases/uniprot/previous_releases/", (res) => {
                     res.on("data", (chunk) => data += chunk);
@@ -206,9 +204,27 @@ export default class CreateCustomDatabase extends Vue {
                 this.versions.push(version.replace("release-", "").replace("_", "."));
             }
             this.versions.sort().reverse();
-            this.versions.unshift("Current");
+
+            // We also have to find out what the current version of UniProt is and add it to the list.
+            const latestVersionData = await new Promise<string>((resolve) => {
+                let data = "";
+                https.get("https://ftp.uniprot.org/pub/databases/uniprot/current_release/RELEASE.metalink", (res) => {
+                    res.on("data", (chunk) => data += chunk);
+                    res.on("end", () => resolve(data));
+                });
+            });
+
+            const lastVersion: string = latestVersionData
+                .split("\n")
+                .map(line => line.trim())
+                .filter(line => line.includes("<version>"))[0]
+                .replaceAll(/<\/*version>/g, "")
+                .replace("_", ".")
+
+            this.versions.unshift(lastVersion);
             this.loading = false;
         } catch (e) {
+            console.error(e);
             this.error = true;
         }
     }
@@ -242,7 +258,7 @@ export default class CreateCustomDatabase extends Vue {
                 this.selectedSources.map(source => (sourceUrlMap as any)[source]),
                 this.selectedSources,
                 this.selectedTaxa.map(taxon => taxon.id),
-                await configManager.readConfiguration()
+                this.selectedVersion
             ]
         );
         this.dialogActive = false;
@@ -261,6 +277,7 @@ export default class CreateCustomDatabase extends Vue {
         (this.$refs.databaseForm as any).reset();
         this.selectedSources.splice(0, this.selectedSources.length);
         this.selectedVersion = "Current";
+
         this.selectedMirror = "EU (Expasy)";
         this.error = false;
     }
@@ -284,6 +301,17 @@ export default class CreateCustomDatabase extends Vue {
 
     @Watch("value")
     private onValueChanged() {
+        if (this.value) {
+            // Reset to the default supplied values.
+            this.selectedSources.splice(0, this.selectedSources.length);
+            this.selectedSources.push(...this.selectedSourcesDefault);
+            this.databaseName = this.databaseNameDefault;
+            this.selectedVersion = this.selectedVersionDefault;
+            console.log(this.selectedVersion);
+            this.selectedTaxa.splice(0, this.selectedTaxa.length);
+            this.selectedTaxa.push(...this.selectedTaxaDefault);
+        }
+
         this.dialogActive = this.value;
     }
 
