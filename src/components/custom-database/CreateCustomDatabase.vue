@@ -276,8 +276,7 @@ export default class CreateCustomDatabase extends Vue {
         this.databaseName = "";
         (this.$refs.databaseForm as any).reset();
         this.selectedSources.splice(0, this.selectedSources.length);
-        this.selectedVersion = "Current";
-
+        this.selectedVersion = this.sources[0];
         this.selectedMirror = "EU (Expasy)";
         this.error = false;
     }
@@ -307,7 +306,6 @@ export default class CreateCustomDatabase extends Vue {
             this.selectedSources.push(...this.selectedSourcesDefault);
             this.databaseName = this.databaseNameDefault;
             this.selectedVersion = this.selectedVersionDefault;
-            console.log(this.selectedVersion);
             this.selectedTaxa.splice(0, this.selectedTaxa.length);
             this.selectedTaxa.push(...this.selectedTaxaDefault);
         }

@@ -55,7 +55,7 @@
                                 <!-- Show currently selected analysis source and possibility to change it, if requested -->
                                 <div>
 
-                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource">
+                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource()">
                                         <div>
                                             <v-icon small class="mr-1">mdi-web</v-icon>
                                             <span class="mr-1">{{ analysisSourceDescription }}</span>
@@ -157,6 +157,8 @@ export default class AnalysisSummary extends Vue {
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
 
+    private originalAnalysisSourceName: string = "";
+
     private currentAnalysisSource: RenderableAnalysisSource = null;
     private renderableSources: RenderableAnalysisSource[] = [];
 
@@ -190,7 +192,8 @@ export default class AnalysisSummary extends Vue {
     get isDirty(): boolean {
         return this.originalEquateIl !== this.equateIl ||
             this.originalFilterDuplicates !== this.filterDuplicates ||
-            this.originalMissedCleavage !== this.missedCleavage
+            this.originalMissedCleavage !== this.missedCleavage ||
+            this.originalAnalysisSourceName !== this.currentAnalysisSource.title
     }
 
     get isOnlineAnalysisSource(): boolean {
@@ -253,12 +256,14 @@ export default class AnalysisSummary extends Vue {
             } else {
                 const customDb = (this.analysisSource as CachedCustomDbAnalysisSource).customDatabase;
 
-                return {
+                this.currentAnalysisSource = {
                     type: "local",
                     title: customDb.name,
                     subtitle: `${customDb.entries} UniProt-entries`
                 }
             }
+
+            this.originalAnalysisSourceName = this.currentAnalysisSource.title;
         }
     }
 
