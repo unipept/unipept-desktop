@@ -64,8 +64,27 @@
 
         <div>
             <h3>Search for taxa</h3>
-            <div class="text-caption">
-                Enter a keyword to search for taxa. You can search by name, NCBI identifier or rank.
+            <div class="text-caption mb-2">
+                Enter a keyword to search for taxa. You can search by name, NCBI identifier or rank. Advanced search
+                capabilities are available. Some examples of what you can do:
+                <ul>
+                    <li>
+                        Look for all taxa with a specific rank:
+                        <span class="inline-code">rank_name:(species)</span>
+                    </li>
+                    <li>
+                        Look for all taxa whose name contains the words "severe" and "acute":
+                        <span class="inline-code">name:(severe acute)</span>
+                    </li>
+                    <li>
+                        Look for all taxa that are assigned the "species" rank and whose name contains "bacteria":
+                        <span class="inline-code">rank_name:(species) AND name:(bacteria)</span>
+                    </li>
+                    <li>
+                        Look for all taxa whose ID starts with "1234" or whose name contains "1234":
+                        <span class="inline-code">id:(^1234*) OR name:(1234)</span>
+                    </li>
+                </ul>
             </div>
             <div>
                 <v-text-field
@@ -139,7 +158,7 @@ export default class TaxaBrowser extends Vue {
             width: "45%"
         },
         {
-            text: "Rank",
+            text: "Rank Name",
             align: "start",
             value: "rank",
             width: "38%"
@@ -186,9 +205,6 @@ export default class TaxaBrowser extends Vue {
         "deep-orange darken-4"
     ];
 
-    private ranks: string[] = ["All"].concat([...Object.keys(NcbiRank)]);
-    private selectedRank: string = "All";
-
     private search: string = "";
 
     private taxaCount: number = 0;
@@ -233,21 +249,9 @@ export default class TaxaBrowser extends Vue {
     private async filterByName(): Promise<void> {
         this.filterLoading = true;
         this.taxaCount = this.ncbiCommunicator.getNcbiCount(
-            this.search,
-            this.selectedRank === "All" ? "" : this.selectedRank
+            this.search
         );
         this.options.page = 1;
-        await this.onOptionsChanged();
-        this.filterLoading = false;
-    }
-
-    @Watch("selectedRank")
-    private async filterByRank(): Promise<void> {
-        this.filterLoading = true;
-        this.taxaCount = this.ncbiCommunicator.getNcbiCount(
-            this.search,
-            this.selectedRank === "All" ? "" : this.selectedRank
-        );
         await this.onOptionsChanged();
         this.filterLoading = false;
     }
@@ -261,7 +265,6 @@ export default class TaxaBrowser extends Vue {
                 itemsPerPage * (page - 1),
                 itemsPerPage * page,
                 this.search,
-                this.selectedRank === "All" ? "" : this.selectedRank,
                 (sortBy.length > 0 ? sortBy[0] : undefined) as "id" | "name" | "rank",
                 sortDesc.length > 0 ? sortDesc[0] : undefined
             );
@@ -361,5 +364,8 @@ export default class TaxaBrowser extends Vue {
 </script>
 
 <style scoped>
-
+    .inline-code {
+        background-color: #eee;
+        font-family: Roboto mono, monospace;
+    }
 </style>
