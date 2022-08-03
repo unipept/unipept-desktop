@@ -53,6 +53,19 @@ CREATE TABLE storage_metadata (
     FOREIGN KEY(configuration_id) REFERENCES search_configuration(id)
 );
 
+CREATE TABLE datasource (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT CHECK( type in ('online', 'custom_db') ) NOT NULL,
+    /* UniProt version that was used to process the underlying data (e.g. 2022.02). */
+    uniprot_version TEXT NOT NULL,
+    /* Comma-delimited list of NCBI taxon ID's that are used for filtering in this database. */
+    selected_taxa TEXT,
+    /* Is SwissProt included in this datasource? */
+    swissprot_selected INTEGER,
+    /* Is TrEMBL included in this datasource? */
+    trembl_selected INTEGER
+);
+
 CREATE TABLE database_metadata (
     application_version TEXT NOT NULL
 );

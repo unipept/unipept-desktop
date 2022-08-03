@@ -67,15 +67,22 @@
                                         </v-select>
                                     </v-col>
                                     <v-col cols="6">
-                                        <v-select
+                                        <v-text-field
+                                            readonly
                                             dense
-                                            label="Database version"
-                                            :items="versions"
                                             v-model="selectedVersion"
-                                            :rules="[value => !! value || 'You must select a UniProtKB source']"
-                                            hint="Select the version of the UniProtKB source that should be processed."
-                                            persistent-hint>
-                                        </v-select>
+                                            label="Latest UniProt version">
+
+                                        </v-text-field>
+<!--                                        <v-select-->
+<!--                                            dense-->
+<!--                                            label="Database version"-->
+<!--                                            :items="versions"-->
+<!--                                            v-model="selectedVersion"-->
+<!--                                            :rules="[value => !! value || 'You must select a UniProtKB source']"-->
+<!--                                            hint="Select the version of the UniProtKB source that should be processed."-->
+<!--                                            persistent-hint>-->
+<!--                                        </v-select>-->
                                     </v-col>
                                 </v-row>
                                 <v-row>
@@ -160,7 +167,7 @@ export default class CreateCustomDatabase extends Vue {
     private selectedMirror: string = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
-    private versions: string[] = [];
+    // private versions: string[] = [];
     private selectedVersion: string = "";
 
     private selectedTaxa: NcbiTaxon[] = [];
@@ -192,18 +199,18 @@ export default class CreateCustomDatabase extends Vue {
     private async retrieveUniProtVersions(): Promise<void> {
         try {
             this.loading = true;
-            const data = await new Promise<string>((resolve) => {
-                let data = "";
-                https.get("https://ftp.uniprot.org/pub/databases/uniprot/previous_releases/", (res) => {
-                    res.on("data", (chunk) => data += chunk);
-                    res.on("end", () => resolve(data));
-                });
-            });
-
-            for (const version of data.match(/release-[0-9]{4}_[0-9]{2}/g)) {
-                this.versions.push(version.replace("release-", "").replace("_", "."));
-            }
-            this.versions.sort().reverse();
+            // const data = await new Promise<string>((resolve) => {
+            //     let data = "";
+            //     https.get("https://ftp.uniprot.org/pub/databases/uniprot/previous_releases/", (res) => {
+            //         res.on("data", (chunk) => data += chunk);
+            //         res.on("end", () => resolve(data));
+            //     });
+            // });
+            //
+            // for (const version of data.match(/release-[0-9]{4}_[0-9]{2}/g)) {
+            //     this.versions.push(version.replace("release-", "").replace("_", "."));
+            // }
+            // this.versions.sort().reverse();
 
             // We also have to find out what the current version of UniProt is and add it to the list.
             const latestVersionData = await new Promise<string>((resolve) => {
@@ -221,7 +228,7 @@ export default class CreateCustomDatabase extends Vue {
                 .replaceAll(/<\/*version>/g, "")
                 .replace("_", ".")
 
-            this.versions.unshift(lastVersion);
+            this.selectedVersion = lastVersion;
             this.loading = false;
         } catch (e) {
             console.error(e);
@@ -242,8 +249,6 @@ export default class CreateCustomDatabase extends Vue {
             // "TrEMBL": "host.docker.internal:8000/uniprot_trembl.xml.gz",
             "SwissProt": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
         }
-
-        const configManager = new ConfigurationManager();
 
         // No filtering should be applied in this case (which means we pass only the root to the construction step of
         // the database).
