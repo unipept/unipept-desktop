@@ -93,12 +93,20 @@
                                                 and size of the custom databases you are planning to use. For large
                                                 databases, at least 100GiB of free space is required.
                                             </div>
+                                            <span class="settings-text settings-important-text">
+                                                NOTE: This option is not available on Windows due to a bug in
+                                                Windows' implementation of Docker. Follow
+                                                <a @click="openInBrowser('https://dev.to/kimcuonthenet/move-docker-desktop-data-distro-out-of-system-drive-4cg2')">this guide</a>
+                                                if you need to change the default storage location of Docker volume's
+                                                nonetheless.
+                                            </span>
                                         </v-col>
                                         <v-col cols="4">
                                             <v-text-field
                                                 single-line
                                                 filled
                                                 readonly
+                                                :disabled="isWindows()"
                                                 v-model="customDbStorageLocation"
                                                 :rules="customDbStorageLocationRules"
                                                 prepend-inner-icon="mdi-folder-outline"
@@ -224,6 +232,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
 import { NetworkConfiguration, NetworkUtils } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import Utils from "@/logic/Utils";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -383,6 +392,14 @@ export default class SettingsPage extends Vue {
 
     private openInBrowser(url: string): void {
         NetworkUtils.openInBrowser(url);
+    }
+
+    private isWindows(): boolean {
+        return Utils.isWindows();
+    }
+
+    private isMac(): boolean {
+        return Utils.isMacOS();
     }
 }
 </script>

@@ -2,6 +2,8 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { promises as fs } from "fs";
 import path, { dirname } from "path";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
+import Utils from "@/logic/Utils";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
 /**
  * This class is responsible for managing the custom databases that are currently created by some of the users and to
@@ -84,6 +86,9 @@ export default class CustomDatabaseManager {
     }
 
     public async deleteDatabase(dbRootFolder: string, db: CustomDatabase): Promise<void> {
+        const dockerCommunicator = new DockerCommunicator();
+        await dockerCommunicator.cleanDatabase(db.name);
+
         const dbPath = path.join(dbRootFolder, "databases", db.name);
         await fs.rmdir(dbPath, { recursive: true });
     }

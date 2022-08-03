@@ -41,9 +41,8 @@ export default class LocalPept2DataCommunicator extends Pept2DataCommunicator {
     ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
         // Start up the web component of the web browser.
         const dockerCommunicator = new DockerCommunicator();
-        const dbPath = path.join(this.customDatabaseLocation, "databases", this.customDatabase.name);
         await dockerCommunicator.startDatabase(
-            dbPath
+            this.customDatabase.name
         );
         await dockerCommunicator.startWebComponent();
         // @ts-ignore

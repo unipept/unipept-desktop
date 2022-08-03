@@ -5,10 +5,13 @@ import path from "path";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
+import Utils from "@/logic/Utils";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
     private static readonly WEB_CONTAINER_NAME = "unipept_web";
+
+    private static readonly INDEX_VOLUME_NAME = "unipept_index";
 
     public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({
         socketPath: "/var/run/docker.sock"
@@ -19,7 +22,7 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.4";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.5";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
 
     public static connection: Dockerode;
@@ -66,13 +69,12 @@ export default class DockerCommunicator {
             throw new Error("A previous database build is still in progress.");
         }
 
-        // Clear the database output folder since this one will be filled up again by rebuilding the database.
-        await fs.rmdir(databaseFolder, { recursive: true });
-        await mkdirp(databaseFolder);
+        const dataVolumeName = await this.createDataVolume(customDb.name, databaseFolder);
+        const indexVolumeName = await this.createIndexVolume(indexFolder);
 
         progressListener("Fetching required Docker images", -1, 0);
         // Pull the database image
-        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
 
         await new Promise<void>(async(resolve, reject) => {
             try {
@@ -105,9 +107,9 @@ export default class DockerCommunicator {
                         HostConfig: {
                             Binds: [
                                 // Mount the folder in which the MySQL-specific database files will be kept
-                                `${databaseFolder}:/var/lib/mysql`,
+                                `${dataVolumeName}:/var/lib/mysql`,
                                 // Mount the folder in which the reusable database index structure will be kept
-                                `${indexFolder}:/index`
+                                `${indexVolumeName}:/index`
                             ]
                         }
                     }
@@ -126,46 +128,52 @@ export default class DockerCommunicator {
         await this.stopDatabase();
     }
 
-    public async startDatabase(databaseLocation: string): Promise<void> {
+    public async startDatabase(dbName: string): Promise<void> {
+        const dataVolumeName = this.generateDataVolumeName(dbName);
+
+        // Pull image if required...
+        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+
         return new Promise<void>(async(resolve, reject) => {
             try {
-                databaseLocation = path.join(databaseLocation, "data");
+                const inspectorStream = new ProgressInspectorStream(
+                    (s: string, p: number) => {},
+                    () => resolve(),
+                    () => {},
+                    () => {}
+                );
+
                 await DockerCommunicator.connection.run(
-                    "pverscha/unipept-database:1.0.0",
+                    DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
                     [],
-                    new ProgressInspectorStream(
-                        (s: string, p: number) => {},
-                        () => resolve(),
-                        () => {},
-                        () => {}
-                    ),
+                    inspectorStream,
                     {
                         Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                        PortBindings: {
-                            "3306/tcp": [{
-                                HostIP: "0.0.0.0",
-                                HostPort: "3306"
-                            }]
-                        },
                         Env: [
                             "MYSQL_ROOT_PASSWORD=unipept"
                         ],
                         HostConfig: {
                             Binds: [
                                 // Mount the folder in which the MySQL-specific database files will be kept
-                                `${databaseLocation}:/var/lib/mysql`
-                            ]
+                                `${dataVolumeName}:/var/lib/mysql`
+                            ],
+                            PortBindings: {
+                                "3306/tcp": [{
+                                    HostIP: "0.0.0.0",
+                                    HostPort: "3306"
+                                }]
+                            }
                         }
-                    }
-                );
+                    });
             } catch (err) {
+                console.error(err);
                 reject(err);
             }
         });
     }
 
     /**
-     * Stop all of the running Docker database containers associated with the Unipept Desktop application.
+     * Stop all the running Docker database containers associated with the Unipept Desktop application.
      */
     public async stopDatabase(): Promise<void> {
         while ((await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined) {
@@ -239,6 +247,10 @@ export default class DockerCommunicator {
         );
     }
 
+    public async cleanDatabase(dbName: string): Promise<void> {
+        await this.deleteDataVolume(dbName);
+    }
+
     private async listUnipeptContainers(): Promise<Dockerode.ContainerInfo[]> {
         return (await DockerCommunicator.connection.listContainers()).filter((c: Dockerode.ContainerInfo) => {
             return c.Names.filter(n => n.includes("unipept_desktop"));
@@ -299,5 +311,100 @@ export default class DockerCommunicator {
                 );
             }
         );
+    }
+
+    private async getDataVolume(dbName: string): Promise<Dockerode.Volume> {
+        return DockerCommunicator.connection.getVolume(this.generateDataVolumeName(dbName));
+    }
+
+    private async deleteDataVolume(dbName: string): Promise<any> {
+        return this.deleteVolume(this.generateDataVolumeName(dbName));
+    }
+
+    private async deleteVolume(volumeName: string): Promise<any> {
+        const volume = await DockerCommunicator.connection.getVolume(volumeName);
+        if (volume) {
+            return volume.remove();
+        }
+    }
+
+    private async createDataVolume(dbName: string, dbLocation: string): Promise<string> {
+        const volumeName = this.generateDataVolumeName(dbName);
+
+        if (!Utils.isWindows()) {
+            dbLocation = this.generateDataVolumePath(dbLocation);
+
+            // Clear what's currently stored in the data volume path
+            await fs.rmdir(dbLocation, { recursive: true });
+            await mkdirp(dbLocation);
+        }
+
+        await this.createVolume(volumeName, dbLocation);
+
+        return volumeName;
+    }
+
+    private async createIndexVolume(indexLocation: string): Promise<string> {
+        indexLocation = this.generateIndexVolumePath(indexLocation);
+
+        // First check if such a volume already exists
+        if (await this.volumeExists(DockerCommunicator.INDEX_VOLUME_NAME)) {
+            // Since the path cannot change on Windows, we do not create a new volume if it already exists and do not
+            // check the path information in that case.
+            if (Utils.isWindows()) {
+                return DockerCommunicator.INDEX_VOLUME_NAME;
+            }
+
+            // Check if the path where this volume is stored is the same as the current index location
+            const existingVolume = await DockerCommunicator.connection.getVolume(DockerCommunicator.INDEX_VOLUME_NAME);
+            const info = await existingVolume.inspect();
+
+            if (path.resolve(info.Mountpoint) !== path.resolve(indexLocation)) {
+                // Remove the volume and create a new later (the path where index files are stored has changed)
+                await this.deleteVolume(DockerCommunicator.INDEX_VOLUME_NAME);
+            } else {
+                // Reuse the already existing index volume
+                return DockerCommunicator.INDEX_VOLUME_NAME;
+            }
+        }
+
+        await this.createVolume(DockerCommunicator.INDEX_VOLUME_NAME, indexLocation);
+
+        return DockerCommunicator.INDEX_VOLUME_NAME;
+    }
+
+    private async createVolume(volumeName: string, volumeLocation: string): Promise<void> {
+        if (Utils.isWindows()) {
+            // Do not take into account the database location, due to a bug in WSL2 on Windows.
+            await DockerCommunicator.connection.createVolume({
+                Name: volumeName
+            });
+        } else {
+            await DockerCommunicator.connection.createVolume({
+                Name: volumeName,
+                DriverOpts: {
+                    "type": "none",
+                    "device": volumeLocation,
+                    "o": "bind"
+                }
+            });
+        }
+    }
+
+    private async volumeExists(volumeName: string): Promise<boolean> {
+        const volumes = await DockerCommunicator.connection.listVolumes();
+        return volumes.Volumes.some(v => v.Name === volumeName);
+    }
+
+    private generateDataVolumeName(dbName: string): string {
+        return `${dbName}_unipept_data`;
+    }
+
+    private generateDataVolumePath(dbLocation: string): string {
+        return dbLocation;
+    }
+
+    private generateIndexVolumePath(indexLocation: string): string {
+        return indexLocation;
     }
 }
