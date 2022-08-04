@@ -6,6 +6,7 @@ import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
 import Utils from "@/logic/Utils";
+import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
@@ -249,6 +250,17 @@ export default class DockerCommunicator {
 
     public async cleanDatabase(dbName: string): Promise<void> {
         await this.deleteDataVolume(dbName);
+    }
+
+    public async getDatabaseSize(dbName: string): Promise<number> {
+        const volume = await this.getDataVolume(dbName);
+        const info = await volume.inspect();
+
+        if (Utils.isWindows()) {
+            return info.UsageData.Size;
+        } else {
+            return await FileSystemUtils.getSize(info.Options["device"]);
+        }
     }
 
     private async listUnipeptContainers(): Promise<Dockerode.ContainerInfo[]> {

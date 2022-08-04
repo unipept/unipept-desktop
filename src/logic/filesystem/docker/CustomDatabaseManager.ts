@@ -41,7 +41,10 @@ export default class CustomDatabaseManager {
                         )
                     );
 
-                    const dbSize = await FileSystemUtils.getSize(dbPath);
+                    console.log("Computing size...");
+
+                    const dockerCommunicator = new DockerCommunicator();
+                    const dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
 
                     databases.push(
                         new CustomDatabase(
@@ -60,6 +63,7 @@ export default class CustomDatabaseManager {
                         )
                     );
                 } catch (e) {
+                    console.error(e);
                     // The inspected directory probably doesn't contain a database and we should do nothing in this
                     // case.
                 }
