@@ -7,12 +7,14 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
 import Utils from "@/logic/Utils";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
+import {inspect} from "util";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
     private static readonly WEB_CONTAINER_NAME = "unipept_web";
 
     private static readonly INDEX_VOLUME_NAME = "unipept_index";
+    private static readonly TEMP_VOLUME_NAME = "unipept_temp";
 
     public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({
         socketPath: "/var/run/docker.sock"
@@ -50,6 +52,8 @@ export default class DockerCommunicator {
      * @param databaseFolder Folder in which the database under construction should be stored. This folder should be
      * empty.
      * @param indexFolder Folder in which the constructed database index structure should be kept.
+     * @param tempFolder Folder in which all temporary required data can reside. This folder will normally only contain
+     * data during the build of the database. It will be cleaned up automatically once the database build is over.
      * @param progressListener A callback function that can be used to monitor the progress of building the database.
      * @param logReporter A callback that's called whenever a new line of log content is produced by the underlying
      * container.
@@ -58,6 +62,7 @@ export default class DockerCommunicator {
         customDb: CustomDatabase,
         databaseFolder: string,
         indexFolder: string,
+        tempFolder: string,
         progressListener: (step: string, progress: number, progress_step: number) => void,
         logReporter: (logLine: string) => void
     ): Promise<void> {
@@ -72,6 +77,7 @@ export default class DockerCommunicator {
 
         const dataVolumeName = await this.createDataVolume(customDb.name, databaseFolder);
         const indexVolumeName = await this.createIndexVolume(indexFolder);
+        const tempVolumeName = await this.createTempVolume(tempFolder);
 
         progressListener("Fetching required Docker images", -1, 0);
         // Pull the database image
@@ -202,21 +208,29 @@ export default class DockerCommunicator {
     public async startWebComponent(): Promise<void> {
         await this.pullImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
 
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME,
-                [],
-                new StringNotifierInspectorStream("Listening on", resolve),
-                {
-                    Name: DockerCommunicator.WEB_CONTAINER_NAME,
-                    PortBindings: {
-                        "3000/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT
-                        }]
+        await new Promise<void>(async(resolve, reject) => {
+            const inspectorStream = new StringNotifierInspectorStream("Listening on", resolve);
+            try {
+                await DockerCommunicator.connection.run(
+                    DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME,
+                    [],
+                    inspectorStream,
+                    {
+                        Name: DockerCommunicator.WEB_CONTAINER_NAME,
+                        HostConfig: {
+                            PortBindings: {
+                                "3000/tcp": [{
+                                    HostIP: "0.0.0.0",
+                                    HostPort: DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT
+                                }]
+                            }
+                        }
                     }
-                }
-            )
+                );
+            } catch (error) {
+                console.error(error);
+                reject(error);
+            }
         });
     }
 
@@ -257,7 +271,12 @@ export default class DockerCommunicator {
         const info = await volume.inspect();
 
         if (Utils.isWindows()) {
-            return info.UsageData.Size;
+            // TODO: UsageData is not reported by the engine at this time, should be fixed in the future.
+            if (info.UsageData) {
+                return info.UsageData.Size;
+            } else {
+                return -1;
+            }
         } else {
             return await FileSystemUtils.getSize(info.Options["device"]);
         }
@@ -300,27 +319,33 @@ export default class DockerCommunicator {
     private pullImage(imageName: string): Promise<void> {
         return new Promise<void>(
             async(resolve, reject) => {
-                DockerCommunicator.connection.pull(
-                    imageName,
-                    function(err: any, stream: any) {
-                        if (err) {
-                            reject(err);
-                        }
+                try {
+                    await DockerCommunicator.connection.pull(
+                        imageName,
+                        function (err: any, stream: any) {
+                            if (err) {
+                                reject(err);
+                            }
 
-                        DockerCommunicator.connection.modem.followProgress(
-                            stream,
-                            // onFinished
-                            (err: any, output: any) => {
-                                if (err) {
-                                    reject(err);
-                                }
-                                resolve();
-                            },
-                            // onProgress
-                            (progressEvent: any) => {}
-                        );
-                    }
-                );
+                            DockerCommunicator.connection.modem.followProgress(
+                                stream,
+                                // onFinished
+                                (err: any, output: any) => {
+                                    if (err) {
+                                        reject(err);
+                                    }
+                                    resolve();
+                                },
+                                // onProgress
+                                (progressEvent: any) => {}
+                            );
+                        }
+                    );
+
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                }
             }
         );
     }
@@ -351,41 +376,68 @@ export default class DockerCommunicator {
             await mkdirp(dbLocation);
         }
 
+        // If the volume already exists, we need to delete it and create a new one (since the analysis will be
+        // completely restarted).
+        if (await this.volumeExists(volumeName)) {
+            await this.deleteDataVolume(dbName);
+        }
+
         await this.createVolume(volumeName, dbLocation);
 
         return volumeName;
     }
 
+    /**
+     * Create a new Docker named volume that's used to store the database index files (which can be used to speed up
+     * later iterations of the database construction process).
+     *
+     * Note that an index volume will also be created when on Windows, but that the given location will not be respected
+     * in that case!
+     *
+     * @param indexLocation Location on the hard drive where the index files can be stored.
+     * @return Name of this volume.
+     */
     private async createIndexVolume(indexLocation: string): Promise<string> {
         indexLocation = this.generateIndexVolumePath(indexLocation);
+        return this.createVolume(DockerCommunicator.INDEX_VOLUME_NAME, indexLocation);
+    }
 
-        // First check if such a volume already exists
-        if (await this.volumeExists(DockerCommunicator.INDEX_VOLUME_NAME)) {
-            // Since the path cannot change on Windows, we do not create a new volume if it already exists and do not
-            // check the path information in that case.
+    private async createTempVolume(tempLocation: string): Promise<string> {
+        tempLocation = this.generateIndexVolumePath(tempLocation);
+        return this.createVolume(DockerCommunicator.TEMP_VOLUME_NAME, tempLocation);
+    }
+
+    /**
+     * Create a new named volume at a specific location on the filesystem. If a volume with the given name already
+     * exists, no new volume will be created (EXCEPT in one situation: if the filesystem path is different for
+     * the existing volume and the new volume and the current OS is different from Windows, the old one will be deleted
+     * and a new one will be created).
+     *
+     * @param volumeName Name of the volume that should be created.
+     * @param volumeLocation Path on the filesystem where this new named volume should be created.
+     * @return The final volume name that was assigned by the system to this volume (will be the same as the first
+     * argument in almost all situations).
+     */
+    private async createVolume(volumeName: string, volumeLocation: string): Promise<string> {
+        if (await this.volumeExists(volumeName)) {
+            // Since the path on Windows cannot change (due to a bug in WSL2), we are done for Windows in this case.
             if (Utils.isWindows()) {
-                return DockerCommunicator.INDEX_VOLUME_NAME;
+                return volumeName;
             }
 
-            // Check if the path where this volume is stored is the same as the current index location
-            const existingVolume = await DockerCommunicator.connection.getVolume(DockerCommunicator.INDEX_VOLUME_NAME);
+            // Check if the path where this volume is currently is stored is the same as the requested path
+            const existingVolume = await DockerCommunicator.connection.getVolume(volumeName);
             const info = await existingVolume.inspect();
 
-            if (path.resolve(info.Mountpoint) !== path.resolve(indexLocation)) {
-                // Remove the volume and create a new later (the path where index files are stored has changed)
-                await this.deleteVolume(DockerCommunicator.INDEX_VOLUME_NAME);
+            if (path.resolve(info.Options["device"]) !== path.resolve(volumeLocation)) {
+                // Remove the volume and create a new one later (the path where index files are stored has changed).
+                await this.deleteVolume(volumeName);
             } else {
-                // Reuse the already existing index volume
-                return DockerCommunicator.INDEX_VOLUME_NAME;
+                // Reuse the current volume
+                return volumeName;
             }
         }
 
-        await this.createVolume(DockerCommunicator.INDEX_VOLUME_NAME, indexLocation);
-
-        return DockerCommunicator.INDEX_VOLUME_NAME;
-    }
-
-    private async createVolume(volumeName: string, volumeLocation: string): Promise<void> {
         if (Utils.isWindows()) {
             // Do not take into account the database location, due to a bug in WSL2 on Windows.
             await DockerCommunicator.connection.createVolume({
@@ -401,13 +453,27 @@ export default class DockerCommunicator {
                 }
             });
         }
+
+        return volumeName;
     }
 
+    /**
+     * Checks if a volume with the given name exists in the current Docker context.
+     *
+     * @param volumeName
+     * @return true if a volume with the given name does exist.
+     */
     private async volumeExists(volumeName: string): Promise<boolean> {
         const volumes = await DockerCommunicator.connection.listVolumes();
         return volumes.Volumes.some(v => v.Name === volumeName);
     }
 
+    /**
+     * Generate a data volume name for the given database name. All special characters will be removed from the given
+     * database name (these are not allowed to be used in a volume name).
+     *
+     * @param dbName Name of the database for which the new volume name should be generated.
+     */
     private generateDataVolumeName(dbName: string): string {
         const encodedName = dbName
             .toLowerCase()
@@ -422,5 +488,9 @@ export default class DockerCommunicator {
 
     private generateIndexVolumePath(indexLocation: string): string {
         return indexLocation;
+    }
+
+    private generateTempVolumePath(tempLocation: string): string {
+        return tempLocation;
     }
 }
