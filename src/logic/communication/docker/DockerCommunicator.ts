@@ -397,7 +397,11 @@ export default class DockerCommunicator {
     }
 
     private generateDataVolumeName(dbName: string): string {
-        return `${dbName}_unipept_data`;
+        const encodedName = dbName
+            .toLowerCase()
+            .replace(/[)( ]+/g, "_")
+            .replace(/[^a-z0-9_]+/g, "");
+        return `${encodedName}_unipept_data`;
     }
 
     private generateDataVolumePath(dbLocation: string): string {
