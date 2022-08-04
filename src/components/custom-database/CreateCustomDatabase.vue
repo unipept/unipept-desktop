@@ -145,8 +145,8 @@ export default class CreateCustomDatabase extends Vue {
     private selectedSourcesDefault: string[];
     @Prop({ required: false, default: "" })
     private databaseNameDefault: string;
-    @Prop({ required: false, default: "Current" })
-    private selectedVersionDefault: string;
+    // @Prop({ required: false, default: "Current" })
+    // private selectedVersionDefault: string;
     @Prop({ required: false, default: () => [] as NcbiTaxon[] })
     private selectedTaxaDefault: NcbiTaxon[];
 
@@ -310,7 +310,7 @@ export default class CreateCustomDatabase extends Vue {
             this.selectedSources.splice(0, this.selectedSources.length);
             this.selectedSources.push(...this.selectedSourcesDefault);
             this.databaseName = this.databaseNameDefault;
-            this.selectedVersion = this.selectedVersionDefault;
+            // this.selectedVersion = this.selectedVersionDefault;
             this.selectedTaxa.splice(0, this.selectedTaxa.length);
             this.selectedTaxa.push(...this.selectedTaxaDefault);
         }
