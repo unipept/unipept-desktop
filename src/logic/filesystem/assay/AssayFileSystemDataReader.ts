@@ -6,12 +6,13 @@ import {
     Assay,
     Study,
     SearchConfiguration,
-    NetworkConfiguration
+    NetworkConfiguration, AnalysisSource, NcbiId
 } from "unipept-web-components";
 import { promises as fs } from "fs";
 import Worker from "worker-loader?inline=fallback!./AssayFileSystemDataReader.worker";
 import { Database } from "better-sqlite3";
 import {
+    AnalysisSourceTableRow,
     AssayTableRow,
 } from "@/logic/filesystem/database/Schema";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
@@ -19,6 +20,11 @@ import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSource
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
+import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
+import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
+import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import { Store } from "vuex";
+import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
 
 export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     private static inProgress: Promise<string[]>;
@@ -28,6 +34,7 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
         directoryPath: string,
         dbManager: DatabaseManager,
         private readonly projectLocation: string,
+        private readonly store: Store<any>,
         private readonly study?: Study
     ) {
         super(directoryPath, dbManager);
@@ -75,15 +82,11 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
             const metadata = await metadataMng.readMetadata(assayRow.id);
 
             const searchConfigMng = new SearchConfigManager(this.dbManager);
-
             mpAssay.setSearchConfiguration(await searchConfigMng.readSearchConfig(assayRow.configuration_id));
+
+            const analysisSourceMng = new AnalysisSourceManager(this.dbManager, this.projectLocation, this.store);
             mpAssay.setAnalysisSource(
-                await AnalysisSourceSerializer.deserializeAnalysisSource(
-                    assayRow.endpoint,
-                    mpAssay,
-                    this.dbManager,
-                    this.projectLocation
-                )
+                await analysisSourceMng.reviveAnalysisSource(mpAssay, assayRow.analysis_source_id)
             );
 
             if (metadata) {

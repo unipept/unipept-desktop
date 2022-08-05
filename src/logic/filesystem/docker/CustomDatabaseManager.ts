@@ -4,6 +4,7 @@ import path, { dirname } from "path";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 import Utils from "@/logic/Utils";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import { NcbiId } from "unipept-web-components";
 
 /**
  * This class is responsible for managing the custom databases that are currently created by some of the users and to
@@ -40,8 +41,6 @@ export default class CustomDatabaseManager {
                             { encoding: "utf-8" }
                         )
                     );
-
-                    console.log("Computing size...");
 
                     const dockerCommunicator = new DockerCommunicator();
                     const dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
@@ -124,6 +123,46 @@ export default class CustomDatabaseManager {
         }
 
         return "";
+    }
+
+    /**
+     * Find a suitable custom database that has the same analysis configuration as the parameters that are given for
+     * this function.
+     *
+     * @param selectedSources List of all original UniProt database sources that have been selected for this database.
+     * @param selectedTaxa List of all selected NCBI taxon ID's that are selected for this database.
+     * @param uniprotVersion Version of the source UniProt database.
+     * @param dbRootFolder Where are all the custom database metadata files stored?
+     */
+    public async getDatabaseByProperties(
+        selectedSources: string[],
+        selectedTaxa: NcbiId[],
+        uniprotVersion: string,
+        dbRootFolder: string
+    ): Promise<CustomDatabase | null> {
+        const dbs = await this.listAllDatabases(dbRootFolder);
+        const possibleDbs = dbs.filter((db: CustomDatabase) => {
+            if (db.databaseVersion !== uniprotVersion) {
+                return false;
+            }
+
+            if (
+                !Utils.compareAssays<string>(
+                    db.sources.sort(),
+                    selectedSources.sort()
+                )
+            ) {
+                return false;
+            }
+
+            return Utils.compareAssays<NcbiId>(db.taxa.sort(), selectedTaxa.sort());
+        });
+
+        if (possibleDbs.length > 0) {
+            return possibleDbs[0];
+        }
+
+        return null;
     }
 
     /**

@@ -238,7 +238,7 @@ export default class HomePage extends Vue {
         try {
             if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {
                 const projectManager: ProjectManager = new ProjectManager();
-                await projectManager.loadExistingProject(path, addToRecents);
+                await projectManager.loadExistingProject(path, addToRecents, this.$store);
             }
             await this.$router.push("/analysis/single");
         } catch (err) {

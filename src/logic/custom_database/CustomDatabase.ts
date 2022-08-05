@@ -47,12 +47,14 @@ export default class CustomDatabase {
     ) {}
 
     /**
-     * Two custom databases are the same iff they produce the same hash value. This means that the original source,
-     * source types, taxa and name of the database are also equal.
+     * Two custom databases are the same iff they produce the same hash value.
+     *
+     * TODO: Note that we don't care about the UniProt version at this point in time, since the application does not
+     * TODO: support the construction of databases from older UniProt versions.
      */
     public getDatabaseHash(): string {
         return crypto.createHash("sha256").update(
-            this.name + this.sources.toString() + this.sourceTypes.toString() + this.taxa.toString()
+            this.sourceTypes.toString() + this.taxa.toString()
         ).digest("base64");
     }
 }

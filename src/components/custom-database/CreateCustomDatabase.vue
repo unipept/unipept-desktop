@@ -244,24 +244,19 @@ export default class CreateCustomDatabase extends Vue {
     }
 
     private async buildDatabase(): Promise<void> {
-        const sourceUrlMap = {
-            "TrEMBL": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.xml.gz",
-            // "TrEMBL": "host.docker.internal:8000/uniprot_trembl.xml.gz",
-            "SwissProt": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
-        }
-
         // No filtering should be applied in this case (which means we pass only the root to the construction step of
         // the database).
         if (this.selectedTaxa.length === 0) {
             this.selectedTaxa.push(new NcbiTaxon(1, "root", "dummy", []));
         }
 
+        const convertedSources = this.selectedSources.map(s => s.toLowerCase());
+
         this.$store.dispatch(
             "customDatabases/buildDatabase",
             [
                 this.databaseName,
-                this.selectedSources.map(source => (sourceUrlMap as any)[source]),
-                this.selectedSources,
+                convertedSources,
                 this.selectedTaxa.map(taxon => taxon.id),
                 this.selectedVersion
             ]

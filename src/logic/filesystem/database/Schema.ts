@@ -11,7 +11,7 @@ export type AssayTableRow = {
     name: string,
     study_id: string,
     configuration_id: number,
-    datasource_id: number
+    analysis_source_id: number
 };
 
 export type StudyTableRow = {
@@ -39,16 +39,17 @@ export type StorageMetadataTableRow = {
     configuration_id: number,
     data_hash: string,
     analysis_date: string,
-    datasource_id: number
+    analysis_source_id: number
 };
 
 export type AnalysisSourceTableRow = {
     id: number,
     type: "online" | "custom_db",
+    endpoint: string,
     uniprot_version: string,
     selected_taxa: string,
-    swissprot_selected: boolean,
-    trembl_selected: boolean
+    swissprot_selected: number,
+    trembl_selected: number
 }
 
 export type DatabaseMetadataTableRow = {
