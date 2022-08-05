@@ -3,12 +3,12 @@ import Database from "better-sqlite3";
 import v2_to_v3 from "raw-loader!@/db/migrations/v2_to_v3.sql";
 import crypto from "crypto";
 import path from "path";
-import fs from "fs";
+import { promises as fs } from "fs";
 
 export default class DatabaseMigratorV2ToV3 implements DatabaseMigrator {
     constructor(private readonly projectLocation: string) {}
 
-    public upgrade(database: Database.Database): void {
+    public async upgrade(database: Database.Database): Promise<void> {
         // Read in all data and metadata for all assays.
         const assayData = database.prepare(
             "SELECT * FROM assays INNER JOIN storage_metadata ON assays.id = storage_metadata.assay_id"
@@ -86,7 +86,7 @@ export default class DatabaseMigratorV2ToV3 implements DatabaseMigrator {
 
             // Data should be recomputed for this upgrade, which is why the fingerprint is set to an empty string here.
             const fingerPrint: string = "";
-            const dataHash: string = this.computeDataHash(row.assayId);
+            const dataHash: string = await this.computeDataHash(row.assayId);
 
             database.prepare(`
                 INSERT INTO storage_metadata
@@ -95,20 +95,20 @@ export default class DatabaseMigratorV2ToV3 implements DatabaseMigrator {
         }
     }
 
-    private computeDataHash(assayId: string): string {
+    private async computeDataHash(assayId: string): Promise<string> {
         const dataHash = crypto.createHash("sha256");
         const bufferPath: string = path.join(this.projectLocation, ".buffers");
         const dataBufferPath = path.join(bufferPath, assayId + ".data");
         const indexBufferPath = path.join(bufferPath, assayId + ".index");
 
-        const dataBuffer = fs.readFileSync(dataBufferPath);
+        const dataBuffer = await fs.readFile(dataBufferPath);
         dataHash.update(dataBuffer);
 
         const dataHex = dataHash.digest("hex");
 
         const indexHash = crypto.createHash("sha256");
 
-        const indexBuffer = fs.readFileSync(indexBufferPath);
+        const indexBuffer = await fs.readFile(indexBufferPath);
         indexHash.update(indexBuffer);
 
         const indexHex = indexHash.digest("hex");

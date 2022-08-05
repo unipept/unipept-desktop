@@ -7,28 +7,6 @@
             <v-row>
                 <v-col>
                     <div style="max-width: 1400px; margin: auto;">
-                        <h2 class="mx-auto settings-category-title">Connection settings</h2>
-                        <v-card>
-                            <v-card-text>
-                                <v-container fluid>
-                                    <v-row>
-                                        <v-col cols="8">
-                                            <div class="settings-title">Unipept API</div>
-                                            <span class="settings-text">
-                                                Denotes the base URL that should be used for communication with a
-                                                Unipept API.
-                                            </span>
-                                        </v-col>
-                                        <v-col cols="4">
-                                            <v-text-field label="https://unipept.ugent.be" single-line filled
-                                                v-model="configuration.apiSource"
-                                                :rules="apiSourceRules">
-                                            </v-text-field>
-                                        </v-col>
-                                    </v-row>
-                                </v-container>
-                            </v-card-text>
-                        </v-card>
                         <h2 class="mx-auto settings-category-title">Concurrency</h2>
                         <v-card>
                             <v-card-text>
@@ -94,8 +72,8 @@
                                                 databases, at least 100GiB of free space is required.
                                             </div>
                                             <span class="settings-text settings-important-text">
-                                                NOTE: This option is not available on Windows due to a bug in
-                                                Windows' implementation of Docker. Follow
+                                                NOTE: Only database metadata will be stored in this location on Windows
+                                                based systems due to a bug in Windows' implementation of Docker. Follow
                                                 <a @click="openInBrowser('https://dev.to/kimcuonthenet/move-docker-desktop-data-distro-out-of-system-drive-4cg2')">this guide</a>
                                                 if you need to change the default storage location of Docker volume's
                                                 nonetheless.
@@ -106,7 +84,6 @@
                                                 single-line
                                                 filled
                                                 readonly
-                                                :disabled="isWindows()"
                                                 v-model="customDbStorageLocation"
                                                 :rules="customDbStorageLocationRules"
                                                 prepend-inner-icon="mdi-folder-outline"
@@ -247,11 +224,6 @@ export default class SettingsPage extends Vue {
 
     private dockerInfo: any = null;
     private dockerInfoLoading: boolean = true;
-
-    private apiSourceRules: ((x: string) => boolean | string)[] = [
-        Rules.required,
-        Rules.url
-    ];
 
     private maxTasksRules: ((x: string) => boolean | string)[] = [
         Rules.required,

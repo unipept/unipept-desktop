@@ -4,7 +4,7 @@ import v1_to_v2 from "raw-loader!@/db/migrations/v1_to_v2.sql";
 import path from "path";
 import { store } from "@/main";
 import mkdirp from "mkdirp";
-import fs from "fs";
+import { promises as fs } from "fs";
 
 const electron = require("electron");
 const app = electron.remote.app;
@@ -18,13 +18,13 @@ const app = electron.remote.app;
 export default class DatabaseMigratorV1ToV2 implements DatabaseMigrator {
     constructor(private readonly projectLocation: string) {}
 
-    public upgrade(database: Database): void {
-        this.migrateBuffers(database);
+    public async upgrade(database: Database): Promise<void> {
+        await this.migrateBuffers(database);
         // Read in the buffers from the database and write these to a file.
         database.exec(v1_to_v2);
     }
 
-    private migrateBuffers(database: Database): void {
+    private async migrateBuffers(database: Database): Promise<void> {
         const rows = database.prepare("SELECT * FROM pept2data").all();
         for (const row of rows) {
             const indexBuffer = row.index_buffer;
@@ -39,8 +39,8 @@ export default class DatabaseMigratorV1ToV2 implements DatabaseMigrator {
             const dataBufferPath = path.join(bufferDirectory, assayId + ".data");
 
             // Write new version of this file's buffer to file
-            fs.writeFileSync(indexBufferPath, indexBuffer);
-            fs.writeFileSync(dataBufferPath, dataBuffer);
+            await fs.writeFile(indexBufferPath, indexBuffer);
+            await fs.writeFile(dataBufferPath, dataBuffer);
         }
     }
 }

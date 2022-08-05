@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import { Peptide, PeptideData, PeptideDataResponse, PeptideDataSerializer, StringUtils } from "unipept-web-components";
 import { ShareableMap } from "shared-memory-datastructures";
 import path from "path";
-import fs from "fs";
+import { promises as fs } from "fs";
 import BufferUtils from "@/logic/filesystem/BufferUtils";
 import crypto from "crypto";
 
@@ -15,11 +15,13 @@ import crypto from "crypto";
  * ago such that only 27 of them still remain. The PeptideData-encoding therefore needs to be updated accordingly. In
  * order to make upgrades of this encoding easier in the future, a new version identifier has also been added to the
  * encoding (this was not present previously).
+ *
+ * @author Pieter Verschaffelt
  */
 export default class DatabaseMigratorV3ToV4 implements DatabaseMigrator {
     constructor(private readonly projectLocation: string) {}
 
-    public upgrade(database: Database.Database): void {
+    public async upgrade(database: Database.Database): Promise<void> {
         for (const assayId of database.prepare("SELECT id FROM assays").all().map(o => o.id)) {
             /*
              * The following steps need to be performed to upgrade the database encoding:
@@ -31,7 +33,7 @@ export default class DatabaseMigratorV3ToV4 implements DatabaseMigrator {
              */
 
             // First read in the current buffers from disk.
-            const [indexBuffer, dataBuffer] = this.readFromDisk(assayId);
+            const [indexBuffer, dataBuffer] = await this.readFromDisk(assayId);
 
             // Convert the read buffers to a ShareableMap (with the old encoding and serializer).
             const map = new ShareableMap<Peptide, PeptideDataV0>(undefined, undefined, new PeptideDataV0Serializer());
@@ -54,7 +56,7 @@ export default class DatabaseMigratorV3ToV4 implements DatabaseMigrator {
             const indexNodeBuffer = BufferUtils.arrayBufferToBuffer(upgradedIndexBuffer);
             const dataNodeBuffer = BufferUtils.arrayBufferToBuffer(upgradedDataBuffer);
 
-            this.writeToDisk(assayId, indexNodeBuffer, dataNodeBuffer);
+            await this.writeToDisk(assayId, indexNodeBuffer, dataNodeBuffer);
 
             // Update the data hash in the database
             const dataHash = crypto.createHash("sha256");
@@ -75,23 +77,23 @@ export default class DatabaseMigratorV3ToV4 implements DatabaseMigrator {
         }
     }
 
-    private readFromDisk(assayId: string): [SharedArrayBuffer, SharedArrayBuffer] {
+    private async readFromDisk(assayId: string): Promise<[SharedArrayBuffer, SharedArrayBuffer]> {
         const bufferPath: string = path.join(this.projectLocation, ".buffers");
         const dataBufferPath = path.join(bufferPath, assayId + ".data");
         const indexBufferPath = path.join(bufferPath, assayId + ".index");
 
-        const indexBuffer = fs.readFileSync(indexBufferPath);
-        const dataBuffer = fs.readFileSync(dataBufferPath);
+        const indexBuffer = await fs.readFile(indexBufferPath);
+        const dataBuffer = await fs.readFile(dataBufferPath);
         return [BufferUtils.bufferToSharedArrayBuffer(indexBuffer), BufferUtils.bufferToSharedArrayBuffer(dataBuffer)];
     }
 
-    private writeToDisk(assayId: string, indexBuffer: Buffer, dataBuffer: Buffer): void {
+    private async writeToDisk(assayId: string, indexBuffer: Buffer, dataBuffer: Buffer): Promise<void> {
         const bufferPath: string = path.join(this.projectLocation, ".buffers");
         const dataBufferPath = path.join(bufferPath, assayId + ".data");
         const indexBufferPath = path.join(bufferPath, assayId + ".index");
 
-        fs.writeFileSync(indexBufferPath, indexBuffer);
-        fs.writeFileSync(dataBufferPath, dataBuffer);
+        await fs.writeFile(indexBufferPath, indexBuffer);
+        await fs.writeFile(dataBufferPath, dataBuffer);
     }
 }
 

@@ -6,5 +6,5 @@ export default interface DatabaseMigrator {
      *
      * @param database The Database that should be upgraded to a newer database schema version.
      */
-    upgrade(database: Database): void;
+    upgrade(database: Database): Promise<void>;
 }

@@ -40,6 +40,7 @@ export default class ProjectManager  {
         }
 
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+        await dbManager.initializeDatabase();
         const dbAppVersion = dbManager.getApplicationVersion();
 
         if (Utils.isVersionLargerThan(dbAppVersion, app.getVersion())) {
@@ -76,7 +77,7 @@ export default class ProjectManager  {
             projectLocation += "/";
         }
 
-        const dbManager = this.setUpDatabase(projectLocation);
+        const dbManager = await this.setUpDatabase(projectLocation);
 
         if (addToRecents) {
             await this.addToRecentProjects(projectLocation);
@@ -85,8 +86,10 @@ export default class ProjectManager  {
         await store.dispatch("initializeProject", [projectLocation, dbManager, []]);
     }
 
-    public setUpDatabase(projectLocation: string): DatabaseManager {
-        return new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+    public async setUpDatabase(projectLocation: string): Promise<DatabaseManager> {
+        const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+        await dbManager.initializeDatabase();
+        return dbManager;
     }
 
     private async loadStudy(

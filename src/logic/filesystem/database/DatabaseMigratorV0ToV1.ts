@@ -12,7 +12,7 @@ const app = electron.remote.app;
  * - Added new table "database_metadata", which keeps track of the current application version.
  */
 export default class DatabaseMigratorV0ToV1 implements DatabaseMigrator {
-    public upgrade(database: Database): void {
+    public async upgrade(database: Database): Promise<void> {
         database.exec(v0_to_v1);
         database.prepare("DELETE FROM database_metadata").run();
         database.prepare("INSERT INTO database_metadata (application_version) VALUES (?)").run(app.getVersion());
