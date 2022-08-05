@@ -276,6 +276,7 @@ export default class CustomDatabaseStoreFactory {
                 customDb,
                 dbPath,
                 path.join(this.configuration.customDbStorageLocation, "index"),
+                path.join(this.configuration.customDbStorageLocation, "temp"),
                 (step, value, progress_step) => {
                     store.commit("CUSTOM_DB_UPDATE_PROGRESS", [customDb, value, progress_step]);
                     this.updateMetadata(customDb);
@@ -288,7 +289,6 @@ export default class CustomDatabaseStoreFactory {
 
             if (customDb.progress.logs.filter(x => x.includes("Shutdown complete")).length > 0) {
                 customDb.sizeOnDisk = await dockerCommunicator.getDatabaseSize(customDb.name);
-                // customDb.sizeOnDisk = await FileSystemUtils.getSize(dbPath);
                 store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [customDb, true]);
             } else {
                 const err = new Error("Status of container was changed outside of application.");
