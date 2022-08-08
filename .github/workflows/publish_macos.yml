@@ -18,8 +18,10 @@ jobs:
       - name: Install packages
         run: npm install--force
       - name: Build application for ${{ matrix.os }}
-          run: npm run electron:publish
-          env:
-            GH_TOKEN: ${{ secrets.GH_TOKEN }}
-            CSC_LINK: ${{ secrets.mac_certs }}
-            CSC_KEY_PASSWORD: ${{ secrets.mac_certs_password }}
+        run: npm run electron:publish
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # temporary disabled notarization
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+#          CSC_LINK: ${{ secrets.mac_certs }}
+#          CSC_KEY_PASSWORD: ${{ secrets.mac_certs_password }}
