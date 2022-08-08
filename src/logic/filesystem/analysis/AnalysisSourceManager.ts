@@ -28,7 +28,8 @@ export default class AnalysisSourceManager {
                 sourceData.endpoint,
                 assay,
                 this.dbManager,
-                this.projectLocation
+                this.projectLocation,
+                this.store
             );
         } else {
             const customDbManager = new CustomDatabaseManager();
@@ -55,6 +56,11 @@ export default class AnalysisSourceManager {
             );
 
             if (!possibleDb) {
+                console.log("Requested properties for db are not present...");
+                console.log(selectedSources);
+                console.log(selectedTaxa);
+                console.log(sourceData.uniprot_version);
+
                 // We need to create a new database and prepare it for construction by pushing it to the store.
                 const newDbName: string = `${assay.getName()}_supporting_db`;
                 await this.store.dispatch(
@@ -75,7 +81,8 @@ export default class AnalysisSourceManager {
                 this.dbManager,
                 possibleDb,
                 customDbStorageLocation,
-                this.projectLocation
+                this.projectLocation,
+                this.store
             );
         }
     }
@@ -92,6 +99,8 @@ export default class AnalysisSourceManager {
         source: AnalysisSource,
         sourceId?: number
     ): Promise<number> {
+        console.log("Write analysis source...");
+
         if (sourceId) {
             // The AnalysisSource has already been stored in the project database before, and can thus be overwritten.
             return this.dbManager.performQuery<number>((db: Database) => {
@@ -109,6 +118,8 @@ export default class AnalysisSourceManager {
                             id = ?
                     `).run("online", source.endpoint, "N/A", "", 1, 1, sourceId);
                 } else if (source instanceof CachedCustomDbAnalysisSource) {
+                    console.log("Writing existing analysis source...");
+                    console.log(JSON.stringify(source.customDatabase));
                     const customDb = source.customDatabase;
                     db.prepare(`
                         UPDATE analysis_source
@@ -126,8 +137,8 @@ export default class AnalysisSourceManager {
                         "",
                         customDb.databaseVersion,
                         customDb.taxa.join(","),
-                        customDb.sources.includes("swissprot") ? 1 : 0,
-                        customDb.sources.includes("trembl") ? 1 : 0,
+                        customDb.sourceTypes.includes("swissprot") ? 1 : 0,
+                        customDb.sourceTypes.includes("trembl") ? 1 : 0,
                         sourceId
                     );
                 }
@@ -144,6 +155,8 @@ export default class AnalysisSourceManager {
                         VALUES (?, ?, ?, ?, ?)
                     `).run("online", source.endpoint, "N/A", 1, 1);
                 } else if (source instanceof CachedCustomDbAnalysisSource) {
+                    console.log("Write new AnalysisSource...");
+                    console.log(JSON.stringify(source.customDatabase));
                     const customDb = source.customDatabase;
 
                     runResult = db.prepare(`
@@ -155,8 +168,8 @@ export default class AnalysisSourceManager {
                         "custom_db",
                         customDb.databaseVersion,
                         customDb.taxa.join(","),
-                        customDb.sources.includes("swissprot") ? 1 : 0,
-                        customDb.sources.includes("trembl") ? 1 : 0
+                        customDb.sourceTypes.includes("swissprot") ? 1 : 0,
+                        customDb.sourceTypes.includes("trembl") ? 1 : 0
                     );
                 }
 

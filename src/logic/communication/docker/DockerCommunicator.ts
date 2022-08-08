@@ -263,10 +263,15 @@ export default class DockerCommunicator {
     }
 
     public async cleanDatabase(dbName: string): Promise<void> {
+
         await this.deleteDataVolume(dbName);
     }
 
     public async getDatabaseSize(dbName: string): Promise<number> {
+        if (!(await this.volumeExists(this.generateDataVolumeName(dbName)))) {
+            return -1;
+        }
+
         const volume = await this.getDataVolume(dbName);
         const info = await volume.inspect();
 

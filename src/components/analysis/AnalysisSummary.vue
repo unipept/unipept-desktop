@@ -272,11 +272,17 @@ export default class AnalysisSummary extends Vue {
 
     private async checkCacheValidity(): Promise<void> {
         this.cacheValidityLoading = true;
-        const metadataMng = new StorageMetadataManager(this.$store.getters.dbManager);
-        const metadata = await metadataMng.readMetadata(this.assay.getId());
+        const metadataMng = new StorageMetadataManager(
+            this.$store.getters.dbManager,
+            this.$store.getters.projectLocation,
+            this.$store
+        );
+        const metadata = await metadataMng.readMetadata(this.assay);
 
         if (metadata) {
-            this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+            this.cacheIsValid = await this.assay
+                .getAnalysisSource()
+                .verifyEquality(await metadata.analysisSource.computeFingerprint());
         } else {
             this.cacheIsValid = false;
         }
@@ -290,7 +296,8 @@ export default class AnalysisSummary extends Vue {
                 this.currentAnalysisSource.subtitle,
                 this.assay,
                 this.$store.getters.dbManager,
-                this.$store.getters.projectLocation
+                this.$store.getters.projectLocation,
+                this.$store
             );
         } else {
             const configMng = new ConfigurationManager();
@@ -301,7 +308,8 @@ export default class AnalysisSummary extends Vue {
                 this.$store.getters.dbManager,
                 this.$store.getters["customDatabases/database"](this.currentAnalysisSource.title),
                 config.customDbStorageLocation,
-                this.$store.getters.projectLocation
+                this.$store.getters.projectLocation,
+                this.$store
             );
         }
     }
@@ -323,7 +331,9 @@ export default class AnalysisSummary extends Vue {
         const assayWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}/${study.getName()}`,
             this.$store.getters.dbManager,
-            study
+            study,
+            this.$store.getters.projectLocation,
+            this.$store
         );
         this.assay.accept(assayWriter);
 

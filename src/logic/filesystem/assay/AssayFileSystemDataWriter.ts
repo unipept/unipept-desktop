@@ -1,15 +1,12 @@
 import FileSystemAssayVisitor from "./FileSystemAssayVisitor";
 import { promises as fs } from "fs";
-import { OnlineAnalysisSource, ProteomicsAssay, Study } from "unipept-web-components";
+import { ProteomicsAssay, Study } from "unipept-web-components";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
-import { Database, RunResult } from "better-sqlite3";
-import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
+import { Database } from "better-sqlite3";
 import { AssayTableRow } from "@/logic/filesystem/database/Schema";
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
-import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
-import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
-import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
+import { Store } from "vuex";
 
 /**
  * Visitor that writes the raw data associated with an assay to disk. This raw data can become rather large, which is
@@ -21,7 +18,9 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
     constructor(
         directoryPath: string,
         dbManager: DatabaseManager,
-        private readonly study: Study
+        private readonly study: Study,
+        private readonly projectLocation: string,
+        private readonly store: Store<any>
     ) {
         super(directoryPath, dbManager);
     }
@@ -57,7 +56,8 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
         );
 
         const source = mpAssay.getAnalysisSource();
-        const analysisSourceMng = new AnalysisSourceManager(this.dbManager, this);
+        const analysisSourceMng = new AnalysisSourceManager(this.dbManager, this.projectLocation, this.store);
+        const analysisSourceId = await analysisSourceMng.writeAnalysisSource(source, oldAssayRow?.analysis_source_id);
 
         // Write assay metadata to the database
         await this.dbManager.performQuery<void>((db: Database) => {
@@ -68,7 +68,7 @@ export default class AssayFileSystemDataWriter extends FileSystemAssayVisitor {
                 mpAssay.getName(),
                 this.study.getId(),
                 config.id,
-                runResult.lastInsertRowid
+                analysisSourceId
             );
         });
     }

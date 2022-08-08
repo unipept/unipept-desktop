@@ -7,13 +7,15 @@ import CachedEcResponseCommunicator from "@/logic/communication/functional/Cache
 import CachedInterproResponseCommunicator from "@/logic/communication/functional/CachedInterproResponseCommunicator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { Store } from "vuex";
 
 export default class CachedOnlineAnalysisSource implements AnalysisSource {
     constructor(
         public readonly endpoint: string,
         public readonly assay: ProteomicsAssay,
         public readonly dbManager: DatabaseManager,
-        public readonly projectLocation: string
+        public readonly projectLocation: string,
+        private readonly store: Store<any>
     ) {}
 
     public async computeFingerprint(): Promise<string> {
@@ -32,7 +34,8 @@ export default class CachedOnlineAnalysisSource implements AnalysisSource {
                 this.assay,
                 new Pept2DataCommunicator(this.endpoint),
                 this.dbManager,
-                this.projectLocation
+                this.projectLocation,
+                this.store
             ),
             new CachedGoResponseCommunicator(),
             new CachedEcResponseCommunicator(),

@@ -1,7 +1,7 @@
 import StorageMetadata from "@/logic/filesystem/metadata/StorageMetadata";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import { Database } from "better-sqlite3";
-import { StorageMetadataTableRow } from "@/logic/filesystem/database/Schema";
+import { AnalysisSourceTableRow, StorageMetadataTableRow } from "@/logic/filesystem/database/Schema";
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
 import { Store } from "vuex";
@@ -15,6 +15,7 @@ export default class StorageMetadataManager {
     ) {}
 
     public async readMetadata(assay: ProteomicsAssay): Promise<StorageMetadata | undefined> {
+        console.log("Reading metadata...");
         const metaRow = await this.dbManager.performQuery<StorageMetadataTableRow>((db: Database) => {
             return db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
         });
@@ -41,22 +42,35 @@ export default class StorageMetadataManager {
     }
 
     public async writeMetadata(metadata: StorageMetadata): Promise<void> {
-        await this.dbManager.performQuery<void>((db: Database) => {
+        const sourceId = await this.dbManager.performQuery<number>((db: Database) => {
+            // Looks up the ID of the analysis source in the database. If this analysis source does not yet exist in
+            // the database, undefined is returned.
+            const resultSet: StorageMetadataTableRow | undefined = db
+                .prepare("SELECT * FROM storage_metadata WHERE assay_id = ?")
+                .get(metadata.assayId);
 
+            if (!resultSet) {
+                return undefined
+            } else {
+                return resultSet.analysis_source_id;
+            }
         });
+
+        const analysisSourceMng = new AnalysisSourceManager(this.dbManager, this.projectLocation, this.store);
+        const newSourceId = await analysisSourceMng.writeAnalysisSource(metadata.analysisSource, sourceId);
 
         await this.dbManager.performQuery<void>((db: Database) => {
             return db.prepare(
                 `
-                    REPLACE INTO storage_metadata (assay_id, configuration_id, endpoint, fingerprint, data_hash, analysis_date)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    REPLACE INTO storage_metadata (assay_id, configuration_id, data_hash, analysis_date, analysis_source_id)
+                    VALUES (?, ?, ?, ?, ?)
                 `
             ).run(
                 metadata.assayId,
                 metadata.searchConfiguration.id,
-
                 metadata.dataHash,
-                metadata.analysisDate.toJSON()
+                metadata.analysisDate.toJSON(),
+                newSourceId
             );
         });
     }

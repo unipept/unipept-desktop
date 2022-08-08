@@ -63,7 +63,9 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
                     const assayWriter: AssayVisitor = new AssayFileSystemDataWriter(
                         this.studyPath,
                         this.dbManager,
-                        study
+                        study,
+                        this.projectLocation,
+                        this.store
                     );
                     await assay.accept(assayWriter);
                 }

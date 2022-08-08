@@ -18,7 +18,6 @@ import { promises as fs } from "fs";
 import path from "path";
 import mkdirp from "mkdirp";
 import crypto from "crypto";
-import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 import StorageMetadata from "@/logic/filesystem/metadata/StorageMetadata";
@@ -168,12 +167,11 @@ export default class CachedResultsManager {
         const trustMng = new PeptideTrustManager(this.dbManager);
         await trustMng.writeTrust(assay.getId(), trust);
 
-        const storageMetaManager = new StorageMetadataManager(this.dbManager);
+        const storageMetaManager = new StorageMetadataManager(this.dbManager, this.projectLocation, this.store);
         await storageMetaManager.writeMetadata(new StorageMetadata(
             assay.getId(),
             searchConfiguration,
-            AnalysisSourceSerializer.serializeAnalysisSource(assay.getAnalysisSource()),
-            await assay.getAnalysisSource().computeFingerprint(),
+            assay.getAnalysisSource(),
             await this.computeDataHash(assay),
             assay.getDate()
         ));

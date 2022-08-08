@@ -395,7 +395,8 @@ export default class CreateAssayDialog extends Vue {
                         placeholder.analysisSource.subtitle,
                         assay,
                         this.$store.getters.dbManager,
-                        this.$store.getters.projectLocation
+                        this.$store.getters.projectLocation,
+                        this.$store
                     );
                 } else {
                     const configMng = new ConfigurationManager();
@@ -406,18 +407,22 @@ export default class CreateAssayDialog extends Vue {
                         this.$store.getters.dbManager,
                         this.$store.getters["customDatabases/database"](placeholder.analysisSource.title),
                         config.customDbStorageLocation,
-                        this.$store.getters.projectLocation
+                        this.$store.getters.projectLocation,
+                        this.$store
                     );
                 }
 
                 assay.setAnalysisSource(analysisSource);
 
                 try {
+                    console.log("Created assay, writing to filesystem...");
                     // Write assay to filesystem
                     const assayFileWriter = new AssayFileSystemDataWriter(
                         `${this.$store.getters.projectLocation}/${this.study.getName()}`,
                         this.$store.getters.dbManager,
-                        this.study
+                        this.study,
+                        this.$store.getters.projectLocation,
+                        this.$store
                     );
                     await assay.accept(assayFileWriter);
                 } catch (err) {

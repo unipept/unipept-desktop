@@ -6,6 +6,7 @@ import { Database } from "better-sqlite3";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import CachedResultsManager from "@/logic/filesystem/assay/processed/CachedResultsManager";
 import path from "path";
+import { Store } from "vuex";
 
 /**
  * Removes both the metadata and raw data for an assay.
@@ -14,6 +15,7 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
     constructor(
         directoryPath: string,
         dbManager: DatabaseManager,
+        private readonly store: Store<any>
     ) {
         super(directoryPath, dbManager);
     }
@@ -43,7 +45,8 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
         // Also delete cached results that might have possibly been created for this assay
         const cachedResultsMng = new CachedResultsManager(
             this.dbManager,
-            path.dirname(this.directoryPath)
+            path.dirname(this.directoryPath),
+            this.store
         );
 
         await cachedResultsMng.deleteProcessingResults(assay);

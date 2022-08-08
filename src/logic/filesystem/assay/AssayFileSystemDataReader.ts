@@ -16,13 +16,9 @@ import {
     AssayTableRow,
 } from "@/logic/filesystem/database/Schema";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
-import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
-import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
-import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
-import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Store } from "vuex";
 import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
 
@@ -41,6 +37,9 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     }
 
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
+        console.log("Reading proteomics assay: ");
+        console.log(mpAssay);
+
         const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;
 
         // First, try to read in all of the peptides for this assay.
@@ -78,8 +77,8 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
 
         if (assayRow) {
             // Also read in the metadata
-            const metadataMng = new StorageMetadataManager(this.dbManager);
-            const metadata = await metadataMng.readMetadata(assayRow.id);
+            const metadataMng = new StorageMetadataManager(this.dbManager, this.projectLocation, this.store);
+            const metadata = await metadataMng.readMetadata(mpAssay);
 
             const searchConfigMng = new SearchConfigManager(this.dbManager);
             mpAssay.setSearchConfiguration(await searchConfigMng.readSearchConfig(assayRow.configuration_id));
@@ -99,7 +98,8 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
                     NetworkConfiguration.BASE_URL,
                     mpAssay,
                     this.dbManager,
-                    this.projectLocation
+                    this.projectLocation,
+                    this.store
                 )
             );
         }

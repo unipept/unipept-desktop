@@ -18,6 +18,7 @@ import CachedGoResponseCommunicator from "@/logic/communication/functional/Cache
 import CachedInterproResponseCommunicator from "@/logic/communication/functional/CachedInterproResponseCommunicator";
 
 import { ShareableMap } from "shared-memory-datastructures";
+import { Store } from "vuex";
 
 export default class CachedCommunicationSource implements CommunicationSource {
     private readonly ecCommunicator: EcResponseCommunicator;
@@ -29,17 +30,21 @@ export default class CachedCommunicationSource implements CommunicationSource {
     constructor(
         peptToResponseMap: ShareableMap<Peptide, PeptideData>,
         peptideTrust: PeptideTrust,
-        initialConfiguration: SearchConfiguration
+        initialConfiguration: SearchConfiguration,
+        projectLocation: string,
+        store: Store<any>
     ) {
         this.ecCommunicator = new CachedEcResponseCommunicator();
         this.goCommunicator = new CachedGoResponseCommunicator();
         this.iprCommunicator = new CachedInterproResponseCommunicator();
         this.ncbiCommunicator = new CachedNcbiResponseCommunicator();
-        // @ts-ignore
         this.pept2DataCommunicator = new CachedPept2DataCommunicator(
+            // @ts-ignore
             peptToResponseMap,
             peptideTrust,
-            initialConfiguration
+            initialConfiguration,
+            projectLocation,
+            store
         );
     }
 
