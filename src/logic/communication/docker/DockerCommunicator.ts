@@ -404,11 +404,13 @@ export default class DockerCommunicator {
      */
     private async createIndexVolume(indexLocation: string): Promise<string> {
         indexLocation = this.generateIndexVolumePath(indexLocation);
+        await mkdirp(indexLocation);
         return this.createVolume(DockerCommunicator.INDEX_VOLUME_NAME, indexLocation);
     }
 
     private async createTempVolume(tempLocation: string): Promise<string> {
         tempLocation = this.generateIndexVolumePath(tempLocation);
+        await mkdirp(tempLocation);
         return this.createVolume(DockerCommunicator.TEMP_VOLUME_NAME, tempLocation);
     }
 

@@ -93,20 +93,28 @@ export default class DiskUsageBar extends Vue {
     private async update() {
         if (this.folder) {
             try {
+                const statsTime = new Date().getTime();
                 const spaceReport = await FileSystemUtils.getDiskStats(this.folder);
+                const statsEndTime = new Date().getTime();
+                console.log("Get disk stats took: " + (statsTime - statsEndTime) + "ms");
 
                 this.totalDiskSpace = spaceReport.total;
                 this.totalFreeSpace = spaceReport.free;
 
+                const sizeTime = new Date().getTime();
                 this.spaceUsedByFolder = await FileSystemUtils.getSize(this.folder);
+                const endSizeTime = new Date().getTime();
+                console.log("Get used space took: " + (endSizeTime - sizeTime) + "ms");
 
                 this.totalFreeSpacePercentage = Math.round((this.totalFreeSpace / this.totalDiskSpace) * 100);
                 this.spaceUsedByFolderPercentage = Math.round((this.spaceUsedByFolder / this.totalDiskSpace) * 100);
 
                 this.error = false;
             } catch (err) {
+                console.warn(err);
                 this.error = true;
             }
+
         }
     }
 }

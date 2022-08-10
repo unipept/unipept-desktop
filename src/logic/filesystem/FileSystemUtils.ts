@@ -28,20 +28,38 @@ export default class FileSystemUtils {
      * @return Size of the given path in bytes (total size of directory if path points to a directory).
      */
     public static async getSize(location: string): Promise<number> {
-        const stats = await fs.lstat(location);
-        let totalSize: number = 0;
-        if (stats.isDirectory()) {
-            for (const subPath of await fs.readdir(location)) {
-                totalSize += await this.getSize(path.join(location, subPath));
+        try {
+            const stats = await fs.lstat(location);
+            let totalSize: number = 0;
+            if (stats.isDirectory()) {
+                for (const subPath of await fs.readdir(location)) {
+                    totalSize += await this.getSize(path.join(location, subPath));
+                }
+                return totalSize;
+            } else {
+                return stats.size;
             }
-            return totalSize;
-        } else {
-            return stats.size;
+        } catch (e) {
+            // Folder was not found... Reported size is 0 in this case.
+            return 0;
         }
     }
 
     public static async getDiskStats(folder: string): Promise<DiskStats | undefined> {
+        try {
+            console.log("Start getting disk stats...");
+            const time = new Date().getTime();
+            await fs.readdir(folder);
+            console.log("Took: " + (new Date().getTime() - time) + "ms");
+        } catch (err) {
+            console.warn(err);
+            // This folder does not exist.
+            return undefined;
+        }
+
         const { exec } = require("child_process");
+
+        console.log("Process platform: " + process.platform);
 
         if (process.platform === "darwin" || process.platform === "linux") {
             const [stdout, stderr] = await new Promise<[string, string]>(
@@ -60,6 +78,7 @@ export default class FileSystemUtils {
             );
 
             if (stderr) {
+                console.warn(stderr);
                 return undefined;
             } else {
                 // Try to parse the output
@@ -88,6 +107,7 @@ export default class FileSystemUtils {
             );
 
             if (stderr) {
+                console.warn(stderr);
                 return undefined;
             }
 

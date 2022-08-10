@@ -21,7 +21,7 @@ export default class DatabaseMigratorV4ToV5 implements DatabaseMigrator {
     public async upgrade(database: Database.Database): Promise<void> {
         // Reset the configuration back to the default value.
         const configManager = new ConfigurationManager();
-        const defaultConfig = configManager.getDefaultConfiguration();
+        const defaultConfig = await configManager.getDefaultConfiguration();
         await configManager.writeConfiguration(defaultConfig);
 
         // Now also migrate the SQL-database itself. For this to work, we need to read in all data and metadata for the

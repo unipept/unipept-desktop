@@ -6,6 +6,7 @@ import path from "path";
 import { App } from "electron";
 import Utils from "@/logic/Utils";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import mkdirp from "mkdirp";
 
 
 export default class ConfigurationManager {
@@ -57,7 +58,7 @@ export default class ConfigurationManager {
             let rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
             let data = JSON.parse(rawConfig);
             if (!this.isValidConfiguration(data)) {
-                ConfigurationManager.currentConfiguration = this.getDefaultConfiguration();
+                ConfigurationManager.currentConfiguration = await this.getDefaultConfiguration();
                 return ConfigurationManager.currentConfiguration;
             }
             ConfigurationManager.currentConfiguration = data;
@@ -67,15 +68,18 @@ export default class ConfigurationManager {
         }
     }
 
-    public getDefaultConfiguration(): Configuration {
-        const homeDir = this.app.getPath("home");
+    public async getDefaultConfiguration(): Promise<Configuration> {
+        const homeDir = this.app.getPath("documents");
+
+        const customDbDir = path.join(homeDir, "unipept", "data");
+        await mkdirp(customDbDir);
 
         return {
             maxLongRunningTasks: 8,
             maxParallelRequests: 3,
             dockerConfigurationSettings:
                 Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
-            customDbStorageLocation: path.join(homeDir, "unipept", "data")
+            customDbStorageLocation: customDbDir
         }
     }
 

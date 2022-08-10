@@ -28,45 +28,51 @@ export default class CustomDatabaseManager {
      * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
      */
     public async listAllDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
+        const dbFolderRoot = path.join(dbRootFolder, "databases");
+
         const databases = [];
-        for (const dir of (await fs.readdir(path.join(dbRootFolder, "databases")))) {
-            const dbPath = path.join(dbRootFolder, "databases", dir);
-            if ((await fs.lstat(dbPath)).isDirectory()) {
-                // Check if a metadata file is present in the folder that was found. If it is present, we should read
-                // the database name and other metadata from this file.
-                try {
-                    const metadata = JSON.parse(
-                        await fs.readFile(
-                            this.metadataPath(dbRootFolder, dir),
-                            { encoding: "utf-8" }
-                        )
-                    );
+        try {
+            for (const dir of (await fs.readdir(path.join(dbRootFolder, "databases")))) {
+                const dbPath = path.join(dbRootFolder, "databases", dir);
+                if ((await fs.lstat(dbPath)).isDirectory()) {
+                    // Check if a metadata file is present in the folder that was found. If it is present, we should read
+                    // the database name and other metadata from this file.
+                    try {
+                        const metadata = JSON.parse(
+                            await fs.readFile(
+                                this.metadataPath(dbRootFolder, dir),
+                                { encoding: "utf-8" }
+                            )
+                        );
 
-                    const dockerCommunicator = new DockerCommunicator();
-                    const dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
+                        const dockerCommunicator = new DockerCommunicator();
+                        const dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
 
-                    databases.push(
-                        new CustomDatabase(
-                            metadata.name,
-                            metadata.sources,
-                            metadata.sourceTypes,
-                            metadata.taxa,
-                            metadata.databaseVersion,
-                            metadata.entries,
-                            metadata.ready,
-                            dbSize,
-                            metadata.cancelled,
-                            metadata.inProgress,
-                            metadata.progress,
-                            metadata.error
-                        )
-                    );
-                } catch (e) {
-                    console.error(e);
-                    // The inspected directory probably doesn't contain a database and we should do nothing in this
-                    // case.
+                        databases.push(
+                            new CustomDatabase(
+                                metadata.name,
+                                metadata.sources,
+                                metadata.sourceTypes,
+                                metadata.taxa,
+                                metadata.databaseVersion,
+                                metadata.entries,
+                                metadata.ready,
+                                dbSize,
+                                metadata.cancelled,
+                                metadata.inProgress,
+                                metadata.progress,
+                                metadata.error
+                            )
+                        );
+                    } catch (e) {
+                        console.warn(e);
+                        // The inspected directory probably doesn't contain a database and we should do nothing in this
+                        // case.
+                    }
                 }
             }
+        } catch (e) {
+            console.warn(e);
         }
         return databases;
     }
