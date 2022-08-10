@@ -148,11 +148,8 @@ export default class CustomDatabaseManager {
     ): Promise<CustomDatabase | null> {
         const dbs = await this.listAllDatabases(dbRootFolder);
 
-        console.log(dbs);
-
         const possibleDbs = dbs.filter((db: CustomDatabase) => {
             if (db.databaseVersion !== uniprotVersion) {
-                console.log("DB Version is different")
                 return false;
             }
 
@@ -162,7 +159,6 @@ export default class CustomDatabaseManager {
                     selectedSources.sort()
                 )
             ) {
-                console.log("Sources are different!");
                 return false;
             }
 

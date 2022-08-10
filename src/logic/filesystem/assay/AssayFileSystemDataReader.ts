@@ -37,9 +37,6 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
     }
 
     public async visitProteomicsAssay(mpAssay: ProteomicsAssay): Promise<void> {
-        console.log("Reading proteomics assay: ");
-        console.log(mpAssay);
-
         const path: string = `${this.directoryPath}${mpAssay.getName()}.pep`;
 
         // First, try to read in all of the peptides for this assay.

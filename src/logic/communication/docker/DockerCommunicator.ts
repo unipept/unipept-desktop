@@ -7,7 +7,6 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
 import Utils from "@/logic/Utils";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
-import {inspect} from "util";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
@@ -346,8 +345,6 @@ export default class DockerCommunicator {
                             );
                         }
                     );
-
-                    resolve();
                 } catch (err) {
                     reject(err);
                 }

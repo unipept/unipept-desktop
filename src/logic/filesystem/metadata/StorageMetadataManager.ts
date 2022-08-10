@@ -15,7 +15,6 @@ export default class StorageMetadataManager {
     ) {}
 
     public async readMetadata(assay: ProteomicsAssay): Promise<StorageMetadata | undefined> {
-        console.log("Reading metadata...");
         const metaRow = await this.dbManager.performQuery<StorageMetadataTableRow>((db: Database) => {
             return db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
         });

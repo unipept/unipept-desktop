@@ -47,10 +47,7 @@ export default class FileSystemUtils {
 
     public static async getDiskStats(folder: string): Promise<DiskStats | undefined> {
         try {
-            console.log("Start getting disk stats...");
-            const time = new Date().getTime();
             await fs.readdir(folder);
-            console.log("Took: " + (new Date().getTime() - time) + "ms");
         } catch (err) {
             console.warn(err);
             // This folder does not exist.
@@ -58,14 +55,12 @@ export default class FileSystemUtils {
         }
 
         const { exec } = require("child_process");
-
-        console.log("Process platform: " + process.platform);
-
         if (process.platform === "darwin" || process.platform === "linux") {
             const [stdout, stderr] = await new Promise<[string, string]>(
                 (resolve, reject) =>  {
                     exec(
                         `df -B1 ${folder}`,
+                        { timeout: 200 },
                         (err: ExecException | null, stdout: string, stderr: string) =>  {
                             if (err) {
                                 reject(err);
@@ -78,7 +73,6 @@ export default class FileSystemUtils {
             );
 
             if (stderr) {
-                console.warn(stderr);
                 return undefined;
             } else {
                 // Try to parse the output
@@ -107,7 +101,6 @@ export default class FileSystemUtils {
             );
 
             if (stderr) {
-                console.warn(stderr);
                 return undefined;
             }
 
