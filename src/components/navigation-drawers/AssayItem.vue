@@ -163,19 +163,11 @@ import {
     PeptideTrust,
     Study,
     ProteomicsAssay,
-    SearchConfiguration,
-    CountTable,
-    Peptide,
-    Assay,
-    AssayAnalysisStatus,
-    PeptideData
+    AssayAnalysisStatus
 } from "unipept-web-components";
 
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
-import { promises as fs } from "fs";
-import { v4 as uuidv4 } from "uuid";
-import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 
 const { remote } = require("electron");
 const { Menu, MenuItem } = remote;
