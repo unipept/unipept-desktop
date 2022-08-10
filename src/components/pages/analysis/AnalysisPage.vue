@@ -80,28 +80,44 @@
                         You have created an empty project. If this is the first time you're using this application, you can use
                         the following steps as a guide to get started.
                     </p>
-                    <h3>1. Create a new study</h3>
-                    <p class="font-italic font-weight-light">
-                        A study is a central concept that contains information about the subject that's under investigation.
-                        It's a collection of assays with extra contextual information about these assays.
-                    </p>
-                    <p class="font-weight-medium">
+                    <h3>
+                        1. Create a new
+                        <v-tooltip bottom open-delay="500" max-width="500px">
+                            <template v-slot:activator="{ on, attrs }">
+                                <span v-on="on" class="tooltip-text">
+                                    study
+                                </span>
+                            </template>
+                            <span>
+                                A study is a central concept that contains information about the subject that's
+                                under investigation. It's a collection of assays with extra contextual information
+                                about these assays.
+                            </span>
+                        </v-tooltip>
+                    </h3>
+                    <p class="mt-1">
                         Click the "Create study" button in the sidebar to the left to create a new study. This is the big blue
                         button situated at the bottom of the sidebar.
                     </p>
-                    <h3>2. Add an assay to your study</h3>
-                    <p class="font-italic font-weight-light">
-                        An assay corresponds to one experiment executed on a piece of material or a dataset. In the case of
-                        metaproteomics, an assay corresponds to a list of peptides with a specific search configuration that
-                        can directly be processed by this application.
-                    </p>
-                    <p class="font-weight-medium">
+                    <h3>
+                        2. Add an
+                        <v-tooltip bottom open-delay="500" max-width="500px">
+                            <template v-slot:activator="{ on, attrs }">
+                                <span v-on="on" class="tooltip-text">
+                                    assay
+                                </span>
+                            </template>
+                            <span>
+                                An assay corresponds to a list of peptides with a specific search configuration that
+                                can directly be processed by this application.
+                            </span>
+                        </v-tooltip>
+                        to your study
+                    </h3>
+                    <p class="mt-1">
                         After you've created a new study, you need to import a list of peptides that you want to process. Click
                         the <v-icon small style="position: relative; bottom: 1px;" color="grey darken-3">
                         mdi-file-plus-outline</v-icon> button next to the study to which your new assay should belong.
-                    </p>
-                    <p class="font-italic">
-                        Tip: you can create as many studies and assays as you'd like.
                     </p>
                 </div>
 
@@ -319,5 +335,11 @@ export default class AnalysisPage extends Vue {
         font-family: "Roboto mono", monospace;
         width: 100%;
         min-height: 300px;
+    }
+
+    .tooltip-text {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-position: under;
     }
 </style>
