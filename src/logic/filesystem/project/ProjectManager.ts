@@ -90,6 +90,11 @@ export default class ProjectManager  {
         }
 
         await store.dispatch("initializeProject", [projectLocation, dbManager, []]);
+        const study = new Study(uuidv4());
+        study.setName("Study name");
+        await store.dispatch("addStudy", study);
+        const studyWriter = new StudyFileSystemDataWriter(path.join(projectLocation, "Study name"), dbManager);
+        await study.accept(studyWriter);
     }
 
     public async setUpDatabase(projectLocation: string): Promise<DatabaseManager> {
