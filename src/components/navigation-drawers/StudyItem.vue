@@ -82,12 +82,12 @@
             <div v-else>
                 <!-- placeholder button to add a new assay -->
                 <div class="assay-item" @click="createAssay()">
-                    <v-icon size="20">
+                    <v-icon size="20" color="primary">
                         mdi-file-plus-outline
                     </v-icon>
-                    <span class="assay-name">
+                    <a class="assay-name">
                         Add new assay
-                    </span>
+                    </a>
                 </div>
             </div>
         </div>
