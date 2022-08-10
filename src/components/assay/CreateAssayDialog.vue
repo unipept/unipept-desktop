@@ -14,11 +14,7 @@
                 </v-alert>
 
                 <p>
-                    Create one or more assays and modify their search configuration using the settings below. Please
-                    note that enabling the <span class="font-italic font-weight-bold">advanced missed cleavage</span>
-                    setting has a serious performance impact and leads to a slower analysis. Use the buttons above the
-                    table below to start constructing assays. You can create assays by either manually providing the
-                    peptides and configuration details, or by importing a list of peptides from one or more files.
+                    Create one or more assays and modify their search configuration using the settings below.
                 </p>
 
                 <v-card>
@@ -32,9 +28,6 @@
                             class="assayCreationTable">
                             <template v-slot:top>
                                 <v-toolbar flat>
-                                    <v-toolbar-title>New assays</v-toolbar-title>
-                                    <v-divider class="mx-4" inset vertical></v-divider>
-                                    <v-spacer></v-spacer>
                                     <v-btn color="primary" outlined class="mr-2" @click="addAssayEntry">
                                         Add assay manually
                                     </v-btn>
@@ -74,7 +67,19 @@
                                 </div>
                             </template>
                             <template v-slot:header.missedCleavage="{ header }">
-                                {{ header.text }}
+                                <v-tooltip bottom open-delay="500">
+                                    <template v-slot:activator="{ on }">
+                                        <span v-on="on" class="underlined-info">
+                                            {{ header.text }}
+                                            <v-icon x-small>mdi-information-outline</v-icon>
+                                        </span>
+                                    </template>
+                                    <span>
+                                        Enabling this setting has a serious performance impact and could lead to slower
+                                        analyses.
+                                    </span>
+                                </v-tooltip>
+
                                 <div>
                                     <a v-if="areAllMissedCleavage" @click="areAllMissedCleavage = false">
                                         Uncheck all
@@ -293,10 +298,6 @@ export default class CreateAssayDialog extends Vue {
         }
     }
 
-    get someEquateIl(): boolean {
-        return this.assayPlaceholders.some((item: ProteomicsAssayPlaceholder) => item.searchConfiguration.equateIl);
-    }
-
     get areAllFilterDuplicate(): boolean {
         return this.assayPlaceholders.every(
             (item: ProteomicsAssayPlaceholder) => item.searchConfiguration.filterDuplicates
@@ -309,12 +310,6 @@ export default class CreateAssayDialog extends Vue {
         }
     }
 
-    get someFilterDuplicate(): boolean {
-        return this.assayPlaceholders.some(
-            (item: ProteomicsAssayPlaceholder) => item.searchConfiguration.filterDuplicates
-        );
-    }
-
     get areAllMissedCleavage(): boolean {
         return this.assayPlaceholders.every(
             (item: ProteomicsAssayPlaceholder) => item.searchConfiguration.enableMissingCleavageHandling
@@ -325,12 +320,6 @@ export default class CreateAssayDialog extends Vue {
         for (const item of this.assayPlaceholders) {
             item.searchConfiguration.enableMissingCleavageHandling = value;
         }
-    }
-
-    get someMissedCleavage(): boolean {
-        return this.assayPlaceholders.some(
-            (item: ProteomicsAssayPlaceholder) => item.searchConfiguration.enableMissingCleavageHandling
-        );
     }
 
     private created() {
@@ -614,5 +603,11 @@ export default class CreateAssayDialog extends Vue {
     /* Make sure that appended row in the data table is not highlighted when hovered. */
     .plain-table-row:hover {
         background-color: white !important;
+    }
+
+    .underlined-info {
+        text-decoration: underline;
+        text-underline-position: under;
+        text-decoration-style: dashed;
     }
 </style>
