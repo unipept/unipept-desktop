@@ -11,7 +11,7 @@
             </v-row>
             <v-row v-else>
                 <v-col>
-                    <recent-projects v-on:open-project="onOpenProject"></recent-projects>
+                    <recent-projects v-on:open-project="openProject" v-on:create-project="createProject"/>
                 </v-col>
                 <v-divider vertical></v-divider>
                 <v-col>
@@ -28,19 +28,25 @@
                             <v-icon style="position: relative; bottom: 2px;" color="success">mdi-arrow-up-bold</v-icon>
                             <a>An update is available!</a>
                         </span>
-                        <div class="project-actions">
-                            <tooltip message="Select an empty folder and create a new project." position="bottom">
-                                <div @click="createProject()">
-                                    <v-icon large>mdi-folder-plus-outline</v-icon>
-                                    <span style="font-size: 24px;">Create new project</span>
-                                </div>
-                            </tooltip>
-<!--                            <tooltip message="Import a project from an external model." position="bottom">-->
-<!--                                <div>-->
-<!--                                    <v-icon large>mdi-folder-download-outline</v-icon>-->
-<!--                                    <span style="font-size: 24px;">Import project</span>-->
-<!--                                </div>-->
-<!--                            </tooltip>-->
+                        <div class="project-actions d-flex align-center">
+                            <v-tooltip bottom open-delay="500">
+                                <template v-slot:activator="{ on, attrs }">
+                                    <div @click="createProject()" v-on="on">
+                                        <v-icon>mdi-folder-plus-outline</v-icon>
+                                        <span style="font-size: 24px;">Create new project</span>
+                                    </div>
+                                </template>
+                                <span>Select an empty folder and create a new project.</span>
+                            </v-tooltip>
+                            <v-tooltip bottom open-delay="500">
+                                <template v-slot:activator="{ on, attrs }">
+                                    <div @click="openProject()" v-on="on">
+                                        <v-icon>mdi-folder-open-outline</v-icon>
+                                        <span style="font-size: 24px;">Open project</span>
+                                    </div>
+                                </template>
+                                <span>Select a previously created project to open.</span>
+                            </v-tooltip>
                         </div>
                     </div>
 
@@ -205,7 +211,7 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string[] | undefined = await dialog.showOpenDialogSync({
+        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
             properties: ["openDirectory", "createDirectory"]
         });
 
@@ -216,6 +222,20 @@ export default class HomePage extends Vue {
             }
 
             await this.initializeProject(chosenPath[0]);
+        }
+    }
+
+    private async openProject(path?: string) {
+        if (path) {
+            this.loadProject(path, true);
+        } else {
+            const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
+                properties: ["openDirectory"]
+            });
+
+            if (!chosenPath) {
+                this.loadProject(chosenPath[0], true);
+            }
         }
     }
 
@@ -233,7 +253,7 @@ export default class HomePage extends Vue {
         }
     }
 
-    private async onOpenProject(path: string, addToRecents: boolean = true) {
+    private async loadProject(path: string, addToRecents: boolean = true) {
         this.loadingProject = true;
         try {
             if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {
@@ -264,7 +284,7 @@ export default class HomePage extends Vue {
         this.loadingProject = true;
         const demoManager = new DemoProjectManager();
         const demoPath = await demoManager.initializeDemoProject();
-        await this.onOpenProject(demoPath, false);
+        await this.loadProject(demoPath, false);
         this.loadingProject = false;
     }
 

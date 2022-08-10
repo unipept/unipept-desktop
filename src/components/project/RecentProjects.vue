@@ -25,35 +25,41 @@
         <div v-else class="ml-12 mr-12">
             <h2>No recent projects</h2>
             <p class="font-weight-medium">
-                Click the button below to open a previously created project or chose one of the options on the right.
-                You can create a new, empty project by selecting the "Create new project" button. If you want to
-                import an existing project from an external model (for example ISA-tab), you need to click the "Import
-                project" button.
+                Click the buttons below to create a new project, or to open an existing project.
             </p>
         </div>
-        <tooltip message="Select a previously created project to open." position="bottom">
-            <div class="open-project-button" @click="openProject()">
-                <v-icon>mdi-folder-open-outline</v-icon>
-                <a>Open project...</a>
-            </div>
-        </tooltip>
+
+        <div v-if="recentProjects.length === 0">
+            <v-tooltip bottom open-delay="500">
+                <template v-slot:activator="{ on, attrs }">
+                    <div class="open-project-button mb-1" @click="createProject()" v-on="on">
+                        <v-icon>mdi-folder-plus-outline</v-icon>
+                        <a>Create new project...</a>
+                    </div>
+                </template>
+                <span>Select an empty folder and create a new project.</span>
+            </v-tooltip>
+            <v-tooltip bottom open-delay="500">
+                <template v-slot:activator="{ on, attrs }">
+                    <div class="open-project-button" @click="openProject()" v-on="on">
+                        <v-icon>mdi-folder-open-outline</v-icon>
+                        <a>Open project...</a>
+                    </div>
+                </template>
+                <span>Select a previously created project to open.</span>
+            </v-tooltip>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { Tooltip } from "unipept-web-components";
-import ProjectManager from "@/logic/filesystem/project/ProjectManager.ts";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 import RecentProject from "@/logic/filesystem/project/RecentProject";
 const { dialog } = require("electron").remote;
 
-@Component({
-    components: {
-        Tooltip
-    }
-})
+@Component({})
 export default class RecentProjects extends Vue {
     private recentProjects: RecentProject[] = [];
 
@@ -63,13 +69,11 @@ export default class RecentProjects extends Vue {
     }
 
     private async openProject() {
-        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
-            properties: ["openDirectory"]
-        });
+        this.$emit("open-project");
+    }
 
-        if (chosenPath) {
-            this.$emit("open-project", chosenPath[0]);
-        }
+    private async createProject() {
+        this.$emit("create-project");
     }
 
     private async openPreviouslyLoadedProject(path: string) {
