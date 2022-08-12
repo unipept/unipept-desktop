@@ -8,7 +8,6 @@
         dense
         :error="error"
         :error-messages="errorMessages"
-        clearable
         return-object>
         <template v-slot:selection="{ item }">
             <div class="d-flex justify-center">
@@ -66,6 +65,10 @@ export default class AnalysisSourceSelect extends Vue {
     private errorMessages: string | [];
 
     private selectedSource: RenderableAnalysisSource = null;
+
+    private mounted() {
+        this.onValueChanged();
+    }
 
     @Watch("value")
     private onValueChanged() {

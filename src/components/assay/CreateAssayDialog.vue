@@ -114,9 +114,17 @@
                         </v-simple-checkbox>
                     </template>
                     <template v-slot:item.actions="{ item }">
-                        <v-btn icon color="red" @click="deleteAssay(item)">
-                            <v-icon>mdi-delete</v-icon>
-                        </v-btn>
+                        <v-tooltip bottom open-delay="500">
+                            <template v-slot:activator="{ on }">
+                                <v-btn icon v-on="on" color="red" @click="deleteAssay(item)">
+                                    <v-icon>mdi-delete</v-icon>
+                                </v-btn>
+                            </template>
+                            <span>Delete assay</span>
+                        </v-tooltip>
+                    </template>
+                    <template v-slot:item.peptides="{ item }">
+                        {{ item.peptides.trim().split("\n").length }}
                     </template>
                     <template v-slot:item.analysisSource="{ item }">
                         <analysis-source-select
@@ -255,7 +263,7 @@ export default class CreateAssayDialog extends Vue {
             align: "start",
             sortable: true,
             value: "name",
-            width: "20%"
+            width: "17%"
         }, {
             text: "Equate I/L",
             align: "center",
@@ -279,7 +287,13 @@ export default class CreateAssayDialog extends Vue {
             align: "center",
             sortable: false,
             value: "analysisSource",
-            width: "25%"
+            width: "22%"
+        }, {
+            text: "Peptides",
+            align: "center",
+            sortable: false,
+            value: "peptides",
+            width: "5%"
         }, {
             text: "Delete",
             align: "center",
@@ -507,10 +521,11 @@ export default class CreateAssayDialog extends Vue {
             nameError: "",
             peptides: "",
             searchConfiguration: new SearchConfiguration(),
-            analysisSource: undefined,
+            analysisSource: this.renderableSources[0],
             analysisSourceError: "",
             inProgress: false
         }
+        console.log(JSON.stringify(assayPlaceholder));
         this.assayPlaceholders.push(assayPlaceholder);
         this.expandedItems.push(assayPlaceholder);
     }
