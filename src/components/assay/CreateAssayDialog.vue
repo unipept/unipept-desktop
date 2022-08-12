@@ -116,12 +116,17 @@
                     <template v-slot:item.actions="{ item }">
                         <v-tooltip bottom open-delay="500">
                             <template v-slot:activator="{ on }">
-                                <v-btn icon v-on="on" color="red" @click="deleteAssay(item)">
+                                <v-btn icon v-on="on" color="red" @click="removeAssayConfirmationActive = true">
                                     <v-icon>mdi-delete</v-icon>
                                 </v-btn>
                             </template>
                             <span>Delete assay</span>
                         </v-tooltip>
+                        <confirm-deletion-dialog
+                            v-model="removeAssayConfirmationActive"
+                            :action="() => deleteAssay(item)"
+                            item-type="assay">
+                        </confirm-deletion-dialog>
                     </template>
                     <template v-slot:item.peptides="{ item }">
                         {{ item.peptides.trim().split("\n").length }}
@@ -213,6 +218,7 @@ import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedC
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 
 
 const electron = require("electron");
@@ -233,7 +239,7 @@ type ProteomicsAssayPlaceholder = {
 }
 
 @Component({
-    components: { AnalysisSourceSelect }
+    components: { ConfirmDeletionDialog, AnalysisSourceSelect }
 })
 export default class CreateAssayDialog extends Vue {
     @Prop({ required: true })
@@ -247,6 +253,8 @@ export default class CreateAssayDialog extends Vue {
 
     private renderableSources: RenderableAnalysisSource[] = [];
     private globalSourceSelection: RenderableAnalysisSource = null;
+
+    private removeAssayConfirmationActive: boolean = false;
 
     private errorActive: boolean = false;
     private errorMessage: string = "";
@@ -508,6 +516,7 @@ export default class CreateAssayDialog extends Vue {
     }
 
     private deleteAssay(item: ProteomicsAssayPlaceholder) {
+        this.removeAssayConfirmationActive = false;
         const idx = this.assayPlaceholders.findIndex((a: ProteomicsAssayPlaceholder) => a.id === item.id);
         if (idx >= 0) {
             this.assayPlaceholders.splice(idx, 1);
@@ -525,7 +534,6 @@ export default class CreateAssayDialog extends Vue {
             analysisSourceError: "",
             inProgress: false
         }
-        console.log(JSON.stringify(assayPlaceholder));
         this.assayPlaceholders.push(assayPlaceholder);
         this.expandedItems.push(assayPlaceholder);
     }
