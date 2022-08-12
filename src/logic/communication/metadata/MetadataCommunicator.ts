@@ -1,7 +1,8 @@
-import { NetworkConfiguration, NetworkUtils } from "unipept-web-components";
+import { NcbiId, NetworkConfiguration, NetworkUtils } from "unipept-web-components";
 
 export default class MetadataCommunicator {
     private static METADATA_ENDPOINT: string = "/private_api/metadata";
+    private static UNIPROT_API_URL: string = "https://rest.uniprot.org/uniprotkb/search";
 
     /**
      * Looks up what the most recent UniProt-version is that is available at the endpoint for the given URL.
@@ -17,5 +18,42 @@ export default class MetadataCommunicator {
         } catch (err) {
             return "N/A";
         }
+    }
+
+    /**
+     * Connects to the UniProt API and requests how many UniProt-records are associated with the given list of NCBI
+     * IDs.
+     *
+     * @param taxa
+     * @param swissprotSelected
+     * @param tremblSelected
+     */
+    public static async getUniProtRecordCount(
+        taxa: NcbiId[],
+        swissprotSelected: boolean,
+        tremblSelected: boolean
+    ): Promise<number> {
+        if (taxa.length === 0) {
+            return 0;
+        }
+
+        const idQuery = taxa.map(taxon => `taxonomy_id:${taxon}`).join("+OR+");
+        const result = await NetworkUtils.getJSON(
+            `${MetadataCommunicator.UNIPROT_API_URL}?facets=reviewed&query=${idQuery}&size=0`
+        );
+
+        let totalCount: number = 0;
+
+        if (swissprotSelected) {
+            totalCount += result["facets"][0]["values"]
+                .find((item: any) => item["label"] === "Reviewed (Swiss-Prot)")["count"];
+        }
+
+        if (tremblSelected) {
+            totalCount += result["facets"][0]["values"]
+                .find((item: any) => item["label"] === "Unreviewed (TrEMBL)")["count"];
+        }
+
+        return totalCount;
     }
 }

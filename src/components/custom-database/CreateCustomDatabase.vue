@@ -104,7 +104,11 @@
                             <v-row>
                                 <v-col cols="12">
                                     <div>
-                                        <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
+                                        <taxa-browser
+                                            v-on:input="updateSelectedTaxa"
+                                            :swissprot-selected="selectedSources.includes('SwissProt')"
+                                            :trembl-selected="selectedSources.includes('TrEMBL')"
+                                        />
                                     </div>
                                 </v-col>
                             </v-row>
