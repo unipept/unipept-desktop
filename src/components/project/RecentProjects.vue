@@ -1,12 +1,47 @@
 <template>
-    <div>
+    <div class="mx-12">
+        <h2>Project management</h2>
+
+        <v-row class="mt-1 mb-6">
+            <v-col md="12" lg="6">
+                <v-card>
+                    <v-card-title>Add project</v-card-title>
+                    <v-card-text>
+                        <div>Select an empty folder and create a new project.</div>
+                        <div class="text-center mt-2">
+                            <v-btn color="primary" @click="createProject">
+                                <v-icon class="mr-2">mdi-folder-plus-outline</v-icon>
+                                Create project
+                            </v-btn>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+            <v-col md="12" lg="6">
+                <v-card>
+                    <v-card-title>Load project</v-card-title>
+                    <v-card-text>
+                        <div>Select a previously created project to open.</div>
+                        <div class="text-center mt-2">
+                            <v-btn @click="openProject">
+                                <v-icon class="mr-2">mdi-folder-open-outline</v-icon>
+                                Select project
+                            </v-btn>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+        </v-row>
+        <h2>Recent projects</h2>
         <div v-if="recentProjects.length > 0">
-            <span>Recent projects</span>
             <v-list two-line>
                 <v-list-item
                     v-for="recentProject of recentProjects"
                     :key="recentProject.path"
                     @click="openPreviouslyLoadedProject(recentProject.path)">
+                    <v-list-item-avatar>
+                        <v-icon>mdi-folder-open-outline</v-icon>
+                    </v-list-item-avatar>
                     <v-list-item-content>
                         <v-list-item-title>{{ recentProject.name }}</v-list-item-title>
                         <v-list-item-subtitle>{{ recentProject.path }}</v-list-item-subtitle>
@@ -22,32 +57,10 @@
                 </v-list-item>
             </v-list>
         </div>
-        <div v-else class="ml-12 mr-12">
-            <h2>No recent projects</h2>
-            <p class="font-weight-medium">
-                Click the buttons below to create a new project, or to open an existing project.
-            </p>
-        </div>
-
-        <div v-if="recentProjects.length === 0">
-            <v-tooltip bottom open-delay="500">
-                <template v-slot:activator="{ on, attrs }">
-                    <div class="open-project-button mb-1" @click="createProject()" v-on="on">
-                        <v-icon>mdi-folder-plus-outline</v-icon>
-                        <a>Create new project...</a>
-                    </div>
-                </template>
-                <span>Select an empty folder and create a new project.</span>
-            </v-tooltip>
-            <v-tooltip bottom open-delay="500">
-                <template v-slot:activator="{ on, attrs }">
-                    <div class="open-project-button" @click="openProject()" v-on="on">
-                        <v-icon>mdi-folder-open-outline</v-icon>
-                        <a>Open project...</a>
-                    </div>
-                </template>
-                <span>Select a previously created project to open.</span>
-            </v-tooltip>
+        <div v-else>
+            <span>
+                No recent projects. Use one of the buttons above to create a new project or load an existing one.
+            </span>
         </div>
     </div>
 </template>

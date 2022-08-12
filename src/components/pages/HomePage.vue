@@ -28,26 +28,6 @@
                             <v-icon style="position: relative; bottom: 2px;" color="success">mdi-arrow-up-bold</v-icon>
                             <a>An update is available!</a>
                         </span>
-                        <div class="project-actions d-flex align-center">
-                            <v-tooltip bottom open-delay="500">
-                                <template v-slot:activator="{ on, attrs }">
-                                    <div @click="createProject()" v-on="on">
-                                        <v-icon>mdi-folder-plus-outline</v-icon>
-                                        <span style="font-size: 24px;">Create new project</span>
-                                    </div>
-                                </template>
-                                <span>Select an empty folder and create a new project.</span>
-                            </v-tooltip>
-                            <v-tooltip bottom open-delay="500">
-                                <template v-slot:activator="{ on, attrs }">
-                                    <div @click="openProject()" v-on="on">
-                                        <v-icon>mdi-folder-open-outline</v-icon>
-                                        <span style="font-size: 24px;">Open project</span>
-                                    </div>
-                                </template>
-                                <span>Select a previously created project to open.</span>
-                            </v-tooltip>
-                        </div>
                     </div>
 
                     <div class="d-flex justify-center mt-12">
