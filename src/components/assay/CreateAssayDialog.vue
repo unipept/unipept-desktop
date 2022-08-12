@@ -17,165 +17,166 @@
                     Create one or more assays and modify their search configuration using the settings below.
                 </p>
 
-                <v-card>
-                    <v-card-text>
-                        <v-data-table
-                            :items="assayPlaceholders"
-                            :headers="assayCreationTableHeaders"
-                            show-expand
-                            :expanded.sync="expandedItems"
-                            item-key="id"
-                            class="assayCreationTable">
-                            <template v-slot:top>
-                                <v-toolbar flat>
-                                    <v-btn color="primary" outlined class="mr-2" @click="addAssayEntry">
-                                        Add assay manually
-                                    </v-btn>
+                <v-data-table
+                    :items="assayPlaceholders"
+                    :headers="assayCreationTableHeaders"
+                    show-expand
+                    :expanded.sync="expandedItems"
+                    item-key="id"
+                    class="assayCreationTable">
+                    <template v-slot:item.data-table-expand="{ item, isExpanded, expand }">
+                        <v-progress-circular v-if="item.inProgress" indeterminate></v-progress-circular>
+                        <v-btn v-else @click="expand(!isExpanded)" icon>
+                            <v-icon v-if="isExpanded">mdi-chevron-up</v-icon>
+                            <v-icon v-else>mdi-chevron-down</v-icon>
+                        </v-btn>
+                    </template>
+                    <template v-slot:header.equateIl="{ header }">
+                        {{ header.text }}
+                        <div v-if="assayPlaceholders.length > 0">
+                            <a v-if="areAllEquateIl" @click="areAllEquateIl = false">
+                                Uncheck all
+                            </a>
+                            <a v-else @click="areAllEquateIl = true">
+                                Check all
+                            </a>
+                        </div>
+                    </template>
+                    <template v-slot:header.filterDuplicates="{ header }">
+                        {{ header.text }}
+                        <div v-if="assayPlaceholders.length > 0">
+                            <a v-if="areAllFilterDuplicate" @click="areAllFilterDuplicate = false">
+                                Uncheck all
+                            </a>
+                            <a v-else @click="areAllFilterDuplicate = true">
+                                Check all
+                            </a>
+                        </div>
+                    </template>
+                    <template v-slot:header.missedCleavage="{ header }">
+                        <v-tooltip bottom open-delay="500">
+                            <template v-slot:activator="{ on }">
+                                <span v-on="on" class="underlined-info">
+                                    {{ header.text }}
+                                    <v-icon x-small>mdi-information-outline</v-icon>
+                                </span>
+                            </template>
+                            <span>
+                                Enabling this setting has a serious performance impact and could lead to slower
+                                analyses.
+                            </span>
+                        </v-tooltip>
 
-                                    <v-btn color="primary" outlined @click="importAssaysFromFile">
-                                        Import assay from file
-                                    </v-btn>
-                                </v-toolbar>
-                            </template>
-                            <template v-slot:item.data-table-expand="{ item, isExpanded, expand }">
-                                <v-progress-circular v-if="item.inProgress" indeterminate></v-progress-circular>
-                                <v-btn v-else @click="expand(!isExpanded)" icon>
-                                    <v-icon v-if="isExpanded">mdi-chevron-up</v-icon>
-                                    <v-icon v-else>mdi-chevron-down</v-icon>
-                                </v-btn>
-                            </template>
-                            <template v-slot:header.equateIl="{ header }">
-                                {{ header.text }}
-                                <div>
-                                    <a v-if="areAllEquateIl" @click="areAllEquateIl = false">
-                                        Uncheck all
-                                    </a>
-                                    <a v-else @click="areAllEquateIl = true">
-                                        Check all
-                                    </a>
-                                </div>
-                            </template>
-                            <template v-slot:header.filterDuplicates="{ header }">
-                                {{ header.text }}
-                                <div>
-                                    <a v-if="areAllFilterDuplicate" @click="areAllFilterDuplicate = false">
-                                        Uncheck all
-                                    </a>
-                                    <a v-else @click="areAllFilterDuplicate = true">
-                                        Check all
-                                    </a>
-                                </div>
-                            </template>
-                            <template v-slot:header.missedCleavage="{ header }">
-                                <v-tooltip bottom open-delay="500">
-                                    <template v-slot:activator="{ on }">
-                                        <span v-on="on" class="underlined-info">
-                                            {{ header.text }}
-                                            <v-icon x-small>mdi-information-outline</v-icon>
-                                        </span>
-                                    </template>
-                                    <span>
-                                        Enabling this setting has a serious performance impact and could lead to slower
-                                        analyses.
-                                    </span>
-                                </v-tooltip>
-
-                                <div>
-                                    <a v-if="areAllMissedCleavage" @click="areAllMissedCleavage = false">
-                                        Uncheck all
-                                    </a>
-                                    <a v-else @click="areAllMissedCleavage = true">
-                                        Check all
-                                    </a>
-                                </div>
-                            </template>
-                            <template v-slot:header.analysisSource="{ header }">
-                                {{ header.text }}
-                                <v-edit-dialog large save-text="Update all" @save="setGlobalAnalysisSource">
-                                    <a>Update all</a>
-                                    <template v-slot:input>
-                                        <analysis-source-select
-                                            v-model="globalSourceSelection"
-                                            :items="renderableSources"
-                                            class="my-6">
-                                        </analysis-source-select>
-                                    </template>
-                                </v-edit-dialog>
-                            </template>
-                            <template v-slot:item.name="props">
-                                <v-edit-dialog :return-value.sync="props.item.name">
-                                    <v-text-field
-                                        v-model="props.item.name"
-                                        hide-details
-                                        dense
-                                        readonly
-                                        :error-messages="props.item.nameError">
-                                    </v-text-field>
-                                    <template v-slot:input>
-                                        <v-text-field
-                                            v-model="props.item.name"
-                                            label="Edit name"
-                                            single-line>
-                                        </v-text-field>
-                                    </template>
-                                </v-edit-dialog>
-                            </template>
-                            <template v-slot:item.equateIl="{ item }">
-                                <v-simple-checkbox v-model="item.searchConfiguration.equateIl" color="primary">
-                                </v-simple-checkbox>
-                            </template>
-                            <template v-slot:item.filterDuplicates="{ item }">
-                                <v-simple-checkbox v-model="item.searchConfiguration.filterDuplicates" color="primary">
-                                </v-simple-checkbox>
-                            </template>
-                            <template v-slot:item.missedCleavage="{ item }">
-                                <v-simple-checkbox v-model="item.searchConfiguration.enableMissingCleavageHandling" color="primary">
-                                </v-simple-checkbox>
-                            </template>
-                            <template v-slot:item.actions="{ item }">
-                                <v-btn icon color="primary" @click="deleteAssay(item)">
-                                    <v-icon>mdi-delete</v-icon>
-                                </v-btn>
-                            </template>
-                            <template v-slot:item.analysisSource="{ item }">
+                        <div v-if="assayPlaceholders.length > 0">
+                            <a v-if="areAllMissedCleavage" @click="areAllMissedCleavage = false">
+                                Uncheck all
+                            </a>
+                            <a v-else @click="areAllMissedCleavage = true">
+                                Check all
+                            </a>
+                        </div>
+                    </template>
+                    <template v-slot:header.analysisSource="{ header }">
+                        {{ header.text }}
+                        <v-edit-dialog
+                            v-if="assayPlaceholders.length > 0"
+                            large
+                            save-text="Update all"
+                            @save="setGlobalAnalysisSource">
+                            <a>Update all</a>
+                            <template v-slot:input>
                                 <analysis-source-select
+                                    v-model="globalSourceSelection"
                                     :items="renderableSources"
-                                    v-model="item.analysisSource"
-                                    :error-messages="item.analysisSourceError">
+                                    class="my-6">
                                 </analysis-source-select>
                             </template>
-                            <template v-slot:expanded-item="{ headers, item }">
-                                <td :colspan="headers.length">
-                                    <div class="my-4">
-                                        <v-alert type="info" dense color="blue-grey" text prominent>
-                                            Please provide a list of all peptides that are associated with this assay. This
-                                            input is line-based, so only one peptide should be provided per line. Note that
-                                            the size of an assay directly impacts the time it takes to perform the
-                                            complete analysis.
-                                        </v-alert>
-                                        <v-textarea
-                                            v-model="item.peptides"
-                                            label="Peptides"
-                                            counter>
-                                            <template v-slot:counter>
-                                                <div class="v-counter theme--light">
-                                                    {{ (item.peptides.trim().match(/\n/g) || []).length + (item.peptides.trim() === "" ? 0 : 1) }} peptides
-                                                </div>
-                                            </template>
-                                        </v-textarea>
-                                    </div>
-                                </td>
-                            </template>
-                        </v-data-table>
-                    </v-card-text>
-                </v-card>
+                        </v-edit-dialog>
+                    </template>
+                    <template v-slot:item.name="props">
+                        <v-text-field
+                            v-model="props.item.name"
+                            hide-details
+                            dense
+                            :error-messages="props.item.nameError">
+                        </v-text-field>
+                    </template>
+                    <template v-slot:item.equateIl="{ item }">
+                        <v-simple-checkbox v-model="item.searchConfiguration.equateIl" color="primary">
+                        </v-simple-checkbox>
+                    </template>
+                    <template v-slot:item.filterDuplicates="{ item }">
+                        <v-simple-checkbox v-model="item.searchConfiguration.filterDuplicates" color="primary">
+                        </v-simple-checkbox>
+                    </template>
+                    <template v-slot:item.missedCleavage="{ item }">
+                        <v-simple-checkbox v-model="item.searchConfiguration.enableMissingCleavageHandling" color="primary">
+                        </v-simple-checkbox>
+                    </template>
+                    <template v-slot:item.actions="{ item }">
+                        <v-btn icon color="red" @click="deleteAssay(item)">
+                            <v-icon>mdi-delete</v-icon>
+                        </v-btn>
+                    </template>
+                    <template v-slot:item.analysisSource="{ item }">
+                        <analysis-source-select
+                            :items="renderableSources"
+                            v-model="item.analysisSource"
+                            :error-messages="item.analysisSourceError">
+                        </analysis-source-select>
+                    </template>
+                    <template v-slot:expanded-item="{ headers, item }">
+                        <td :colspan="headers.length">
+                            <div class="my-4">
+                                <v-alert type="info" dense color="blue-grey" text prominent>
+                                    Please provide a list of all peptides that are associated with this assay. This
+                                    input is line-based, so only one peptide should be provided per line. Note that
+                                    the size of an assay directly impacts the time it takes to perform the
+                                    complete analysis.
+                                </v-alert>
+                                <v-textarea
+                                    v-model="item.peptides"
+                                    label="Peptides"
+                                    counter>
+                                    <template v-slot:counter>
+                                        <div class="v-counter theme--light">
+                                            {{ (item.peptides.trim().match(/\n/g) || []).length + (item.peptides.trim() === "" ? 0 : 1) }} peptides
+                                        </div>
+                                    </template>
+                                </v-textarea>
+                            </div>
+                        </td>
+                    </template>
+                    <template v-slot:body.append="{ headers }">
+                        <td :colspan="headers.length">
+                            <div class="d-flex justify-center my-2">
+                                <v-menu>
+                                    <template v-slot:activator="{ on, attrs }">
+                                        <v-btn text color="primary" v-on="on">
+                                            <v-icon>mdi-plus</v-icon>
+                                            Add assay
+                                        </v-btn>
+                                    </template>
+                                    <v-list>
+                                        <v-list-item @click="addAssayEntry">
+                                            <v-list-item-title>Empty assay</v-list-item-title>
+                                        </v-list-item>
+                                        <v-list-item @click="importAssaysFromFile">
+                                            <v-list-item-title>Bulk import from file(s)</v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-menu>
+                            </div>
+                        </td>
+                    </template>
+                </v-data-table>
 
                 <div class="d-flex justify-center mt-4">
                     <v-btn @click="close" class="mr-2">
                         Cancel
                     </v-btn>
                     <v-btn color="primary" @click="addToProject" :disabled="assayPlaceholders.length === 0">
-                        Add to project
+                        Continue
                     </v-btn>
                 </div>
             </v-card-text>
@@ -280,7 +281,7 @@ export default class CreateAssayDialog extends Vue {
             value: "analysisSource",
             width: "25%"
         }, {
-            text: "Actions",
+            text: "Delete",
             align: "center",
             sortable: false,
             value: "actions",
@@ -500,16 +501,18 @@ export default class CreateAssayDialog extends Vue {
     }
 
     private addAssayEntry() {
-        this.assayPlaceholders.push({
+        const assayPlaceholder: ProteomicsAssayPlaceholder = {
             id: this.idCounter++,
-            name: this.generateUniqueAssayName("Unknown"),
+            name: this.generateUniqueAssayName("New assay"),
             nameError: "",
             peptides: "",
             searchConfiguration: new SearchConfiguration(),
             analysisSource: undefined,
             analysisSourceError: "",
             inProgress: false
-        })
+        }
+        this.assayPlaceholders.push(assayPlaceholder);
+        this.expandedItems.push(assayPlaceholder);
     }
 
     private async importAssaysFromFile() {
