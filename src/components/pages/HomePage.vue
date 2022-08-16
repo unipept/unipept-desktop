@@ -16,20 +16,6 @@
 
                         <v-row class="mt-1 mb-6">
                             <v-col md="12" lg="6">
-                                <v-card class="d-flex flex-column" style="height: 100%;">
-                                    <v-card-title>Add project</v-card-title>
-                                    <v-card-text class="d-flex flex-column" style="height: 100%;">
-                                        <div class="flex-grow-1">Select an empty folder and create a new project.</div>
-                                        <div class="text-center mt-2">
-                                            <v-btn color="primary" @click="createProject">
-                                                <v-icon class="mr-2">mdi-folder-plus-outline</v-icon>
-                                                Create project
-                                            </v-btn>
-                                        </div>
-                                    </v-card-text>
-                                </v-card>
-                            </v-col>
-                            <v-col md="12" lg="6">
                                 <v-card>
                                     <v-card-title>New here? Try our demo project!</v-card-title>
                                     <v-card-text>
@@ -38,13 +24,29 @@
                                             demo project and discover what this application can do for you.
                                         </div>
                                         <div class="text-center mt-2">
-                                            <v-btn @click="openDemoProject">
+                                            <v-btn @click="openDemoProject" color="primary">
                                                 Open demo project
                                             </v-btn>
                                         </div>
                                     </v-card-text>
                                 </v-card>
                             </v-col>
+
+                            <v-col md="12" lg="6">
+                                <v-card class="d-flex flex-column" style="height: 100%;">
+                                    <v-card-title>Add project</v-card-title>
+                                    <v-card-text class="d-flex flex-column" style="height: 100%;">
+                                        <div class="flex-grow-1">Select an empty folder and create a new project.</div>
+                                        <div class="text-center mt-2">
+                                            <v-btn @click="createProject">
+                                                <v-icon class="mr-2">mdi-folder-plus-outline</v-icon>
+                                                Create project
+                                            </v-btn>
+                                        </div>
+                                    </v-card-text>
+                                </v-card>
+                            </v-col>
+
                         </v-row>
                     </div>
                     <recent-projects v-on:open-project="openProject" v-on:create-project="createProject"/>

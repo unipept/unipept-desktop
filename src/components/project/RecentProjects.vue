@@ -7,7 +7,7 @@
                 :key="recentProject.path"
                 @click="openPreviouslyLoadedProject(recentProject.path)">
                 <v-list-item-avatar>
-                    <v-icon>mdi-folder-open-outline</v-icon>
+                    <v-icon>mdi-folder-outline</v-icon>
                 </v-list-item-avatar>
                 <v-list-item-content>
                     <v-list-item-title>{{ recentProject.name }}</v-list-item-title>
