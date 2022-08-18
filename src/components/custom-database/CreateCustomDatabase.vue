@@ -67,13 +67,11 @@
                                         </v-select>
                                     </v-col>
                                     <v-col cols="6">
-                                        <v-text-field
-                                            readonly
-                                            dense
-                                            v-model="selectedVersion"
-                                            label="Latest UniProt version">
-
-                                        </v-text-field>
+                                        <div>
+                                            <span class="font-weight-bold">Note:</span> the most recent UniProtKB
+                                            version will be used for the construction of this database. The most recent
+                                            version currently is {{ selectedVersion }}.
+                                        </div>
 <!--                                        <v-select-->
 <!--                                            dense-->
 <!--                                            label="Database version"-->
@@ -163,11 +161,11 @@ export default class CreateCustomDatabase extends Vue {
         "TrEMBL",
         "SwissProt"
     ];
-    private selectedSources: string[] = [];
+    // Select both TrEMBL and SwissProt by default
+    private selectedSources: string[] = [...this.sources];
 
     private databaseName: string = "";
 
-    private mirrors: string[] = ["UK (EBI)", "EU (Expasy)", "US (UniProt)"];
     private selectedMirror: string = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
@@ -182,6 +180,8 @@ export default class CreateCustomDatabase extends Vue {
         this.onValueChanged();
         this.selectedMirror = this.getMostSuitableMirror();
         await this.retrieveUniProtVersions();
+
+        console.log(this.selectedSources);
     }
 
     /**
@@ -192,7 +192,7 @@ export default class CreateCustomDatabase extends Vue {
      * @return true if this database name is not yet taken.
      */
     private isDbNameUnique(name: string): boolean {
-        return ! this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
+        return !this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
     }
 
     private updateSelectedTaxa(value: NcbiTaxon[]): void {
@@ -280,6 +280,7 @@ export default class CreateCustomDatabase extends Vue {
         this.databaseName = "";
         (this.$refs.databaseForm as any).reset();
         this.selectedSources.splice(0, this.selectedSources.length);
+        this.selectedSources.push(...this.sources);
         this.selectedVersion = this.sources[0];
         this.selectedMirror = "EU (Expasy)";
         this.error = false;
