@@ -19,7 +19,7 @@
                                     such zombie processes are active.
                                 </div>
 
-                                <v-divider class="my-2 warning" style="opacity: 0.22"`></v-divider>
+                                <v-divider class="my-2 warning" style="opacity: 0.22"></v-divider>
 
                                 <v-row align="center" no-gutters>
                                     <v-col class="grow">
@@ -269,7 +269,7 @@ export default class CustomDatabasePage extends Vue {
 
     private loading: boolean = true;
 
-    private selectedSourceDefault: string[] = [];
+    private selectedSourceDefault: string[] = ["TrEMBL", "SwissProt"];
     private databaseNameDefault: string = "";
     private selectedVersionDefault: string = "Current";
     private selectedTaxaDefault: NcbiTaxon[] = [];
@@ -409,6 +409,7 @@ export default class CustomDatabasePage extends Vue {
 
     private resetDatabaseDefaults(): void {
         this.selectedSourceDefault.splice(0, this.selectedSourceDefault.length);
+        this.selectedSourceDefault.push("TrEMBL", "SwissProt");
         this.databaseNameDefault = "";
         this.selectedVersionDefault = "Current";
         this.selectedTaxaDefault.splice(0, this.selectedTaxaDefault.length);

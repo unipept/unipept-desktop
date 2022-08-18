@@ -143,7 +143,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 export default class CreateCustomDatabase extends Vue {
     @Prop({ required: true })
     private value: boolean;
-    @Prop({ required: false, default: () => [] as string[] })
+    @Prop({ required: false, default: () => ["TrEMBL", "SwissProt"] as string[] })
     private selectedSourcesDefault: string[];
     @Prop({ required: false, default: "" })
     private databaseNameDefault: string;
@@ -180,8 +180,6 @@ export default class CreateCustomDatabase extends Vue {
         this.onValueChanged();
         this.selectedMirror = this.getMostSuitableMirror();
         await this.retrieveUniProtVersions();
-
-        console.log(this.selectedSources);
     }
 
     /**
