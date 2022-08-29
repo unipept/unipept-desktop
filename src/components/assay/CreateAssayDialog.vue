@@ -557,7 +557,7 @@ export default class CreateAssayDialog extends Vue {
                     nameError: "",
                     peptides: "",
                     searchConfiguration: new SearchConfiguration(),
-                    analysisSource: undefined,
+                    analysisSource: this.renderableSources[0],
                     analysisSourceError: "",
                     inProgress: true
                 };
