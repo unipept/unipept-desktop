@@ -7,6 +7,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
 import Utils from "@/logic/Utils";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
+import PortFinder from "portfinder";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
@@ -206,8 +207,11 @@ export default class DockerCommunicator {
         const dbContainerName: string =
             `${DockerCommunicator.RUN_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
-        // TODO: use PortScanner utility to only use ports that are not already in use here.
-        const mysqlPort: number = 3306;
+        const mysqlPort: number = await PortFinder.getPortPromise({
+            port: 3300,
+            stopPort: 3400
+        });
+        // TODO: user PortFinder also for the web service port.
         const webPort: number = 3000;
 
         await new Promise<void>(async(resolve, reject) => {
