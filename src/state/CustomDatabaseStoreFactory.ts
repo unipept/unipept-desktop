@@ -277,13 +277,13 @@ export default class CustomDatabaseStoreFactory {
         store.commit("CUSTOM_DB_UPDATE_GLOBAL_CONSTRUCTION_STATUS", true);
         customDb.inProgress = true;
 
-        const dockerCommunicator = new DockerCommunicator();
         try {
-            const dbPath = path.join(this.configuration.customDbStorageLocation, "databases", customDb.name, "data");
+            const dbPath = path.join(this.configuration.customDbStorageLocation);
+
+            const dockerCommunicator = new DockerCommunicator(dbPath);
 
             await dockerCommunicator.buildDatabase(
                 customDb,
-                dbPath,
                 path.join(this.configuration.customDbStorageLocation, "index"),
                 path.join(this.configuration.customDbStorageLocation, "temp"),
                 (step, value, progress_step) => {
@@ -335,7 +335,7 @@ export default class CustomDatabaseStoreFactory {
             store.commit("CUSTOM_DB_ADD_DATABASE_OBJECT", db);
         }
 
-        const dockerCommunicator = new DockerCommunicator();
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
 
         setInterval(
             async() => {
@@ -381,6 +381,7 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         const dbObj = store.getters.database(dbName);
 
+        store.commit("CUSTOM_DB_UPDATE_PROGRESS", [dbObj, -1, 0]);
         store.commit("CUSTOM_DB_UPDATE_ERROR", [dbObj, false, "", undefined]);
         store.commit("CUSTOM_DB_RESET_LOG", dbObj);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, false]);
@@ -398,10 +399,8 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         const dbObj = store.getters.database(dbName);
 
-        if (dbObj.inProgress) {
-            const dockerCommunicator = new DockerCommunicator();
-            await dockerCommunicator.stopDatabase();
-        }
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
+        await dockerCommunicator.stopDatabase(dbObj);
 
         store.commit("CUSTOM_DB_UPDATE_CANCELLATION_STATUS", [dbObj, true]);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, true]);

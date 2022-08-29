@@ -205,15 +205,15 @@ app.on("before-quit", async(event) => {
         shutdownStarted = true;
 
         try {
-            const dockerCommunicator = new DockerCommunicator();
-
-            // Stop all the running database builds (if there are some still in progress).
             const configMng = new ConfigurationManager();
             const config = await configMng.readConfiguration();
+
+            const dockerCommunicator = new DockerCommunicator(config.customDbStorageLocation);
+
+            // Stop all the running database builds (if there are some still in progress).
             DockerCommunicator.initializeConnection(JSON.parse(config.dockerConfigurationSettings));
 
-            await dockerCommunicator.stopWebComponent();
-            await dockerCommunicator.stopDatabase();
+            await dockerCommunicator.closeConnection();
         } finally {
             shutdownCompleted = true;
             app.quit();

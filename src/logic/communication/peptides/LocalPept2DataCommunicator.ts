@@ -40,19 +40,19 @@ export default class LocalPept2DataCommunicator extends Pept2DataCommunicator {
         progressListener?: ProgressListener
     ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
         // Start up the web component of the web browser.
-        const dockerCommunicator = new DockerCommunicator();
-        await dockerCommunicator.startDatabase(
-            this.customDatabase.name
-        );
-        await dockerCommunicator.startWebComponent();
+        const dockerCommunicator = new DockerCommunicator(this.customDatabaseLocation);
+
+        // TODO: make use of this public port for connecting with the analysis service via HTTP.
+        const publicPort = await dockerCommunicator.startDatabase(this.customDatabase);
+
         // @ts-ignore
         const result: [ShareableMap<Peptide, PeptideData>, PeptideTrust] = await super.process(
             countTable,
             configuration,
             progressListener
         );
-        await dockerCommunicator.stopWebComponent();
-        await dockerCommunicator.stopDatabase();
+
+        await dockerCommunicator.stopDatabase(this.customDatabase);
 
         return new Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]>((resolve) => resolve(result));
     }

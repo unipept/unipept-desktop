@@ -12,32 +12,6 @@
                                 before building a database.
                             </v-alert>
 
-                            <v-alert type="warning" prominent text v-if="buildInProgressError">
-                                <div>
-                                    Docker is still processing a Unipept database that was started outside of this
-                                    application. The application can only continue with constructing databases if no
-                                    such zombie processes are active.
-                                </div>
-
-                                <v-divider class="my-2 warning" style="opacity: 0.22"></v-divider>
-
-                                <v-row align="center" no-gutters>
-                                    <v-col class="grow">
-                                        Click "force stop" to stop this zombie process immediately and return the
-                                        control to this application.
-                                    </v-col>
-                                    <v-col class="shrink">
-                                        <v-btn
-                                            color="warning"
-                                            outlined
-                                            @click="forceStop()"
-                                            :loading="forceStopInProgress">
-                                            Force stop
-                                        </v-btn>
-                                    </v-col>
-                                </v-row>
-                            </v-alert>
-
                             <v-alert type="warning" prominent text v-if="lowOnMemoryWarning">
                                 <div>
                                     Warning: not enough memory
@@ -257,7 +231,6 @@ export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog: boolean = false;
 
     private dockerConnectionError: boolean = false;
-    private buildInProgressError: boolean = false;
 
     private lowOnMemoryWarning: boolean = false;
     // The amount of memory that's currently allocated to the Docker daemon.
@@ -336,9 +309,6 @@ export default class CustomDatabasePage extends Vue {
 
         this.dockerCheckTimeout = setInterval(async() => {
             this.dockerConnectionError = !(await this.checkDockerConnection());
-            if (!this.dockerConnectionError) {
-                this.buildInProgressError = await this.checkZombieBuildInProgress();
-            }
         }, 1000);
 
         const configurationMng = new ConfigurationManager();
@@ -364,7 +334,7 @@ export default class CustomDatabasePage extends Vue {
     }
 
     private async checkDockerConnection(): Promise<boolean> {
-        const dockerCommunicator = new DockerCommunicator();
+        const dockerCommunicator = new DockerCommunicator(this.databaseFolder);
 
         try {
             const dockerInfo = await dockerCommunicator.getDockerInfo();
@@ -376,18 +346,6 @@ export default class CustomDatabasePage extends Vue {
         } catch (e) {
             return false;
         }
-    }
-
-    /**
-     * Returns true if a zombie database construction process is still running in the Docker daemon.
-     */
-    private async checkZombieBuildInProgress(): Promise<boolean> {
-        if (this.$store.getters["customDatabases/constructionInProgress"]) {
-            return false;
-        }
-
-        const dockerCommunicator = new DockerCommunicator();
-        return await dockerCommunicator.isDatabaseActive();
     }
 
     private async restartBuild(dbName: string): Promise<void> {
@@ -449,13 +407,6 @@ export default class CustomDatabasePage extends Vue {
         }
 
         return newName;
-    }
-
-    private async forceStop(): Promise<void> {
-        this.forceStopInProgress = true;
-        const dockerCommunicator = new DockerCommunicator();
-        await dockerCommunicator.stopDatabase();
-        this.forceStopInProgress = false;
     }
 
     private toHumanReadableNumber(n: number): string {

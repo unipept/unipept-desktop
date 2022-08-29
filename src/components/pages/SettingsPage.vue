@@ -247,9 +247,9 @@ export default class SettingsPage extends Vue {
         Rules.required
     ];
 
-    private mounted() {
+    private async mounted() {
         let configManager: ConfigurationManager = new ConfigurationManager();
-        configManager.readConfiguration().then((result) => this.configuration = result);
+        this.configuration = await configManager.readConfiguration();
 
         this.retrieveDockerInfo();
     }
@@ -313,7 +313,7 @@ export default class SettingsPage extends Vue {
     private async retrieveDockerInfo() {
         this.dockerInfoLoading = true;
 
-        const dockerCommunicator = new DockerCommunicator();
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
 
         try {
             this.dockerInfo = await dockerCommunicator.getDockerInfo();
