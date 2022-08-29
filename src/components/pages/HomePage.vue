@@ -236,7 +236,7 @@ export default class HomePage extends Vue {
                 properties: ["openDirectory"]
             });
 
-            if (!chosenPath) {
+            if (chosenPath) {
                 this.loadProject(chosenPath[0], true);
             }
         }

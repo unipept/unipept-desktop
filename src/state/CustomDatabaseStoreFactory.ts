@@ -400,7 +400,7 @@ export default class CustomDatabaseStoreFactory {
         const dbObj = store.getters.database(dbName);
 
         const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
-        await dockerCommunicator.stopDatabase(dbObj);
+        await dockerCommunicator.stopDatabaseBuild(dbObj);
 
         store.commit("CUSTOM_DB_UPDATE_CANCELLATION_STATUS", [dbObj, true]);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, true]);

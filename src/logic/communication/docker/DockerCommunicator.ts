@@ -174,6 +174,21 @@ export default class DockerCommunicator {
     }
 
     /**
+     * Stop the database construction process for the given database object.
+     *
+     * @param customDb
+     */
+    public async stopDatabaseBuild(customDb: CustomDatabase): Promise<void> {
+        const constructionContainerName =
+            `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+        await this.stopContainer(constructionContainerName);
+
+        if (this.dbBeingConstructed && this.dbBeingConstructed.name === customDb.name) {
+            this.dbBeingConstructed = undefined;
+        }
+    }
+
+    /**
      * Start a Unipept service that can be used to be queried for analysis results. This function returns the port
      * number on which the service is exposed.
      *
@@ -269,7 +284,6 @@ export default class DockerCommunicator {
      * @param customDb The database for which all running containers should be stopped.
      */
     public async stopDatabase(customDb: CustomDatabase): Promise<void> {
-
         const webContainerName = `${DockerCommunicator.WEB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
         const webContainers = (await this.listWebContainers())
             .filter((c) => c.Names[0].includes(webContainerName));
