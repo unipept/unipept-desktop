@@ -1,7 +1,6 @@
 <template>
     <v-select
         :items="items"
-        label="Analysis source"
         v-model="selectedSource"
         item-text="title"
         hide-details
@@ -23,16 +22,31 @@
             </div>
         </template>
         <template v-slot:item="{ item }">
-            <v-icon v-if="item.type === 'online'">
-                mdi-web
-            </v-icon>
-            <v-icon v-if="item.type === 'local'">
-                mdi-database
-            </v-icon>
-            <v-list-item two-line>
+            <v-list-item-action>
+                <v-icon v-if="item.type === 'online'">
+                    mdi-web
+                </v-icon>
+                <v-icon v-if="item.type === 'local'">
+                    mdi-database
+                </v-icon>
+            </v-list-item-action>
+            <v-list-item-content>
+                <v-list-item-title>{{ item.title }}</v-list-item-title>
+                <v-list-item-subtitle>{{ item.subtitle }}</v-list-item-subtitle>
+            </v-list-item-content>
+        </template>
+        <template v-slot:append-item>
+            <v-list-item two-line @click="navigateToDbConstruction">
+                <v-list-item-action>
+                    <v-icon>
+                        mdi-database-plus
+                    </v-icon>
+                </v-list-item-action>
                 <v-list-item-content>
-                    <v-list-item-title>{{ item.title }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ item.subtitle }}</v-list-item-subtitle>
+                    <v-list-item-title>Create custom database</v-list-item-title>
+                    <v-list-item-subtitle>
+                        Click here to navigate to the database creation page.
+                    </v-list-item-subtitle>
                 </v-list-item-content>
             </v-list-item>
         </template>
@@ -78,6 +92,10 @@ export default class AnalysisSourceSelect extends Vue {
     @Watch("selectedSource")
     private onSelectedSourceChanged() {
         this.$emit("input", this.selectedSource);
+    }
+
+    private navigateToDbConstruction() {
+        this.$router.push("/databases");
     }
 }
 </script>

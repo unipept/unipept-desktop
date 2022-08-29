@@ -141,12 +141,17 @@
                     <template v-slot:expanded-item="{ headers, item }">
                         <td :colspan="headers.length">
                             <div class="my-4">
-                                <v-alert type="info" dense color="blue-grey" text prominent>
-                                    Please provide a list of all peptides that are associated with this assay. This
-                                    input is line-based, so only one peptide should be provided per line. Note that
-                                    the size of an assay directly impacts the time it takes to perform the
-                                    complete analysis.
-                                </v-alert>
+                                <div class="d-flex align-center">
+                                    <v-alert type="info" dense color="blue-grey" text prominent class="mb-0 mr-2">
+                                        Please provide a list of all peptides that are associated with this assay. This
+                                        input is line-based, so only one peptide should be provided per line. Note that
+                                        the size of an assay directly impacts the time it takes to perform the
+                                        complete analysis.
+                                    </v-alert>
+                                    <v-btn>
+                                        Import from file
+                                    </v-btn>
+                                </div>
                                 <v-textarea
                                     v-model="item.peptides"
                                     label="Peptides"
