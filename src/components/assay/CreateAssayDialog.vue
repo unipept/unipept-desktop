@@ -141,27 +141,34 @@
                     <template v-slot:expanded-item="{ headers, item }">
                         <td :colspan="headers.length">
                             <div class="my-4">
-                                <div class="d-flex align-center">
-                                    <v-alert type="info" dense color="blue-grey" text prominent class="mb-0 mr-2">
-                                        Please provide a list of all peptides that are associated with this assay. This
-                                        input is line-based, so only one peptide should be provided per line. Note that
-                                        the size of an assay directly impacts the time it takes to perform the
-                                        complete analysis.
-                                    </v-alert>
-                                    <v-btn>
-                                        Import from file
-                                    </v-btn>
-                                </div>
-                                <v-textarea
-                                    v-model="item.peptides"
-                                    label="Peptides"
-                                    counter>
-                                    <template v-slot:counter>
-                                        <div class="v-counter theme--light">
-                                            {{ (item.peptides.trim().match(/\n/g) || []).length + (item.peptides.trim() === "" ? 0 : 1) }} peptides
+                                <v-row>
+                                    <v-col :cols="6">
+                                        <div class="font-weight-bold">
+                                            Add peptides that should be analysed to the textarea below.
                                         </div>
-                                    </template>
-                                </v-textarea>
+                                        <v-textarea
+                                            v-model="item.peptides"
+                                            label="Peptides"
+                                            counter>
+                                            <template v-slot:counter>
+                                                <div class="v-counter theme--light">
+                                                    {{ (item.peptides.trim().match(/\n/g) || []).length + (item.peptides.trim() === "" ? 0 : 1) }} peptides
+                                                </div>
+                                            </template>
+                                        </v-textarea>
+                                    </v-col>
+                                    <v-divider vertical></v-divider>
+                                    <v-col :cols="6">
+                                        <div class="d-flex flex-column align-center">
+                                            <div class="font-weight-bold">
+                                                Or, import peptides from a file...
+                                            </div>
+                                            <v-btn class="mt-2" @click="importPeptidesFromFile(item)">
+                                                Import from file
+                                            </v-btn>
+                                        </div>
+                                    </v-col>
+                                </v-row>
                             </div>
                         </td>
                     </template>
@@ -583,6 +590,18 @@ export default class CreateAssayDialog extends Vue {
             <strong>${ incompatibleFiles.join(", ") }</strong>.
             `
         this.errorActive = incompatibleFiles.length > 0;
+    }
+
+    private async importPeptidesFromFile(item: ProteomicsAssayPlaceholder): Promise<void> {
+        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
+            properties: ["openFile"],
+            defaultPath: this.previousDirectory
+        });
+
+        if (chosenPath && chosenPath["filePaths"].length > 0) {
+            const path = chosenPath["filePaths"][0];
+            item.peptides = await fs.readFile(path, "utf-8");
+        }
     }
 
     /**
