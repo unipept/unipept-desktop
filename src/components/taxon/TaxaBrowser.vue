@@ -9,23 +9,6 @@
                         taxa will be retained in the resulting database.
                     </div>
                 </div>
-                <v-tooltip bottom open-delay="500">
-                    <template v-slot:activator="{ on, attrs }">
-                        <v-btn outlined v-on="on" @click="clearSelection" color="red" class="mr-2">
-                            <v-icon>mdi-close</v-icon>
-                        </v-btn>
-                    </template>
-                    <span>Clear selection</span>
-                </v-tooltip>
-                <v-tooltip bottom open-delay="500">
-                    <template v-slot:activator="{ on, attrs }">
-                        <v-btn color="primary" outlined v-on="on" @click="importTaxaFromFile" :loading="importLoading">
-                            <v-icon>mdi-file-upload-outline</v-icon>
-                        </v-btn>
-                    </template>
-                    <span>Import taxa for filtering from file.</span>
-                </v-tooltip>
-
             </div>
             <div class="my-2">
                 <!-- This error is shown whenever the complete taxa import file could not be read properly -->
@@ -48,7 +31,7 @@
                         Use the search bar below to find taxa that can be used for filtering.
                     </div>
                 </div>
-                <v-chip-group v-else column>
+                <v-chip-group column v-else>
                     <v-chip
                         v-for="taxon in selectedItems"
                         close
@@ -59,6 +42,30 @@
                         {{ taxon.name }}
                     </v-chip>
                 </v-chip-group>
+                <div class="d-flex flex-row justify-center my-2">
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                                color="primary"
+                                outlined
+                                v-on="on"
+                                @click="importTaxaFromFile"
+                                :loading="importLoading"
+                                class="mr-2">
+                                Import taxa from file
+                            </v-btn>
+                        </template>
+                        <span>Import a selection of taxa for filtering from a file.</span>
+                    </v-tooltip>
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn outlined v-on="on" @click="clearSelection" color="red" class="mr-2">
+                                Clear selection
+                            </v-btn>
+                        </template>
+                        <span>Clear selection</span>
+                    </v-tooltip>
+                </div>
                 <div>
                     <span v-if="uniprotRecordsLoading">Computing database size...</span>
                     <span v-else>Resulting database will contain {{ formattedUniprotRecords }} UniProtKB records.</span>

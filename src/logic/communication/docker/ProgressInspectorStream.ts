@@ -49,7 +49,7 @@ export default class ProgressInspectorStream extends stream.Writable {
         // If this text appears in the Docker logs, we know that the server has been started.
         if (
             chunk.toString().includes(
-                "X Plugin ready for connections."
+                "mariadbd: Shutdown complete"
             )
         ) {
             // Wait 2 more seconds for the server to be completely ready and then notify all listeners that the database

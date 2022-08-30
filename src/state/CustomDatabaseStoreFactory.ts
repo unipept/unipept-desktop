@@ -296,7 +296,7 @@ export default class CustomDatabaseStoreFactory {
                 }
             );
 
-            if (customDb.progress.logs.filter(x => x.includes("Shutdown complete")).length > 0) {
+            if (customDb.progress.logs.filter(x => x.includes("mariadbd: Shutdown complete")).length > 0) {
                 customDb.sizeOnDisk = await dockerCommunicator.getDatabaseSize(customDb.name);
                 store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [customDb, true]);
             } else {
@@ -340,8 +340,7 @@ export default class CustomDatabaseStoreFactory {
         setInterval(
             async() => {
                 if (
-                    !store.getters.constructionInProgress &&
-                    !(await dockerCommunicator.isDatabaseActive())
+                    !store.getters.constructionInProgress
                 ) {
                     // If no databases are currently being constructed, and at least one database is
                     // waiting in the queue, we should start the construction process for this database.

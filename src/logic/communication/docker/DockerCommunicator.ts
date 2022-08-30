@@ -26,15 +26,13 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "pverscha/unipept-database:1.0.5";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:sha-0a5a124";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
 
     public static connection: Dockerode;
 
     // The database that's currently being constructed by Docker.
     private dbBeingConstructed: CustomDatabase;
-    // A list of databases that are running and ready to perform analyses.
-    private readonly runningDbs: CustomDatabase[] = [];
 
     public static initializeConnection(config: Dockerode.DockerOptions) {
         DockerCommunicator.connection = new Dockerode(config);
@@ -109,9 +107,9 @@ export default class DockerCommunicator {
         // Check that no other database construction containers are running and stop them if this is the case.
         const runningContainers = await this.listConstructionContainers();
         if (runningContainers.length > 0) {
-            runningContainers.forEach(
-                (container) => DockerCommunicator.connection.getContainer(container.Id).stop()
-            );
+            await Promise.all(runningContainers.map(
+                (container) => this.stopContainer(container.Names[0])
+            ));
         }
 
         // Now, start effectively by constructing the new database
@@ -140,10 +138,10 @@ export default class DockerCommunicator {
                     {
                         name: containerName,
                         Env: [
-                            "MYSQL_ROOT_PASSWORD=unipept",
-                            "MYSQL_DATABASE=unipept",
-                            "MYSQL_USER=unipept",
-                            "MYSQL_PASSWORD=unipept",
+                            "MARIADB_ROOT_PASSWORD=unipept",
+                            "MARIADB_DATABASE=unipept",
+                            "MARIADB_USER=unipept",
+                            "MARIADB_PASSWORD=unipept",
                             `DB_TYPES=${customDb.sourceTypes.join(",")}`,
                             `DB_SOURCES=${customDb.sources.join(",")}`,
                             `FILTER_TAXA=${customDb.taxa.join(",")}`
@@ -163,6 +161,7 @@ export default class DockerCommunicator {
                 // If resolve has not yet been called, we call it here.
                 resolve();
             } catch (err) {
+                this.dbBeingConstructed = undefined;
                 reject(err);
             }
         });
@@ -202,7 +201,8 @@ export default class DockerCommunicator {
         await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
         await this.pullImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
 
-        this.runningDbs.push(customDb);
+        // Stop the execution of previous services for this db
+        await this.stopDatabase(customDb);
 
         const dbContainerName: string =
             `${DockerCommunicator.RUN_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
@@ -216,21 +216,19 @@ export default class DockerCommunicator {
 
         await new Promise<void>(async(resolve, reject) => {
             try {
-                const inspectorStream = new ProgressInspectorStream(
-                    (s: string, p: number) => {},
-                    () => resolve(),
-                    () => {},
-                    () => {}
+                const stringInspector = new StringNotifierInspectorStream(
+                    /InnoDB: Buffer pool\(s\) load completed/,
+                    resolve
                 );
 
                 await DockerCommunicator.connection.run(
                     DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
                     [],
-                    inspectorStream,
+                    stringInspector,
                     {
                         name: dbContainerName,
                         Env: [
-                            "MYSQL_ROOT_PASSWORD=unipept"
+                            "MARIADB_ROOT_PASSWORD=unipept"
                         ],
                         HostConfig: {
                             Binds: [
@@ -255,7 +253,7 @@ export default class DockerCommunicator {
             `${DockerCommunicator.WEB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
         await new Promise<void>(async(resolve, reject) => {
-            const inspectorStream = new StringNotifierInspectorStream("Listening on", resolve);
+            const inspectorStream = new StringNotifierInspectorStream(/Listening on/, resolve);
             try {
                 await DockerCommunicator.connection.run(
                     DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME,
@@ -304,9 +302,6 @@ export default class DockerCommunicator {
         for (const container of dbContainers) {
             await this.stopContainer(container.Names[0]);
         }
-
-        const idx = this.runningDbs.findIndex((db) => db.name === customDb.name);
-        this.runningDbs.splice(idx, 1);
     }
 
     /**
@@ -321,8 +316,8 @@ export default class DockerCommunicator {
         const constructDbs = (await this.listConstructionContainers())
             .filter((c) => c.Names[0].includes(constructionName));
 
-        if (constructDbs.length > 0) {
-            await this.stopContainer(constructDbs[0].Names[0])
+        for (const db of constructDbs) {
+            await this.stopContainer(db.Names[0]);
         }
 
         if (this.dbBeingConstructed && this.dbBeingConstructed.name === customDb.name) {

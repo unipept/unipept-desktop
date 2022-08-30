@@ -99,6 +99,9 @@
     "vuetify-loader": "^1.7.3",
     "worker-loader": "^3.0.2"
   },
+  "overrides": {
+    "electron-builder": "23.0.2"
+  },
   "eslintConfig": {
     "root": true,
     "env": {
