@@ -32,8 +32,7 @@ import { NetworkUtils } from "unipept-web-components";
 import marked from "marked";
 import Utils from "@/logic/Utils";
 
-const electron = require("electron");
-const app = electron.remote.app;
+const { app } = require("@electron/remote");
 
 @Component
 export default class UpdateNotesDialog extends Vue {

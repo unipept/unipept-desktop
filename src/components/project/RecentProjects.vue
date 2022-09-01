@@ -40,7 +40,6 @@ import Vue from "vue";
 import Component from "vue-class-component";
 import RecentProjectsManager from "@/logic/filesystem/project/RecentProjectsManager";
 import RecentProject from "@/logic/filesystem/project/RecentProject";
-const { dialog } = require("electron").remote;
 
 @Component({})
 export default class RecentProjects extends Vue {

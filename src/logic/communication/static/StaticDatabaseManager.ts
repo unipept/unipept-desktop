@@ -8,7 +8,7 @@ import { Readable } from "stream";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import sqlite3 from "better-sqlite3";
 
-const { app } = require("electron").remote;
+const { app } = require('@electron/remote');
 
 /**
  * This class manages the database containing static information about taxons and functional annotations. This class can

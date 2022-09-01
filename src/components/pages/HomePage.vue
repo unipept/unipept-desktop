@@ -113,9 +113,7 @@ import UpdateNotesDialog from "@/components/dialogs/UpdateNotesDialog.vue";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import Utils from "@/logic/Utils";
 
-const electron = require("electron");
-const { dialog } = electron.remote;
-const app = electron.remote.app;
+const { app, dialog } = require("@electron/remote");
 
 @Component({
     components: {

@@ -14,8 +14,7 @@ import Utils from "@/logic/Utils";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
 import { Store } from "vuex";
 
-const electron = require("electron");
-const app = electron.remote.app;
+const { app } = require('@electron/remote');
 
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";

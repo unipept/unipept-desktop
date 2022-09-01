@@ -12,19 +12,35 @@ module.exports = {
         ]);
         config.output.globalObject("this");
     },
+    configureWebpack:{
+        target: "electron-renderer",
+        plugins: [
+            new webpack.optimize.LimitChunkCountPlugin({
+                maxChunks: 1
+            })
+        ]
+    },
     pluginOptions: {
         electronBuilder: {
             nodeIntegration: true,
-            externals: ["better-sqlite3"],
             builderOptions: {
                 "appId": "be.ugent.unipept.desktop",
-                "artifactName": "Unipept-Desktop.${ext}",
+                "artifactName": "Unipept-Desktop-${arch}.${ext}",
                 "asar": true,
                 "mac": {
                     "hardenedRuntime": true,
                     "gatekeeperAssess": false,
                     "entitlements": "build/entitlements.mac.plist",
-                    "entitlementsInherit": "build/entitlements.mac.plist"
+                    "entitlementsInherit": "build/entitlements.mac.plist",
+                    "target": [
+                        {
+                            "target": "default",
+                            "arch": [
+                                "x64",
+                                "arm64"
+                            ]
+                        }
+                    ]
                 },
                 "afterSign": "scripts/notarize.js",
                 "dmg": {
@@ -34,13 +50,6 @@ module.exports = {
                     "target": "AppImage"
                 }
             },
-        }
-    },
-    configureWebpack:{
-        plugins: [
-            new webpack.optimize.LimitChunkCountPlugin({
-                maxChunks: 1
-            })
-        ]
+        },
     }
 }

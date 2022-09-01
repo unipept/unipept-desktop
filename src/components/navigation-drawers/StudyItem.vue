@@ -128,12 +128,8 @@ import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.
 import StudyManager from "@/logic/filesystem/study/StudyManager";
 
 
-const { remote } = require("electron");
-const { Menu, MenuItem } = remote;
+const { Menu, MenuItem } = require("@electron/remote");
 const fs = require("fs").promises;
-
-const electron = require("electron");
-const { dialog } = electron.remote;
 
 @Component({
     components: {

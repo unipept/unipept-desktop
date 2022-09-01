@@ -345,8 +345,7 @@ export default class SettingsPage extends Vue {
     }
 
     private async openDbStorageFileDialog(): Promise<void> {
-        const electron = require("electron");
-        const { dialog } = electron.remote;
+        const { dialog } = require("@electron/remote");
 
         const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
             properties: ["openDirectory", "createDirectory"]

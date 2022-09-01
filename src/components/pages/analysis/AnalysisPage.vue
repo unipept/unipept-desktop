@@ -193,7 +193,7 @@ import CreateAssayDialog from "@/components/assay/CreateAssayDialog.vue";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 import { Watch } from "vue-property-decorator";
 
-const { app } = require("electron").remote;
+const { app } = require("@electron/remote");
 
 @Component({
     components: {

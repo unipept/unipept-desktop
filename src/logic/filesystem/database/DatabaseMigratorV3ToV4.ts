@@ -153,7 +153,7 @@ class PeptideDataV0 {
         // GO is stored as an integer (4 bytes) and it's count (4 bytes for count)
         // IPR is stored as an integer (4 bytes) and it's count (4 bytes)
         // EC is stored as 4 integers (4 bytes) and it's count (4 bytes)
-        let faDataLength = 12 + gos.length * 8 + iprs.length * 8 + ecs.length * 20;
+        const faDataLength = 12 + gos.length * 8 + iprs.length * 8 + ecs.length * 20;
         const bufferLength = PeptideDataV0.FA_DATA_START + faDataLength;
 
         const dataBuffer = new ArrayBuffer(bufferLength);

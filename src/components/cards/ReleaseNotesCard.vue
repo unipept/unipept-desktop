@@ -28,8 +28,7 @@ import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator"
 import { NetworkUtils } from "unipept-web-components";
 import marked from "marked";
 
-const electron = require("electron");
-const app = electron.remote.app;
+const { app } = require("@electron/remote");
 
 @Component
 export default class ReleaseNotesCard extends Vue {

@@ -175,8 +175,7 @@ import { DataOptions } from "vuetify";
 import { promises as fs } from "fs";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
-const electron = require("electron");
-const { dialog } = electron.remote;
+const { dialog } = require("@electron/remote");
 
 @Component
 export default class TaxaBrowser extends Vue {

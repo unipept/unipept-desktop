@@ -201,7 +201,7 @@ export default class CachedResultsManager {
      * @param pept2Data
      * @private
      */
-    private async writeShareableMap(assay: ProteomicsAssay, pept2Data: ShareableMap<String, PeptideData>) {
+    private async writeShareableMap(assay: ProteomicsAssay, pept2Data: ShareableMap<string, PeptideData>) {
         // Write both buffers to a binary file.
         const buffers: ArrayBuffer[] = pept2Data.getBuffers();
 

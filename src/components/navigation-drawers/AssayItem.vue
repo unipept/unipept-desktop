@@ -169,8 +169,7 @@ import {
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
 
-const { remote } = require("electron");
-const { Menu, MenuItem } = remote;
+const { Menu, MenuItem } = require("@electron/remote");
 
 @Component({
     components: {

@@ -1,30 +1,26 @@
 module.exports = {
-    root: true,
-    env: {
-        "node": true,
-        "browser": true,
-    },
-    "extends": [
-        "plugin:vue/essential",
-        "eslint:recommended",
-        "@vue/typescript",
-    ],
-    rules: {
-        "no-console": process.env.NODE_ENV === "production" ? "error" : "off",
-        "no-debugger": process.env.NODE_ENV === "production" ? "error" : "off",
-        "indent": ["error", 4],
-        "max-len": ["warn", { "code": 120 }],
-        "object-curly-spacing": ["error", "always"],
-        "quotes": ["error", "double"],
-        "space-before-function-paren": ["error", "never"],
-        "no-inner-declarations": "off",
-        "brace-style": ["error", "1tbs"],
-        "keyword-spacing": "error",
-        "no-async-promise-executor": "off",
-        "require-atomic-updates": "off",
-    },
-    parserOptions: {
-        "parser": "@typescript-eslint/parser",
-        "ecmaVersion": 6,
-    },
-};
+  root: true,
+  env: {
+    node: true
+  },
+  'extends': [
+    'plugin:vue/essential',
+    'eslint:recommended',
+    '@vue/typescript/recommended'
+  ],
+  parserOptions: {
+    ecmaVersion: 2020
+  },
+  rules: {
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    '@typescript-eslint/no-var-requires': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    'no-async-promise-executor': 'off',
+    '@typescript-eslint/no-inferrable-types': 'warn',
+    '@typescript-eslint/no-empty-function': 'off',
+    'vue/no-unused-vars': 'off',
+    'vue/valid-v-slot': 'off',
+    'no-undef': 'off'
+  }
+}

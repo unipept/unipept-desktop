@@ -55,8 +55,8 @@ export default class ConfigurationManager {
         }
 
         try {
-            let rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
-            let data = JSON.parse(rawConfig);
+            const rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
+            const data = JSON.parse(rawConfig);
             if (!this.isValidConfiguration(data)) {
                 ConfigurationManager.currentConfiguration = await this.getDefaultConfiguration();
                 return ConfigurationManager.currentConfiguration;
@@ -97,7 +97,7 @@ export default class ConfigurationManager {
         }
 
         try {
-            fs.writeFileSync(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "UTF-8" });
+            fs.writeFileSync(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "utf-8" });
             ConfigurationManager.currentConfiguration = config;
         } catch (err) {
             throw "IOException";
@@ -112,7 +112,7 @@ export default class ConfigurationManager {
      * @return True if the given Configuration is valid.
      */
     private isValidConfiguration(config: Configuration): boolean {
-        for (let test of this.configurationRequirements) {
+        for (const test of this.configurationRequirements) {
             if (!test(config)) {
                 return false;
             }
@@ -139,7 +139,7 @@ export default class ConfigurationManager {
 
     private getConfigurationFilePath(): string {
         if (!this.app) {
-            const { app } = require("electron").remote;
+            const { app } = require('@electron/remote');
             this.app = app;
         }
 

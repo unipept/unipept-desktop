@@ -233,8 +233,7 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 
 
-const electron = require("electron");
-const { dialog } = electron.remote;
+const { dialog } = require("@electron/remote");
 
 type ProteomicsAssayPlaceholder = {
     id: number,

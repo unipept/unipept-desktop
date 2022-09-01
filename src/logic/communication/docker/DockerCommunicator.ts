@@ -121,7 +121,7 @@ export default class DockerCommunicator {
         const indexVolumeName = await this.createIndexVolume(indexLocation);
         const tempVolumeName = await this.createTempVolume(tempLocation);
 
-        const containerName: string =
+        const containerName =
             `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
         await new Promise<void>(async(resolve, reject) => {
@@ -204,7 +204,7 @@ export default class DockerCommunicator {
         // Stop the execution of previous services for this db
         await this.stopDatabase(customDb);
 
-        const dbContainerName: string =
+        const dbContainerName =
             `${DockerCommunicator.RUN_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
         const mysqlPort: number = await PortFinder.getPortPromise({
@@ -212,7 +212,7 @@ export default class DockerCommunicator {
             stopPort: 3400
         });
         // TODO: user PortFinder also for the web service port.
-        const webPort: number = 3000;
+        const webPort = 3000;
 
         await new Promise<void>(async(resolve, reject) => {
             try {
@@ -249,7 +249,7 @@ export default class DockerCommunicator {
             }
         });
 
-        const webContainerName: string =
+        const webContainerName =
             `${DockerCommunicator.WEB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
         await new Promise<void>(async(resolve, reject) => {
