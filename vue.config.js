@@ -7,18 +7,18 @@ module.exports = {
             {
                 // Fix for node native addon inclusion failures
                 "fsevents": "require('fsevents')",
-                "better-sqlite3": "require('better-sqlite3')"
-            }
+                "better-sqlite3": "require('better-sqlite3')",
+            },
         ]);
         config.output.globalObject("this");
     },
-    configureWebpack:{
+    configureWebpack: {
         target: "electron-renderer",
         plugins: [
             new webpack.optimize.LimitChunkCountPlugin({
-                maxChunks: 1
-            })
-        ]
+                maxChunks: 1,
+            }),
+        ],
     },
     pluginOptions: {
         electronBuilder: {
@@ -37,19 +37,19 @@ module.exports = {
                             "target": "default",
                             "arch": [
                                 "x64",
-                                "arm64"
-                            ]
-                        }
-                    ]
+                                "arm64",
+                            ],
+                        },
+                    ],
                 },
                 "afterSign": "scripts/notarize.js",
                 "dmg": {
-                    "sign": false
+                    "sign": false,
                 },
                 "linux": {
-                    "target": "AppImage"
-                }
+                    "target": "AppImage",
+                },
             },
         },
-    }
-}
+    },
+};

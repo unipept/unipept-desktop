@@ -14,6 +14,7 @@ module.exports = {
     rules: {
         "quotes": ["error", "double"],
         "indent": ["error", 4],
+        "max-len": ["warn", { "code": 120 }],
         "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
         "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
         "no-async-promise-executor": "off",
