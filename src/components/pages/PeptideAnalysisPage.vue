@@ -104,17 +104,10 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import {
-    CommunicationSource,
-    DefaultCommunicationSource, NetworkConfiguration, Pept2DataCommunicator, Peptide,
+    Peptide,
     SinglePeptideAnalysisCard,
     SinglePeptideSummary
 } from "unipept-web-components";
-import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
-import ConfigureableCommunicationSource from "@/logic/communication/source/ConfigureableCommunicationSource";
-import CachedGoResponseCommunicator from "@/logic/communication/functional/CachedGoResponseCommunicator";
-import CachedEcResponseCommunicator from "@/logic/communication/functional/CachedEcResponseCommunicator";
-import CachedInterproResponseCommunicator from "@/logic/communication/functional/CachedInterproResponseCommunicator";
-import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 
 @Component({
     components: { SinglePeptideAnalysisCard, SinglePeptideSummary }

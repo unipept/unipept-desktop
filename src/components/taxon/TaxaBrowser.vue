@@ -160,7 +160,6 @@
 import Vue from "vue";
 import Component from "vue-class-component";
 import {
-    DefaultCommunicationSource,
     NcbiId,
     NcbiOntologyProcessor,
     NcbiRank,
@@ -168,7 +167,6 @@ import {
     Ontology,
     StringUtils
 } from "unipept-web-components";
-import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import { Prop, Watch } from "vue-property-decorator";
 import { DataOptions } from "vuetify";
