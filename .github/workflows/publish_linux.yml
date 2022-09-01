@@ -15,9 +15,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16
+      - name: Install Yarn
+        run: npm install --global yarn
       - name: Install dependencies
-        run: npm install
+        run: yarn install
       - name: Build application for ${{ matrix.os }}
-        run: npm run electron:publish
+        run: yarn run electron:publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
