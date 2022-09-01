@@ -8,7 +8,7 @@ import { Readable } from "stream";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import sqlite3 from "better-sqlite3";
 
-const { app } = require('@electron/remote');
+const { app } = require("@electron/remote");
 
 /**
  * This class manages the database containing static information about taxons and functional annotations. This class can
@@ -143,7 +143,7 @@ export default class StaticDatabaseManager {
     public async getMostRecentVersion(): Promise<Date> {
         const data = await new Promise<string>((resolve, reject) => {
             https.get(StaticDatabaseManager.STATIC_DB_VERSION_POINTER, (resp: any) => {
-                let contents: string = "";
+                let contents = "";
                 resp.on("data", (chunk: any) => {
                     contents += chunk;
                 });

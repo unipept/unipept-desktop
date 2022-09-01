@@ -258,17 +258,17 @@ export default class CreateAssayDialog extends Vue {
     @Prop({ required: true })
     private study: Study;
 
-    private dialogActive: boolean = false;
+    private dialogActive = false;
 
-    private idCounter: number = 0;
+    private idCounter = 0;
 
     private renderableSources: RenderableAnalysisSource[] = [];
     private globalSourceSelection: RenderableAnalysisSource = null;
 
-    private removeAssayConfirmationActive: boolean = false;
+    private removeAssayConfirmationActive = false;
 
-    private errorActive: boolean = false;
-    private errorMessage: string = "";
+    private errorActive = false;
+    private errorMessage = "";
 
     // The previous directory that was used to load an assay from.
     // (Is required to open the file dialog in the same directory on Linux)
@@ -481,7 +481,7 @@ export default class CreateAssayDialog extends Vue {
      * @return true if the validation succeeds, false if a conflict is discovered.
      */
     private validate(): boolean {
-        let valid: boolean = true;
+        let valid = true;
         for (const placeholder of this.assayPlaceholders) {
             // First reset the current validation status.
             placeholder.analysisSourceError = "";

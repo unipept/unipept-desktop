@@ -14,7 +14,7 @@ import Utils from "@/logic/Utils";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
 import { Store } from "vuex";
 
-const { app } = require('@electron/remote');
+const { app } = require("@electron/remote");
 
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";
@@ -33,7 +33,7 @@ export default class ProjectManager  {
      */
     public async loadExistingProject(
         projectLocation: string,
-        addToRecents: boolean = true,
+        addToRecents = true,
         store: Store<any>
     ): Promise<void> {
         if (!projectLocation.endsWith("/")) {
@@ -77,7 +77,7 @@ export default class ProjectManager  {
      * @param projectLocation Path to root directory of project.
      * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
      */
-    public async initializeProject(projectLocation: string, addToRecents: boolean = true): Promise<void> {
+    public async initializeProject(projectLocation: string, addToRecents = true): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }

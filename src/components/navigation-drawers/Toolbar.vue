@@ -145,7 +145,7 @@ import { Tooltip } from "unipept-web-components";
     }
 })
 export default class Toolbar extends Vue {
-    private originalToolbarWidth: number = 210;
+    private originalToolbarWidth = 210;
     private toolbarWidth: number = this.originalToolbarWidth;
 
     private navigate(routeToGo: string, activateSidebar: boolean) {

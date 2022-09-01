@@ -219,11 +219,11 @@ export default class SettingsPage extends Vue {
 
     private configuration: Configuration = null;
 
-    private errorVisible: boolean = false;
-    private errorMessage: string = "";
+    private errorVisible = false;
+    private errorMessage = "";
 
     private dockerInfo: any = null;
-    private dockerInfoLoading: boolean = true;
+    private dockerInfoLoading = true;
 
     private maxTasksRules: ((x: string) => boolean | string)[] = [
         Rules.required,

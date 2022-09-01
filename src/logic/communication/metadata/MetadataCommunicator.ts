@@ -1,8 +1,8 @@
 import { NcbiId, NetworkConfiguration, NetworkUtils } from "unipept-web-components";
 
 export default class MetadataCommunicator {
-    private static METADATA_ENDPOINT: string = "/private_api/metadata";
-    private static UNIPROT_API_URL: string = "https://rest.uniprot.org/uniprotkb/search";
+    private static METADATA_ENDPOINT = "/private_api/metadata";
+    private static UNIPROT_API_URL = "https://rest.uniprot.org/uniprotkb/search";
 
     /**
      * Looks up what the most recent UniProt-version is that is available at the endpoint for the given URL.
@@ -42,7 +42,7 @@ export default class MetadataCommunicator {
             `${MetadataCommunicator.UNIPROT_API_URL}?facets=reviewed&query=${idQuery}&size=0`
         );
 
-        let totalCount: number = 0;
+        let totalCount = 0;
 
         if (swissprotSelected) {
             totalCount += result["facets"][0]["values"]

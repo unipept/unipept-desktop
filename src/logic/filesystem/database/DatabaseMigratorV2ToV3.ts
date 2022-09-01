@@ -85,7 +85,7 @@ export default class DatabaseMigratorV2ToV3 implements DatabaseMigrator {
             `).run(row.assayId, row.missedPeptides, row.matchedPeptides, row.searchedPeptides);
 
             // Data should be recomputed for this upgrade, which is why the fingerprint is set to an empty string here.
-            const fingerPrint: string = "";
+            const fingerPrint = "";
             const dataHash: string = await this.computeDataHash(row.assayId);
 
             database.prepare(`

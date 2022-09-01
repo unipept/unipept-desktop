@@ -32,9 +32,9 @@ const { app } = require("@electron/remote");
 
 @Component
 export default class ReleaseNotesCard extends Vue {
-    private loading: boolean = false;
-    private appVersion: string = "";
-    private releaseContent: string = "";
+    private loading = false;
+    private appVersion = "";
+    private releaseContent = "";
 
     private mounted() {
         this.appVersion = app.getVersion();

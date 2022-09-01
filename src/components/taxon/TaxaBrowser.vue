@@ -245,19 +245,19 @@ export default class TaxaBrowser extends Vue {
         "deep-orange darken-4"
     ];
 
-    private search: string = "";
+    private search = "";
 
-    private taxaCount: number = 0;
+    private taxaCount = 0;
     private taxa: NcbiTaxon[] = [];
 
-    private loading: boolean = true;
+    private loading = true;
 
-    private filterLoading: boolean = false;
+    private filterLoading = false;
 
-    private importLoading: boolean = false;
+    private importLoading = false;
 
-    private parseError: boolean = false;
-    private importWarning: boolean = false;
+    private parseError = false;
+    private importWarning = false;
     // List of taxon identifiers that could not be imported properly
     private failedImports: string[] = []
 
@@ -269,10 +269,10 @@ export default class TaxaBrowser extends Vue {
 
     private selectedItems: NcbiTaxon[] = [];
 
-    private showSearchHintActive: boolean = false;
+    private showSearchHintActive = false;
 
-    private uniprotRecords: number = 0;
-    private uniprotRecordsLoading: boolean = false;
+    private uniprotRecords = 0;
+    private uniprotRecordsLoading = false;
 
     private get formattedUniprotRecords(): string {
         return StringUtils.toHumanReadableNumber(this.uniprotRecords);

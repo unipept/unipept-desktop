@@ -5,7 +5,7 @@ import DatabaseMigratorV0ToV1 from "@/logic/filesystem/database/DatabaseMigrator
 import Schema from "@/logic/filesystem/database/Schema";
 import DatabaseMigratorV1ToV2 from "@/logic/filesystem/database/DatabaseMigratorV1ToV2";
 
-const { app } = require('@electron/remote');
+const { app } = require("@electron/remote");
 
 import path from "path";
 import DatabaseMigratorV2ToV3 from "@/logic/filesystem/database/DatabaseMigratorV2ToV3";

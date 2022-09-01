@@ -64,14 +64,14 @@ export default class DiskUsageBar extends Vue {
      */
     private folder: string;
 
-    private totalDiskSpace: number = 0;
-    private totalFreeSpace: number = 0;
-    private totalFreeSpacePercentage: number = 0;
-    private spaceUsedByFolder: number = 0;
-    private spaceUsedByFolderPercentage: number = 0;
+    private totalDiskSpace = 0;
+    private totalFreeSpace = 0;
+    private totalFreeSpacePercentage = 0;
+    private spaceUsedByFolder = 0;
+    private spaceUsedByFolderPercentage = 0;
 
-    private loading: boolean = true;
-    private error: boolean = false;
+    private loading = true;
+    private error = false;
 
     private interval: NodeJS.Timeout;
 

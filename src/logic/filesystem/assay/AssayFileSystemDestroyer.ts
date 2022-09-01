@@ -25,7 +25,7 @@ export default class AssayFileSystemDestroyer extends FileSystemAssayVisitor {
      * @throws {IOException}
      */
     public async visitProteomicsAssay(assay: ProteomicsAssay): Promise<void> {
-        const assayPath: string = `${this.directoryPath}${assay.getName()}.pep`;
+        const assayPath = `${this.directoryPath}${assay.getName()}.pep`;
 
         try {
             await fs.unlink(assayPath);

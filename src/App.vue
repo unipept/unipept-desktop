@@ -108,23 +108,23 @@ const ipcRenderer = electron.ipcRenderer;
     }
 })
 export default class App extends Vue implements ErrorListener {
-    private navDrawer: boolean = false;
-    private loading: boolean = true;
+    private navDrawer = false;
+    private loading = true;
 
-    private updatingSnackbar: boolean = false;
-    private updatingProgress: number = 0;
+    private updatingSnackbar = false;
+    private updatingProgress = 0;
 
-    private updatedSnackbar: boolean = false;
-    private updateMessage: string = "";
-    private updatedColor: string = "info";
+    private updatedSnackbar = false;
+    private updateMessage = "";
+    private updatedColor = "info";
 
-    private toolbarWidth: number = 210;
+    private toolbarWidth = 210;
 
     // Has this component been initialized before?
-    private static previouslyInitialized: boolean = false;
+    private static previouslyInitialized = false;
 
-    private showHomePageDialog: boolean = true;
-    private errorDialog: boolean = false;
+    private showHomePageDialog = true;
+    private errorDialog = false;
 
     async mounted() {
         // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation

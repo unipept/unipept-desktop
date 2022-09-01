@@ -194,17 +194,17 @@ export default class AssayItem extends Vue {
     private value: boolean;
 
     private peptideTrust: PeptideTrust = null;
-    private experimentSummaryActive: boolean = false;
-    private removeConfirmationActive: boolean = false;
-    private isEditingAssayName: boolean = false;
-    private isValidAssayName: boolean = true;
+    private experimentSummaryActive = false;
+    private removeConfirmationActive = false;
+    private isEditingAssayName = false;
+    private isValidAssayName = true;
 
     // Is this assay currently selected for a comparative analysis?
-    private selected: boolean = false;
+    private selected = false;
 
-    private assayName: string = "";
+    private assayName = "";
 
-    private nameError: string = "";
+    private nameError = "";
 
     mounted() {
         this.onAssayChanged();

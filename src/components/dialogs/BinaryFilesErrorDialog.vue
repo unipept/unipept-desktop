@@ -29,7 +29,7 @@ export default class BinaryFilesErrorDialog extends Vue {
     @Prop({ required: true })
     private binaryFiles: string[];
 
-    private dialogActive: boolean = false;
+    private dialogActive = false;
 
     mounted() {
         this.onValueChanged();

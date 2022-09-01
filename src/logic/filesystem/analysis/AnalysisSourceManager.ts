@@ -57,7 +57,7 @@ export default class AnalysisSourceManager {
 
             if (!possibleDb) {
                 // We need to create a new database and prepare it for construction by pushing it to the store.
-                const newDbName: string = `${assay.getName()}_supporting_db`;
+                const newDbName = `${assay.getName()}_supporting_db`;
                 await this.store.dispatch(
                     "customDatabases/buildDatabase",
                     [

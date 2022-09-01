@@ -124,26 +124,26 @@ const { app, dialog } = require("@electron/remote");
     }
 })
 export default class HomePage extends Vue {
-    private errorMessage: string = "";
-    private errorSnackbarVisible: boolean = false;
-    private version: string = "";
-    private loadingApplication: boolean = false;
-    private loadingProject: boolean = false;
+    private errorMessage = "";
+    private errorSnackbarVisible = false;
+    private version = "";
+    private loadingApplication = false;
+    private loadingProject = false;
     // Is the update notes dialog visible? (shows the changes between this version and the most recent one)
-    private updateNotesActive: boolean = false;
+    private updateNotesActive = false;
     // Is there an update for the application available?
-    private updateAvailable: boolean = false;
+    private updateAvailable = false;
 
     // Whether we're currently downloading the static information database (user interaction should be blocked during
     // this event).
-    private downloadingDatabase: boolean = false;
-    private downloadDatabaseProgress: number = 0;
+    private downloadingDatabase = false;
+    private downloadDatabaseProgress = 0;
 
-    private static downloadCheckPerformed: boolean = false;
+    private static downloadCheckPerformed = false;
 
     async mounted() {
         this.loadingApplication = true;
-        let shouldUpdate: boolean = false;
+        let shouldUpdate = false;
 
         this.version = app.getVersion();
 
@@ -240,7 +240,7 @@ export default class HomePage extends Vue {
         }
     }
 
-    private async initializeProject(path: string, addToRecents: boolean = true) {
+    private async initializeProject(path: string, addToRecents = true) {
         try {
             const projectManager: ProjectManager = new ProjectManager();
             await projectManager.initializeProject(path, addToRecents);
@@ -254,7 +254,7 @@ export default class HomePage extends Vue {
         }
     }
 
-    private async loadProject(path: string, addToRecents: boolean = true) {
+    private async loadProject(path: string, addToRecents = true) {
         this.loadingProject = true;
         try {
             if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {

@@ -121,7 +121,7 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 })
 export default class PeptideAnalysisPage extends Vue {
     private peptideModel: Peptide = "";
-    private equateIlModel: boolean = false;
+    private equateIlModel = false;
 
     get peptide(): Peptide {
         return this.$store.getters.peptideStatus.peptide;

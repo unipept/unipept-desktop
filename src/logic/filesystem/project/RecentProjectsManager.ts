@@ -77,7 +77,7 @@ export default class RecentProjectsManager {
     }
 
     private getRecentsFilePath(): string {
-        const { app } = require('@electron/remote');
+        const { app } = require("@electron/remote");
         // Get a reference to the user data folder in which configuration data will be stored.
         const configurationFolder = app.getPath("userData");
         return configurationFolder + "/" + RecentProjectsManager.RECENT_PROJECTS_FILE;

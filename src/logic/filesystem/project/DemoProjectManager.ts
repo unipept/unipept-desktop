@@ -2,7 +2,7 @@ import mkdirp from "mkdirp";
 import { promises as fs } from "fs";
 import path from "path";
 
-const { app } = require('@electron/remote');
+const { app } = require("@electron/remote");
 
 import clover1a from "raw-loader!@/demo_project/clover/clover_1a.pep";
 import clover1b from "raw-loader!@/demo_project/clover/clover_1b.pep";

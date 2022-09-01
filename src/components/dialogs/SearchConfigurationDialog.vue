@@ -140,7 +140,7 @@ export default class SearchConfigurationDialog extends Vue {
     } })
     private callback: (cancelled: boolean) => Promise<void>;
 
-    private dialogActive: boolean = false;
+    private dialogActive = false;
 
     private tableItems: SearchConfigTableItem[] = [];
     private tableHeaders = [

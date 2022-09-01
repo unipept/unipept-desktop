@@ -163,24 +163,24 @@ export default class StudyItem extends Vue {
     @Prop({ required: false, default: false })
     private selectable: boolean;
 
-    private collapsed: boolean = false;
-    private studyName: string = "";
-    private showCreateAssayDialog: boolean = false;
+    private collapsed = false;
+    private studyName = "";
+    private showCreateAssayDialog = false;
 
-    private showBinaryFilesError: boolean = false;
+    private showBinaryFilesError = false;
     private binaryFilesList: string[] = [];
 
-    private removeConfirmationActive: boolean = false;
-    private showSearchConfigDialog: boolean = false;
+    private removeConfirmationActive = false;
+    private showSearchConfigDialog = false;
     private searchConfigCallback: (cancelled: boolean) => Promise<void> = async(cancelled: boolean) => {
         return;
     };
     private searchConfigAssays: ProteomicsAssay[] = [];
 
-    private isEditingStudyName: boolean = false;
-    private isValidStudyName: boolean = true;
+    private isEditingStudyName = false;
+    private isValidStudyName = true;
 
-    private nameError: string = "";
+    private nameError = "";
     // Keep track of the names of the assays that we are currently processing.
     private assaysInProgress: string[] = [];
 

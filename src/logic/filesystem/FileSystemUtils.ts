@@ -30,7 +30,7 @@ export default class FileSystemUtils {
     public static async getSize(location: string): Promise<number> {
         try {
             const stats = await fs.lstat(location);
-            let totalSize: number = 0;
+            let totalSize = 0;
             if (stats.isDirectory()) {
                 for (const subPath of await fs.readdir(location)) {
                     totalSize += await this.getSize(path.join(location, subPath));

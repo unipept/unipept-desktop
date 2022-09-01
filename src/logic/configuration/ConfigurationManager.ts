@@ -139,7 +139,7 @@ export default class ConfigurationManager {
 
     private getConfigurationFilePath(): string {
         if (!this.app) {
-            const { app } = require('@electron/remote');
+            const { app } = require("@electron/remote");
             this.app = app;
         }
 

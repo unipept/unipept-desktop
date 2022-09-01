@@ -152,10 +152,10 @@ export default class CreateCustomDatabase extends Vue {
     @Prop({ required: false, default: () => [] as NcbiTaxon[] })
     private selectedTaxaDefault: NcbiTaxon[];
 
-    private dialogActive: boolean = false;
+    private dialogActive = false;
 
-    private loading: boolean = true;
-    private error: boolean = false;
+    private loading = true;
+    private error = false;
 
     private sources: string[] = [
         "TrEMBL",
@@ -164,17 +164,17 @@ export default class CreateCustomDatabase extends Vue {
     // Select both TrEMBL and SwissProt by default
     private selectedSources: string[] = [...this.sources];
 
-    private databaseName: string = "";
+    private databaseName = "";
 
-    private selectedMirror: string = "EU (Expasy)";
+    private selectedMirror = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
     // private versions: string[] = [];
-    private selectedVersion: string = "";
+    private selectedVersion = "";
 
     private selectedTaxa: NcbiTaxon[] = [];
 
-    private currentStep: number = 1;
+    private currentStep = 1;
 
     private async mounted() {
         this.onValueChanged();

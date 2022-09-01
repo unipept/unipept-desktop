@@ -37,7 +37,7 @@ export default class ErrorDetailViewer extends Vue {
     @Prop({ required: true })
     private message: string;
 
-    private copyDone: boolean = false;
+    private copyDone = false;
 
     private async copyContent(): Promise<void> {
         await navigator.clipboard.writeText(this.message);

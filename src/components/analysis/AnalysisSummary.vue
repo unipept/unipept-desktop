@@ -146,27 +146,27 @@ export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
 
-    private equateIl: boolean = true;
-    private filterDuplicates: boolean = true;
-    private missedCleavage: boolean = false;
+    private equateIl = true;
+    private filterDuplicates = true;
+    private missedCleavage = false;
 
-    private originalEquateIl: boolean = true;
-    private originalFilterDuplicates: boolean = true;
-    private originalMissedCleavage: boolean = false;
+    private originalEquateIl = true;
+    private originalFilterDuplicates = true;
+    private originalMissedCleavage = false;
 
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
 
-    private originalAnalysisSourceName: string = "";
+    private originalAnalysisSourceName = "";
 
     private currentAnalysisSource: RenderableAnalysisSource = null;
     private renderableSources: RenderableAnalysisSource[] = [];
 
-    private cacheIsValid: boolean = true;
+    private cacheIsValid = true;
     // We are currently still checking if the provided cache is valid or not...
-    private cacheValidityLoading: boolean = true;
+    private cacheValidityLoading = true;
 
-    private searchConfigIsValid: boolean = true;
+    private searchConfigIsValid = true;
 
     get originalPeptideTrust(): PeptideTrust {
         return this.$store.getters.assayData(this.assay)?.originalData?.trust;

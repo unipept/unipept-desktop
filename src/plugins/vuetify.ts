@@ -1,5 +1,5 @@
-import Vue from 'vue';
-import Vuetify from 'vuetify/lib/framework';
+import Vue from "vue";
+import Vuetify from "vuetify/lib/framework";
 import IconTestMultiple from "@/components/icons/IconTestMultiple.vue";
 
 

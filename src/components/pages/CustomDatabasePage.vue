@@ -228,23 +228,23 @@ import ErrorDetailViewer from "@/components/error/ErrorDetailViewer.vue";
     }
 })
 export default class CustomDatabasePage extends Vue {
-    private createDatabaseDialog: boolean = false;
+    private createDatabaseDialog = false;
 
-    private dockerConnectionError: boolean = false;
+    private dockerConnectionError = false;
 
-    private lowOnMemoryWarning: boolean = false;
+    private lowOnMemoryWarning = false;
     // The amount of memory that's currently allocated to the Docker daemon.
-    private availableMemoryAmount: number = 0;
+    private availableMemoryAmount = 0;
 
     private dockerCheckTimeout: NodeJS.Timeout;
 
-    private forceStopInProgress: boolean = false;
+    private forceStopInProgress = false;
 
-    private loading: boolean = true;
+    private loading = true;
 
     private selectedSourceDefault: string[] = ["TrEMBL", "SwissProt"];
-    private databaseNameDefault: string = "";
-    private selectedVersionDefault: string = "Current";
+    private databaseNameDefault = "";
+    private selectedVersionDefault = "Current";
     private selectedTaxaDefault: NcbiTaxon[] = [];
 
     private headers = [
@@ -298,7 +298,7 @@ export default class CustomDatabasePage extends Vue {
     private dbsBeingDeleted: string[] = [];
     private dbsBeingStopped: string[] = [];
 
-    private databaseFolder: string = "";
+    private databaseFolder = "";
 
     get databases(): CustomDatabase[] {
         return this.$store.getters["customDatabases/databases"];

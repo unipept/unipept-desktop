@@ -206,9 +206,9 @@ const { app } = require("@electron/remote");
     }
 })
 export default class AnalysisPage extends Vue {
-    private explorerWidth: number = 210;
+    private explorerWidth = 210;
 
-    private createAssayDialogActive: boolean = false;
+    private createAssayDialogActive = false;
 
     // The Study object to which new assays should be added.
     private studyForCreation: Study = null;

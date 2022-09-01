@@ -6,7 +6,7 @@ import { store } from "@/main";
 import mkdirp from "mkdirp";
 import { promises as fs } from "fs";
 
-const { app } = require('@electron/remote');
+const { app } = require("@electron/remote");
 
 /**
  * This migrator updates the current database from schema version 0 to version 1.
