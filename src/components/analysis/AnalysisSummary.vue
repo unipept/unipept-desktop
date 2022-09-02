@@ -96,6 +96,7 @@
                     <v-col sm="12" lg="6">
                         <peptide-summary-table :assay="assay" />
                         <div class="d-flex justify-center">
+
                             <export-results-button :assay="assay" button-text="Export results" />
                         </div>
                     </v-col>
@@ -123,7 +124,6 @@ import {
     SearchConfiguration,
     PeptideTrust,
     Pept2DataCommunicator,
-    ExportResultsButton,
     NetworkConfiguration,
     Tooltip, Study, Assay, OnlineAnalysisSource, AnalysisSource
 } from "unipept-web-components";
@@ -138,6 +138,7 @@ import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelec
 import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import ExportResultsButton from "@/components/analysis/ExportResultsButton.vue";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
