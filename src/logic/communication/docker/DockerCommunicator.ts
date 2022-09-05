@@ -26,8 +26,8 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.0";
-    public static readonly UNIPEPT_WEB_IMAGE_NAME = "ghcr.io/unipept/unipept-web:1.0";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.0.3";
+    public static readonly UNIPEPT_WEB_IMAGE_NAME = "ghcr.io/unipept/unipept-web:1.0.3";
 
     public static connection: Dockerode;
 
