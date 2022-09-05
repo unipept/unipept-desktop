@@ -28,9 +28,6 @@ export default class CachedEcResponseCommunicator extends EcResponseCommunicator
         for (const code of codes) {
             const row = stmt.get(code.substr(3));
 
-            console.log(code);
-            console.log(row);
-
             if (row) {
                 CachedEcResponseCommunicator.codeToResponses.set(code, {
                     code: "EC:" + row.code,

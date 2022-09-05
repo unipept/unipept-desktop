@@ -103,7 +103,7 @@ export default class CustomDatabaseManager {
 
         // Remove the database itself also from the filesystem.
         const dbPath = path.join(rootFolder, "databases", db.name);
-        await fs.rmdir(dbPath, { recursive: true });
+        await fs.rm(dbPath, { recursive: true });
     }
 
     /**

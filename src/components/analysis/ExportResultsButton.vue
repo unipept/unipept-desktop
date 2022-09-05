@@ -54,7 +54,6 @@ import {
 import { dialog } from "@electron/remote";
 import { promises as fs } from "fs";
 import PeptideExport from "@/logic/analysis/PeptideExport";
-import CachedEcResponseCommunicator from "@/logic/communication/functional/CachedEcResponseCommunicator";
 
 
 @Component({})

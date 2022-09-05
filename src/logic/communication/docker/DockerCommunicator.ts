@@ -26,8 +26,8 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:sha-0a5a124";
-    public static readonly UNIPEPT_WEB_IMAGE_NAME = "pverscha/unipept-web:1.0.0";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.0";
+    public static readonly UNIPEPT_WEB_IMAGE_NAME = "ghcr.io/unipept/unipept-web:1.0";
 
     public static connection: Dockerode;
 
@@ -389,9 +389,10 @@ export default class DockerCommunicator {
      * @param name Name by which the active Docker containers need to be filtered.
      */
     private async filterContainersByName(name: string): Promise<Dockerode.ContainerInfo[]> {
-        return (await DockerCommunicator.connection.listContainers()).filter((c: Dockerode.ContainerInfo) => {
-            return c.Names.some(n => n.includes(name));
-        });
+        return (await DockerCommunicator.connection.listContainers({ all: true }))
+            .filter((c: Dockerode.ContainerInfo) => {
+                return c.Names.some(n => n.includes(name));
+            });
     }
 
     /**
@@ -400,7 +401,7 @@ export default class DockerCommunicator {
      * @param name The container name for which all details should be retrieved.
      */
     private async getContainerByName(name: string): Promise<Dockerode.ContainerInfo | undefined> {
-        const allWithName = (await DockerCommunicator.connection.listContainers()).filter(
+        const allWithName = (await DockerCommunicator.connection.listContainers({ all: true })).filter(
             (c: Dockerode.ContainerInfo) => {
                 return c.Names.filter(n => n.includes(name));
             }
@@ -417,7 +418,11 @@ export default class DockerCommunicator {
 
         if (containerInfo) {
             const container = DockerCommunicator.connection.getContainer(containerInfo.Id);
-            await container.stop();
+
+            if (containerInfo.State !== "exited") {
+                await container.stop();
+            }
+
             await container.remove();
         }
     }
@@ -478,7 +483,12 @@ export default class DockerCommunicator {
             dbLocation = this.generateDataVolumePath(db);
 
             // Clear what's currently stored in the data volume path
-            await fs.rmdir(dbLocation, { recursive: true });
+            try {
+                await fs.rm(dbLocation, { recursive: true });
+            } catch (e) {
+                // Path does not exist...
+            }
+
             await mkdirp(dbLocation);
         }
 
