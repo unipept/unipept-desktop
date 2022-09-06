@@ -15,7 +15,7 @@ import Component from "vue-class-component";
 
 @Component
 export default class CollapsableCard extends Vue {
-    private collapsed: boolean = false;
+    private collapsed = false;
 }
 </script>
 

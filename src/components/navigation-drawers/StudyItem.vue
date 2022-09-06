@@ -66,17 +66,30 @@
                 </v-tooltip>
             </div>
         </div>
-        <div class="assay-items" v-if="study.getAssays().length > 0 && !collapsed">
-            <assay-item
-                v-for="assay of sortedAssays"
-                :selectable="selectable"
-                :assay="assay"
-                :study="study"
-                v-bind:key="assay.id"
-                :value="assayInComparison(assay)"
-                v-on:input="toggleAssayComparison(assay)"
-                v-on:select-assay="onSelectAssay">
-            </assay-item>
+        <div class="assay-items" v-if="!collapsed">
+            <div v-if="study.getAssays().length > 0">
+                <assay-item
+                    v-for="assay of sortedAssays"
+                    :selectable="selectable"
+                    :assay="assay"
+                    :study="study"
+                    v-bind:key="assay.id"
+                    :value="assayInComparison(assay)"
+                    v-on:input="toggleAssayComparison(assay)"
+                    v-on:select-assay="onSelectAssay">
+                </assay-item>
+            </div>
+            <div v-else>
+                <!-- placeholder button to add a new assay -->
+                <div class="assay-item" @click="createAssay()">
+                    <v-icon size="20" color="primary">
+                        mdi-file-plus-outline
+                    </v-icon>
+                    <a class="assay-name">
+                        Add new assay
+                    </a>
+                </div>
+            </div>
         </div>
         <search-configuration-dialog
             v-model="showSearchConfigDialog"
@@ -110,22 +123,13 @@ import {
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
-import { v4 as uuidv4 } from "uuid";
-import path from "path";
-import { isText, isBinary, getEncoding } from "istextorbinary";
 import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
-import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import StudyManager from "@/logic/filesystem/study/StudyManager";
 
 
-const { remote } = require("electron");
-const { Menu, MenuItem } = remote;
+const { Menu, MenuItem } = require("@electron/remote");
 const fs = require("fs").promises;
-
-const electron = require("electron");
-const { dialog } = electron.remote;
 
 @Component({
     components: {
@@ -159,24 +163,24 @@ export default class StudyItem extends Vue {
     @Prop({ required: false, default: false })
     private selectable: boolean;
 
-    private collapsed: boolean = false;
-    private studyName: string = "";
-    private showCreateAssayDialog: boolean = false;
+    private collapsed = false;
+    private studyName = "";
+    private showCreateAssayDialog = false;
 
-    private showBinaryFilesError: boolean = false;
+    private showBinaryFilesError = false;
     private binaryFilesList: string[] = [];
 
-    private removeConfirmationActive: boolean = false;
-    private showSearchConfigDialog: boolean = false;
+    private removeConfirmationActive = false;
+    private showSearchConfigDialog = false;
     private searchConfigCallback: (cancelled: boolean) => Promise<void> = async(cancelled: boolean) => {
         return;
     };
     private searchConfigAssays: ProteomicsAssay[] = [];
 
-    private isEditingStudyName: boolean = false;
-    private isValidStudyName: boolean = true;
+    private isEditingStudyName = false;
+    private isValidStudyName = true;
 
-    private nameError: string = "";
+    private nameError = "";
     // Keep track of the names of the assays that we are currently processing.
     private assaysInProgress: string[] = [];
 

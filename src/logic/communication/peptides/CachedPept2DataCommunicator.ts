@@ -12,6 +12,7 @@ import { ShareableMap } from "shared-memory-datastructures";
 import CachedResultsManager from "@/logic/filesystem/assay/processed/CachedResultsManager";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import PeptideTrustManager from "@/logic/filesystem/trust/PeptideTrustManager";
+import { Store } from "vuex";
 
 /**
  * Special type of Pept2DataCommunicator that will always first check if data for the given sample is present in the
@@ -26,7 +27,8 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         private readonly assay: ProteomicsAssay,
         private readonly invalidCacheCommunicator: Pept2DataCommunicator,
         private readonly databaseMng: DatabaseManager,
-        private readonly projectLocation: string
+        private readonly projectLocation: string,
+        private readonly store: Store<any>
     ) {
         super(invalidCacheCommunicator.serviceUrl);
     }
@@ -36,7 +38,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
         configuration: SearchConfiguration,
         progressListener?: ProgressListener
     ): Promise<[ShareableMap<Peptide, PeptideData>, PeptideTrust]> {
-        const cachedResultsManager = new CachedResultsManager(this.databaseMng, this.projectLocation);
+        const cachedResultsManager = new CachedResultsManager(this.databaseMng, this.projectLocation, this.store);
 
         if (await cachedResultsManager.verifyCacheIntegrity(this.assay)) {
             const pept2data = (await cachedResultsManager.readProcessingResults(this.assay)).pept2DataMap;
@@ -70,7 +72,7 @@ export default class CachedPept2DataCommunicator extends Pept2DataCommunicator {
                 );
             }
 
-            const dataMng = new CachedResultsManager(this.databaseMng, this.projectLocation);
+            const dataMng = new CachedResultsManager(this.databaseMng, this.projectLocation, this.store);
 
             // @ts-ignore
             dataMng.storeProcessingResults(

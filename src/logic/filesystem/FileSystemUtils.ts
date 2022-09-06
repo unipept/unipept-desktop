@@ -28,26 +28,39 @@ export default class FileSystemUtils {
      * @return Size of the given path in bytes (total size of directory if path points to a directory).
      */
     public static async getSize(location: string): Promise<number> {
-        const stats = await fs.lstat(location);
-        let totalSize: number = 0;
-        if (stats.isDirectory()) {
-            for (const subPath of await fs.readdir(location)) {
-                totalSize += await this.getSize(path.join(location, subPath));
+        try {
+            const stats = await fs.lstat(location);
+            let totalSize = 0;
+            if (stats.isDirectory()) {
+                for (const subPath of await fs.readdir(location)) {
+                    totalSize += await this.getSize(path.join(location, subPath));
+                }
+                return totalSize;
+            } else {
+                return stats.size;
             }
-            return totalSize;
-        } else {
-            return stats.size;
+        } catch (e) {
+            // Folder was not found... Reported size is 0 in this case.
+            return 0;
         }
     }
 
     public static async getDiskStats(folder: string): Promise<DiskStats | undefined> {
-        const { exec } = require("child_process");
+        try {
+            await fs.readdir(folder);
+        } catch (err) {
+            console.warn(err);
+            // This folder does not exist.
+            return undefined;
+        }
 
+        const { exec } = require("child_process");
         if (process.platform === "darwin" || process.platform === "linux") {
             const [stdout, stderr] = await new Promise<[string, string]>(
                 (resolve, reject) =>  {
                     exec(
                         `df -B1 ${folder}`,
+                        { timeout: 200 },
                         (err: ExecException | null, stdout: string, stderr: string) =>  {
                             if (err) {
                                 reject(err);

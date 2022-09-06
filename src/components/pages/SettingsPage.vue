@@ -7,28 +7,6 @@
             <v-row>
                 <v-col>
                     <div style="max-width: 1400px; margin: auto;">
-                        <h2 class="mx-auto settings-category-title">Connection settings</h2>
-                        <v-card>
-                            <v-card-text>
-                                <v-container fluid>
-                                    <v-row>
-                                        <v-col cols="8">
-                                            <div class="settings-title">Unipept API</div>
-                                            <span class="settings-text">
-                                                Denotes the base URL that should be used for communication with a
-                                                Unipept API.
-                                            </span>
-                                        </v-col>
-                                        <v-col cols="4">
-                                            <v-text-field label="https://unipept.ugent.be" single-line filled
-                                                v-model="configuration.apiSource"
-                                                :rules="apiSourceRules">
-                                            </v-text-field>
-                                        </v-col>
-                                    </v-row>
-                                </v-container>
-                            </v-card-text>
-                        </v-card>
                         <h2 class="mx-auto settings-category-title">Concurrency</h2>
                         <v-card>
                             <v-card-text>
@@ -93,6 +71,13 @@
                                                 and size of the custom databases you are planning to use. For large
                                                 databases, at least 100GiB of free space is required.
                                             </div>
+                                            <span class="settings-text settings-important-text">
+                                                NOTE: Only database metadata will be stored in this location on Windows
+                                                based systems due to a bug in Windows' implementation of Docker. Follow
+                                                <a @click="openInBrowser('https://dev.to/kimcuonthenet/move-docker-desktop-data-distro-out-of-system-drive-4cg2')">this guide</a>
+                                                if you need to change the default storage location of Docker volume's
+                                                nonetheless.
+                                            </span>
                                         </v-col>
                                         <v-col cols="4">
                                             <v-text-field
@@ -224,6 +209,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
 import { NetworkConfiguration, NetworkUtils } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import Utils from "@/logic/Utils";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -233,16 +219,11 @@ export default class SettingsPage extends Vue {
 
     private configuration: Configuration = null;
 
-    private errorVisible: boolean = false;
-    private errorMessage: string = "";
+    private errorVisible = false;
+    private errorMessage = "";
 
     private dockerInfo: any = null;
-    private dockerInfoLoading: boolean = true;
-
-    private apiSourceRules: ((x: string) => boolean | string)[] = [
-        Rules.required,
-        Rules.url
-    ];
+    private dockerInfoLoading = true;
 
     private maxTasksRules: ((x: string) => boolean | string)[] = [
         Rules.required,
@@ -266,9 +247,9 @@ export default class SettingsPage extends Vue {
         Rules.required
     ];
 
-    private mounted() {
+    private async mounted() {
         let configManager: ConfigurationManager = new ConfigurationManager();
-        configManager.readConfiguration().then((result) => this.configuration = result);
+        this.configuration = await configManager.readConfiguration();
 
         this.retrieveDockerInfo();
     }
@@ -332,7 +313,7 @@ export default class SettingsPage extends Vue {
     private async retrieveDockerInfo() {
         this.dockerInfoLoading = true;
 
-        const dockerCommunicator = new DockerCommunicator();
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
 
         try {
             this.dockerInfo = await dockerCommunicator.getDockerInfo();
@@ -364,8 +345,7 @@ export default class SettingsPage extends Vue {
     }
 
     private async openDbStorageFileDialog(): Promise<void> {
-        const electron = require("electron");
-        const { dialog } = electron.remote;
+        const { dialog } = require("@electron/remote");
 
         const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
             properties: ["openDirectory", "createDirectory"]
@@ -383,6 +363,14 @@ export default class SettingsPage extends Vue {
 
     private openInBrowser(url: string): void {
         NetworkUtils.openInBrowser(url);
+    }
+
+    private isWindows(): boolean {
+        return Utils.isWindows();
+    }
+
+    private isMac(): boolean {
+        return Utils.isMacOS();
     }
 }
 </script>

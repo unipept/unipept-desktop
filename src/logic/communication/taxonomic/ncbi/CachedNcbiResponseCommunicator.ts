@@ -96,7 +96,7 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
      * @param filter A portion of text that should be present in the name of all taxa that are returned by this
      * function.
      * */
-    public getNcbiCount(filter: string = ""): number {
+    public getNcbiCount(filter = ""): number {
         if (filter !== "") {
             return this.db.prepare(
                 "SELECT COUNT(id) FROM virtual_taxons WHERE virtual_taxons MATCH ? AND name != 'root'"
@@ -122,9 +122,9 @@ export default class CachedNcbiResponseCommunicator extends NcbiResponseCommunic
     public getNcbiRange(
         start: number,
         end: number,
-        filter: string = "",
+        filter = "",
         sortBy: "id" | "name" | "rank" = "id",
-        sortDescending: boolean = false
+        sortDescending = false
     ): NcbiId[] {
         if (filter !== "") {
             return this.db.prepare(

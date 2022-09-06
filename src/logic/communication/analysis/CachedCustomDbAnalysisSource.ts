@@ -8,6 +8,7 @@ import CachedInterproResponseCommunicator from "@/logic/communication/functional
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import CachedPept2DataCommunicator from "@/logic/communication/peptides/CachedPept2DataCommunicator";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
+import { Store } from "vuex";
 
 export default class CachedCustomDbAnalysisSource implements AnalysisSource {
     constructor(
@@ -15,7 +16,8 @@ export default class CachedCustomDbAnalysisSource implements AnalysisSource {
         public readonly databaseMng: DatabaseManager,
         public readonly customDatabase: CustomDatabase,
         public readonly customDatabaseStorageLocation: string,
-        public readonly projectLocation: string
+        public readonly projectLocation: string,
+        private readonly store: Store<any>
     ) {}
 
     public getCommunicationSource() {
@@ -25,7 +27,13 @@ export default class CachedCustomDbAnalysisSource implements AnalysisSource {
         );
 
         return new ConfigureableCommunicationSource(
-            new CachedPept2DataCommunicator(this.assay, pept2DataCommunicator, this.databaseMng, this.projectLocation),
+            new CachedPept2DataCommunicator(
+                this.assay,
+                pept2DataCommunicator,
+                this.databaseMng,
+                this.projectLocation,
+                this.store
+            ),
             new CachedGoResponseCommunicator(),
             new CachedEcResponseCommunicator(),
             new CachedInterproResponseCommunicator(),

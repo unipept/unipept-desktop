@@ -43,18 +43,29 @@ export default class CustomDatabaseStoreFactory {
                 state: CustomDatabaseState,
                 [
                     dbName,
-                    databaseSources,
                     databaseTypes,
                     taxa,
                     dbVersion
                 ]: [
                     string,
                     string[],
-                    string[],
                     NcbiId[],
                     string
                 ]
             ) {
+                const sourceUrlMap = new Map<string, string>([
+                    [
+                        "trembl",
+                        "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.xml.gz"
+                    ],
+                    [
+                        "swissprot",
+                        "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
+                    ]
+                ]);
+
+                const databaseSources = databaseTypes.map(t => sourceUrlMap.get(t));
+
                 const db = new CustomDatabase(
                     dbName,
                     databaseSources,
@@ -191,19 +202,17 @@ export default class CustomDatabaseStoreFactory {
                     store: ActionContext<CustomDatabaseState, any>,
                     [
                         dbName,
-                        databaseSources,
                         databaseTypes,
                         taxa,
                         uniprotVersion
                     ]: [
                         string,
                         string[],
-                        string[],
                         NcbiId[],
                         string
                     ]
                 ) => {
-                    await this.buildDatabase(store, [dbName, databaseSources, databaseTypes, taxa, uniprotVersion]);
+                    await this.buildDatabase(store, [dbName, databaseTypes, taxa, uniprotVersion]);
                 }
             },
 
@@ -268,14 +277,15 @@ export default class CustomDatabaseStoreFactory {
         store.commit("CUSTOM_DB_UPDATE_GLOBAL_CONSTRUCTION_STATUS", true);
         customDb.inProgress = true;
 
-        const dockerCommunicator = new DockerCommunicator();
         try {
-            const dbPath = path.join(this.configuration.customDbStorageLocation, "databases", customDb.name, "data");
+            const dbPath = path.join(this.configuration.customDbStorageLocation);
+
+            const dockerCommunicator = new DockerCommunicator(dbPath);
 
             await dockerCommunicator.buildDatabase(
                 customDb,
-                dbPath,
                 path.join(this.configuration.customDbStorageLocation, "index"),
+                path.join(this.configuration.customDbStorageLocation, "temp"),
                 (step, value, progress_step) => {
                     store.commit("CUSTOM_DB_UPDATE_PROGRESS", [customDb, value, progress_step]);
                     this.updateMetadata(customDb);
@@ -286,8 +296,8 @@ export default class CustomDatabaseStoreFactory {
                 }
             );
 
-            if (customDb.progress.logs.filter(x => x.includes("Shutdown complete")).length > 0) {
-                customDb.sizeOnDisk = await FileSystemUtils.getSize(dbPath);
+            if (customDb.progress.logs.filter(x => x.includes("mariadbd: Shutdown complete")).length > 0) {
+                customDb.sizeOnDisk = await dockerCommunicator.getDatabaseSize(customDb.name);
                 store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [customDb, true]);
             } else {
                 const err = new Error("Status of container was changed outside of application.");
@@ -325,13 +335,12 @@ export default class CustomDatabaseStoreFactory {
             store.commit("CUSTOM_DB_ADD_DATABASE_OBJECT", db);
         }
 
-        const dockerCommunicator = new DockerCommunicator();
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
 
         setInterval(
             async() => {
                 if (
-                    !store.getters.constructionInProgress &&
-                    !(await dockerCommunicator.isDatabaseActive())
+                    !store.getters.constructionInProgress
                 ) {
                     // If no databases are currently being constructed, and at least one database is
                     // waiting in the queue, we should start the construction process for this database.
@@ -371,6 +380,7 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         const dbObj = store.getters.database(dbName);
 
+        store.commit("CUSTOM_DB_UPDATE_PROGRESS", [dbObj, -1, 0]);
         store.commit("CUSTOM_DB_UPDATE_ERROR", [dbObj, false, "", undefined]);
         store.commit("CUSTOM_DB_RESET_LOG", dbObj);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, false]);
@@ -388,10 +398,8 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         const dbObj = store.getters.database(dbName);
 
-        if (dbObj.inProgress) {
-            const dockerCommunicator = new DockerCommunicator();
-            await dockerCommunicator.stopDatabase();
-        }
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
+        await dockerCommunicator.stopDatabaseBuild(dbObj);
 
         store.commit("CUSTOM_DB_UPDATE_CANCELLATION_STATUS", [dbObj, true]);
         store.commit("CUSTOM_DB_UPDATE_READY_STATUS", [dbObj, true]);
@@ -405,13 +413,11 @@ export default class CustomDatabaseStoreFactory {
         store: ActionContext<CustomDatabaseState, any>,
         [
             dbName,
-            databaseSources,
             databaseTypes,
             taxa,
             uniprotVersion
         ]: [
             string,
-            string[],
             string[],
             NcbiId[],
             string
@@ -419,7 +425,6 @@ export default class CustomDatabaseStoreFactory {
     ): Promise<void> {
         store.commit("CUSTOM_DB_ADD_DATABASE", [
             dbName,
-            databaseSources,
             databaseTypes,
             taxa,
             uniprotVersion

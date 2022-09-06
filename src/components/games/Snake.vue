@@ -61,7 +61,7 @@ export type CellType = {
 
 @Component
 export default class Snake extends Vue {
-    private snakeActive: boolean = false;
+    private snakeActive = false;
 
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
@@ -69,7 +69,7 @@ export default class Snake extends Vue {
     private grid = 16;
     private count = 0;
 
-    private animationFrameListener: number = -1;
+    private animationFrameListener = -1;
 
     private snake: {x: number, y: number, dx: number, dy: number, cells: CellType[], maxCells: number} = {
         x: 160,

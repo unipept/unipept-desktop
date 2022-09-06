@@ -118,7 +118,7 @@ export default class PeptideSummaryTable extends Vue {
     private items: PeptideSummary[] = [];
     private options = {};
 
-    private loading: boolean = true;
+    private loading = true;
 
     private search: string = "";
     private currentSearch: string = "";

@@ -1,7 +1,9 @@
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import { promises as fs } from "fs";
 import path, { dirname } from "path";
-import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
+import Utils from "@/logic/Utils";
+import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import { NcbiId } from "unipept-web-components";
 
 /**
  * This class is responsible for managing the custom databases that are currently created by some of the users and to
@@ -17,51 +19,61 @@ import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
  * @author Pieter Verschaffelt
  */
 export default class CustomDatabaseManager {
+    public constructor() {}
+
     /**
      * Returns a list of all custom databases known to this application, both complete and incomplete variants. Make
      * sure to always check if a database is complete before trying to connect to it.
      *
-     * @param dbRootFolder The root folder in which all custom database information for the complete application is
+     * @param rootFolder The root folder in which all custom database information for the complete application is
      * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
      */
-    public async listAllDatabases(dbRootFolder: string): Promise<CustomDatabase[]> {
+    public async listAllDatabases(rootFolder: string): Promise<CustomDatabase[]> {
+        const dbsRoot = path.join(rootFolder, "databases");
+
         const databases = [];
-        for (const dir of (await fs.readdir(path.join(dbRootFolder, "databases")))) {
-            const dbPath = path.join(dbRootFolder, "databases", dir);
-            if ((await fs.lstat(dbPath)).isDirectory()) {
-                // Check if a metadata file is present in the folder that was found. If it is present, we should read
-                // the database name and other metadata from this file.
-                try {
-                    const metadata = JSON.parse(
-                        await fs.readFile(
-                            this.metadataPath(dbRootFolder, dir),
-                            { encoding: "utf-8" }
-                        )
-                    );
+        try {
+            for (const dir of (await fs.readdir(dbsRoot))) {
+                const dbPath = path.join(dbsRoot, dir);
+                if ((await fs.lstat(dbPath)).isDirectory()) {
+                    // Check if a metadata file is present in the folder that was found. If it is present, we should
+                    // read the database name and other metadata from this file.
+                    try {
+                        const metadata = JSON.parse(
+                            await fs.readFile(
+                                this.metadataPath(rootFolder, dir),
+                                { encoding: "utf-8" }
+                            )
+                        );
 
-                    const dbSize = await FileSystemUtils.getSize(dbPath);
+                        const dockerCommunicator = new DockerCommunicator(rootFolder);
+                        const dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
 
-                    databases.push(
-                        new CustomDatabase(
-                            metadata.name,
-                            metadata.sources,
-                            metadata.sourceTypes,
-                            metadata.taxa,
-                            metadata.databaseVersion,
-                            metadata.entries,
-                            metadata.ready,
-                            dbSize,
-                            metadata.cancelled,
-                            metadata.inProgress,
-                            metadata.progress,
-                            metadata.error
-                        )
-                    );
-                } catch (e) {
-                    // The inspected directory probably doesn't contain a database and we should do nothing in this
-                    // case.
+                        databases.push(
+                            new CustomDatabase(
+                                metadata.name,
+                                metadata.sources,
+                                metadata.sourceTypes,
+                                metadata.taxa,
+                                metadata.databaseVersion,
+                                metadata.entries,
+                                metadata.ready,
+                                dbSize,
+                                metadata.cancelled,
+                                metadata.inProgress,
+                                metadata.progress,
+                                metadata.error
+                            )
+                        );
+                    } catch (e) {
+                        console.warn(e);
+                        // The inspected directory probably doesn't contain a database and we should do nothing in this
+                        // case.
+                    }
                 }
             }
+        } catch (e) {
+            console.warn(e);
         }
         return databases;
     }
@@ -71,21 +83,27 @@ export default class CustomDatabaseManager {
      * that was previously stored in this file for this database will be lost and replaced by the metadata provided
      * as an argument to this function.
      *
-     * @param dbRootFolder The root folder in which all custom database information for the complete application is
-     * kept. This folder should contain one folder per custom database (and a metadata file per custom database folder).
+     * @param rootFolder The root folder in which all custom database information for the complete application is
+     * kept. This folder should contain a "databases" folder which then keeps track of all databases by constructing
+     * one folder per database.
      * @param db CustomDatabase object for which the metadata should be updated.
      */
-    public async updateMetadata(dbRootFolder: string, db: CustomDatabase): Promise<void> {
-        const path = this.metadataPath(dbRootFolder, db.name);
+    public async updateMetadata(rootFolder: string, db: CustomDatabase): Promise<void> {
+        const path = this.metadataPath(rootFolder, db.name);
         // Make sure that the path to the database that we want to build actually exists, before trying to write the
-        // metadata file to it.d .
+        // metadata file to it.
         await fs.mkdir(dirname(path), { recursive:true })
         return fs.writeFile(path, JSON.stringify(db));
     }
 
-    public async deleteDatabase(dbRootFolder: string, db: CustomDatabase): Promise<void> {
-        const dbPath = path.join(dbRootFolder, "databases", db.name);
-        await fs.rmdir(dbPath, { recursive: true });
+    public async deleteDatabase(rootFolder: string, db: CustomDatabase): Promise<void> {
+        const dockerCommunicator = new DockerCommunicator(rootFolder)
+        // Remove all Docker-related files for the database.
+        await dockerCommunicator.removeDatabase(db);
+
+        // Remove the database itself also from the filesystem.
+        const dbPath = path.join(rootFolder, "databases", db.name);
+        await fs.rm(dbPath, { recursive: true });
     }
 
     /**
@@ -115,6 +133,47 @@ export default class CustomDatabaseManager {
         }
 
         return "";
+    }
+
+    /**
+     * Find a suitable custom database that has the same analysis configuration as the parameters that are given for
+     * this function.
+     *
+     * @param selectedSources List of all original UniProt database sources that have been selected for this database.
+     * @param selectedTaxa List of all selected NCBI taxon ID's that are selected for this database.
+     * @param uniprotVersion Version of the source UniProt database.
+     * @param dbRootFolder Where are all the custom database metadata files stored?
+     */
+    public async getDatabaseByProperties(
+        selectedSources: string[],
+        selectedTaxa: NcbiId[],
+        uniprotVersion: string,
+        dbRootFolder: string
+    ): Promise<CustomDatabase | null> {
+        const dbs = await this.listAllDatabases(dbRootFolder);
+
+        const possibleDbs = dbs.filter((db: CustomDatabase) => {
+            if (db.databaseVersion !== uniprotVersion) {
+                return false;
+            }
+
+            if (
+                !Utils.compareAssays<string>(
+                    db.sourceTypes.sort(),
+                    selectedSources.sort()
+                )
+            ) {
+                return false;
+            }
+
+            return Utils.compareAssays<NcbiId>(db.taxa.sort(), selectedTaxa.sort());
+        });
+
+        if (possibleDbs.length > 0) {
+            return possibleDbs[0];
+        }
+
+        return null;
     }
 
     /**

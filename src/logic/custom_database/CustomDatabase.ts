@@ -29,15 +29,22 @@ export default class CustomDatabase {
         public readonly name: string,
         public readonly sources: string[],
         public readonly sourceTypes: string[],
+        // A list of NCBI taxon IDs that are used for filtering this database.
         public readonly taxa: NcbiId[],
+        // Version of the UniProt-database that was used for constructing this database.
         public readonly databaseVersion: string,
         // Amount of entries that are present in this filtered database.
         public entries: number = -1,
         // Has the database successfully been built?
         public ready: boolean = false,
+        // The size of this database's folder on the disk in bytes. Use -1 if the size is not available.
         public sizeOnDisk: number = -1,
+        // Has the construction process for this database been cancelled?
         public cancelled: boolean = false,
+        // Is the construction process for this database in progress?
         public inProgress: boolean = false,
+        // What's the status of the construction process of this database? What step is currently being processed
+        // and which portion of this step has been processed?
         public readonly progress: ProgressReport = ProgressReportHelper.constructProgressReportObject(progressSteps),
         public readonly error: DatabaseErrorStatus = {
             status: false,
@@ -47,12 +54,14 @@ export default class CustomDatabase {
     ) {}
 
     /**
-     * Two custom databases are the same iff they produce the same hash value. This means that the original source,
-     * source types, taxa and name of the database are also equal.
+     * Two custom databases are the same iff they produce the same hash value.
+     *
+     * TODO: Note that we don't care about the UniProt version at this point in time, since the application does not
+     * TODO: support the construction of databases from older UniProt versions.
      */
     public getDatabaseHash(): string {
         return crypto.createHash("sha256").update(
-            this.name + this.sources.toString() + this.sourceTypes.toString() + this.taxa.toString()
+            this.sourceTypes.toString() + this.taxa.toString()
         ).digest("base64");
     }
 }

@@ -81,10 +81,9 @@ import {
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import BootstrapApplication from "@/logic/application/BootstrapApplication";
 
+const { app, BrowserWindow } = require("@electron/remote");
 const electron = require("electron");
 const ipcRenderer = electron.ipcRenderer;
-const BrowserWindow = electron.BrowserWindow;
-const { app } = require("electron").remote;
 
 @Component({
     components: {
@@ -109,23 +108,23 @@ const { app } = require("electron").remote;
     }
 })
 export default class App extends Vue implements ErrorListener {
-    private navDrawer: boolean = false;
-    private loading: boolean = true;
+    private navDrawer = false;
+    private loading = true;
 
-    private updatingSnackbar: boolean = false;
-    private updatingProgress: number = 0;
+    private updatingSnackbar = false;
+    private updatingProgress = 0;
 
-    private updatedSnackbar: boolean = false;
-    private updateMessage: string = "";
-    private updatedColor: string = "info";
+    private updatedSnackbar = false;
+    private updateMessage = "";
+    private updatedColor = "info";
 
-    private toolbarWidth: number = 210;
+    private toolbarWidth = 210;
 
     // Has this component been initialized before?
-    private static previouslyInitialized: boolean = false;
+    private static previouslyInitialized = false;
 
-    private showHomePageDialog: boolean = true;
-    private errorDialog: boolean = false;
+    private showHomePageDialog = true;
+    private errorDialog = false;
 
     async mounted() {
         // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation
@@ -170,9 +169,9 @@ export default class App extends Vue implements ErrorListener {
     @Watch("activeAssay")
     private activeAssayChanged(assay: AssayAnalysisStatus) {
         if (assay.analysisReady) {
-            electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(-1);
+            BrowserWindow.getAllWindows()[0].setProgressBar(-1);
         } else {
-            electron.remote.BrowserWindow.getAllWindows()[0].setProgressBar(
+            BrowserWindow.getAllWindows()[0].setProgressBar(
                 this.$store.getters.activeAssay.originalProgress.currentValue
             );
         }
@@ -195,7 +194,7 @@ export default class App extends Vue implements ErrorListener {
     }
 
     private async closeApplication() {
-        electron.remote.app.quit();
+        app.quit();
     }
 
     private onToolbarWidthUpdated(newValue: number) {
@@ -205,85 +204,85 @@ export default class App extends Vue implements ErrorListener {
 </script>
 
 <style lang="less">
-    @import "~unipept-web-components/dist/unipept-web-components.css";
-    @import "~@mdi/font/css/materialdesignicons.min.css";
+@import "~unipept-web-components/dist/unipept-web-components.css";
+@import "~@mdi/font/css/materialdesignicons.min.css";
 
 
-    #app {
-        font-family: 'Avenir', Helvetica, Arial, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        color: #2c3e50;
-    }
+#app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color: #2c3e50;
+}
 
-    a {
-        text-decoration: none;
-    }
+a {
+    text-decoration: none;
+}
 
-    .v-application--wrap {
-        flex-direction: row !important;
-    }
+.v-application--wrap {
+    flex-direction: row !important;
+}
 
-    .nav-drawer .v-divider {
-        margin-top: 7px !important;
-    }
+.nav-drawer .v-divider {
+    margin-top: 7px !important;
+}
 
-    .v-content {
-        // Force right part of the application to resize immediately
-        transition: initial !important;
-    }
+.v-content {
+    // Force right part of the application to resize immediately
+    transition: initial !important;
+}
 
-    .titlebar {
-        position: fixed !important;
-    }
+.titlebar {
+    position: fixed !important;
+}
 
-    .titlebar, .titlebar > * {
-        font-family: Roboto, sans-serif;
-    }
+.titlebar, .titlebar > * {
+    font-family: Roboto, sans-serif;
+}
 
-    html {
-        overflow-y: auto !important;
-    }
+html {
+    overflow-y: auto !important;
+}
 
-    .updating-snackbar-content {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        align-items: center;
-        align-self: start;
-    }
+.updating-snackbar-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    align-self: start;
+}
 
-    .updating-snackbar-content .updating-snackbar-text {
-        margin-top: 10px;
-    }
+.updating-snackbar-content .updating-snackbar-text {
+    margin-top: 10px;
+}
 
-    .updating-snackbar-container .v-snack__content {
-        padding: 0;
-    }
+.updating-snackbar-container .v-snack__content {
+    padding: 0;
+}
 
-    .updating-snackbar-container .v-snack__wrapper {
-        display: block;
-    }
+.updating-snackbar-container .v-snack__wrapper {
+    display: block;
+}
 
-    .updated-snackbar-container .v-snack__wrapper {
-        max-width: none;
-    }
+.updated-snackbar-container .v-snack__wrapper {
+    max-width: none;
+}
 
-    .v-content__wrap .container--fluid {
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-    }
+.v-content__wrap .container--fluid {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
 
-    .v-progress-circular__overlay {
-        transition: none !important;
-    }
+.v-progress-circular__overlay {
+    transition: none !important;
+}
 
-    .tip {
-        font-family: "Roboto", sans-serif;
-    }
+.tip {
+    font-family: "Roboto", sans-serif;
+}
 
-    .main-container {
-        transition: none !important;
-    }
+.main-container {
+    transition: none !important;
+}
 
 </style>

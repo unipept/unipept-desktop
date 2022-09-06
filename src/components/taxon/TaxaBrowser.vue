@@ -9,23 +9,6 @@
                         taxa will be retained in the resulting database.
                     </div>
                 </div>
-                <v-tooltip bottom open-delay="500">
-                    <template v-slot:activator="{ on, attrs }">
-                        <v-btn outlined v-on="on" @click="clearSelection" color="red" class="mr-2">
-                            <v-icon>mdi-close</v-icon>
-                        </v-btn>
-                    </template>
-                    <span>Clear selection</span>
-                </v-tooltip>
-                <v-tooltip bottom open-delay="500">
-                    <template v-slot:activator="{ on, attrs }">
-                        <v-btn color="primary" outlined v-on="on" @click="importTaxaFromFile" :loading="importLoading">
-                            <v-icon>mdi-file-upload-outline</v-icon>
-                        </v-btn>
-                    </template>
-                    <span>Import taxa for filtering from file.</span>
-                </v-tooltip>
-
             </div>
             <div class="my-2">
                 <!-- This error is shown whenever the complete taxa import file could not be read properly -->
@@ -48,7 +31,7 @@
                         Use the search bar below to find taxa that can be used for filtering.
                     </div>
                 </div>
-                <v-chip-group v-else column>
+                <v-chip-group column v-else>
                     <v-chip
                         v-for="taxon in selectedItems"
                         close
@@ -59,37 +42,38 @@
                         {{ taxon.name }}
                     </v-chip>
                 </v-chip-group>
+                <div class="d-flex flex-row justify-center my-2">
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                                color="primary"
+                                outlined
+                                v-on="on"
+                                @click="importTaxaFromFile"
+                                :loading="importLoading"
+                                class="mr-2">
+                                Import taxa from file
+                            </v-btn>
+                        </template>
+                        <span>Import a selection of taxa for filtering from a file.</span>
+                    </v-tooltip>
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn outlined v-on="on" @click="clearSelection" color="red" class="mr-2">
+                                Clear selection
+                            </v-btn>
+                        </template>
+                        <span>Clear selection</span>
+                    </v-tooltip>
+                </div>
+                <div>
+                    <span v-if="uniprotRecordsLoading">Computing database size...</span>
+                    <span v-else>Resulting database will contain {{ formattedUniprotRecords }} UniProtKB records.</span>
+                </div>
             </div>
         </div>
 
         <div>
-            <h3>Search for taxa</h3>
-            <div class="text-caption mb-2">
-                Enter a keyword to search for taxa. You can search by name, NCBI identifier or rank. Advanced search
-                capabilities are available. Some examples of what you can do:
-                <ul>
-                    <li>
-                        Look for all taxa with a specific rank:
-                        <span class="inline-code">rank_name:(species)</span>
-                    </li>
-                    <li>
-                        Look for all taxa whose name contains the words "severe" and "acute":
-                        <span class="inline-code">name:(severe acute)</span>
-                    </li>
-                    <li>
-                        Look for all taxa that are assigned the "species" rank and whose name contains "bacteria":
-                        <span class="inline-code">rank_name:(species) AND name:(bacteria)</span>
-                    </li>
-                    <li>
-                        Look for all taxa whose ID starts with "1234" or whose name contains "1234":
-                        <span class="inline-code">id:(^1234*) OR name:(1234)</span>
-                    </li>
-                    <li>
-                        Look for all "Escherichia Coli" by using it's abbreviation:
-                        <span class="inline-code">e* coli</span>
-                    </li>
-                </ul>
-            </div>
             <div>
                 <!-- Must use append-icon instead of clearable here, otherwise model is set to null -->
                 <v-text-field
@@ -131,24 +115,73 @@
                 </template>
             </v-data-table>
         </div>
+        <div class="text-caption mb-2">
+            <span>Hint:</span>
+            enter a keyword to search for taxa. You can search by name, NCBI identifier or rank.
+            <v-tooltip bottom open-delay="500">
+                <template v-slot:activator="{ on, attrs }">
+                    <a @click="showSearchHintActive = !showSearchHintActive" v-on="on">
+                        Advanced search capabilities
+                    </a>
+                </template>
+                <span>Click to toggle search hints.</span>
+            </v-tooltip>
+            are available.
+        </div>
+        <div class="text-caption" v-if="showSearchHintActive">
+            Some examples of what you can do:
+            <ul>
+                <li>
+                    Look for all taxa with a specific rank:
+                    <span class="inline-code">rank_name:(species)</span>
+                </li>
+                <li>
+                    Look for all taxa whose name contains the words "severe" and "acute":
+                    <span class="inline-code">name:(severe acute)</span>
+                </li>
+                <li>
+                    Look for all taxa that are assigned the "species" rank and whose name contains "bacteria":
+                    <span class="inline-code">rank_name:(species) AND name:(bacteria)</span>
+                </li>
+                <li>
+                    Look for all taxa whose ID starts with "1234" or whose name contains "1234":
+                    <span class="inline-code">id:(^1234*) OR name:(1234)</span>
+                </li>
+                <li>
+                    Look for all "Escherichia Coli" by using it's abbreviation:
+                    <span class="inline-code">e* coli</span>
+                </li>
+            </ul>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
 import Component from "vue-class-component";
-import { DefaultCommunicationSource, NcbiId, NcbiOntologyProcessor, NcbiRank, NcbiTaxon, Ontology } from "unipept-web-components";
-import CachedCommunicationSource from "@/logic/communication/source/CachedCommunicationSource";
+import {
+    NcbiId,
+    NcbiOntologyProcessor,
+    NcbiRank,
+    NcbiTaxon,
+    Ontology,
+    StringUtils
+} from "unipept-web-components";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import { Prop, Watch } from "vue-property-decorator";
 import { DataOptions } from "vuetify";
 import { promises as fs } from "fs";
+import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
 
-const electron = require("electron");
-const { dialog } = electron.remote;
+const { dialog } = require("@electron/remote");
 
 @Component
 export default class TaxaBrowser extends Vue {
+    @Prop({ required: true })
+    private swissprotSelected: boolean;
+    @Prop({ required: true })
+    private tremblSelected: boolean;
+
     private headers = [
         {
             text: "NCBI ID",
@@ -210,19 +243,19 @@ export default class TaxaBrowser extends Vue {
         "deep-orange darken-4"
     ];
 
-    private search: string = "";
+    private search = "";
 
-    private taxaCount: number = 0;
+    private taxaCount = 0;
     private taxa: NcbiTaxon[] = [];
 
-    private loading: boolean = true;
+    private loading = true;
 
-    private filterLoading: boolean = false;
+    private filterLoading = false;
 
-    private importLoading: boolean = false;
+    private importLoading = false;
 
-    private parseError: boolean = false;
-    private importWarning: boolean = false;
+    private parseError = false;
+    private importWarning = false;
     // List of taxon identifiers that could not be imported properly
     private failedImports: string[] = []
 
@@ -234,12 +267,22 @@ export default class TaxaBrowser extends Vue {
 
     private selectedItems: NcbiTaxon[] = [];
 
+    private showSearchHintActive = false;
+
+    private uniprotRecords = 0;
+    private uniprotRecordsLoading = false;
+
+    private get formattedUniprotRecords(): string {
+        return StringUtils.toHumanReadableNumber(this.uniprotRecords);
+    }
+
     private mounted() {
         this.loading = true;
         this.ncbiCommunicator = new CachedNcbiResponseCommunicator();
         this.ncbiOntologyProcessor = new NcbiOntologyProcessor(this.ncbiCommunicator);
         this.taxaCount = this.ncbiCommunicator.getNcbiCount();
         this.loading = false;
+        this.computeUniprotRecords();
     }
 
     private clearSelection(): void {
@@ -286,6 +329,17 @@ export default class TaxaBrowser extends Vue {
     @Watch("selectedItems")
     private onSelectedItemsChanged(): void {
         this.$emit("input", this.selectedItems);
+        this.computeUniprotRecords();
+    }
+
+    private async computeUniprotRecords(): Promise<void> {
+        this.uniprotRecordsLoading = true;
+        this.uniprotRecords = await MetadataCommunicator.getUniProtRecordCount(
+            this.selectedItems.map(taxon => taxon.id),
+            this.swissprotSelected,
+            this.tremblSelected
+        );
+        this.uniprotRecordsLoading = false;
     }
 
     private getRankColor(rank: string): string {

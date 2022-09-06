@@ -1,13 +1,9 @@
 import Vue from "vue";
-import Vuetify from "vuetify/lib";
-import { Ripple } from "vuetify/lib/directives"
+import Vuetify from "vuetify/lib/framework";
 import IconTestMultiple from "@/components/icons/IconTestMultiple.vue";
 
-Vue.use(Vuetify, {
-    directives: {
-        Ripple
-    }
-});
+
+Vue.use(Vuetify);
 
 export default new Vuetify({
     icons: {

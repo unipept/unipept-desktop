@@ -67,15 +67,20 @@
                                         </v-select>
                                     </v-col>
                                     <v-col cols="6">
-                                        <v-select
-                                            dense
-                                            label="Database version"
-                                            :items="versions"
-                                            v-model="selectedVersion"
-                                            :rules="[value => !! value || 'You must select a UniProtKB source']"
-                                            hint="Select the version of the UniProtKB source that should be processed."
-                                            persistent-hint>
-                                        </v-select>
+                                        <div>
+                                            <span class="font-weight-bold">Note:</span> the most recent UniProtKB
+                                            version will be used for the construction of this database. The most recent
+                                            version currently is {{ selectedVersion }}.
+                                        </div>
+<!--                                        <v-select-->
+<!--                                            dense-->
+<!--                                            label="Database version"-->
+<!--                                            :items="versions"-->
+<!--                                            v-model="selectedVersion"-->
+<!--                                            :rules="[value => !! value || 'You must select a UniProtKB source']"-->
+<!--                                            hint="Select the version of the UniProtKB source that should be processed."-->
+<!--                                            persistent-hint>-->
+<!--                                        </v-select>-->
                                     </v-col>
                                 </v-row>
                                 <v-row>
@@ -97,7 +102,11 @@
                             <v-row>
                                 <v-col cols="12">
                                     <div>
-                                        <taxa-browser v-on:input="updateSelectedTaxa"></taxa-browser>
+                                        <taxa-browser
+                                            v-on:input="updateSelectedTaxa"
+                                            :swissprot-selected="selectedSources.includes('SwissProt')"
+                                            :trembl-selected="selectedSources.includes('TrEMBL')"
+                                        />
                                     </div>
                                 </v-col>
                             </v-row>
@@ -134,38 +143,38 @@ import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 export default class CreateCustomDatabase extends Vue {
     @Prop({ required: true })
     private value: boolean;
-    @Prop({ required: false, default: () => [] as string[] })
+    @Prop({ required: false, default: () => ["TrEMBL", "SwissProt"] as string[] })
     private selectedSourcesDefault: string[];
     @Prop({ required: false, default: "" })
     private databaseNameDefault: string;
-    @Prop({ required: false, default: "Current" })
-    private selectedVersionDefault: string;
+    // @Prop({ required: false, default: "Current" })
+    // private selectedVersionDefault: string;
     @Prop({ required: false, default: () => [] as NcbiTaxon[] })
     private selectedTaxaDefault: NcbiTaxon[];
 
-    private dialogActive: boolean = false;
+    private dialogActive = false;
 
-    private loading: boolean = true;
-    private error: boolean = false;
+    private loading = true;
+    private error = false;
 
     private sources: string[] = [
         "TrEMBL",
         "SwissProt"
     ];
-    private selectedSources: string[] = [];
+    // Select both TrEMBL and SwissProt by default
+    private selectedSources: string[] = [...this.sources];
 
-    private databaseName: string = "";
+    private databaseName = "";
 
-    private mirrors: string[] = ["UK (EBI)", "EU (Expasy)", "US (UniProt)"];
-    private selectedMirror: string = "EU (Expasy)";
+    private selectedMirror = "EU (Expasy)";
 
     // All database versions of UniPept that are currently available
-    private versions: string[] = [];
-    private selectedVersion: string = "";
+    // private versions: string[] = [];
+    private selectedVersion = "";
 
     private selectedTaxa: NcbiTaxon[] = [];
 
-    private currentStep: number = 1;
+    private currentStep = 1;
 
     private async mounted() {
         this.onValueChanged();
@@ -181,7 +190,7 @@ export default class CreateCustomDatabase extends Vue {
      * @return true if this database name is not yet taken.
      */
     private isDbNameUnique(name: string): boolean {
-        return ! this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
+        return !this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
     }
 
     private updateSelectedTaxa(value: NcbiTaxon[]): void {
@@ -192,18 +201,18 @@ export default class CreateCustomDatabase extends Vue {
     private async retrieveUniProtVersions(): Promise<void> {
         try {
             this.loading = true;
-            const data = await new Promise<string>((resolve) => {
-                let data = "";
-                https.get("https://ftp.uniprot.org/pub/databases/uniprot/previous_releases/", (res) => {
-                    res.on("data", (chunk) => data += chunk);
-                    res.on("end", () => resolve(data));
-                });
-            });
-
-            for (const version of data.match(/release-[0-9]{4}_[0-9]{2}/g)) {
-                this.versions.push(version.replace("release-", "").replace("_", "."));
-            }
-            this.versions.sort().reverse();
+            // const data = await new Promise<string>((resolve) => {
+            //     let data = "";
+            //     https.get("https://ftp.uniprot.org/pub/databases/uniprot/previous_releases/", (res) => {
+            //         res.on("data", (chunk) => data += chunk);
+            //         res.on("end", () => resolve(data));
+            //     });
+            // });
+            //
+            // for (const version of data.match(/release-[0-9]{4}_[0-9]{2}/g)) {
+            //     this.versions.push(version.replace("release-", "").replace("_", "."));
+            // }
+            // this.versions.sort().reverse();
 
             // We also have to find out what the current version of UniProt is and add it to the list.
             const latestVersionData = await new Promise<string>((resolve) => {
@@ -221,7 +230,7 @@ export default class CreateCustomDatabase extends Vue {
                 .replaceAll(/<\/*version>/g, "")
                 .replace("_", ".")
 
-            this.versions.unshift(lastVersion);
+            this.selectedVersion = lastVersion;
             this.loading = false;
         } catch (e) {
             console.error(e);
@@ -237,26 +246,19 @@ export default class CreateCustomDatabase extends Vue {
     }
 
     private async buildDatabase(): Promise<void> {
-        const sourceUrlMap = {
-            "TrEMBL": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.xml.gz",
-            // "TrEMBL": "host.docker.internal:8000/uniprot_trembl.xml.gz",
-            "SwissProt": "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
-        }
-
-        const configManager = new ConfigurationManager();
-
         // No filtering should be applied in this case (which means we pass only the root to the construction step of
         // the database).
         if (this.selectedTaxa.length === 0) {
             this.selectedTaxa.push(new NcbiTaxon(1, "root", "dummy", []));
         }
 
+        const convertedSources = this.selectedSources.map(s => s.toLowerCase());
+
         this.$store.dispatch(
             "customDatabases/buildDatabase",
             [
                 this.databaseName,
-                this.selectedSources.map(source => (sourceUrlMap as any)[source]),
-                this.selectedSources,
+                convertedSources,
                 this.selectedTaxa.map(taxon => taxon.id),
                 this.selectedVersion
             ]
@@ -276,6 +278,7 @@ export default class CreateCustomDatabase extends Vue {
         this.databaseName = "";
         (this.$refs.databaseForm as any).reset();
         this.selectedSources.splice(0, this.selectedSources.length);
+        this.selectedSources.push(...this.sources);
         this.selectedVersion = this.sources[0];
         this.selectedMirror = "EU (Expasy)";
         this.error = false;
@@ -305,7 +308,7 @@ export default class CreateCustomDatabase extends Vue {
             this.selectedSources.splice(0, this.selectedSources.length);
             this.selectedSources.push(...this.selectedSourcesDefault);
             this.databaseName = this.databaseNameDefault;
-            this.selectedVersion = this.selectedVersionDefault;
+            // this.selectedVersion = this.selectedVersionDefault;
             this.selectedTaxa.splice(0, this.selectedTaxa.length);
             this.selectedTaxa.push(...this.selectedTaxaDefault);
         }

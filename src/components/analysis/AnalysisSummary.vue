@@ -123,7 +123,6 @@ import {
     SearchConfiguration,
     PeptideTrust,
     Pept2DataCommunicator,
-    ExportResultsButton,
     NetworkConfiguration,
     Tooltip, Study, Assay, OnlineAnalysisSource, AnalysisSource
 } from "unipept-web-components";
@@ -138,6 +137,7 @@ import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelec
 import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import ExportResultsButton from "@/components/analysis/ExportResultsButton.vue";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
@@ -146,27 +146,27 @@ export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
 
-    private equateIl: boolean = true;
-    private filterDuplicates: boolean = true;
-    private missedCleavage: boolean = false;
+    private equateIl = true;
+    private filterDuplicates = true;
+    private missedCleavage = false;
 
-    private originalEquateIl: boolean = true;
-    private originalFilterDuplicates: boolean = true;
-    private originalMissedCleavage: boolean = false;
+    private originalEquateIl = true;
+    private originalFilterDuplicates = true;
+    private originalMissedCleavage = false;
 
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
 
-    private originalAnalysisSourceName: string = "";
+    private originalAnalysisSourceName = "";
 
     private currentAnalysisSource: RenderableAnalysisSource = null;
     private renderableSources: RenderableAnalysisSource[] = [];
 
-    private cacheIsValid: boolean = true;
+    private cacheIsValid = true;
     // We are currently still checking if the provided cache is valid or not...
-    private cacheValidityLoading: boolean = true;
+    private cacheValidityLoading = true;
 
-    private searchConfigIsValid: boolean = true;
+    private searchConfigIsValid = true;
 
     get originalPeptideTrust(): PeptideTrust {
         return this.$store.getters.assayData(this.assay)?.originalData?.trust;
@@ -272,11 +272,17 @@ export default class AnalysisSummary extends Vue {
 
     private async checkCacheValidity(): Promise<void> {
         this.cacheValidityLoading = true;
-        const metadataMng = new StorageMetadataManager(this.$store.getters.dbManager);
-        const metadata = await metadataMng.readMetadata(this.assay.getId());
+        const metadataMng = new StorageMetadataManager(
+            this.$store.getters.dbManager,
+            this.$store.getters.projectLocation,
+            this.$store
+        );
+        const metadata = await metadataMng.readMetadata(this.assay);
 
         if (metadata) {
-            this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+            this.cacheIsValid = await this.assay
+                .getAnalysisSource()
+                .verifyEquality(await metadata.analysisSource.computeFingerprint());
         } else {
             this.cacheIsValid = false;
         }
@@ -290,7 +296,8 @@ export default class AnalysisSummary extends Vue {
                 this.currentAnalysisSource.subtitle,
                 this.assay,
                 this.$store.getters.dbManager,
-                this.$store.getters.projectLocation
+                this.$store.getters.projectLocation,
+                this.$store
             );
         } else {
             const configMng = new ConfigurationManager();
@@ -301,7 +308,8 @@ export default class AnalysisSummary extends Vue {
                 this.$store.getters.dbManager,
                 this.$store.getters["customDatabases/database"](this.currentAnalysisSource.title),
                 config.customDbStorageLocation,
-                this.$store.getters.projectLocation
+                this.$store.getters.projectLocation,
+                this.$store
             );
         }
     }
@@ -323,7 +331,9 @@ export default class AnalysisSummary extends Vue {
         const assayWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}/${study.getName()}`,
             this.$store.getters.dbManager,
-            study
+            study,
+            this.$store.getters.projectLocation,
+            this.$store
         );
         this.assay.accept(assayWriter);
 

@@ -64,23 +64,23 @@ export default class DiskUsageBar extends Vue {
      */
     private folder: string;
 
-    private totalDiskSpace: number = 0;
-    private totalFreeSpace: number = 0;
-    private totalFreeSpacePercentage: number = 0;
-    private spaceUsedByFolder: number = 0;
-    private spaceUsedByFolderPercentage: number = 0;
+    private totalDiskSpace = 0;
+    private totalFreeSpace = 0;
+    private totalFreeSpacePercentage = 0;
+    private spaceUsedByFolder = 0;
+    private spaceUsedByFolderPercentage = 0;
 
-    private loading: boolean = true;
-    private error: boolean = false;
+    private loading = true;
+    private error = false;
 
     private interval: NodeJS.Timeout;
 
     private async mounted() {
         this.loading = true;
-        await this.update();
+        setTimeout(() => this.update(), 500);
         this.interval = setInterval(() => {
             this.update();
-        }, 1000);
+        }, 30000);
         this.loading = false;
     }
 
@@ -94,19 +94,19 @@ export default class DiskUsageBar extends Vue {
         if (this.folder) {
             try {
                 const spaceReport = await FileSystemUtils.getDiskStats(this.folder);
-
                 this.totalDiskSpace = spaceReport.total;
                 this.totalFreeSpace = spaceReport.free;
 
                 this.spaceUsedByFolder = await FileSystemUtils.getSize(this.folder);
-
                 this.totalFreeSpacePercentage = Math.round((this.totalFreeSpace / this.totalDiskSpace) * 100);
                 this.spaceUsedByFolderPercentage = Math.round((this.spaceUsedByFolder / this.totalDiskSpace) * 100);
 
                 this.error = false;
             } catch (err) {
+                console.warn(err);
                 this.error = true;
             }
+
         }
     }
 }
