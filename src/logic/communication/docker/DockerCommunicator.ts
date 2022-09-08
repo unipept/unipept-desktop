@@ -261,6 +261,9 @@ export default class DockerCommunicator {
                     inspectorStream,
                     {
                         name: webContainerName,
+                        Env: [
+                            `DB_PORT=${mysqlPort.toString()}`
+                        ],
                         HostConfig: {
                             PortBindings: {
                                 "3000/tcp": [{
