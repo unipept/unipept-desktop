@@ -389,7 +389,13 @@ export default class CreateAssayDialog extends Vue {
 
     private close() {
         this.dialogActive = false;
-        this.$emit("input", this.dialogActive);
+    }
+
+    @Watch("dialogActive")
+    private onDialogActiveChanged() {
+        if (!this.dialogActive) {
+            this.$emit("input", this.dialogActive)
+        }
     }
 
     /**
