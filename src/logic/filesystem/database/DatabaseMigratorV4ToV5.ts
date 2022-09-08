@@ -9,21 +9,12 @@ import v4_to_v5 from "raw-loader!@/db/migrations/v4_to_v5.sql";
  * that were used for the analysis of a specific sample. These details are required by the application to check if the
  * selected custom database is available for analysis (or not).
  *
- * The migrator will also reset the default configuration values of the application since important changes have been
- * made to these default values since the last version (the default Docker settings for Windows-systems have changed
- * for example).
- *
  * @author Pieter Verschaffelt
  */
 export default class DatabaseMigratorV4ToV5 implements DatabaseMigrator {
     constructor(private readonly projectLocation: string) {}
 
     public async upgrade(database: Database.Database): Promise<void> {
-        // Reset the configuration back to the default value.
-        const configManager = new ConfigurationManager();
-        const defaultConfig = await configManager.getDefaultConfiguration();
-        await configManager.writeConfiguration(defaultConfig);
-
         // Now also migrate the SQL-database itself. For this to work, we need to read in all data and metadata for the
         // assays and convert to the newest database format. These data and metadata files will be temporarily kept
         // in memory.
