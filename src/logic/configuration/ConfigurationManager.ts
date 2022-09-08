@@ -79,7 +79,8 @@ export default class ConfigurationManager {
             maxParallelRequests: 3,
             dockerConfigurationSettings:
                 Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
-            customDbStorageLocation: customDbDir
+            customDbStorageLocation: customDbDir,
+            configurationAppVersion: this.app.getVersion()
         }
     }
 

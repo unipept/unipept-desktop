@@ -3,7 +3,7 @@ import Configuration from "@/logic/configuration/Configuration";
 import { NetworkConfiguration, QueueManager } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import { Store } from "vuex";
-import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
+import ApplicationMigrator from "@/logic/application/ApplicationMigrator";
 
 /**
  * This class provides functions that need to be run when the application is started. All steps that are necessary for
@@ -20,6 +20,7 @@ export default class BootstrapApplication {
      * Start and load the different components required for the application to function properly.
      */
     public async loadApplicationComponents(): Promise<void> {
+        await this.runApplicationMigrations();
         const config = await this.initializeConfiguration();
         this.initializeApi(config);
         this.initializeWorkers(config);
@@ -60,5 +61,10 @@ export default class BootstrapApplication {
 
     private initializeProcessing(config: Configuration): Promise<void> {
         return this.store.dispatch("initializeAssayQueue");
+    }
+
+    private runApplicationMigrations(): Promise<void> {
+        const applicationMigrator = new ApplicationMigrator();
+        return applicationMigrator.runMigrations();
     }
 }
