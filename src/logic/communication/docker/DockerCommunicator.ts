@@ -152,7 +152,7 @@ export default class DockerCommunicator {
                                 `${dataVolumeName}:/var/lib/mysql`,
                                 // Mount the folder in which the reusable database index structure will be kept
                                 `${indexVolumeName}:/index`,
-                                `${tempVolumeName}:/temp`
+                                `${tempVolumeName}:/tmp`
                             ]
                         }
                     }
