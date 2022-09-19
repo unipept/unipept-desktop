@@ -19,8 +19,18 @@ export default class Utils {
      * @return True if firstVersion is larger than secondVersion
      */
     static isVersionLargerThan(firstVersion: string, secondVersion: string): boolean {
-        const firstSplitted = firstVersion.split(".");
-        const secondSplitted = secondVersion.split(".");
+        const firstSplitted = firstVersion.split(".").map(x => parseInt(x));
+        const secondSplitted = secondVersion.split(".").map(x => parseInt(x));
+
+        if (firstSplitted.length < secondSplitted.length) {
+            for (let i = 0; i < secondSplitted.length - firstSplitted.length; i++) {
+                firstSplitted.push(0);
+            }
+        } else if (secondSplitted.length < firstSplitted.length) {
+            for (let i = 0; i < firstSplitted.length - secondSplitted.length; i++) {
+                secondSplitted.push(0);
+            }
+        }
 
         for (let part = 0; part < firstSplitted.length; part++) {
             if (firstSplitted[part] > secondSplitted[part]) {

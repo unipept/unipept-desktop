@@ -436,8 +436,8 @@ export default class DockerCommunicator {
      * @param imageName Exact matching name of the image that should be pulled from the Docker Hub (should also include
      * the correct version numbering).
      */
-    private pullImage(imageName: string): Promise<void> {
-        return new Promise<void>(
+    private async pullImage(imageName: string): Promise<void> {
+        await new Promise<void>(
             async(resolve, reject) => {
                 try {
                     await DockerCommunicator.connection.pull(
@@ -466,6 +466,32 @@ export default class DockerCommunicator {
                 }
             }
         );
+
+        // Once pulling the images is done, we remove old versions of these images that are no longer required.
+        let imageWithoutVersion = imageName;
+        if (imageName.includes(":")) {
+            imageWithoutVersion = imageName.split(":")[0];
+        }
+        const imagesWithName = (await DockerCommunicator.connection.listImages())
+            .filter(i => (i.RepoDigests && i.RepoDigests.some(d => d.includes(imageWithoutVersion))));
+
+
+        const versionIdentifier = "org.opencontainers.image.version";
+
+        const newestImage = imagesWithName.sort(
+            (a, b) => {
+                return Utils.isVersionLargerThan(
+                    a.Labels[versionIdentifier],
+                    b.Labels[versionIdentifier]
+                ) ? -1 : 1;
+            }
+        )[0];
+
+        for (const image of imagesWithName) {
+            if (image.Labels[versionIdentifier] !== newestImage.Labels[versionIdentifier]) {
+                await DockerCommunicator.connection.getImage(image.Id).remove();
+            }
+        }
     }
 
     private getVolume(volumeName: string): Dockerode.Volume {
