@@ -36,40 +36,50 @@ export default class CustomDatabaseManager {
             for (const dir of (await fs.readdir(dbsRoot))) {
                 const dbPath = path.join(dbsRoot, dir);
                 if ((await fs.lstat(dbPath)).isDirectory()) {
+                    let metadata: any;
+
                     // Check if a metadata file is present in the folder that was found. If it is present, we should
                     // read the database name and other metadata from this file.
                     try {
-                        const metadata = JSON.parse(
+                        metadata = JSON.parse(
                             await fs.readFile(
                                 this.metadataPath(rootFolder, dir),
                                 { encoding: "utf-8" }
-                            )
-                        );
-
-                        const dockerCommunicator = new DockerCommunicator(rootFolder);
-                        const dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
-
-                        databases.push(
-                            new CustomDatabase(
-                                metadata.name,
-                                metadata.sources,
-                                metadata.sourceTypes,
-                                metadata.taxa,
-                                metadata.databaseVersion,
-                                metadata.entries,
-                                metadata.ready,
-                                dbSize,
-                                metadata.cancelled,
-                                metadata.inProgress,
-                                metadata.progress,
-                                metadata.error
                             )
                         );
                     } catch (e) {
                         console.warn(e);
                         // The inspected directory probably doesn't contain a database and we should do nothing in this
                         // case.
+                        continue;
                     }
+
+                    let dbSize: number = -1;
+
+                    try {
+                        const dockerCommunicator = new DockerCommunicator(rootFolder);
+                        dbSize = await dockerCommunicator.getDatabaseSize(metadata.name);
+                    } catch (e) {
+                        // Docker is probably not running, so we can't get the database size.
+                    }
+
+                    databases.push(
+                        new CustomDatabase(
+                            metadata.name,
+                            metadata.sources,
+                            metadata.sourceTypes,
+                            metadata.taxa,
+                            metadata.databaseVersion,
+                            metadata.entries,
+                            metadata.ready,
+                            dbSize,
+                            metadata.cancelled,
+                            metadata.inProgress,
+                            metadata.progress,
+                            metadata.error
+                        )
+                    );
+
                 }
             }
         } catch (e) {
