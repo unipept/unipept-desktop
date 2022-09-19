@@ -367,7 +367,7 @@ export default class CustomDatabasePage extends Vue {
 
     private resetDatabaseDefaults(): void {
         this.selectedSourceDefault.splice(0, this.selectedSourceDefault.length);
-        this.selectedSourceDefault.push("TrEMBL", "SwissProt");
+        this.selectedSourceDefault.push("trembl", "swissprot");
         this.databaseNameDefault = "";
         this.selectedVersionDefault = "Current";
         this.selectedTaxaDefault.splice(0, this.selectedTaxaDefault.length);
@@ -379,14 +379,15 @@ export default class CustomDatabasePage extends Vue {
     }
 
     private async copyDatabase(db: CustomDatabase): Promise<void> {
-        this.resetDatabaseDefaults();
-
+        this.selectedSourceDefault.splice(0, this.selectedSourceDefault.length);
         this.selectedSourceDefault.push(...db.sourceTypes);
         this.databaseNameDefault = this.generateUniqueDbName(db.name);
         this.selectedVersionDefault = db.databaseVersion;
 
+        this.selectedTaxaDefault.splice(0, this.selectedTaxaDefault.length);
         const ncbiOntologyProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
-        this.selectedTaxaDefault.push(...(await ncbiOntologyProcessor.getOntologyByIds(db.taxa)).toMap().values());
+        const ontology = await ncbiOntologyProcessor.getOntologyByIds(db.taxa);
+        this.selectedTaxaDefault.push(...(db.taxa.map(id => ontology.getDefinition(id))));
 
         this.createDatabaseDialog = true;
     }

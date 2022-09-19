@@ -181,6 +181,8 @@ export default class TaxaBrowser extends Vue {
     private swissprotSelected: boolean;
     @Prop({ required: true })
     private tremblSelected: boolean;
+    @Prop({ required: true })
+    private value: NcbiTaxon[];
 
     private headers = [
         {
@@ -278,6 +280,7 @@ export default class TaxaBrowser extends Vue {
 
     private mounted() {
         this.loading = true;
+        this.onValueChanged();
         this.ncbiCommunicator = new CachedNcbiResponseCommunicator();
         this.ncbiOntologyProcessor = new NcbiOntologyProcessor(this.ncbiCommunicator);
         this.taxaCount = this.ncbiCommunicator.getNcbiCount();
@@ -302,6 +305,14 @@ export default class TaxaBrowser extends Vue {
         this.options.page = 1;
         await this.onOptionsChanged();
         this.filterLoading = false;
+    }
+
+    @Watch("value")
+    private onValueChanged() {
+        if (this.value !== this.selectedItems) {
+            this.selectedItems.splice(0, this.selectedItems.length);
+            this.selectedItems.push(...this.value);
+        }
     }
 
     @Watch("options")
