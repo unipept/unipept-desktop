@@ -30,7 +30,10 @@ export default class LocalPept2DataCommunicator extends Pept2DataCommunicator {
         private readonly customDatabaseLocation: string
     ) {
         super(
-            `${DockerCommunicator.WEB_COMPONENT_PUBLIC_URL}:${DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT}`
+            `${DockerCommunicator.WEB_COMPONENT_PUBLIC_URL}:${DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT}`,
+            // This cache key will be used to make sure that network requests in the cache are invalidated if the
+            // database changes.
+            customDatabase.getDatabaseHash()
         );
     }
 
