@@ -78,28 +78,27 @@
                 </v-icon>
             </div>
 
-            <!-- Name of the assay -->
-            <div class="flex-grow-1">
-                <!-- Simply display the name if editing is disabled -->
-                <span
-                    v-if="!isEditingAssayName"
-                    v-on:dblclick="enableAssayEdit()"
-                    class="assay-name">
-                    {{ assay.getName() }}
-                </span>
+            <!-- Simply display the name if editing is disabled -->
+            <span
+                v-if="!isEditingAssayName"
+                v-on:dblclick="enableAssayEdit()"
+                class="assay-name">
+                {{ assay.getName() }}
+            </span>
 
-                <!-- Input field when editing the name is enabled. -->
-                <input
-                    v-else
-                    v-model="assayName"
-                    v-on:blur="disableAssayEdit()"
-                    v-on:keyup.enter="disableAssayEdit()"
-                    :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
-                    type="text" />
-            </div>
+            <!-- Input field when editing the name is enabled. -->
+            <input
+                v-else
+                v-model="assayName"
+                v-on:blur="disableAssayEdit()"
+                v-on:keyup.enter="disableAssayEdit()"
+                :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
+                type="text" />
+
+            <v-spacer></v-spacer>
 
             <!-- Icon on the right side of the item -->
-            <div>
+            <div class="ml-2">
                 <!-- When the assay has been fully processed, we show the info button to open up the peptide summary -->
                 <v-tooltip v-if="analysisReady" bottom open-delay="500">
                     <template v-slot:activator="{ on }">
@@ -413,4 +412,6 @@ export default class AssayItem extends Vue {
         position: relative;
         bottom: 1px;
     }
+
+
 </style>
