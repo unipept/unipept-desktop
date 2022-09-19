@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { exec, ExecException } from "child_process";
+import checkDiskSpace from "check-disk-space";
 
 export type DiskStats = {
     total: number,
@@ -54,70 +55,76 @@ export default class FileSystemUtils {
             return undefined;
         }
 
-        const { exec } = require("child_process");
-        if (process.platform === "darwin" || process.platform === "linux") {
-            const [stdout, stderr] = await new Promise<[string, string]>(
-                (resolve, reject) =>  {
-                    exec(
-                        `df -B1 ${folder}`,
-                        { timeout: 200 },
-                        (err: ExecException | null, stdout: string, stderr: string) =>  {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve([stdout, stderr]);
-                            }
-                        }
-                    );
-                }
-            );
-
-            if (stderr) {
-                return undefined;
-            } else {
-                // Try to parse the output
-                const lines = stdout.split("\n");
-                const fields = lines[1].split(/\s+/);
-
-                return {
-                    total: Number.parseInt(fields[3]) + Number.parseInt(fields[2]),
-                    free: Number.parseInt(fields[3])
-                }
-            }
-        } else if (process.platform === "win32") {
-            const [stdout, stderr] = await new Promise<[string, string]>(
-                (resolve, reject) =>  {
-                    exec(
-                        "wmic logicaldisk get size,freespace,caption",
-                        (err: ExecException | null, stdout: string, stderr: string) =>  {
-                            if (err) {
-                                reject(err);
-                            } else {
-                                resolve([stdout, stderr]);
-                            }
-                        }
-                    );
-                }
-            );
-
-            if (stderr) {
-                return undefined;
-            }
-
-            // Drive identification information is always given as the first part of the path in Windows
-            const driveLetter = folder.slice(0, 2);
-
-            const lines = stdout.split("\n").map(l => l.trimEnd());
-            const requestedLine = lines.find(l => l.startsWith(driveLetter));
-
-            const fields = requestedLine.split(/\s+/);
-
-            return {
-                total: Number.parseInt(fields[2]),
-                free: Number.parseInt(fields[1])
-            }
+        const space = await checkDiskSpace(folder);
+        return {
+            total: space.size,
+            free: space.free
         }
 
-        return undefined;
+        // const { exec } = require("child_process");
+        // if (process.platform === "darwin" || process.platform === "linux") {
+        //     const [stdout, stderr] = await new Promise<[string, string]>(
+        //         (resolve, reject) =>  {
+        //             exec(
+        //                 `df -B1 ${folder}`,
+        //                 { timeout: 200 },
+        //                 (err: ExecException | null, stdout: string, stderr: string) =>  {
+        //                     if (err) {
+        //                         reject(err);
+        //                     } else {
+        //                         resolve([stdout, stderr]);
+        //                     }
+        //                 }
+        //             );
+        //         }
+        //     );
+        //
+        //     if (stderr) {
+        //         return undefined;
+        //     } else {
+        //         // Try to parse the output
+        //         const lines = stdout.split("\n");
+        //         const fields = lines[1].split(/\s+/);
+        //
+        //         return {
+        //             total: Number.parseInt(fields[3]) + Number.parseInt(fields[2]),
+        //             free: Number.parseInt(fields[3])
+        //         }
+        //     }
+        // } else if (process.platform === "win32") {
+        //     const [stdout, stderr] = await new Promise<[string, string]>(
+        //         (resolve, reject) =>  {
+        //             exec(
+        //                 "wmic logicaldisk get size,freespace,caption",
+        //                 (err: ExecException | null, stdout: string, stderr: string) =>  {
+        //                     if (err) {
+        //                         reject(err);
+        //                     } else {
+        //                         resolve([stdout, stderr]);
+        //                     }
+        //                 }
+        //             );
+        //         }
+        //     );
+        //
+        //     if (stderr) {
+        //         return undefined;
+        //     }
+        //
+        //     // Drive identification information is always given as the first part of the path in Windows
+        //     const driveLetter = folder.slice(0, 2);
+        //
+        //     const lines = stdout.split("\n").map(l => l.trimEnd());
+        //     const requestedLine = lines.find(l => l.startsWith(driveLetter));
+        //
+        //     const fields = requestedLine.split(/\s+/);
+        //
+        //     return {
+        //         total: Number.parseInt(fields[2]),
+        //         free: Number.parseInt(fields[1])
+        //     }
+        // }
+        //
+        // return undefined;
     }
 }

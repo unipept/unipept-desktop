@@ -24,6 +24,7 @@
         "@mdi/font": "^7.0.96",
         "async": "^3.2.4",
         "better-sqlite3": "^7.6.2",
+        "check-disk-space": "^3.3.1",
         "chokidar": "^3.5.3",
         "core-js": "^3.25.0",
         "dockerode": "^3.3.4",
