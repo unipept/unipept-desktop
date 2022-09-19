@@ -97,11 +97,6 @@ export default class ExportResultsButton extends Vue {
         if (this.assay && this.peptideCountTable) {
             this.exportLoading = true;
 
-            console.log(this.$store.getters.assayData(this.assay));
-            console.log(this.goOntology);
-            console.log(this.ecOntology);
-            console.log(this.interproOntology);
-
             const csv: string = await PeptideExport.exportSummaryAsCsv(
                 this.peptideCountTable,
                 this.pept2data,
