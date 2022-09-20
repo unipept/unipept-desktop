@@ -103,7 +103,7 @@
                                 <v-col cols="12">
                                     <div>
                                         <taxa-browser
-                                            v-on:input="updateSelectedTaxa"
+                                            v-model="selectedTaxa"
                                             :swissprot-selected="selectedSources.includes('SwissProt')"
                                             :trembl-selected="selectedSources.includes('TrEMBL')"
                                         />
@@ -191,11 +191,6 @@ export default class CreateCustomDatabase extends Vue {
      */
     private isDbNameUnique(name: string): boolean {
         return !this.$store.getters["customDatabases/databases"].some((db: CustomDatabase) => db.name === name);
-    }
-
-    private updateSelectedTaxa(value: NcbiTaxon[]): void {
-        this.selectedTaxa.splice(0, this.selectedTaxa.length);
-        this.selectedTaxa.push(...value);
     }
 
     private async retrieveUniProtVersions(): Promise<void> {
@@ -306,13 +301,16 @@ export default class CreateCustomDatabase extends Vue {
         if (this.value) {
             // Reset to the default supplied values.
             this.selectedSources.splice(0, this.selectedSources.length);
-            this.selectedSources.push(...this.selectedSourcesDefault);
+            this.selectedSources.push(...this.selectedSourcesDefault.map(
+                (x: string) => {
+                    return { "trembl": "TrEMBL", "swissprot": "SwissProt" }[x]
+                }
+            ));
             this.databaseName = this.databaseNameDefault;
             // this.selectedVersion = this.selectedVersionDefault;
             this.selectedTaxa.splice(0, this.selectedTaxa.length);
             this.selectedTaxa.push(...this.selectedTaxaDefault);
         }
-
         this.dialogActive = this.value;
     }
 
