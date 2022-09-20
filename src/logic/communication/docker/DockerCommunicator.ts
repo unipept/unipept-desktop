@@ -346,6 +346,10 @@ export default class DockerCommunicator {
     }
 
     public async getDatabaseSize(dbName: string): Promise<number> {
+        if (!DockerCommunicator.connection) {
+            return -1;
+        }
+
         if (!(await this.volumeExists(this.generateDataVolumeName(dbName)))) {
             return -1;
         }
