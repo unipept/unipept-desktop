@@ -8,6 +8,7 @@ import StringNotifierInspectorStream from "@/logic/communication/docker/StringNo
 import Utils from "@/logic/Utils";
 import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 import PortFinder from "portfinder";
+import { powerSaveBlocker } from "@electron/remote";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
@@ -124,7 +125,9 @@ export default class DockerCommunicator {
         const containerName =
             `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
+
         await new Promise<void>(async(resolve, reject) => {
+            const appSuspensionId = powerSaveBlocker.start("prevent-app-suspension");
             try {
                 await DockerCommunicator.connection.run(
                     DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
@@ -163,6 +166,8 @@ export default class DockerCommunicator {
             } catch (err) {
                 this.dbBeingConstructed = undefined;
                 reject(err);
+            } finally {
+                powerSaveBlocker.stop(appSuspensionId);
             }
         });
 

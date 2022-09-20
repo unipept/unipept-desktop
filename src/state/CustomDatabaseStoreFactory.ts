@@ -5,8 +5,6 @@ import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator"
 import Configuration from "@/logic/configuration/Configuration";
 import * as path from "path";
 import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
-import { data } from "jquery";
-import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
 
 export interface CustomDatabaseState {
     databases: CustomDatabase[],
