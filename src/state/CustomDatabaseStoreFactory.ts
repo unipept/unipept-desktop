@@ -162,6 +162,10 @@ export default class CustomDatabaseStoreFactory {
                         progressObj.startTimes[i] = 0;
                         progressObj.endTimes[i] = 0;
                     }
+
+                    progressObj.startTimes[0] = new Date().getTime();
+                    progressObj.currentStep = 0;
+                    progressObj.currentValue = -1;
                 }
 
                 dbObj.ready = status;
