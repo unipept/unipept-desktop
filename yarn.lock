@@ -8246,10 +8246,10 @@ unipept-visualizations@^2.1.0:
     d3 "^6.2.0"
     regenerator-runtime "^0.13.7"
 
-unipept-web-components@^1.5.7:
-  version "1.5.7"
-  resolved "https://registry.yarnpkg.com/unipept-web-components/-/unipept-web-components-1.5.7.tgz#618f5e56a1da4029cba821a04961f0da7393d9a1"
-  integrity sha512-HjbHRLFxucNXlMbtx02mHOjOcYTszPo3hMQoVrRTLp1ydVxNaJnDM3dgdTM7j9iDYVF8wIIj7Q2BbJ2IAGVrTA==
+unipept-web-components@^1.5.8:
+  version "1.5.8"
+  resolved "https://registry.yarnpkg.com/unipept-web-components/-/unipept-web-components-1.5.8.tgz#125b6ecd78a0753830f3ce0cbace139d92f07d81"
+  integrity sha512-LxUyFmr2oGnKYeRS5qHdS9ei9XZv4ZgQnTmLbms1vI13cubWgwGxyXycr20AysMHznuiO+6Jod3LPzaJ3PIVZg==
   dependencies:
     async "^3.2.0"
     axios "^0.21.1"
