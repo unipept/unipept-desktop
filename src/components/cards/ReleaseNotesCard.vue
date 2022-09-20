@@ -26,7 +26,7 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import { NetworkUtils } from "unipept-web-components";
-import marked from "marked";
+import { marked } from "marked";
 
 const { app } = require("@electron/remote");
 
@@ -48,6 +48,7 @@ export default class ReleaseNotesCard extends Vue {
             const releaseNotes = await communicator.getReleaseNotes(app.getVersion());
             this.releaseContent = marked(releaseNotes);
         } catch (error) {
+            console.error(error);
             this.releaseContent = "Could not load release notes. Make sure you're connected to the internet."
         }
         this.loading = false;
