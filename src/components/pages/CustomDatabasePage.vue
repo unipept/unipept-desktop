@@ -12,6 +12,12 @@
                                 before building a database.
                             </v-alert>
 
+                            <v-alert type="error" prominent text v-if="dbFolderError">
+                                The specified database folder does not exist (or the provided path is not a folder).
+                                Make sure that all <router-link to="/settings">settings</router-link> are properly
+                                configured before building a database.
+                            </v-alert>
+
                             <v-alert type="warning" prominent text v-if="lowOnMemoryWarning">
                                 <div>
                                     Warning: not enough memory
@@ -217,6 +223,7 @@ import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import { Watch } from "vue-property-decorator";
 import DiskUsageBar from "@/components/filesystem/DiskUsageBar.vue";
 import ErrorDetailViewer from "@/components/error/ErrorDetailViewer.vue";
+import { promises as fs } from "fs";
 
 @Component({
     components: {
@@ -231,6 +238,9 @@ export default class CustomDatabasePage extends Vue {
     private createDatabaseDialog = false;
 
     private dockerConnectionError = false;
+
+    // Error that's shown when the selected folder for storing databases is not readable or does not exist.
+    private dbFolderError = false;
 
     private lowOnMemoryWarning = false;
     // The amount of memory that's currently allocated to the Docker daemon.
@@ -309,6 +319,7 @@ export default class CustomDatabasePage extends Vue {
 
         this.dockerCheckTimeout = setInterval(async() => {
             this.dockerConnectionError = !(await this.checkDockerConnection());
+            this.dbFolderError = !(await this.databaseFolderExists());
         }, 1000);
 
         const configurationMng = new ConfigurationManager();
@@ -344,6 +355,22 @@ export default class CustomDatabasePage extends Vue {
 
             return true;
         } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * This function checks if the folder that's currently been set for storage of custom databases does exist and is
+     * readable.
+     *
+     * @return True when the given database folder does exist and __is__ readable.
+     */
+    private async databaseFolderExists(): Promise<boolean> {
+        try {
+            const stats = await fs.lstat(this.databaseFolder);
+            return stats.isDirectory();
+        } catch (error) {
+            // Folder does not exist.
             return false;
         }
     }
