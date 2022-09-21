@@ -63,27 +63,43 @@
                                     </span>
                                 </template>
                                 <template v-slot:item.actions="{ item }">
-                                    <v-btn
-                                        icon
-                                        x-small
-                                        :disabled="item.ready && !item.cancelled"
-                                        class="mx-1"
-                                        :loading="!dbsBeingDeleted.includes(item.name) && dbsBeingStopped.includes(item.name)">
-                                        <v-icon v-if="item.error.status || item.cancelled" @click="restartBuild(item.name)">
-                                            mdi-restart
-                                        </v-icon>
-                                        <v-icon v-else @click="stopDatabase(item.name)">
-                                            mdi-stop
-                                        </v-icon>
-                                    </v-btn>
-                                    <v-btn
-                                        icon
-                                        x-small
-                                        class="mx-1"
-                                        @click="deleteDatabase(item.name)"
-                                        :loading="dbsBeingDeleted.indexOf(item.name) !== -1">
-                                        <v-icon>mdi-delete</v-icon>
-                                    </v-btn>
+                                    <v-tooltip open-delay="500" bottom v-if="item.error.status || item.cancelled">
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn icon x-small class="mx-1" @click="restartBuild(item.name)" v-on="on">
+                                                <v-icon>mdi-restart</v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Restart construction process for this database.</span>
+                                    </v-tooltip>
+                                    <v-tooltip open-delay="500" bottom v-else>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn
+                                                icon
+                                                x-small
+                                                :disabled="item.ready"
+                                                class="mx-1"
+                                                @click="stopDatabase(item.name)"
+                                                :loading="dbsBeingStopped.includes(item.name)"
+                                                v-on="on">
+                                                <v-icon>mdi-stop</v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Stop construction process for this database.</span>
+                                    </v-tooltip>
+                                    <v-tooltip open-delay="500" bottom>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn
+                                                icon
+                                                x-small
+                                                class="mx-1"
+                                                @click="deleteDatabase(item.name)"
+                                                :loading="dbsBeingDeleted.indexOf(item.name) !== -1"
+                                                v-on="on">
+                                                <v-icon>mdi-delete</v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Delete this database.</span>
+                                    </v-tooltip>
                                     <v-tooltip open-delay="500" bottom>
                                         <template v-slot:activator="{ on, attrs }">
                                             <v-btn
@@ -97,7 +113,7 @@
                                                 </v-icon>
                                             </v-btn>
                                         </template>
-                                        <span>Duplicate this database.</span>
+                                        <span>Create new database with the same configuration as this one.</span>
                                     </v-tooltip>
                                 </template>
                                 <template v-slot:item.status="{ item }">
