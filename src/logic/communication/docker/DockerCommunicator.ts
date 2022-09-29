@@ -125,6 +125,7 @@ export default class DockerCommunicator {
         const containerName =
             `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
 
+        const memoryForSort = await this.computeSortMemoryLimit();
 
         await new Promise<void>(async(resolve, reject) => {
             const appSuspensionId = powerSaveBlocker.start("prevent-app-suspension");
@@ -147,7 +148,8 @@ export default class DockerCommunicator {
                             "MARIADB_PASSWORD=unipept",
                             `DB_TYPES=${customDb.sourceTypes.join(",")}`,
                             `DB_SOURCES=${customDb.sources.join(",")}`,
-                            `FILTER_TAXA=${customDb.taxa.join(",")}`
+                            `FILTER_TAXA=${customDb.taxa.join(",")}`,
+                            `SORT_MEMORY=${memoryForSort}`
                         ],
                         HostConfig: {
                             Binds: [
@@ -498,7 +500,11 @@ export default class DockerCommunicator {
 
         for (const image of imagesWithName) {
             if (image.Labels[versionIdentifier] !== newestImage.Labels[versionIdentifier]) {
-                await DockerCommunicator.connection.getImage(image.Id).remove();
+                try {
+                    await DockerCommunicator.connection.getImage(image.Id).remove();
+                } catch (e) {
+                    console.warn(`Could not remove image ${image.Id}. Will try again later.`);
+                }
             }
         }
     }
@@ -658,5 +664,21 @@ export default class DockerCommunicator {
 
     private generateTempVolumePath(tempLocation: string): string {
         return tempLocation;
+    }
+
+    /**
+     * This function computes the memory limit string that can be used to configure the sort command in the database
+     * construction Docker container. This string follows the convention required by the Linux sort command.
+     *
+     */
+    private async computeSortMemoryLimit(): Promise<string> {
+        const info = await this.getDockerInfo();
+        // Reserved memory for the Docker deamon in Gigabytes (should be at least 4).
+        const reservedMemory = info.MemTotal / (Math.pow(2,30));
+        const roundedToNearest2 = Math.round(reservedMemory / 2) * 2;
+        // We subtract 2G for the remainder of the script and then divide by 2 to get the memory limit that each
+        // sort process is allowed to use.
+        const memoryLeftForSort = (roundedToNearest2 - 2) / 2;
+        return `${memoryLeftForSort}G`;
     }
 }
