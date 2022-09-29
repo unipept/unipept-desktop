@@ -277,7 +277,8 @@ export default class DockerCommunicator {
                                     HostIP: "0.0.0.0",
                                     HostPort: DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT
                                 }]
-                            }
+                            },
+                            ExtraHosts: ["host.docker.internal:host-gateway"]
                         }
                     }
                 );
