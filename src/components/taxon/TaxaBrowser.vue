@@ -25,66 +25,79 @@
                         {{ failedImports.join(", ") }}.
                     </v-alert>
                 </div>
-                <div v-if="selectedItems.length === 0" style="text-align: center">
-                    <div>No taxa selected yet. No filtering will be applied.</div>
-                    <div class="text-caption">
-                        Use the search bar below to find taxa that can be used for filtering.
-                    </div>
-                </div>
-                <v-chip-group column v-else>
-                    <v-chip
-                        v-for="taxon in selectedItems"
-                        close
-                        :key="taxon.id"
-                        @click:close="selectItem(taxon)"
-                        :color="getRankColor(taxon.rank)"
-                        dark>
-                        {{ taxon.name }}
-                    </v-chip>
-                </v-chip-group>
-                <div class="d-flex flex-row justify-center my-2">
-                    <v-tooltip bottom open-delay="500">
-                        <template v-slot:activator="{ on, attrs }">
-                            <v-btn
-                                color="primary"
-                                outlined
-                                v-on="on"
-                                @click="importTaxaFromFile"
-                                :loading="importLoading"
-                                class="mr-2">
-                                Import taxa from file
-                            </v-btn>
-                        </template>
-                        <span>Import a selection of taxa for filtering from a file.</span>
-                    </v-tooltip>
-                    <v-tooltip bottom open-delay="500">
-                        <template v-slot:activator="{ on, attrs }">
-                            <v-btn outlined v-on="on" @click="clearSelection" color="red" class="mr-2">
-                                Clear selection
-                            </v-btn>
-                        </template>
-                        <span>Clear selection</span>
-                    </v-tooltip>
-                </div>
-                <div>
-                    <span v-if="uniprotRecordsLoading">Computing database size...</span>
-                    <span v-else>Resulting database will contain {{ formattedUniprotRecords }} UniProtKB records.</span>
-                </div>
+
+                <v-container fluid>
+                    <v-row class="d-flex align-center">
+                        <div class="flex-grow-1">
+                            <div v-if="selectedItems.length === 0" style="text-align: center">
+                                <div>No taxa selected yet. No filtering will be applied.</div>
+                                <div class="text-caption">
+                                    Use the table and search bar below to find taxa that can be used for filtering.
+                                </div>
+                            </div>
+                            <v-chip-group column v-else>
+                                <v-chip
+                                    v-for="taxon in selectedItems"
+                                    close
+                                    :key="taxon.id"
+                                    @click:close="selectItem(taxon)"
+                                    :color="getRankColor(taxon.rank)"
+                                    dark>
+                                    {{ taxon.name }}
+                                </v-chip>
+                            </v-chip-group>
+                        </div>
+                        <div class="d-flex flex-column justify-center">
+                            <v-tooltip bottom open-delay="500">
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-btn
+                                        color="primary"
+                                        outlined
+                                        v-on="on"
+                                        @click="importTaxaFromFile"
+                                        :loading="importLoading"
+                                        class="mb-1"
+                                        small>
+                                        Import taxa from file
+                                    </v-btn>
+                                </template>
+                                <span>Import a selection of taxa for filtering from a file.</span>
+                            </v-tooltip>
+                            <v-tooltip bottom open-delay="500">
+                                <template v-slot:activator="{ on, attrs }">
+                                    <v-btn outlined v-on="on" @click="clearSelection" color="red" small>
+                                        Clear selection
+                                    </v-btn>
+                                </template>
+                                <span>Clear all selected taxa.</span>
+                            </v-tooltip>
+                        </div>
+                    </v-row>
+                    <v-row>
+                        <div>
+                            <span v-if="uniprotRecordsLoading">Computing database size...</span>
+                            <span v-else>
+                                Resulting database will contain {{ formattedUniprotRecords }} UniProtKB records.
+                            </span>
+                        </div>
+                    </v-row>
+                </v-container>
+
             </div>
         </div>
 
         <div>
-            <div>
-                <!-- Must use append-icon instead of clearable here, otherwise model is set to null -->
-                <v-text-field
-                    prepend-icon="mdi-magnify"
-                    label="Search"
-                    v-model="search"
-                    append-icon="mdi-close"
-                    @keydown.enter="filterByName()"
-                    @click:append="clearFilter()">
-                </v-text-field>
-            </div>
+<!--            <div>-->
+<!--                &lt;!&ndash; Must use append-icon instead of clearable here, otherwise model is set to null &ndash;&gt;-->
+<!--                <v-text-field-->
+<!--                    prepend-icon="mdi-magnify"-->
+<!--                    label="Search"-->
+<!--                    v-model="search"-->
+<!--                    append-icon="mdi-close"-->
+<!--                    @keydown.enter="filterByName()"-->
+<!--                    @click:append="clearFilter()">-->
+<!--                </v-text-field>-->
+<!--            </div>-->
             <v-data-table
                 :headers="headers"
                 :items="taxa"
@@ -93,6 +106,19 @@
                 :loading="loading"
                 :options.sync="options"
                 dense>
+                <template v-slot:footer.prepend>
+                    <v-text-field
+                        prepend-icon="mdi-magnify"
+                        label="Search"
+                        v-model="search"
+                        append-icon="mdi-close"
+                        dense
+                        hide-details
+                        class="mr-6"
+                        @keydown.enter="filterByName()"
+                        @click:append="clearFilter()">
+                    </v-text-field>
+                </template>
                 <template v-slot:item.action="{ item }">
                     <v-btn
                         color="primary"

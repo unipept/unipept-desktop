@@ -33,7 +33,7 @@
                     </v-stepper-step>
 
                     <v-stepper-content step="1">
-                        <v-form ref="databaseForm">
+                        <v-form ref="databaseDetailsForm">
                             <v-container fluid>
                                 <v-row>
                                     <v-col cols="12">
@@ -51,6 +51,52 @@
                                             v-model="databaseName">
                                         </v-text-field>
                                     </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col cols="12" class="pb-0">
+                                        <span class="font-weight-bold">
+                                            Please choose how you want to construct your custom protein reference database.
+                                        </span>
+                                    </v-col>
+                                    <v-col cols="6" class="d-flex">
+                                        <span>
+                                            Manually select which UniProt sources (e.g. TrEMBL and SwissProt) should be
+                                            used for the database construction and which proteins should be included based
+                                            on a given set of taxa.
+                                        </span>
+                                    </v-col>
+                                    <v-col cols="6" class="d-flex">
+                                        <span>
+                                            Provide a list of UniProt reference proteomes that should be used as the basis
+                                            for a custom protein reference database. All available UniProt sources (both
+                                            TrEMBL and SwissProt) will be consulted in this case.
+                                        </span>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col cols="6" class="d-flex flex-column">
+                                        <v-btn @click="manuallyFilterDatabase">
+                                            Manually filter database
+                                        </v-btn>
+                                    </v-col>
+                                    <v-col cols="6" class="d-flex flex-column">
+                                        <v-btn @click="filterByProteomes">
+                                            Construct from reference proteomes
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                            </v-container>
+                        </v-form>
+                    </v-stepper-content>
+
+                    <v-stepper-step step="2" :complete="currentStep > 2">
+                        Database details
+                    </v-stepper-step>
+
+                    <v-stepper-content step="2">
+                        <v-form ref="databaseSourcesForm">
+                            <v-container fluid>
+                                <v-row>
                                     <v-col cols="6">
                                         <v-select
                                             dense
@@ -85,19 +131,19 @@
                                 </v-row>
                                 <v-row>
                                     <v-col cols="12">
-                                        <v-btn color="primary" @click="validateAndContinue">Continue</v-btn>
+                                        <v-btn color="primary" @click="selectDatabaseSources">Continue</v-btn>
                                     </v-col>
                                 </v-row>
                             </v-container>
                         </v-form>
                     </v-stepper-content>
 
-                    <v-stepper-step step="2" :complete="currentStep > 2">
+                    <v-stepper-step step="3" :complete="currentStep > 3">
                         Filter
                         <small>Select which organisms will be present in the output database</small>
                     </v-stepper-step>
 
-                    <v-stepper-content step="2">
+                    <v-stepper-content step="3">
                         <v-container>
                             <v-row>
                                 <v-col cols="12">
@@ -136,6 +182,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import ProteomeCommunicator from "@/logic/communication/proteomes/ProteomeCommunicator";
 
 @Component({
     components: { TaxaBrowser }
@@ -226,6 +273,10 @@ export default class CreateCustomDatabase extends Vue {
                 .replace("_", ".")
 
             this.selectedVersion = lastVersion;
+
+            const results = await ProteomeCommunicator.getProteomeById("UP000464341");
+            console.log(results);
+
             this.loading = false;
         } catch (e) {
             console.error(e);
@@ -233,10 +284,22 @@ export default class CreateCustomDatabase extends Vue {
         }
     }
 
-    private validateAndContinue(): void {
+    private manuallyFilterDatabase(): void {
         // @ts-ignore
-        if (this.$refs.databaseForm.validate()) {
+        if (this.$refs.databaseDetailsForm.validate()) {
+            // this.selectProteomes = false;
             this.currentStep = 2;
+        }
+    }
+
+    private filterByProteomes(): void {
+
+    }
+
+    private selectDatabaseSources(): void {
+        // @ts-ignore
+        if (this.$refs.databaseSourcesForm.validate()) {
+            this.currentStep = 3;
         }
     }
 

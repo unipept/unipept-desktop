@@ -33,11 +33,13 @@ export default class MetadataCommunicator {
         swissprotSelected: boolean,
         tremblSelected: boolean
     ): Promise<number> {
+        let idQuery: string;
         if (taxa.length === 0) {
-            return 0;
+            idQuery = "*";
+        } else {
+            idQuery = taxa.map(taxon => `taxonomy_id:${taxon}`).join("+OR+");
         }
 
-        const idQuery = taxa.map(taxon => `taxonomy_id:${taxon}`).join("+OR+");
         const result = await NetworkUtils.getJSON(
             `${MetadataCommunicator.UNIPROT_API_URL}?facets=reviewed&query=${idQuery}&size=0`
         );
