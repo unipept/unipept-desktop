@@ -163,7 +163,9 @@ export default class CustomDatabaseManager {
         const dbs = await this.listAllDatabases(dbRootFolder);
 
         const possibleDbs = dbs.filter((db: CustomDatabase) => {
+            console.log("Checking: " + db.name);
             if (db.databaseVersion !== uniprotVersion) {
+                console.log("DB Version is different!");
                 return false;
             }
 
@@ -173,9 +175,13 @@ export default class CustomDatabaseManager {
                     selectedSources.sort()
                 )
             ) {
+                console.log(db.sourceTypes.sort());
+                console.log(selectedSources.sort());
+                console.log("Source types are different!");
                 return false;
             }
 
+            console.log("Checking selected taxa...");
             return Utils.compareAssays<NcbiId>(db.taxa.sort(), selectedTaxa.sort());
         });
 

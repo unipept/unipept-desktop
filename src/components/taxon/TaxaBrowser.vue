@@ -75,7 +75,7 @@
                     </v-row>
                     <v-row>
                         <div>
-                            <span v-if="uniprotRecordsLoading">Computing database size...</span>
+                            <span v-if="uniprotRecordsHelper.isExecuting()">Computing database size...</span>
                             <span v-else>
                                 Resulting database will contain {{ formattedUniprotRecords }} UniProtKB records.
                             </span>
@@ -198,6 +198,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import { DataOptions } from "vuetify";
 import { promises as fs } from "fs";
 import MetadataCommunicator from "@/logic/communication/metadata/MetadataCommunicator";
+import AsyncHelper from "@/logic/AsyncHelper";
 
 const { dialog } = require("@electron/remote");
 
@@ -298,7 +299,7 @@ export default class TaxaBrowser extends Vue {
     private showSearchHintActive = false;
 
     private uniprotRecords = 0;
-    private uniprotRecordsLoading = false;
+    private uniprotRecordsHelper = new AsyncHelper<number>();
 
     private get formattedUniprotRecords(): string {
         return StringUtils.toHumanReadableNumber(this.uniprotRecords);
@@ -364,19 +365,24 @@ export default class TaxaBrowser extends Vue {
     }
 
     @Watch("selectedItems")
+    @Watch("swissprotSelected")
+    @Watch("tremblSelected")
     private onSelectedItemsChanged(): void {
         this.$emit("input", this.selectedItems);
         this.computeUniprotRecords();
     }
 
     private async computeUniprotRecords(): Promise<void> {
-        this.uniprotRecordsLoading = true;
-        this.uniprotRecords = await MetadataCommunicator.getUniProtRecordCount(
-            this.selectedItems.map(taxon => taxon.id),
-            this.swissprotSelected,
-            this.tremblSelected
+        this.uniprotRecordsHelper.performIfLast(
+            () => MetadataCommunicator.getUniProtRecordCount(
+                this.selectedItems.map(taxon => taxon.id),
+                this.swissprotSelected,
+                this.tremblSelected
+            ),
+            (count) => {
+                this.uniprotRecords = count;
+            }
         );
-        this.uniprotRecordsLoading = false;
     }
 
     private getRankColor(rank: string): string {

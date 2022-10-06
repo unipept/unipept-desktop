@@ -42,28 +42,17 @@ export default class CustomDatabaseStoreFactory {
                 [
                     dbName,
                     databaseTypes,
+                    databaseSources,
                     taxa,
                     dbVersion
                 ]: [
                     string,
                     string[],
+                    string[],
                     NcbiId[],
                     string
                 ]
             ) {
-                const sourceUrlMap = new Map<string, string>([
-                    [
-                        "trembl",
-                        "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.xml.gz"
-                    ],
-                    [
-                        "swissprot",
-                        "https://ftp.expasy.org/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz"
-                    ]
-                ]);
-
-                const databaseSources = databaseTypes.map(t => sourceUrlMap.get(t));
-
                 const db = new CustomDatabase(
                     dbName,
                     databaseSources,
@@ -205,16 +194,21 @@ export default class CustomDatabaseStoreFactory {
                     [
                         dbName,
                         databaseTypes,
+                        databaseSources,
                         taxa,
                         uniprotVersion
                     ]: [
                         string,
                         string[],
+                        string[],
                         NcbiId[],
                         string
                     ]
                 ) => {
-                    await this.buildDatabase(store, [dbName, databaseTypes, taxa, uniprotVersion]);
+                    await this.buildDatabase(
+                        store,
+                        [dbName, databaseTypes, databaseSources, taxa, uniprotVersion]
+                    );
                 }
             },
 
@@ -416,10 +410,12 @@ export default class CustomDatabaseStoreFactory {
         [
             dbName,
             databaseTypes,
+            databaseSources,
             taxa,
             uniprotVersion
         ]: [
             string,
+            string[],
             string[],
             NcbiId[],
             string
@@ -428,6 +424,7 @@ export default class CustomDatabaseStoreFactory {
         store.commit("CUSTOM_DB_ADD_DATABASE", [
             dbName,
             databaseTypes,
+            databaseSources,
             taxa,
             uniprotVersion
         ]);

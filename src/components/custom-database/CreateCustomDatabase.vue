@@ -27,13 +27,13 @@
             </v-card-text>
             <v-card-text v-else class="mt-2">
                 <v-stepper v-model="currentStep" vertical flat>
-                    <v-stepper-step step="1" :complete="currentStep > 1">
-                        Database details
+                    <v-stepper-step step="1" :complete="currentStep > 1" :editable="currentStep > 1">
+                        Database name
                         <small>Provide basic construction details</small>
                     </v-stepper-step>
 
                     <v-stepper-content step="1">
-                        <v-form ref="databaseDetailsForm">
+                        <v-form ref="databaseNameForm">
                             <v-container fluid>
                                 <v-row>
                                     <v-col cols="12">
@@ -53,35 +53,9 @@
                                     </v-col>
                                 </v-row>
                                 <v-row>
-                                    <v-col cols="12" class="pb-0">
-                                        <span class="font-weight-bold">
-                                            Please choose how you want to construct your custom protein reference database.
-                                        </span>
-                                    </v-col>
-                                    <v-col cols="6" class="d-flex">
-                                        <span>
-                                            Manually select which UniProt sources (e.g. TrEMBL and SwissProt) should be
-                                            used for the database construction and which proteins should be included based
-                                            on a given set of taxa.
-                                        </span>
-                                    </v-col>
-                                    <v-col cols="6" class="d-flex">
-                                        <span>
-                                            Provide a list of UniProt reference proteomes that should be used as the basis
-                                            for a custom protein reference database. All available UniProt sources (both
-                                            TrEMBL and SwissProt) will be consulted in this case.
-                                        </span>
-                                    </v-col>
-                                </v-row>
-                                <v-row>
-                                    <v-col cols="6" class="d-flex flex-column">
-                                        <v-btn @click="manuallyFilterDatabase">
-                                            Manually filter database
-                                        </v-btn>
-                                    </v-col>
-                                    <v-col cols="6" class="d-flex flex-column">
-                                        <v-btn @click="filterByProteomes">
-                                            Construct from reference proteomes
+                                    <v-col cols="12">
+                                        <v-btn color="primary" @click="validateDatabaseNameAndContinue()">
+                                            Continue
                                         </v-btn>
                                     </v-col>
                                 </v-row>
@@ -89,81 +63,200 @@
                         </v-form>
                     </v-stepper-content>
 
-                    <v-stepper-step step="2" :complete="currentStep > 2">
-                        Database details
+                    <v-stepper-step step="2" :complete="currentStep > 2" :editable="currentStep > 2">
+                        Construction method
+                        <small>Please select how you want to construct the database</small>
                     </v-stepper-step>
 
                     <v-stepper-content step="2">
-                        <v-form ref="databaseSourcesForm">
-                            <v-container fluid>
-                                <v-row>
-                                    <v-col cols="6">
-                                        <v-select
-                                            dense
-                                            label="Database sources"
-                                            hint="Select all database sources that should be filtered."
-                                            v-model="selectedSources"
-                                            :rules="[
-                                                    selectedSources.length > 0 ||
-                                                    'At least one source should be selected'
-                                                ]"
-                                            persistent-hint
-                                            multiple
-                                            :items="sources">
-                                        </v-select>
-                                    </v-col>
-                                    <v-col cols="6">
-                                        <div>
-                                            <span class="font-weight-bold">Note:</span> the most recent UniProtKB
-                                            version will be used for the construction of this database. The most recent
-                                            version currently is {{ selectedVersion }}.
-                                        </div>
-<!--                                        <v-select-->
-<!--                                            dense-->
-<!--                                            label="Database version"-->
-<!--                                            :items="versions"-->
-<!--                                            v-model="selectedVersion"-->
-<!--                                            :rules="[value => !! value || 'You must select a UniProtKB source']"-->
-<!--                                            hint="Select the version of the UniProtKB source that should be processed."-->
-<!--                                            persistent-hint>-->
-<!--                                        </v-select>-->
-                                    </v-col>
-                                </v-row>
-                                <v-row>
-                                    <v-col cols="12">
-                                        <v-btn color="primary" @click="selectDatabaseSources">Continue</v-btn>
-                                    </v-col>
-                                </v-row>
-                            </v-container>
-                        </v-form>
-                    </v-stepper-content>
-
-                    <v-stepper-step step="3" :complete="currentStep > 3">
-                        Filter
-                        <small>Select which organisms will be present in the output database</small>
-                    </v-stepper-step>
-
-                    <v-stepper-content step="3">
-                        <v-container>
+                        <v-container fluid>
                             <v-row>
-                                <v-col cols="12">
-                                    <div>
-                                        <taxa-browser
-                                            v-model="selectedTaxa"
-                                            :swissprot-selected="selectedSources.includes('SwissProt')"
-                                            :trembl-selected="selectedSources.includes('TrEMBL')"
-                                        />
-                                    </div>
+                                <v-col cols="6" class="d-flex">
+                                        <span>
+                                            Manually select which UniProt sources (e.g. TrEMBL and SwissProt) should be
+                                            used for the database construction and which proteins should be included
+                                            based on a given set of taxa.
+                                        </span>
+                                </v-col>
+                                <v-col cols="6" class="d-flex">
+                                        <span>
+                                            Provide a list of UniProt reference proteomes that should be used as the
+                                            basis for a custom protein reference database. All available UniProt sources
+                                            (both TrEMBL and SwissProt) will be consulted in this case.
+                                        </span>
                                 </v-col>
                             </v-row>
                             <v-row>
-                                <v-col cols="12">
-                                    <v-btn class="mr-2" @click="currentStep = 1">Go back</v-btn>
-                                    <v-btn color="primary" @click="buildDatabase()">Build database</v-btn>
+                                <v-col cols="6" class="d-flex flex-column">
+                                    <v-btn @click="manuallyFilterDatabase">
+                                        Manually filter database
+                                    </v-btn>
+                                </v-col>
+                                <v-col cols="6" class="d-flex flex-column">
+                                    <v-btn @click="filterByProteomes">
+                                        Construct from reference proteomes
+                                    </v-btn>
                                 </v-col>
                             </v-row>
                         </v-container>
                     </v-stepper-content>
+
+                    <div v-if="useProteomeFilter">
+                        <v-stepper-step step="3" :complete="currentStep > 3" :editable="currentStep > 3">
+                            Select reference proteomes
+                            <small>Decide on a set of reference proteomes that should be present in the database</small>
+                        </v-stepper-step>
+
+                        <v-stepper-content step="3">
+                            <v-container fluid>
+                                <v-row>
+                                    <v-col cols="12" class="d-flex">
+                                        <v-text-field
+                                            dense
+                                            label="Reference proteome identifier"
+                                            hint="Provide a unique UniProtKB reference proteome identifier (e.g. UP000005640)"
+                                            persistent-hint
+                                            :error="referenceProteomeError !== ''"
+                                            :error-messages="referenceProteomeError"
+                                            v-model="referenceProteome">
+                                        </v-text-field>
+                                        <v-btn color="primary ml-2" @click="addReferenceProteome()">Add</v-btn>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col cols="12">
+                                        <v-simple-table v-if="referenceProteomes.length > 0">
+                                            <template v-slot:default>
+                                                <thead>
+                                                <tr>
+                                                    <th class="text-left">Proteome ID</th>
+                                                    <th class="text-left">Organism name</th>
+                                                    <th class="text-left">Protein count</th>
+                                                    <th class="text-center">Actions</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr v-for="(proteome, index) in referenceProteomes" :key="index">
+                                                    <td>{{ proteome.id }}</td>
+                                                    <td>{{ proteome.organismName }}</td>
+                                                    <td>{{ proteome.proteinCount }}</td>
+                                                    <td class="text-center">
+                                                        <v-tooltip bottom open-delay="500">
+                                                            <template v-slot:activator="{ on }">
+                                                                <v-btn
+                                                                    icon
+                                                                    @click="removeReferenceProteome(index)"
+                                                                    v-on="on"
+                                                                    color="red">
+                                                                    <v-icon>mdi-delete</v-icon>
+                                                                </v-btn>
+                                                            </template>
+                                                            <span>Remove reference proteome from selection</span>
+                                                        </v-tooltip>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </template>
+                                        </v-simple-table>
+                                        <div v-else>
+                                            No reference proteomes have been added yet. Find one in the search bar above
+                                            and click the "Add" button.
+                                        </div>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col cols="12">
+                                        <v-btn class="mr-1" @click="currentStep--">Go back</v-btn>
+                                        <v-btn color="primary" @click="buildDatabaseFromReferenceProteomes()">
+                                            Build database
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                            </v-container>
+                        </v-stepper-content>
+                    </div>
+
+                    <div v-else>
+                        <v-stepper-step step="3" :complete="currentStep > 3" :editable="currentStep > 3">
+                            Database sources
+                            <small>Select which UniProtKB components should be processed for the database</small>
+                        </v-stepper-step>
+
+                        <v-stepper-content step="3">
+                            <v-form ref="databaseSourcesForm">
+                                <v-container fluid>
+                                    <v-row>
+                                        <v-col cols="6">
+                                            <v-select
+                                                dense
+                                                label="Database sources"
+                                                hint="Select all database sources that should be filtered."
+                                                v-model="selectedSources"
+                                                :rules="[
+                                                            selectedSources.length > 0 ||
+                                                            'At least one source should be selected'
+                                                        ]"
+                                                persistent-hint
+                                                multiple
+                                                :items="sources">
+                                            </v-select>
+                                        </v-col>
+                                        <v-col cols="6">
+                                            <div>
+                                                <span class="font-weight-bold">Note:</span> the most recent UniProtKB
+                                                version will be used for the construction of this database. The most recent
+                                                version currently is {{ selectedVersion }}.
+                                            </div>
+    <!--                                        <v-select-->
+    <!--                                        dense-->
+    <!--                                        label="Database version"-->
+    <!--                                        :items="versions"-->
+    <!--                                        v-model="selectedVersion"-->
+    <!--                                        :rules="[value => !! value || 'You must select a UniProtKB source']"-->
+    <!--                                        hint="Select the version of the UniProtKB source that should be processed."-->
+    <!--                                        persistent-hint>-->
+    <!--                                        </v-select>-->
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <v-btn class="mr-1" @click="currentStep--">Go back</v-btn>
+                                            <v-btn color="primary" @click="validateDatabaseSourcesAndContinue()">
+                                                Continue
+                                            </v-btn>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-form>
+                        </v-stepper-content>
+
+                        <v-stepper-step step="4" :complete="currentStep > 4">
+                            Filter
+                            <small>Select which organisms will be present in the output database</small>
+                        </v-stepper-step>
+
+                        <v-stepper-content step="4">
+                            <v-container fluid>
+                                <v-row>
+                                    <v-col cols="12">
+                                        <div>
+                                            <taxa-browser
+                                                v-model="selectedTaxa"
+                                                :swissprot-selected="selectedSources.includes('SwissProt')"
+                                                :trembl-selected="selectedSources.includes('TrEMBL')"
+                                            />
+                                        </div>
+                                    </v-col>
+                                </v-row>
+                                <v-row>
+                                    <v-col cols="12">
+                                        <v-btn class="mr-1" @click="currentStep--">Go back</v-btn>
+                                        <v-btn color="primary" @click="buildDatabase()">Build database</v-btn>
+                                    </v-col>
+                                </v-row>
+                            </v-container>
+                        </v-stepper-content>
+                    </div>
                 </v-stepper>
             </v-card-text>
         </v-card>
@@ -183,6 +276,8 @@ import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import ProteomeCommunicator from "@/logic/communication/proteomes/ProteomeCommunicator";
+import Proteome from "@/logic/communication/proteomes/Proteome";
+import UniProtConstants from "@/logic/communication/uniprot/UniProtConstants";
 
 @Component({
     components: { TaxaBrowser }
@@ -222,6 +317,11 @@ export default class CreateCustomDatabase extends Vue {
     private selectedTaxa: NcbiTaxon[] = [];
 
     private currentStep = 1;
+    private useProteomeFilter = false;
+
+    private referenceProteome = "";
+    private referenceProteomes: Proteome[] = [];
+    private referenceProteomeError: string = "";
 
     private async mounted() {
         this.onValueChanged();
@@ -274,9 +374,6 @@ export default class CreateCustomDatabase extends Vue {
 
             this.selectedVersion = lastVersion;
 
-            const results = await ProteomeCommunicator.getProteomeById("UP000464341");
-            console.log(results);
-
             this.loading = false;
         } catch (e) {
             console.error(e);
@@ -284,23 +381,50 @@ export default class CreateCustomDatabase extends Vue {
         }
     }
 
-    private manuallyFilterDatabase(): void {
+    private validateDatabaseNameAndContinue(): void {
         // @ts-ignore
-        if (this.$refs.databaseDetailsForm.validate()) {
-            // this.selectProteomes = false;
+        if (this.$refs.databaseNameForm.validate()) {
             this.currentStep = 2;
         }
     }
 
-    private filterByProteomes(): void {
+    private manuallyFilterDatabase(): void {
+        this.useProteomeFilter = false;
+        this.currentStep = 3;
 
     }
 
-    private selectDatabaseSources(): void {
+    private filterByProteomes(): void {
+        this.useProteomeFilter = true;
+        this.currentStep = 3;
+    }
+
+    private validateDatabaseSourcesAndContinue(): void {
         // @ts-ignore
         if (this.$refs.databaseSourcesForm.validate()) {
-            this.currentStep = 3;
+            this.currentStep = 4;
         }
+    }
+
+    private async addReferenceProteome(): Promise<void> {
+        this.referenceProteomeError = "";
+        try {
+            const proteome = await ProteomeCommunicator.getProteomeById(this.referenceProteome);
+            if (proteome === null) {
+                this.referenceProteomeError = "This proteome does not exist.";
+            } else if (this.referenceProteomes.some(p => p.id === proteome.id)) {
+                this.referenceProteomeError = "This proteome is already added.";
+            } else {
+                this.referenceProteomes.push(proteome);
+                this.referenceProteome = "";
+            }
+        } catch (e) {
+            this.referenceProteomeError = e.message;
+        }
+    }
+
+    private removeReferenceProteome(idx: number): void {
+        this.referenceProteomes.splice(idx, 1);
     }
 
     private async buildDatabase(): Promise<void> {
@@ -317,7 +441,28 @@ export default class CreateCustomDatabase extends Vue {
             [
                 this.databaseName,
                 convertedSources,
+                convertedSources.map(s => UniProtConstants.SOURCE_URLS[s]),
                 this.selectedTaxa.map(taxon => taxon.id),
+                this.selectedVersion
+            ]
+        );
+        this.dialogActive = false;
+
+        // After a database construction was started, we need to reset this wizard and prepare it for the next user.
+        this.resetWizard();
+    }
+
+    private async buildDatabaseFromReferenceProteomes(): Promise<void> {
+        this.$store.dispatch(
+            "customDatabases/buildDatabase",
+            [
+                this.databaseName,
+                this.referenceProteomes.map(p => p.id),
+                this.referenceProteomes.map(
+                    p => `https://rest.uniprot.org/uniprotkb/stream?compressed=true\\&format=xml\\&query=\\(\\(proteome:${p.id}\\)\\)`
+                ),
+                // No filtering should be applied in this case
+                [1],
                 this.selectedVersion
             ]
         );

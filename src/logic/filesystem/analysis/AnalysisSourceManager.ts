@@ -7,6 +7,7 @@ import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManag
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import { Store } from "vuex";
+import UniProtConstants from "@/logic/communication/uniprot/UniProtConstants";
 
 export default class AnalysisSourceManager {
     constructor(
@@ -64,6 +65,7 @@ export default class AnalysisSourceManager {
                         // TODO: we need to make sure here that a DB with this name does not already exist in the system
                         newDbName,
                         selectedSources,
+                        selectedSources.map(s => UniProtConstants.SOURCE_URLS[s]),
                         selectedTaxa,
                         sourceData.uniprot_version
                     ]
