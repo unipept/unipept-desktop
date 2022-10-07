@@ -1,8 +1,8 @@
-import schema_v5 from "raw-loader!@/db/schemas/schema_v5.sql";
+import schema_v6 from "raw-loader!@/db/schemas/schema_v6.sql";
 
 export default class Schema {
-    public static LATEST_VERSION = 5;
-    public static LATEST_SCHEMA: string = schema_v5;
+    public static LATEST_VERSION = 6;
+    public static LATEST_SCHEMA: string = schema_v6;
 }
 
 // Type definitions for all the different rows in the database schema.
@@ -48,8 +48,7 @@ export type AnalysisSourceTableRow = {
     endpoint: string,
     uniprot_version: string,
     selected_taxa: string,
-    swissprot_selected: number,
-    trembl_selected: number
+    sources: string
 }
 
 export type DatabaseMetadataTableRow = {

@@ -35,14 +35,7 @@ export default class AnalysisSourceManager {
         } else {
             const customDbManager = new CustomDatabaseManager();
 
-            const selectedSources: string[] = [];
-            if (sourceData.swissprot_selected === 1) {
-                selectedSources.push("swissprot");
-            }
-
-            if (sourceData.trembl_selected === 1) {
-                selectedSources.push("trembl");
-            }
+            const selectedSources: string[] = sourceData.sources.split(",");
 
             const configMng = new ConfigurationManager();
             const customDbStorageLocation: string = (await configMng.readConfiguration()).customDbStorageLocation;
@@ -107,11 +100,10 @@ export default class AnalysisSourceManager {
                             endpoint = ?,
                             uniprot_version = ?,
                             selected_taxa = ?,
-                            swissprot_selected = ?,
-                            trembl_selected = ?
+                            sources = ?
                         WHERE
                             id = ?
-                    `).run("online", source.endpoint, "N/A", "", 1, 1, sourceId);
+                    `).run("online", source.endpoint, "N/A", "", "", sourceId);
                 } else if (source instanceof CachedCustomDbAnalysisSource) {
                     const customDb = source.customDatabase;
                     db.prepare(`
@@ -121,8 +113,7 @@ export default class AnalysisSourceManager {
                             endpoint = ?,
                             uniprot_version = ?,
                             selected_taxa = ?,
-                            swissprot_selected = ?,
-                            trembl_selected = ?
+                            sources = ?
                         WHERE
                             id = ?
                     `).run(
@@ -130,8 +121,7 @@ export default class AnalysisSourceManager {
                         "",
                         customDb.databaseVersion,
                         customDb.taxa.join(","),
-                        customDb.sourceTypes.includes("swissprot") ? 1 : 0,
-                        customDb.sourceTypes.includes("trembl") ? 1 : 0,
+                        customDb.sourceTypes.join(","),
                         sourceId
                     );
                 }
@@ -144,23 +134,22 @@ export default class AnalysisSourceManager {
 
                 if (source instanceof OnlineAnalysisSource || source instanceof CachedOnlineAnalysisSource) {
                     runResult = db.prepare(`
-                        INSERT INTO analysis_source (type, endpoint, uniprot_version, swissprot_selected, trembl_selected) 
-                        VALUES (?, ?, ?, ?, ?)
-                    `).run("online", source.endpoint, "N/A", 1, 1);
+                        INSERT INTO analysis_source (type, endpoint, uniprot_version, sources) 
+                        VALUES (?, ?, ?, ?)
+                    `).run("online", source.endpoint, "N/A", "");
                 } else if (source instanceof CachedCustomDbAnalysisSource) {
                     const customDb = source.customDatabase;
 
                     runResult = db.prepare(`
                         INSERT INTO analysis_source (
-                            type, uniprot_version, selected_taxa, swissprot_selected, trembl_selected
+                            type, uniprot_version, selected_taxa, sources
                         )
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, ?)
                     `).run(
                         "custom_db",
                         customDb.databaseVersion,
                         customDb.taxa.join(","),
-                        customDb.sourceTypes.includes("swissprot") ? 1 : 0,
-                        customDb.sourceTypes.includes("trembl") ? 1 : 0
+                        customDb.sourceTypes.join(",")
                     );
                 }
 
