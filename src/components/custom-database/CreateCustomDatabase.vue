@@ -110,17 +110,26 @@
                         <v-stepper-content step="3">
                             <v-container fluid>
                                 <v-row>
-                                    <v-col cols="12" class="d-flex">
-                                        <v-text-field
-                                            dense
-                                            label="Reference proteome identifier"
-                                            hint="Provide a unique UniProtKB reference proteome identifier (e.g. UP000005640)"
-                                            persistent-hint
-                                            :error="referenceProteomeError !== ''"
-                                            :error-messages="referenceProteomeError"
-                                            v-model="referenceProteome">
-                                        </v-text-field>
-                                        <v-btn color="primary ml-2" @click="addReferenceProteome()">Add</v-btn>
+                                    <v-col cols="12">
+                                        <div class="d-flex">
+                                            <v-text-field
+                                                dense
+                                                label="Reference proteome identifier"
+                                                hint="Provide a unique UniProtKB reference proteome identifier (e.g. UP000005640)."
+                                                persistent-hint
+                                                :error="referenceProteomeError !== ''"
+                                                :error-messages="referenceProteomeError"
+                                                v-model="referenceProteome">
+                                            </v-text-field>
+                                            <v-btn color="primary ml-2" @click="addReferenceProteome()">Add</v-btn>
+                                        </div>
+                                        <div>
+                                            <span class="font-weight-bold">Hint:</span> browse
+                                            <a @click="openInBrowser('https://www.uniprot.org/proteomes')">
+                                                https://www.uniprot.org/proteomes
+                                            </a>
+                                            for a list of all available reference proteomes.
+                                        </div>
                                     </v-col>
                                 </v-row>
                                 <v-row>
@@ -270,7 +279,7 @@ import axios from "axios";
 
 import https from "https";
 import TaxaBrowser from "@/components/taxon/TaxaBrowser.vue";
-import { NcbiTaxon } from "unipept-web-components";
+import { NcbiTaxon, NetworkUtils } from "unipept-web-components";
 import { Prop, Watch } from "vue-property-decorator";
 import CachedNcbiResponseCommunicator from "@/logic/communication/taxonomic/ncbi/CachedNcbiResponseCommunicator";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
@@ -327,6 +336,10 @@ export default class CreateCustomDatabase extends Vue {
         this.onValueChanged();
         this.selectedMirror = this.getMostSuitableMirror();
         await this.retrieveUniProtVersions();
+    }
+
+    private openInBrowser(url: string) {
+        NetworkUtils.openInBrowser(url);
     }
 
     /**
@@ -479,11 +492,17 @@ export default class CreateCustomDatabase extends Vue {
         this.currentStep = 1;
         this.selectedTaxa.splice(0, this.selectedTaxa.length);
         this.databaseName = "";
-        (this.$refs.databaseForm as any).reset();
+        (this.$refs.databaseNameForm as any).reset();
+        if (this.$refs.databaseSourcesForm) {
+            (this.$refs.databaseSourcesForm as any).reset();
+        }
         this.selectedSources.splice(0, this.selectedSources.length);
         this.selectedSources.push(...this.sources);
         this.selectedVersion = this.sources[0];
         this.selectedMirror = "EU (Expasy)";
+        this.referenceProteome = "";
+        this.referenceProteomes.splice(0, this.referenceProteomes.length);
+        this.referenceProteomeError = "";
         this.error = false;
     }
 
