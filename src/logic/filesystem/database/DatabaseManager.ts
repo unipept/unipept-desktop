@@ -1,5 +1,5 @@
 import Database, { Database as DbType } from "better-sqlite3";
-import async, { AsyncQueue } from "async";
+import async, { AsyncQueue, QueueObject } from "async";
 import DatabaseMigrator from "@/logic/filesystem/database/DatabaseMigrator";
 import DatabaseMigratorV0ToV1 from "@/logic/filesystem/database/DatabaseMigratorV0ToV1";
 import Schema from "@/logic/filesystem/database/Schema";
@@ -11,6 +11,7 @@ import path from "path";
 import DatabaseMigratorV2ToV3 from "@/logic/filesystem/database/DatabaseMigratorV2ToV3";
 import DatabaseMigratorV3ToV4 from "@/logic/filesystem/database/DatabaseMigratorV3ToV4";
 import DatabaseMigratorV4ToV5 from "@/logic/filesystem/database/DatabaseMigratorV4ToV5";
+import DatabaseMigratorV5ToV6 from "@/logic/filesystem/database/DatabaseMigratorV5ToV6";
 
 export default class DatabaseManager {
     // Reading and writing large assays to and from the database can easily take longer than 5 seconds, causing
@@ -19,7 +20,7 @@ export default class DatabaseManager {
     public static readonly DB_TIMEOUT: number = 15000;
 
     private db: DbType;
-    private queue: AsyncQueue<any>;
+    private queue: QueueObject<any>;
     // Version of the application that was last used with this database.
     private dbApplicationVersion: string;
 
@@ -32,7 +33,8 @@ export default class DatabaseManager {
         () => new DatabaseMigratorV1ToV2(path.dirname(this.dbLocation)),
         () => new DatabaseMigratorV2ToV3(path.dirname(this.dbLocation)),
         () => new DatabaseMigratorV3ToV4(path.dirname(this.dbLocation)),
-        () => new DatabaseMigratorV4ToV5(path.dirname(this.dbLocation))
+        () => new DatabaseMigratorV4ToV5(path.dirname(this.dbLocation)),
+        () => new DatabaseMigratorV5ToV6(path.dirname(this.dbLocation))
     ];
 
     /**

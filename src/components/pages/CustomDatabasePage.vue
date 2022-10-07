@@ -430,7 +430,7 @@ export default class CustomDatabasePage extends Vue {
         this.selectedTaxaDefault.splice(0, this.selectedTaxaDefault.length);
         const ncbiOntologyProcessor = new NcbiOntologyProcessor(new CachedNcbiResponseCommunicator());
         const ontology = await ncbiOntologyProcessor.getOntologyByIds(db.taxa);
-        this.selectedTaxaDefault.push(...(db.taxa.map(id => ontology.getDefinition(id))));
+        this.selectedTaxaDefault.push(...(db.taxa.filter(id => id !== 1).map(id => ontology.getDefinition(id))));
 
         this.createDatabaseDialog = true;
     }
