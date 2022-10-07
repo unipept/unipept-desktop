@@ -524,19 +524,50 @@ export default class CreateCustomDatabase extends Vue {
     }
 
     @Watch("value")
-    private onValueChanged() {
+    private async onValueChanged(): Promise<void> {
         if (this.value) {
             // Reset to the default supplied values.
+            if (this.databaseNameDefault !== "") {
+                if (
+                    this.selectedSourcesDefault.includes("trembl") ||
+                    this.selectedSourcesDefault.includes("swissprot")
+                ) {
+                    this.useProteomeFilter = false;
+                } else {
+                    this.referenceProteomes.splice(0, this.referenceProteomes.length);
+                    for (const proteomeId of this.selectedSourcesDefault) {
+                        this.referenceProteomes.push(await ProteomeCommunicator.getProteomeById(proteomeId));
+                    }
+
+                    this.useProteomeFilter = true;
+                }
+            }
+
             this.selectedSources.splice(0, this.selectedSources.length);
             this.selectedSources.push(...this.selectedSourcesDefault.map(
                 (x: string) => {
-                    return { "trembl": "TrEMBL", "swissprot": "SwissProt" }[x]
+                    const translationTable = { "trembl": "TrEMBL", "swissprot": "SwissProt" };
+                    if (x in translationTable) {
+                        return translationTable[x];
+                    } else {
+                        return x;
+                    }
                 }
             ));
             this.databaseName = this.databaseNameDefault;
             // this.selectedVersion = this.selectedVersionDefault;
             this.selectedTaxa.splice(0, this.selectedTaxa.length);
             this.selectedTaxa.push(...this.selectedTaxaDefault);
+
+            if (
+                this.selectedSourcesDefault.includes("trembl") ||
+                this.selectedSourcesDefault.includes("swissprot")
+            ) {
+                await this.$nextTick();
+                this.currentStep = 4;
+            } else {
+                this.currentStep = 3;
+            }
         }
         this.dialogActive = this.value;
     }
