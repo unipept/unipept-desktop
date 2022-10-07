@@ -134,39 +134,45 @@
                                 </v-row>
                                 <v-row>
                                     <v-col cols="12">
-                                        <v-simple-table v-if="referenceProteomes.length > 0">
-                                            <template v-slot:default>
-                                                <thead>
-                                                <tr>
-                                                    <th class="text-left">Proteome ID</th>
-                                                    <th class="text-left">Organism name</th>
-                                                    <th class="text-left">Protein count</th>
-                                                    <th class="text-center">Actions</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                <tr v-for="(proteome, index) in referenceProteomes" :key="index">
-                                                    <td>{{ proteome.id }}</td>
-                                                    <td>{{ proteome.organismName }}</td>
-                                                    <td>{{ proteome.proteinCount }}</td>
-                                                    <td class="text-center">
-                                                        <v-tooltip bottom open-delay="500">
-                                                            <template v-slot:activator="{ on }">
-                                                                <v-btn
-                                                                    icon
-                                                                    @click="removeReferenceProteome(index)"
-                                                                    v-on="on"
-                                                                    color="red">
-                                                                    <v-icon>mdi-delete</v-icon>
-                                                                </v-btn>
-                                                            </template>
-                                                            <span>Remove reference proteome from selection</span>
-                                                        </v-tooltip>
-                                                    </td>
-                                                </tr>
-                                                </tbody>
-                                            </template>
-                                        </v-simple-table>
+                                        <div v-if="referenceProteomes.length > 0">
+                                            <v-simple-table>
+                                                <template v-slot:default>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-left">Proteome ID</th>
+                                                            <th class="text-left">Organism name</th>
+                                                            <th class="text-left">Protein count</th>
+                                                            <th class="text-center">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="(proteome, index) in referenceProteomes" :key="index">
+                                                            <td>{{ proteome.id }}</td>
+                                                            <td>{{ proteome.organismName }}</td>
+                                                            <td>{{ proteome.proteinCount }}</td>
+                                                            <td class="text-center">
+                                                                <v-tooltip bottom open-delay="500">
+                                                                    <template v-slot:activator="{ on }">
+                                                                        <v-btn
+                                                                            icon
+                                                                            @click="removeReferenceProteome(index)"
+                                                                            v-on="on"
+                                                                            color="red">
+                                                                            <v-icon>mdi-delete</v-icon>
+                                                                        </v-btn>
+                                                                    </template>
+                                                                    <span>Remove reference proteome from selection</span>
+                                                                </v-tooltip>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </template>
+                                            </v-simple-table>
+                                            <span>
+                                                Resulting database will contain {{ totalReferenceProteins }} UniProtKB
+                                                records.
+                                            </span>
+                                        </div>
                                         <div v-else>
                                             No reference proteomes have been added yet. Find one in the search bar above
                                             and click the "Add" button.
@@ -332,6 +338,10 @@ export default class CreateCustomDatabase extends Vue {
     private referenceProteomes: Proteome[] = [];
     private referenceProteomeError: string = "";
 
+    get totalReferenceProteins(): number {
+        return this.referenceProteomes.reduce((acc, proteome) => acc + proteome.proteinCount, 0);
+    }
+
     private async mounted() {
         this.onValueChanged();
         this.selectedMirror = this.getMostSuitableMirror();
@@ -492,7 +502,9 @@ export default class CreateCustomDatabase extends Vue {
         this.currentStep = 1;
         this.selectedTaxa.splice(0, this.selectedTaxa.length);
         this.databaseName = "";
-        (this.$refs.databaseNameForm as any).reset();
+        if (this.$refs.databaseNameForm) {
+            (this.$refs.databaseNameForm as any).reset();
+        }
         if (this.$refs.databaseSourcesForm) {
             (this.$refs.databaseSourcesForm as any).reset();
         }
@@ -527,20 +539,24 @@ export default class CreateCustomDatabase extends Vue {
     private async onValueChanged(): Promise<void> {
         if (this.value) {
             // Reset to the default supplied values.
-            if (this.databaseNameDefault !== "") {
-                if (
-                    this.selectedSourcesDefault.includes("trembl") ||
-                    this.selectedSourcesDefault.includes("swissprot")
-                ) {
-                    this.useProteomeFilter = false;
-                } else {
-                    this.referenceProteomes.splice(0, this.referenceProteomes.length);
-                    for (const proteomeId of this.selectedSourcesDefault) {
-                        this.referenceProteomes.push(await ProteomeCommunicator.getProteomeById(proteomeId));
-                    }
+            if (this.databaseNameDefault === "") {
+                this.resetWizard();
+                this.dialogActive = this.value;
+                return;
+            }
 
-                    this.useProteomeFilter = true;
+            if (
+                this.selectedSourcesDefault.includes("trembl") ||
+                this.selectedSourcesDefault.includes("swissprot")
+            ) {
+                this.useProteomeFilter = false;
+            } else {
+                this.referenceProteomes.splice(0, this.referenceProteomes.length);
+                for (const proteomeId of this.selectedSourcesDefault) {
+                    this.referenceProteomes.push(await ProteomeCommunicator.getProteomeById(proteomeId));
                 }
+
+                this.useProteomeFilter = true;
             }
 
             this.selectedSources.splice(0, this.selectedSources.length);
