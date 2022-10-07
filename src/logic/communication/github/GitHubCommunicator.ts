@@ -1,6 +1,9 @@
 import { NetworkUtils } from "unipept-web-components";
 
 export default class GitHubCommunicator {
+    private static releaseNotesCache: string = "";
+    private static releaseNotesVersion: string = ""
+
     /**
      * Returns the release content for a specific release version. This content is formatted as MarkDown.
      *
@@ -10,10 +13,14 @@ export default class GitHubCommunicator {
      * @throws Error if the given release could not be found, or if no internet connection is established.
      */
     public async getReleaseNotes(appVersion: string): Promise<string> {
-        const result = await NetworkUtils.getJSON(
-            `https://api.github.com/repos/unipept/unipept-desktop/releases/tags/v${appVersion}`
-        );
-        return result.body;
+        if (GitHubCommunicator.releaseNotesCache === "" || GitHubCommunicator.releaseNotesVersion !== appVersion) {
+            GitHubCommunicator.releaseNotesCache = (await NetworkUtils.getJSON(
+                `https://api.github.com/repos/unipept/unipept-desktop/releases/tags/v${appVersion}`
+            )).body;
+            GitHubCommunicator.releaseNotesVersion = appVersion;
+        }
+
+        return GitHubCommunicator.releaseNotesCache;
     }
 
     public async getAllReleases(): Promise<string[]> {
