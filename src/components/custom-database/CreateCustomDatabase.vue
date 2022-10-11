@@ -135,6 +135,11 @@
                                 </v-row>
                                 <v-row>
                                     <v-col cols="12">
+                                        <v-alert text type="error" outline v-if="!proteomesAreValid">
+                                            Some of the proteomes you provided have been marked as redundant by
+                                            UniProt. Make sure that all provided proteomes are valid before
+                                            continuing.
+                                        </v-alert>
                                         <div v-if="referenceProteomes.length > 0">
                                             <v-simple-table>
                                                 <template v-slot:default>
@@ -215,7 +220,10 @@
                                 <v-row>
                                     <v-col cols="12">
                                         <v-btn class="mr-1" @click="currentStep--">Go back</v-btn>
-                                        <v-btn color="primary" @click="buildDatabaseFromReferenceProteomes()">
+                                        <v-btn
+                                            color="primary"
+                                            @click="buildDatabaseFromReferenceProteomes()"
+                                            :disabled="!proteomesAreValid || referenceProteomes.length === 0">
                                             Build database
                                         </v-btn>
                                     </v-col>
@@ -373,6 +381,10 @@ export default class CreateCustomDatabase extends Vue {
 
     get totalReferenceProteins(): number {
         return this.referenceProteomes.reduce((acc, proteome) => acc + proteome.proteinCount, 0);
+    }
+
+    get proteomesAreValid(): boolean {
+        return this.referenceProteomes.every(proteome => !proteome.redundant);
     }
 
     private async mounted() {
