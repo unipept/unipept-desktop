@@ -61,7 +61,7 @@ export default class CustomDatabase {
      */
     public getDatabaseHash(): string {
         return crypto.createHash("sha256").update(
-            this.sourceTypes.toString() + this.taxa.toString() + this.entries.toString()
+            this.sourceTypes.sort().toString() + this.taxa.sort().toString() + this.entries.toString()
         ).digest("base64");
     }
 }
