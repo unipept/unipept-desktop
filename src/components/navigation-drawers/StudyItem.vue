@@ -317,6 +317,7 @@ export default class StudyItem extends Vue {
             this.$store.getters.dbManager
         );
         await this.study.accept(studyDestroyer);
+        await this.$store.dispatch("removeStudy", this.study);
     }
 
     private async onSelectAssay(assay: Assay) {

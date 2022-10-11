@@ -65,11 +65,11 @@ export default class ProjectExplorer extends Vue {
         // Check which studies already exist, and make sure there isn't one with the same name.
         const unknowns: number[] = this.$store.getters.studies
             .map((s: Study) => s.getName())
-            .filter((s: string) => s.startsWith("Unknown"))
+            .filter((s: string) => s.startsWith("Study name"))
             .map((s: string) => s.replace(/[^0-9]/g, ""))
             .map((s: string) => s === "" ? 0 : parseInt(s));
 
-        let studyName = "Unknown";
+        let studyName = "Study name";
         if (unknowns.length > 0) {
             studyName += ` (${Math.max(...unknowns) + 1})`
         }
