@@ -82,7 +82,7 @@
             <div v-else>
                 <!-- placeholder button to add a new assay -->
                 <div class="assay-item" @click="createAssay()">
-                    <v-icon size="20" color="primary">
+                    <v-icon size="20" color="primary" class="mr-2">
                         mdi-file-plus-outline
                     </v-icon>
                     <a class="assay-name">
@@ -332,4 +332,5 @@ export default class StudyItem extends Vue {
 
 <style lang="less">
     @import "./../../assets/style/navigation-drawers/study-item.css.less";
+    @import "./../../assets/style/navigation-drawers/assay-item.css.less";
 </style>
