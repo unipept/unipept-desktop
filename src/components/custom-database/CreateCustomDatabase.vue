@@ -119,7 +119,8 @@
                                                 persistent-hint
                                                 :error="referenceProteomeError !== ''"
                                                 :error-messages="referenceProteomeError"
-                                                v-model="referenceProteome">
+                                                v-model="referenceProteome"
+                                                @keyup.enter="addReferenceProteome()">
                                             </v-text-field>
                                             <v-btn color="primary ml-2" @click="addReferenceProteome()">Add</v-btn>
                                         </div>
