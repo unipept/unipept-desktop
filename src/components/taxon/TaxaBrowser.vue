@@ -44,15 +44,15 @@
 
                 <v-container fluid>
                     <v-row>
-                        <div v-if="selectedItems.length === 0" style="text-align: center; width: 100%;">
-                            <div>No taxa selected yet. No filtering will be applied.</div>
-                            <div class="text-caption">
-                                Use the table and search bar below to find taxa that can be used for filtering.
-                            </div>
-                        </div>
-                        <div v-else style="width: 100%;">
+                        <div style="width: 100%;">
                             <div class="d-flex align-center">
-                                <v-chip-group column class="flex-grow-1">
+                                <div v-if="selectedItems.length === 0" style="text-align: center; width: 100%;">
+                                    <div>No taxa selected yet. No filtering will be applied.</div>
+                                    <div class="text-caption">
+                                        Use the table and search bar below to find taxa that can be used for filtering.
+                                    </div>
+                                </div>
+                                <v-chip-group v-else column class="flex-grow-1">
                                     <v-chip
                                         v-for="taxon in selectedItems"
                                         close
@@ -65,8 +65,15 @@
                                 </v-chip-group>
                                 <v-tooltip bottom open-delay="500">
                                     <template v-slot:activator="{ on, attrs }">
-                                        <v-btn icon class="align-self-start" v-on="on" @click="clearSelection()">
-                                            <v-icon>mdi-close-circle</v-icon>
+                                        <v-btn
+                                            class="align-self-start"
+                                            v-on="on"
+                                            @click="clearSelection()"
+                                            small
+                                            outlined
+                                            color="error"
+                                            :disabled="selectedItems.length === 0">
+                                           Clear all
                                         </v-btn>
                                     </template>
                                     <span>Clear selection</span>
