@@ -44,7 +44,7 @@
                                     <span v-if="loading">
                                         Loading...
                                     </span>
-                                    <div v-else class="taxa-filter">
+                                    <div v-else class="overflow-limited">
                                         {{
                                             item.taxa
                                                 .map(t => ncbiOntology.getDefinition(t))
@@ -52,6 +52,11 @@
                                                 .map(i => i.name)
                                                 .join(", ")
                                         }}
+                                    </div>
+                                </template>
+                                <template v-slot:item.sourceTypes="{ item }">
+                                    <div class="overflow-limited">
+                                        {{ item.sourceTypes.join(", ") }}
                                     </div>
                                 </template>
                                 <template v-slot:item.entries="{ item }">
@@ -468,7 +473,7 @@ export default class CustomDatabasePage extends Vue {
     min-height: 200px;
 }
 
-.taxa-filter {
+.overflow-limited {
     max-width: 200px;
     text-overflow: ellipsis;
     overflow: hidden;
