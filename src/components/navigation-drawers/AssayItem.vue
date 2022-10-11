@@ -162,11 +162,17 @@ import {
     PeptideTrust,
     Study,
     ProteomicsAssay,
-    AssayAnalysisStatus
+    AssayAnalysisStatus,
+    SearchConfiguration,
+    Assay
 } from "unipept-web-components";
+import { v4 as uuidv4 } from "uuid";
 
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
+import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
+import { promises as fs } from "fs";
+import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
 
 const { Menu, MenuItem } = require("@electron/remote");
 
@@ -328,61 +334,67 @@ export default class AssayItem extends Vue {
     }
 
     private async duplicateAssay() {
-        throw new Error("This function needs to be implemented again...");
+        let assayName = this.assay.getName();
 
-        // let assayName = this.assay.getName();
-        //
-        // // Check if assay with same name already exists in the list of assays for this study. If so, change the name
-        // // to make it unique.
-        // let otherAssayWithName = this.study.getAssays().find(a => a.getName() === assayName);
-        // if (otherAssayWithName) {
-        //     // Append a number to the assay to make it unique. An assay with this name might again already exist, which
-        //     // is why we need to check for uniqueness in a loop.
-        //     let counter = 1;
-        //     let newName: string;
-        //     while (otherAssayWithName) {
-        //         newName = `${assayName} (${counter})`;
-        //         otherAssayWithName = this.study.getAssays().find((a: Assay) => a.getName() === newName);
-        //         counter++;
-        //     }
-        //     assayName = newName;
-        // }
-        //
-        // // Also copy configuration for this assay.
-        // const newAssay = new ProteomicsAssay(uuidv4());
-        // newAssay.setName(assayName);
-        //
-        // const originalSearchConfig = this.assay.getSearchConfiguration();
-        // const searchConfiguration = new SearchConfiguration(
-        //     originalSearchConfig.equateIl,
-        //     originalSearchConfig.filterDuplicates,
-        //     originalSearchConfig.enableMissingCleavageHandling
-        // );
-        // newAssay.setSearchConfiguration(searchConfiguration);
-        //
-        // // TODO: make sure duplicating an assay works again... (We need to properly copy the analysis source for this
-        // // to work).
-        // newAssay.setAnalysisSource(this.assay.getAnalysisSource());
-        //
-        // newAssay.setPeptides(this.assay.getPeptides());
-        //
-        // const dataWriter = new AssayFileSystemDataWriter(
-        //     `${this.$store.getters.projectLocation}${this.study.getName()}`,
-        //     this.$store.getters.dbManager,
-        //     this.study,
-        //     this.$store.getters.projectLocation,
-        //     this.$store
-        // );
-        // await newAssay.accept(dataWriter);
-        //
-        // await fs.copyFile(
-        //     `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,
-        //     `${this.$store.getters.projectLocation}${this.study.getName()}/${assayName}.pep`,
-        // );
-        //
-        // this.$store.dispatch("addAssay", newAssay);
-        // this.study.addAssay(newAssay);
-        // this.$store.dispatch("analyseAssay", newAssay);
+        // Check if assay with same name already exists in the list of assays for this study. If so, change the name
+        // to make it unique.
+        let otherAssayWithName = this.study.getAssays().find(a => a.getName() === assayName);
+        if (otherAssayWithName) {
+            // Append a number to the assay to make it unique. An assay with this name might again already exist, which
+            // is why we need to check for uniqueness in a loop.
+            let counter = 1;
+            let newName: string;
+            while (otherAssayWithName) {
+                newName = `${assayName} (${counter})`;
+                otherAssayWithName = this.study.getAssays().find((a: Assay) => a.getName() === newName);
+                counter++;
+            }
+            assayName = newName;
+        }
+
+        // Also copy configuration for this assay.
+        const newAssay = new ProteomicsAssay(uuidv4());
+        newAssay.setName(assayName);
+
+        const originalSearchConfig = this.assay.getSearchConfiguration();
+        const searchConfiguration = new SearchConfiguration(
+            originalSearchConfig.equateIl,
+            originalSearchConfig.filterDuplicates,
+            originalSearchConfig.enableMissingCleavageHandling
+        );
+        newAssay.setSearchConfiguration(searchConfiguration);
+
+        const analysisSourceMng = new AnalysisSourceManager(
+            this.$store.getters.dbManager,
+            this.$store.getters.projectLocation,
+            this.$store
+        );
+        newAssay.setAnalysisSource(
+            await analysisSourceMng.copyAnalysisSource(
+                this.assay.getAnalysisSource(),
+                newAssay
+            )
+        );
+
+        newAssay.setPeptides(this.assay.getPeptides());
+
+        const dataWriter = new AssayFileSystemDataWriter(
+            `${this.$store.getters.projectLocation}${this.study.getName()}`,
+            this.$store.getters.dbManager,
+            this.study,
+            this.$store.getters.projectLocation,
+            this.$store
+        );
+        await newAssay.accept(dataWriter);
+
+        await fs.copyFile(
+            `${this.$store.getters.projectLocation}${this.study.getName()}/${this.assay.getName()}.pep`,
+            `${this.$store.getters.projectLocation}${this.study.getName()}/${assayName}.pep`,
+        );
+
+        this.$store.dispatch("addAssay", newAssay);
+        this.study.addAssay(newAssay);
+        this.$store.dispatch("analyseAssay", newAssay);
     }
 
     private async removeAssay() {
