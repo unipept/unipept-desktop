@@ -192,7 +192,6 @@ export default class AssayItem extends Vue {
     @Prop({ required: false, default: false })
     private value: boolean;
 
-    private peptideTrust: PeptideTrust = null;
     private experimentSummaryActive = false;
     private removeConfirmationActive = false;
     private isEditingAssayName = false;
@@ -235,6 +234,10 @@ export default class AssayItem extends Vue {
         return false;
         // const assayData: AssayData = this.$store.getters.assayData(this.assay);
         // return assayData?.analysisMetaData.status === "cancelled";
+    }
+
+    get peptideTrust(): PeptideTrust {
+        return this.$store.getters.assayData(this.assay)?.originalData?.trust || null;
     }
 
     private cancelAnalysis() {
