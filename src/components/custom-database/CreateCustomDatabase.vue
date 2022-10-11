@@ -135,11 +135,17 @@
                                 </v-row>
                                 <v-row>
                                     <v-col cols="12">
+                                        <v-alert text type="error" outline v-if="!proteomesAreValid">
+                                            Some of the proteomes you provided have been marked as redundant by
+                                            UniProt. Make sure that all provided proteomes are valid before
+                                            continuing.
+                                        </v-alert>
                                         <div v-if="referenceProteomes.length > 0">
                                             <v-simple-table>
                                                 <template v-slot:default>
                                                     <thead>
                                                         <tr>
+                                                            <th class="text-left">Status</th>
                                                             <th class="text-left">Proteome ID</th>
                                                             <th class="text-left">Organism name</th>
                                                             <th class="text-left">Protein count</th>
@@ -147,8 +153,39 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr v-for="(proteome, index) in referenceProteomes" :key="index">
-                                                            <td>{{ proteome.id }}</td>
+                                                        <tr
+                                                            v-for="(proteome, index) in referenceProteomes"
+                                                            :key="index"
+                                                            :class="{ 'proteome-warning': proteome.redundant }">
+                                                            <td>
+                                                                <v-tooltip
+                                                                    v-if="proteome.redundant"
+                                                                    bottom
+                                                                    open-delay="500">
+                                                                    <template v-slot:activator="{ on }">
+                                                                        <v-icon color="error" v-on="on">
+                                                                            mdi-alert-circle-outline
+                                                                        </v-icon>
+                                                                    </template>
+                                                                    <span>
+                                                                        This proteome is marked as redundant by UniProt
+                                                                        and will not be processed for this database.
+                                                                    </span>
+                                                                </v-tooltip>
+                                                                <v-tooltip v-else bottom open-delay="500">
+                                                                    <template v-slot:activator="{ on }">
+                                                                        <v-icon color="success" v-on="on">
+                                                                            mdi-check
+                                                                        </v-icon>
+                                                                    </template>
+                                                                    <span>
+                                                                        Proteome is ok and will be processed.
+                                                                    </span>
+                                                                </v-tooltip>
+                                                            </td>
+                                                            <td>
+                                                                {{ proteome.id }}
+                                                            </td>
                                                             <td>{{ proteome.organismName }}</td>
                                                             <td>{{ proteome.proteinCount }}</td>
                                                             <td class="text-center">
@@ -183,7 +220,10 @@
                                 <v-row>
                                     <v-col cols="12">
                                         <v-btn class="mr-1" @click="currentStep--">Go back</v-btn>
-                                        <v-btn color="primary" @click="buildDatabaseFromReferenceProteomes()">
+                                        <v-btn
+                                            color="primary"
+                                            @click="buildDatabaseFromReferenceProteomes()"
+                                            :disabled="!proteomesAreValid || referenceProteomes.length === 0">
                                             Build database
                                         </v-btn>
                                     </v-col>
@@ -341,6 +381,10 @@ export default class CreateCustomDatabase extends Vue {
 
     get totalReferenceProteins(): number {
         return this.referenceProteomes.reduce((acc, proteome) => acc + proteome.proteinCount, 0);
+    }
+
+    get proteomesAreValid(): boolean {
+        return this.referenceProteomes.every(proteome => !proteome.redundant);
     }
 
     private async mounted() {
@@ -600,5 +644,9 @@ export default class CreateCustomDatabase extends Vue {
     .settings-title {
         color: black;
         font-size: 18px;
+    }
+
+    .proteome-warning td {
+        color: red;
     }
 </style>
