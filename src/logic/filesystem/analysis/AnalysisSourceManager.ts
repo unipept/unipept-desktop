@@ -157,4 +157,40 @@ export default class AnalysisSourceManager {
             });
         }
     }
+
+    /**
+     * Creates a copy from the given AnalysisSource object that's properly initialized and that can be used to
+     * attach to a new assay.
+     *
+     * @param source The AnalysisSource for which a new object with the same properties should be made.
+     * @param assay The assay to which this AnalysisSource belongs.
+     */
+    public async copyAnalysisSource(
+        source: AnalysisSource,
+        assay: ProteomicsAssay
+    ): Promise<AnalysisSource> {
+        if (source instanceof OnlineAnalysisSource || source instanceof CachedOnlineAnalysisSource) {
+            return new CachedOnlineAnalysisSource(
+                source.endpoint,
+                assay,
+                this.dbManager,
+                this.projectLocation,
+                this.store
+            );
+        } else if (source instanceof CachedCustomDbAnalysisSource) {
+            const configMng = new ConfigurationManager();
+            const customDbStorageLocation: string = (await configMng.readConfiguration()).customDbStorageLocation;
+
+            return new CachedCustomDbAnalysisSource(
+                assay,
+                this.dbManager,
+                source.customDatabase,
+                customDbStorageLocation,
+                this.projectLocation,
+                this.store
+            );
+        } else {
+            throw new Error("Unknown AnalysisSource type. Cannot copy this source.");
+        }
+    }
 }
