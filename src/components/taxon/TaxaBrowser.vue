@@ -27,8 +27,8 @@
                 </div>
 
                 <v-container fluid>
-                    <v-row class="d-flex align-center">
-                        <div class="flex-grow-1">
+                    <v-row class="d-flex justify-center">
+                        <div style="max-width: calc(100% - 200px);">
                             <div v-if="selectedItems.length === 0" style="text-align: center">
                                 <div>No taxa selected yet. No filtering will be applied.</div>
                                 <div class="text-caption">
@@ -47,7 +47,7 @@
                                 </v-chip>
                             </v-chip-group>
                         </div>
-                        <div class="d-flex flex-column justify-center">
+                        <div class="d-flex flex-column justify-center align-self-start">
                             <v-tooltip bottom open-delay="500">
                                 <template v-slot:activator="{ on, attrs }">
                                     <v-btn
