@@ -126,6 +126,15 @@ export default class App extends Vue implements ErrorListener {
     private showHomePageDialog = true;
     private errorDialog = false;
 
+    get activeAssayProgress(): number {
+        const assayData: AssayAnalysisStatus = this.$store.getters.activeAssay;
+        if (assayData && assayData.analysisInProgress) {
+            return assayData.originalProgress.currentValue / 100;
+        } else {
+            return -1;
+        }
+    }
+
     async mounted() {
         // Connect with the electron-renderer thread and listen to navigation events that take place. All navigation
         // should pass through the Vue app.
@@ -167,14 +176,9 @@ export default class App extends Vue implements ErrorListener {
     }
 
     @Watch("activeAssay")
-    private activeAssayChanged(assay: AssayAnalysisStatus) {
-        if (assay.analysisReady) {
-            BrowserWindow.getAllWindows()[0].setProgressBar(-1);
-        } else {
-            BrowserWindow.getAllWindows()[0].setProgressBar(
-                this.$store.getters.activeAssay.originalProgress.currentValue
-            );
-        }
+    @Watch("activeAssayProgress")
+    private activeProgressChanged() {
+        BrowserWindow.getAllWindows()[0].setProgressBar(this.activeAssayProgress);
     }
 
     /**
