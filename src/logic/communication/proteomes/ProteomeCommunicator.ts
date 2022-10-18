@@ -25,9 +25,9 @@ export default class ProteomeCommunicator {
             // Only the header is present, we didn't find the requested proteome and return null.
             return null;
         } else if (resultLines.length === 2) {
-            // We found the requested proteome, but we are first going to check if its redundant or not.
+            // We found the requested proteome, but we are first going to check if it's redundant or not.
             const validProteomes = await NetworkUtils.get(
-                `https://rest.uniprot.org/proteomes/stream?compressed=false&fields=upid,organism,organism_id,protein_count&format=tsv&query=(${id}) AND (proteome_type=1)`
+                `https://rest.uniprot.org/proteomes/stream?compressed=false&fields=upid,organism,organism_id,protein_count&format=tsv&query=(${id}) AND ((proteome_type=1) OR (proteome_type=2))`
             );
 
             // Input data is TSV, so we split the fields by a tab-character.
