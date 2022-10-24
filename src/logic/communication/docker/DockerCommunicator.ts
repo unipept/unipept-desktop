@@ -27,7 +27,8 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.1";
+    // public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.1";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "ea0c0951fa6862dae87a7815333cd1f90faf2a657c8840c40eb21b54ffbda288";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "ghcr.io/unipept/unipept-web:1.1";
 
     public static connection: Dockerode;
@@ -116,7 +117,7 @@ export default class DockerCommunicator {
         // Now, start effectively by constructing the new database
         progressListener("Fetching required Docker images", -1, 0);
         // Check and pull the database image if it is not present on this system.
-        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
 
         const dataVolumeName = await this.createDataVolume(customDb, this.dbRootFolder);
         const indexVolumeName = await this.createIndexVolume(indexLocation);
@@ -205,7 +206,7 @@ export default class DockerCommunicator {
         const dataVolumeName = this.generateDataVolumeName(customDb.name);
 
         // Pull all images that are required to start the web service.
-        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
         await this.pullImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
 
         // Stop the execution of previous services for this db
