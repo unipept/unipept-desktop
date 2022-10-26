@@ -29,7 +29,7 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import { NetworkUtils } from "unipept-web-components";
-import marked from "marked";
+import { marked } from "marked";
 import Utils from "@/logic/Utils";
 
 const { app } = require("@electron/remote");

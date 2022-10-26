@@ -28,7 +28,7 @@ export default class DockerCommunicator {
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
     // public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.1";
-    public static readonly UNIPEPT_DB_IMAGE_NAME = "ea0c0951fa6862dae87a7815333cd1f90faf2a657c8840c40eb21b54ffbda288";
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:sha-daccff9";
     public static readonly UNIPEPT_WEB_IMAGE_NAME = "ghcr.io/unipept/unipept-web:1.1";
 
     public static connection: Dockerode;
@@ -117,7 +117,7 @@ export default class DockerCommunicator {
         // Now, start effectively by constructing the new database
         progressListener("Fetching required Docker images", -1, 0);
         // Check and pull the database image if it is not present on this system.
-        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
 
         const dataVolumeName = await this.createDataVolume(customDb, this.dbRootFolder);
         const indexVolumeName = await this.createIndexVolume(indexLocation);
@@ -206,7 +206,7 @@ export default class DockerCommunicator {
         const dataVolumeName = this.generateDataVolumeName(customDb.name);
 
         // Pull all images that are required to start the web service.
-        // await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
         await this.pullImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
 
         // Stop the execution of previous services for this db
@@ -481,34 +481,34 @@ export default class DockerCommunicator {
         );
 
         // Once pulling the images is done, we remove old versions of these images that are no longer required.
-        let imageWithoutVersion = imageName;
-        if (imageName.includes(":")) {
-            imageWithoutVersion = imageName.split(":")[0];
-        }
-        const imagesWithName = (await DockerCommunicator.connection.listImages())
-            .filter(i => (i.RepoDigests && i.RepoDigests.some(d => d.includes(imageWithoutVersion))));
-
-
-        const versionIdentifier = "org.opencontainers.image.version";
-
-        const newestImage = imagesWithName.sort(
-            (a, b) => {
-                return Utils.isVersionLargerThan(
-                    a.Labels[versionIdentifier],
-                    b.Labels[versionIdentifier]
-                ) ? -1 : 1;
-            }
-        )[0];
-
-        for (const image of imagesWithName) {
-            if (image.Labels[versionIdentifier] !== newestImage.Labels[versionIdentifier]) {
-                try {
-                    await DockerCommunicator.connection.getImage(image.Id).remove();
-                } catch (e) {
-                    console.warn(`Could not remove image ${image.Id}. Will try again later.`);
-                }
-            }
-        }
+        // let imageWithoutVersion = imageName;
+        // if (imageName.includes(":")) {
+        //     imageWithoutVersion = imageName.split(":")[0];
+        // }
+        // const imagesWithName = (await DockerCommunicator.connection.listImages())
+        //     .filter(i => (i.RepoDigests && i.RepoDigests.some(d => d.includes(imageWithoutVersion))));
+        //
+        //
+        // const versionIdentifier = "org.opencontainers.image.version";
+        //
+        // const newestImage = imagesWithName.sort(
+        //     (a, b) => {
+        //         return Utils.isVersionLargerThan(
+        //             a.Labels[versionIdentifier],
+        //             b.Labels[versionIdentifier]
+        //         ) ? -1 : 1;
+        //     }
+        // )[0];
+        //
+        // for (const image of imagesWithName) {
+        //     if (image.Labels[versionIdentifier] !== newestImage.Labels[versionIdentifier]) {
+        //         try {
+        //             await DockerCommunicator.connection.getImage(image.Id).remove();
+        //         } catch (e) {
+        //             console.warn(`Could not remove image ${image.Id}. Will try again later.`);
+        //         }
+        //     }
+        // }
     }
 
     private getVolume(volumeName: string): Dockerode.Volume {
