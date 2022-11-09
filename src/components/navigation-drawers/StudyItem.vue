@@ -105,6 +105,8 @@
             v-model="showBinaryFilesError"
             :binary-files="binaryFilesList">
         </binary-files-error-dialog>
+        <bulk-export-dialog v-model="showBulkExportDialog" :study="study">
+        </bulk-export-dialog>
     </div>
 </template>
 
@@ -126,6 +128,7 @@ import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemo
 import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
 import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
 import StudyManager from "@/logic/filesystem/study/StudyManager";
+import BulkExportDialog from "@/components/dialogs/BulkExportDialog.vue";
 
 
 const { Menu, MenuItem } = require("@electron/remote");
@@ -133,6 +136,7 @@ const fs = require("fs").promises;
 
 @Component({
     components: {
+        BulkExportDialog,
         BinaryFilesErrorDialog,
         SearchConfigurationDialog,
         ConfirmDeletionDialog,
@@ -172,6 +176,7 @@ export default class StudyItem extends Vue {
 
     private removeConfirmationActive = false;
     private showSearchConfigDialog = false;
+    private showBulkExportDialog = false;
     private searchConfigCallback: (cancelled: boolean) => Promise<void> = async(cancelled: boolean) => {
         return;
     };
@@ -258,6 +263,12 @@ export default class StudyItem extends Vue {
                 this.enableStudyEdit();
             }
         }));
+        menu.append(new MenuItem({
+            label: "Export all results",
+            click: () => {
+                this.bulkExportAssayResults()
+            }
+        }));
         menu.append(new MenuItem({ type: "separator" }));
         menu.append(new MenuItem({
             label: "Delete",
@@ -270,6 +281,10 @@ export default class StudyItem extends Vue {
 
     private enableStudyEdit() {
         this.isEditingStudyName = true;
+    }
+
+    private async bulkExportAssayResults() {
+        this.showBulkExportDialog = true;
     }
 
     private async disableStudyEdit() {
