@@ -12,6 +12,8 @@ import mkdirp from "mkdirp";
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
     private static readonly CONFIG_FILE_NAME = "unipept.config";
+    // The default Unipept API endpoint server that should be used by the application to perform requests to.
+    public static readonly DEFAULT_ENDPOINT = "https://api.unipept.ugent.be";
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
     // configuration and write the changes to disk (without having to read it again).
     private static currentConfiguration: Configuration = null;
@@ -33,7 +35,8 @@ export default class ConfigurationManager {
                 return false;
             }
         },
-        (config: Configuration) => config.customDbStorageLocation !== ""
+        (config: Configuration) => config.customDbStorageLocation !== "",
+        (config: Configuration) => config.endpoints.every(e => this.isUrl(e))
     ]
 
     private app: App;
@@ -57,6 +60,15 @@ export default class ConfigurationManager {
         try {
             const rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
             const data = JSON.parse(rawConfig);
+
+            if (!data["endpoints"] || !Array.isArray(data["endpoints"])) {
+                data["endpoints"] = [];
+            }
+
+            if (!data["endpoints"].includes(ConfigurationManager.DEFAULT_ENDPOINT)) {
+                data["endpoints"].push(ConfigurationManager.DEFAULT_ENDPOINT);
+            }
+
             if (!this.isValidConfiguration(data)) {
                 ConfigurationManager.currentConfiguration = await this.getDefaultConfiguration();
                 return ConfigurationManager.currentConfiguration;
@@ -80,7 +92,8 @@ export default class ConfigurationManager {
             dockerConfigurationSettings:
                 Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
             customDbStorageLocation: customDbDir,
-            configurationAppVersion: this.app.getVersion()
+            configurationAppVersion: this.app.getVersion(),
+            endpoints: ["https://api.unipept.ugent.be/"]
         }
     }
 
