@@ -356,13 +356,17 @@ export default class CreateAssayDialog extends Vue {
         }
     }
 
-    private created() {
-        // Reset the current state of the component when it is reopened.
-        this.renderableSources.push({
-            type: "online",
-            title: "Online Unipept service",
-            subtitle: "https://rick.ugent.be"
-        });
+    private async created() {
+        const configMng = new ConfigurationManager();
+        const config = await configMng.readConfiguration();
+
+        for (const endpoint of config.endpoints) {
+            this.renderableSources.push({
+                type: "online",
+                title: `Online service (${endpoint})`,
+                subtitle: endpoint
+            });
+        }
 
         for (const dbInfo of (this.$store.getters["customDatabases/databases"] as CustomDatabase[])) {
             if (dbInfo.ready) {
