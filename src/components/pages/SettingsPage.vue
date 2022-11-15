@@ -55,6 +55,60 @@
                                             </v-text-field>
                                         </v-col>
                                     </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <div class="settings-title">Custom endpoints</div>
+                                            <span class="settings-text">
+                                                You can add custom endpoints to this application that can be selected
+                                                as an "analysis source" while performing an analysis. These endpoints
+                                                are typically mirrors of Unipept's online service that have been set
+                                                up by you or other third parties.
+                                            </span>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <div class="d-flex align-center mb-4">
+                                                <v-text-field
+                                                    v-model="endpointModel"
+                                                    class="mr-2"
+                                                    dense
+                                                    hide-details />
+                                                <v-btn color="primary" @click="addEndpoint()">
+                                                    Add endpoint
+                                                </v-btn>
+                                            </div>
+                                            <v-simple-table>
+                                                <template v-slot:default>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-left">Endpoint URL</th>
+                                                            <th class="text-center">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="(endpoint, index) in endpoints" :key="index">
+                                                            <td>{{ endpoint }}</td>
+                                                            <td class="text-center">
+                                                                <v-tooltip bottom>
+                                                                    <template v-slot:activator="{ on }">
+                                                                        <v-btn
+                                                                            icon
+                                                                            v-on="on"
+                                                                            @click="removeEndpoint(endpoint)"
+                                                                            :disabled="endpoint === defaultEndpointConstant">
+                                                                            <v-icon>mdi-delete</v-icon>
+                                                                        </v-btn>
+                                                                    </template>
+                                                                    <span>Remove endpoint</span>
+                                                                </v-tooltip>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </template>
+                                            </v-simple-table>
+                                        </v-col>
+                                    </v-row>
                                 </v-container>
                             </v-card-text>
                         </v-card>
@@ -225,6 +279,10 @@ export default class SettingsPage extends Vue {
     private dockerInfo: any = null;
     private dockerInfoLoading = true;
 
+    private configManager: ConfigurationManager;
+
+    private endpointModel: string = "";
+
     private maxTasksRules: ((x: string) => boolean | string)[] = [
         Rules.required,
         Rules.integer,
@@ -248,8 +306,8 @@ export default class SettingsPage extends Vue {
     ];
 
     private async mounted() {
-        let configManager: ConfigurationManager = new ConfigurationManager();
-        this.configuration = await configManager.readConfiguration();
+        this.configManager = new ConfigurationManager();
+        this.configuration = await this.configManager.readConfiguration();
 
         this.retrieveDockerInfo();
     }
@@ -292,12 +350,20 @@ export default class SettingsPage extends Vue {
         return this.configuration.customDbStorageLocation;
     }
 
+    get endpoints(): string[] {
+        return this.configuration.endpoints;
+    }
+
+    get defaultEndpointConstant(): string {
+        return ConfigurationManager.DEFAULT_ENDPOINT;
+    }
+
     @Watch("configuration.apiSource")
     @Watch("configuration.maxLongRunningTasks")
     @Watch("configuration.maxParallelRequests")
     @Watch("configuration.dockerConnectionSettings")
     private async saveChanges(): Promise<void> {
-        NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
+        // NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
         // NetworkConfiguration.BASE_URL = this.configuration.apiSource;
         // NetworkConfiguration.PARALLEL_API_REQUESTS = this.configuration.maxParallelRequests;
         // Update docker connection
@@ -341,6 +407,23 @@ export default class SettingsPage extends Vue {
                     );
                 }
             }
+        }
+    }
+
+    private async addEndpoint(): Promise<void> {
+        if (!this.configuration.endpoints.includes(this.endpointModel)) {
+            this.configuration.endpoints.push(this.endpointModel);
+            await this.configManager.writeConfiguration(this.configuration);
+        }
+        // Reset endpoint model
+        this.endpointModel = "";
+    }
+
+    private async removeEndpoint(endpoint: string): Promise<void> {
+        const idx = this.configuration.endpoints.indexOf(endpoint);
+        if (idx >= 0) {
+            this.configuration.endpoints.splice(idx, 1);
+            await this.configManager.writeConfiguration(this.configuration);
         }
     }
 

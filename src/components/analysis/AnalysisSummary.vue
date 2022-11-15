@@ -54,8 +54,8 @@
                                 </div>
                                 <!-- Show currently selected analysis source and possibility to change it -->
                                 <div>
-
-                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource()">
+                                    <v-progress-circular v-if="sourcesLoading"></v-progress-circular>
+                                    <v-edit-dialog v-else large save-text="Change" @save="updateAnalysisSource()">
                                         <div>
                                             <v-icon small class="mr-1">mdi-web</v-icon>
                                             <span class="mr-1">{{ analysisSourceDescription }}</span>
@@ -82,7 +82,7 @@
                         <div class="d-flex justify-center align-center mt-4">
                             <tooltip message="Reanalyse this assay">
                                 <v-btn
-                                    :disabled="!analysisReady || (cacheIsValid && !isDirty)"
+                                    :disabled="sourcesLoading || !analysisReady || (cacheIsValid && !isDirty)"
                                     color="primary"
                                     @click="update()"
                                     class="mr-2"
@@ -157,6 +157,7 @@ export default class AnalysisSummary extends Vue {
 
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
+    private sourcesLoading: boolean = true;
 
     private originalAnalysisSourceName = "";
 
@@ -211,13 +212,18 @@ export default class AnalysisSummary extends Vue {
         }
     }
 
-    private created() {
-        // Reset the current state of the component when it is reopened.
-        this.renderableSources.push({
-            type: "online",
-            title: "Online Unipept service",
-            subtitle: "https://unipept.ugent.be"
-        });
+    private async created() {
+        this.sourcesLoading = true;
+        const configMng = new ConfigurationManager();
+        const config = await configMng.readConfiguration();
+
+        for (const endpoint of config.endpoints) {
+            this.renderableSources.push({
+                type: "online",
+                title: `Online service (${endpoint})`,
+                subtitle: endpoint
+            });
+        }
 
         for (const dbInfo of (this.$store.getters["customDatabases/databases"] as CustomDatabase[])) {
             if (dbInfo.ready) {
@@ -231,6 +237,7 @@ export default class AnalysisSummary extends Vue {
 
         this.onAssayChanged();
         this.checkCacheValidity();
+        this.sourcesLoading = false;
     }
 
     @Watch("assay")
@@ -254,7 +261,7 @@ export default class AnalysisSummary extends Vue {
             ) {
                 this.currentAnalysisSource = {
                     type: "online",
-                    title: "Online Unipept service",
+                    title: `Online service (${this.analysisSource.endpoint})`,
                     subtitle: this.analysisSource.endpoint
                 }
             } else {
