@@ -55,6 +55,8 @@ export default class PeptideExport {
 
             const pept2DataResponse = pept2data.get(peptide);
 
+            const sanitizeRegex = new RegExp(`${secondarySeparator}|${separator}`, "g");
+
             if (!pept2DataResponse) {
                 for (let i = 0; i < headerLength - 1; i++) {
                     row.push("");
@@ -65,7 +67,7 @@ export default class PeptideExport {
                 row.push(lcaDefinition ? lcaDefinition.name : "");
 
                 const processedLineage = pept2DataResponse.lineage.map(l => l ? ncbiOntology.getDefinition(l) : null);
-                row.push(...processedLineage.map(l => l ? l.name : ""));
+                row.push(...processedLineage.map(l => l ? l.name.replace(sanitizeRegex, "") : ""));
 
                 // Now add information about the EC-numbers.
                 // This list contains the (EC-code, protein count)-mapping, sorted descending on counts.
@@ -79,11 +81,14 @@ export default class PeptideExport {
                 const ecDefinitions: [EcDefinition, number][] = ecNumbers.map(c => [ecOntology.getDefinition(c[0]), c[1]]);
                 row.push(
                     ecDefinitions.map(
-                        c => `${c[0] ? c[0].name : ""} (${StringUtils.numberToPercent(c[1] / pept2DataResponse.faCounts.ec)})`
+                        c => `${c[0] ? c[0].name : ""} (${StringUtils.numberToPercent(c[1] / pept2DataResponse.faCounts.ec)})`.replace(sanitizeRegex, "")
                     ).join(secondarySeparator)
                 );
 
                 // Now process the GO-terms
+                const goCodes = [];
+                const goNames = [];
+
                 for (const ns of Object.values(GoNamespace)) {
                     const gos = pept2DataResponse.go;
                     const goAnnotations = Object.keys(gos).filter(
@@ -98,30 +103,34 @@ export default class PeptideExport {
 
                     const sortedTerms = PeptideExport.sortAnnotations(goTerms);
 
-                    row.push(
+                    goCodes.push(
                         sortedTerms
                             .map(a => `${a[0]} (${StringUtils.numberToPercent(a[1] / pept2DataResponse.faCounts.go)})`)
                             .join(secondarySeparator)
                     );
 
                     const goDefinitions: [GoDefinition, number][] = sortedTerms.map(c => [goOntology.getDefinition(c[0]), c[1]]);
-                    row.push(
+                    goNames.push(
                         goDefinitions.map(
-                            c => `${c ? c[0].name : ""} (${StringUtils.numberToPercent(c[1] / pept2DataResponse.faCounts.go)})`
-                        ).join(secondarySeparator));
+                            c => `${c ? c[0].name : ""} (${StringUtils.numberToPercent(c[1] / pept2DataResponse.faCounts.go)})`.replace(sanitizeRegex, "")
+                        ).join(secondarySeparator)
+                    );
                 }
+
+                row.push(...goCodes);
+                row.push(...goNames);
 
                 // Now process the InterPro-terms
                 const interproNumbers = PeptideExport.sortAnnotations(pept2DataResponse.ipr);
                 row.push(
                     interproNumbers
-                        .map(a => `${a[0].substr(4)} (${StringUtils.numberToPercent(a[1] / pept2DataResponse.faCounts.ipr)})`)
+                        .map(a => `${a[0].substr(4)} (${StringUtils.numberToPercent(a[1] / pept2DataResponse.faCounts.ipr)})`.replace(sanitizeRegex, ""))
                         .join(secondarySeparator)
                 );
 
                 const interproDefinitions: [InterproDefinition, number][] = interproNumbers.map(i => [iprOntology.getDefinition(i[0]), i[1]]);
                 row.push(interproDefinitions.map(
-                    i => `${i && i[0] ? i[0].name : ""} (${StringUtils.numberToPercent(i[1] / pept2DataResponse.faCounts.ipr)})`
+                    i => `${i && i[0] ? i[0].name : ""} (${StringUtils.numberToPercent(i[1] / pept2DataResponse.faCounts.ipr)})`.replace(sanitizeRegex, "")
                 ).join(secondarySeparator));
             }
 
