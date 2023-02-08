@@ -114,19 +114,19 @@
                 </v-tooltip>
 
                 <!-- Otherwise, we show a button that allows the user to stop the analysis of this assay -->
-                <v-tooltip v-else bottom open-delay="500">
-                    <template v-slot:activator="{ on }">
-                        <v-icon
-                            @click="cancelAnalysis()"
-                            v-on:click.stop color="#424242"
-                            size="20"
-                            class="mr-4"
-                            v-on="on">
-                            mdi-stop-circle-outline
-                        </v-icon>
-                    </template>
-                    <span>Cancel analysis for this assay.</span>
-                </v-tooltip>
+<!--                <v-tooltip v-else bottom open-delay="500">-->
+<!--                    <template v-slot:activator="{ on }">-->
+<!--                        <v-icon-->
+<!--                            @click="cancelAnalysis()"-->
+<!--                            v-on:click.stop color="#424242"-->
+<!--                            size="20"-->
+<!--                            class="mr-4"-->
+<!--                            v-on="on">-->
+<!--                            mdi-stop-circle-outline-->
+<!--                        </v-icon>-->
+<!--                    </template>-->
+<!--                    <span>Cancel analysis for this assay.</span>-->
+<!--                </v-tooltip>-->
             </div>
         </div>
 
