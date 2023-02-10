@@ -29,14 +29,16 @@ export default class CachedOnlineAnalysisSource implements AnalysisSource {
     }
 
     public getCommunicationSource() {
+        const pept2DataCommunicator = new CachedPept2DataCommunicator(
+            this.assay,
+            new Pept2DataCommunicator(this.endpoint),
+            this.dbManager,
+            this.projectLocation,
+            this.store
+        );
+
         return new ConfigureableCommunicationSource(
-            new CachedPept2DataCommunicator(
-                this.assay,
-                new Pept2DataCommunicator(this.endpoint),
-                this.dbManager,
-                this.projectLocation,
-                this.store
-            ),
+            pept2DataCommunicator,
             new CachedGoResponseCommunicator(),
             new CachedEcResponseCommunicator(),
             new CachedInterproResponseCommunicator(),

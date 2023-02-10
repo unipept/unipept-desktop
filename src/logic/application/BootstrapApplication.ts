@@ -1,6 +1,6 @@
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import Configuration from "@/logic/configuration/Configuration";
-import { NetworkConfiguration, QueueManager } from "unipept-web-components";
+import { NetworkConfiguration, Pept2DataCommunicator, QueueManager } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import { Store } from "vuex";
 import ApplicationMigrator from "@/logic/application/ApplicationMigrator";
@@ -20,6 +20,9 @@ export default class BootstrapApplication {
      * Start and load the different components required for the application to function properly.
      */
     public async loadApplicationComponents(): Promise<void> {
+        // Hack to lower the amount of peptides sent at the same time to the server
+        Pept2DataCommunicator.MISSED_CLEAVAGE_BATCH = 5;
+
         await this.runApplicationMigrations();
         const config = await this.initializeConfiguration();
         this.initializeApi(config);

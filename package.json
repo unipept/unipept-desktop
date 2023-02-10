@@ -26,6 +26,7 @@
         "better-sqlite3": "^8.0.1",
         "check-disk-space": "^3.3.1",
         "chokidar": "^3.5.3",
+        "compare-versions": "^6.0.0-rc.1",
         "core-js": "^3.25.0",
         "dockerode": "^3.3.4",
         "electron": "^21.3.3",
