@@ -313,7 +313,7 @@ export default class SettingsPage extends Vue {
     }
 
     private async beforeDestroy() {
-        let configurationManager = new ConfigurationManager();
+        const configurationManager = new ConfigurationManager();
         // Write changes to disk.
         await configurationManager.writeConfiguration(this.configuration);
     }
