@@ -1,8 +1,8 @@
 import { NetworkUtils } from "unipept-web-components";
 
 export default class GitHubCommunicator {
-    private static releaseNotesCache: string = "";
-    private static releaseNotesVersion: string = ""
+    private static releaseNotesCache = "";
+    private static releaseNotesVersion = ""
 
     /**
      * Returns the release content for a specific release version. This content is formatted as MarkDown.

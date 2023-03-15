@@ -3,8 +3,8 @@
  * requests can be made simultaneously, but only the last result should actually be used.
  */
 export default class AsyncHelper<T> {
-    private asyncCount: number = 0;
-    private executing: boolean = false;
+    private asyncCount = 0;
+    private executing = false;
 
     /**
      * Use this method if a specific async operation could be executed more than once, but only the result of the final

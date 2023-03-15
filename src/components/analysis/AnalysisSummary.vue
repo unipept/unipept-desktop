@@ -157,7 +157,7 @@ export default class AnalysisSummary extends Vue {
 
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
-    private sourcesLoading: boolean = true;
+    private sourcesLoading = true;
 
     private originalAnalysisSourceName = "";
 

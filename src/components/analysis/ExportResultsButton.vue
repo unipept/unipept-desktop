@@ -63,7 +63,7 @@ export default class ExportResultsButton extends Vue {
     @Prop({ required: false, default: "Download results" })
     private buttonText: string;
 
-    private exportLoading: boolean = false;
+    private exportLoading = false;
 
     get peptideCountTable(): CountTable<Peptide> {
         return this.$store.getters.assayData(this.assay)?.filteredData.peptideCountTable;
@@ -93,7 +93,7 @@ export default class ExportResultsButton extends Vue {
         return this.$store.getters.assayData(this.assay).originalProgress.analysisInProgress;
     }
 
-    private async downloadCsv(separator: string = ",", functionalSeparator: string = ";"): Promise<void> {
+    private async downloadCsv(separator = ",", functionalSeparator = ";"): Promise<void> {
         if (this.assay && this.peptideCountTable) {
             this.exportLoading = true;
 

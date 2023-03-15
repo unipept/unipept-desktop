@@ -377,7 +377,7 @@ export default class CreateCustomDatabase extends Vue {
 
     private referenceProteome = "";
     private referenceProteomes: Proteome[] = [];
-    private referenceProteomeError: string = "";
+    private referenceProteomeError = "";
 
     get totalReferenceProteins(): number {
         return this.referenceProteomes.reduce((acc, proteome) => acc + proteome.proteinCount, 0);

@@ -54,7 +54,7 @@ export default class CustomDatabaseManager {
                         continue;
                     }
 
-                    let dbSize: number = -1;
+                    let dbSize = -1;
 
                     try {
                         const dockerCommunicator = new DockerCommunicator(rootFolder);

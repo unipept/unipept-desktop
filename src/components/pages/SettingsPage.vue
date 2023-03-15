@@ -281,7 +281,7 @@ export default class SettingsPage extends Vue {
 
     private configManager: ConfigurationManager;
 
-    private endpointModel: string = "";
+    private endpointModel = "";
 
     private maxTasksRules: ((x: string) => boolean | string)[] = [
         Rules.required,
