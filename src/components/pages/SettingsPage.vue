@@ -6,29 +6,7 @@
             </v-alert>
             <v-row>
                 <v-col>
-                    <div style="max-width: 1200px; margin: auto;">
-                        <h2 class="mx-auto settings-category-title">Connection settings</h2>
-                        <v-card>
-                            <v-card-text>
-                                <v-container fluid>
-                                    <v-row>
-                                        <v-col cols="8">
-                                            <div class="settings-title">Unipept API</div>
-                                            <span class="settings-text">
-                                                Denotes the base URL that should be used for communication with a
-                                                Unipept API.
-                                            </span>
-                                        </v-col>
-                                        <v-col cols="4">
-                                            <v-text-field label="https://unipept.ugent.be" single-line filled
-                                                v-model="configuration.apiSource"
-                                                :rules="apiSourceRules">
-                                            </v-text-field>
-                                        </v-col>
-                                    </v-row>
-                                </v-container>
-                            </v-card-text>
-                        </v-card>
+                    <div style="max-width: 1400px; margin: auto;">
                         <h2 class="mx-auto settings-category-title">Concurrency</h2>
                         <v-card>
                             <v-card-text>
@@ -77,6 +55,60 @@
                                             </v-text-field>
                                         </v-col>
                                     </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <div class="settings-title">Custom endpoints</div>
+                                            <span class="settings-text">
+                                                You can add custom endpoints to this application that can be selected
+                                                as an "analysis source" while performing an analysis. These endpoints
+                                                are typically mirrors of Unipept's online service that have been set
+                                                up by you or other third parties.
+                                            </span>
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="12">
+                                            <div class="d-flex align-center mb-4">
+                                                <v-text-field
+                                                    v-model="endpointModel"
+                                                    class="mr-2"
+                                                    dense
+                                                    hide-details />
+                                                <v-btn color="primary" @click="addEndpoint()">
+                                                    Add endpoint
+                                                </v-btn>
+                                            </div>
+                                            <v-simple-table>
+                                                <template v-slot:default>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-left">Endpoint URL</th>
+                                                            <th class="text-center">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="(endpoint, index) in endpoints" :key="index">
+                                                            <td>{{ endpoint }}</td>
+                                                            <td class="text-center">
+                                                                <v-tooltip bottom>
+                                                                    <template v-slot:activator="{ on }">
+                                                                        <v-btn
+                                                                            icon
+                                                                            v-on="on"
+                                                                            @click="removeEndpoint(endpoint)"
+                                                                            :disabled="endpoint === defaultEndpointConstant">
+                                                                            <v-icon>mdi-delete</v-icon>
+                                                                        </v-btn>
+                                                                    </template>
+                                                                    <span>Remove endpoint</span>
+                                                                </v-tooltip>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </template>
+                                            </v-simple-table>
+                                        </v-col>
+                                    </v-row>
                                 </v-container>
                             </v-card-text>
                         </v-card>
@@ -93,6 +125,13 @@
                                                 and size of the custom databases you are planning to use. For large
                                                 databases, at least 100GiB of free space is required.
                                             </div>
+                                            <span class="settings-text settings-important-text">
+                                                NOTE: Only database metadata will be stored in this location on Windows
+                                                based systems due to a bug in Windows' implementation of Docker. Follow
+                                                <a @click="openInBrowser('https://dev.to/kimcuonthenet/move-docker-desktop-data-distro-out-of-system-drive-4cg2')">this guide</a>
+                                                if you need to change the default storage location of Docker volume's
+                                                nonetheless.
+                                            </span>
                                         </v-col>
                                         <v-col cols="4">
                                             <v-text-field
@@ -224,6 +263,7 @@ import { Prop, Watch } from "vue-property-decorator";
 import Rules from "./../validation/Rules";
 import { NetworkConfiguration, NetworkUtils } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import Utils from "@/logic/Utils";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -233,16 +273,15 @@ export default class SettingsPage extends Vue {
 
     private configuration: Configuration = null;
 
-    private errorVisible: boolean = false;
-    private errorMessage: string = "";
+    private errorVisible = false;
+    private errorMessage = "";
 
     private dockerInfo: any = null;
-    private dockerInfoLoading: boolean = true;
+    private dockerInfoLoading = true;
 
-    private apiSourceRules: ((x: string) => boolean | string)[] = [
-        Rules.required,
-        Rules.url
-    ];
+    private configManager: ConfigurationManager;
+
+    private endpointModel: string = "";
 
     private maxTasksRules: ((x: string) => boolean | string)[] = [
         Rules.required,
@@ -266,9 +305,9 @@ export default class SettingsPage extends Vue {
         Rules.required
     ];
 
-    private mounted() {
-        let configManager: ConfigurationManager = new ConfigurationManager();
-        configManager.readConfiguration().then((result) => this.configuration = result);
+    private async mounted() {
+        this.configManager = new ConfigurationManager();
+        this.configuration = await this.configManager.readConfiguration();
 
         this.retrieveDockerInfo();
     }
@@ -311,12 +350,20 @@ export default class SettingsPage extends Vue {
         return this.configuration.customDbStorageLocation;
     }
 
+    get endpoints(): string[] {
+        return this.configuration.endpoints;
+    }
+
+    get defaultEndpointConstant(): string {
+        return ConfigurationManager.DEFAULT_ENDPOINT;
+    }
+
     @Watch("configuration.apiSource")
     @Watch("configuration.maxLongRunningTasks")
     @Watch("configuration.maxParallelRequests")
     @Watch("configuration.dockerConnectionSettings")
     private async saveChanges(): Promise<void> {
-        NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
+        // NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
         // NetworkConfiguration.BASE_URL = this.configuration.apiSource;
         // NetworkConfiguration.PARALLEL_API_REQUESTS = this.configuration.maxParallelRequests;
         // Update docker connection
@@ -332,7 +379,7 @@ export default class SettingsPage extends Vue {
     private async retrieveDockerInfo() {
         this.dockerInfoLoading = true;
 
-        const dockerCommunicator = new DockerCommunicator();
+        const dockerCommunicator = new DockerCommunicator(this.configuration.customDbStorageLocation);
 
         try {
             this.dockerInfo = await dockerCommunicator.getDockerInfo();
@@ -363,9 +410,25 @@ export default class SettingsPage extends Vue {
         }
     }
 
+    private async addEndpoint(): Promise<void> {
+        if (!this.configuration.endpoints.includes(this.endpointModel)) {
+            this.configuration.endpoints.push(this.endpointModel);
+            await this.configManager.writeConfiguration(this.configuration);
+        }
+        // Reset endpoint model
+        this.endpointModel = "";
+    }
+
+    private async removeEndpoint(endpoint: string): Promise<void> {
+        const idx = this.configuration.endpoints.indexOf(endpoint);
+        if (idx >= 0) {
+            this.configuration.endpoints.splice(idx, 1);
+            await this.configManager.writeConfiguration(this.configuration);
+        }
+    }
+
     private async openDbStorageFileDialog(): Promise<void> {
-        const electron = require("electron");
-        const { dialog } = electron.remote;
+        const { dialog } = require("@electron/remote");
 
         const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
             properties: ["openDirectory", "createDirectory"]
@@ -383,6 +446,14 @@ export default class SettingsPage extends Vue {
 
     private openInBrowser(url: string): void {
         NetworkUtils.openInBrowser(url);
+    }
+
+    private isWindows(): boolean {
+        return Utils.isWindows();
+    }
+
+    private isMac(): boolean {
+        return Utils.isMacOS();
     }
 }
 </script>

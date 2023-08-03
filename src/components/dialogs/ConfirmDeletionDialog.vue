@@ -28,7 +28,7 @@ export default class ConfirmDeletionDialog extends Vue {
     @Prop({ required: true })
     private value: boolean;
 
-    private removeConfirmationActive: boolean = false;
+    private removeConfirmationActive = false;
 
     mounted() {
         this.onValueChanged();

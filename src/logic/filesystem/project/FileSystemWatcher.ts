@@ -20,32 +20,32 @@ import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemo
  */
 export default class FileSystemWatcher {
     private readonly errorListeners: ErrorListener[] = [];
-    private watcher: chokidar.FSWatcher;
+    // private watcher: chokidar.FSWatcher;
 
     constructor() {
-        this.watcher = chokidar.watch(store.getters.projectLocation, {
-            ignoreInitial: true,
-            // Ignore hidden files and metadata changes
-            ignored: /^\..*$|metadata.sqlite|\.buffers/,
-            awaitWriteFinish: {
-                stabilityThreshold: 1000,
-                pollInterval: 100
-            }
-        });
-
-        this.watcher
-            .on("add", (path: string) => this.fileAdded(path))
-            .on("change", (path: string) => this.fileChanged(path))
-            .on("unlink", (path: string) => this.fileDeleted(path))
-            .on("addDir", (path: string) => this.directoryAdded(path))
-            .on("unlinkDir", (path: string) => this.directoryDeleted(path));
+        // this.watcher = chokidar.watch(store.getters.projectLocation, {
+        //     ignoreInitial: true,
+        //     // Ignore hidden files and metadata changes
+        //     ignored: /^\..*$|metadata.sqlite|\.buffers/,
+        //     awaitWriteFinish: {
+        //         stabilityThreshold: 1000,
+        //         pollInterval: 100
+        //     }
+        // });
+        //
+        // this.watcher
+        //     .on("add", (path: string) => this.fileAdded(path))
+        //     .on("change", (path: string) => this.fileChanged(path))
+        //     .on("unlink", (path: string) => this.fileDeleted(path))
+        //     .on("addDir", (path: string) => this.directoryAdded(path))
+        //     .on("unlinkDir", (path: string) => this.directoryDeleted(path));
     }
 
     public async closeWatcher() {
-        if (this.watcher) {
-            this.watcher.removeAllListeners();
-            this.watcher.close();
-        }
+        // if (this.watcher) {
+        //     this.watcher.removeAllListeners();
+        //     this.watcher.close();
+        // }
     }
 
     public addErrorListener(listener: ErrorListener) {

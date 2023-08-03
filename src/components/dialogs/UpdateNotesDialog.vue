@@ -29,21 +29,20 @@ import Component from "vue-class-component";
 import { Prop, Watch } from "vue-property-decorator";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import { NetworkUtils } from "unipept-web-components";
-import marked from "marked";
+import { marked } from "marked";
 import Utils from "@/logic/Utils";
 
-const electron = require("electron");
-const app = electron.remote.app;
+const { app } = require("@electron/remote");
 
 @Component
 export default class UpdateNotesDialog extends Vue {
     @Prop({ required: true })
     private value: boolean;
 
-    private dialogActive: boolean = false;
-    private loading: boolean = false;
-    private appVersion: string = "";
-    private releaseContent: string = "";
+    private dialogActive = false;
+    private loading = false;
+    private appVersion = "";
+    private releaseContent = "";
 
     private mounted() {
         this.appVersion = app.getVersion();
@@ -70,14 +69,12 @@ export default class UpdateNotesDialog extends Vue {
                     (rel) => Utils.isVersionLargerThan(rel, this.appVersion)
                 );
 
-                let releaseNotes: string = "";
+                let releaseNotes = "";
                 for (const release of allReleases) {
                     // Add title for this release
                     releaseNotes += `### Unipept Desktop ${release}\n`;
                     releaseNotes += await communicator.getReleaseNotes(release) + "\n\n";
                 }
-
-                console.log(releaseNotes);
 
                 this.releaseContent = marked(releaseNotes);
             } catch (error) {

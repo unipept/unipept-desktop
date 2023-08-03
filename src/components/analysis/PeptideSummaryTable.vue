@@ -79,9 +79,9 @@ export default class PeptideSummaryTable extends Vue {
     private items: PeptideSummary[] = [];
     private options = {};
 
-    private loading: boolean = true;
+    private loading = true;
 
-    private showFiltered: boolean = false;
+    private showFiltered = false;
 
     get totalItems(): number {
         return this.peptideCountTable?.totalCount;

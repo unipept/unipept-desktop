@@ -53,8 +53,8 @@ import StudyFileSystemDataWriter from "@/logic/filesystem/study/StudyFileSystemD
     }
 })
 export default class ProjectExplorer extends Vue {
-    private minExplorerWidth: number = 169;
-    private originalExplorerWidth: number = 210;
+    private minExplorerWidth = 169;
+    private originalExplorerWidth = 210;
     private explorerWidth: number = this.originalExplorerWidth;
 
     mounted() {
@@ -65,11 +65,11 @@ export default class ProjectExplorer extends Vue {
         // Check which studies already exist, and make sure there isn't one with the same name.
         const unknowns: number[] = this.$store.getters.studies
             .map((s: Study) => s.getName())
-            .filter((s: string) => s.startsWith("Unknown"))
+            .filter((s: string) => s.startsWith("Study name"))
             .map((s: string) => s.replace(/[^0-9]/g, ""))
             .map((s: string) => s === "" ? 0 : parseInt(s));
 
-        let studyName: string = "Unknown";
+        let studyName = "Study name";
         if (unknowns.length > 0) {
             studyName += ` (${Math.max(...unknowns) + 1})`
         }
@@ -89,7 +89,7 @@ export default class ProjectExplorer extends Vue {
         const toolbar = this.$refs.projectExplorer as Element;
         const drawerBorder = toolbar.querySelector(".v-navigation-drawer__border");
 
-        let initialMousePos: number = 0;
+        let initialMousePos = 0;
 
         const mouseMoveListener = (moveE: MouseEvent) => {
             const xDifference = initialMousePos - moveE.x;

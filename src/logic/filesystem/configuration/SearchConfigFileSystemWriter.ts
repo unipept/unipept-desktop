@@ -14,7 +14,7 @@ export default class SearchConfigFileSystemWriter implements SearchConfiguration
     ) {}
 
     public async visitSearchConfiguration(config: SearchConfiguration): Promise<void> {
-        let insertNew: boolean = true;
+        let insertNew = true;
 
         // Check if the search configuration already exists in the database.
         if (config.id) {

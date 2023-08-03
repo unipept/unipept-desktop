@@ -10,7 +10,7 @@ import vueFullscreen from "vue-fullscreen";
 
 import { DesktopConfigurationStore } from "@/state/DesktopConfigurationStore";
 import { projectStore } from "@/state/ProjectStore";
-import { customDatabaseStore } from "@/state/DockerStore";
+import CustomDatabaseStoreFactory from "@/state/CustomDatabaseStoreFactory";
 import { ComparativeStore } from "@/state/ComparativeStore";
 
 import HomePage from "@/components/pages/HomePage.vue";
@@ -22,19 +22,7 @@ import PeptideAnalysisPage from "@/components/pages/PeptideAnalysisPage.vue";
 import SingleAssayAnalysisPage from "@/components/pages/analysis/SingleAssayAnalysisPage.vue";
 import CustomDatabasePage from "@/components/pages/CustomDatabasePage.vue";
 
-const { app } = require("electron").remote;
-const bt = require("backtrace-js");
-
-// JavaScript errors in renderer process
-bt.initialize({
-    endpoint: "https://unipept.sp.backtrace.io:6098",
-    token: "94d2b87fb00b2b755d07dc4bad99f231603503724471e122f95212f768704898",
-    handlePromises: true,
-    attributes: {
-        application: "Unipept Desktop",
-        version: app.getVersion()
-    }
-});
+const { app } = require("@electron/remote");
 
 Vue.use(VueRouter);
 Vue.use(Vuex);
@@ -43,6 +31,7 @@ Vue.use(vueFullscreen);
 
 const assayStoreFactory = new AssayStoreFactory();
 const singlePeptideStoreFactory = new SinglePeptideStoreFactory();
+const customDatabaseStoreFactory = new CustomDatabaseStoreFactory();
 
 export const store = new Vuex.Store({
     modules: {
@@ -52,7 +41,7 @@ export const store = new Vuex.Store({
         desktopConfiguration: DesktopConfigurationStore,
         comparative: ComparativeStore,
         project: projectStore,
-        customDatabase: customDatabaseStore
+        customDatabases: customDatabaseStoreFactory.constructCustomDatabaseStore()
     }
 });
 

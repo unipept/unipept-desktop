@@ -6,23 +6,12 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title>Unipept Desktop</title>
-    <link rel="stylesheet" href="/styles/roboto.css">
-    <!-- Globally include jQuery. We are currently working on removing jQuery as a dependency, so this could be removed
-         later on. TODO -->
-    <script src="/scripts/jquery-3.4.1.min.js"></script>
-    <!-- Hack to get jQuery to work in an node.js-environment (Electron). See:
-         https://stackoverflow.com/questions/35962868/why-cant-i-reference-jquery-using-a-script-tag-in-electron -->
-    <script type="text/javascript">
-        jQuery = $ = module.exports
-    </script>
-    <script src="/scripts/d3-3.4.13.min.js"></script>
-    <!-- Globally include Unipept-visualizations. This should get removed once this does no longer depent on jQuery
-         anymore. -->
-    <script src="/scripts/unipept-visualizations.es5.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
   </head>
   <body>
     <noscript>
-      <strong>Unipept Desktop only works with JavaScript enabled. Please enable JavaScript and try again.</strong>
+      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
