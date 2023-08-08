@@ -13,8 +13,11 @@ const api = {
   },
   dialog: {
     showFolderPickerDialog: () => ipcRenderer.invoke("dialog:show-folder-picker-dialog")
+  },
+  app: {
+    restart: () => ipcRenderer.send("app:restart")
   }
-}
+};
   
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -10,14 +10,6 @@
                 Please restart the application or contact us if the problem persists.
             </error-alert>
 
-            <v-snackbar
-                v-model="isSuccessfulUpdateSnackbarActive"
-                :timeout="2000"
-                color="success"
-            >
-                Application configuration has successfully been updated.
-            </v-snackbar>
-
             <h2 class="mx-auto settings-category-title">
                 Connectivity
             </h2>
@@ -267,7 +259,7 @@
                     class="mr-2"
                     @click="resetConfiguration"
                 >
-                    Reset to defaults
+                    Reset to defaults and restart
                 </v-btn>
                 <v-btn 
                     color="primary"
@@ -275,7 +267,7 @@
                     :disabled="isFormDisabled"
                     @click="updateConfiguration"
                 >
-                    Save changes
+                    Save changes and restart
                 </v-btn>
             </div>
         </div>
@@ -342,7 +334,6 @@ const loadExistingConfiguration = function() {
 
 const isUpdateConfigError = ref(false);
 const updateConfigError = ref("");
-const isSuccessfulUpdateSnackbarActive = ref(false);
 
 const updateConfiguration = async function() {
     try {
@@ -352,7 +343,7 @@ const updateConfiguration = async function() {
             dockerConfigurationSettings: dockerConnectionSettings.value!,
             apiEndpoints: [...customEndpoints.value!]
         });
-        isSuccessfulUpdateSnackbarActive.value = true;
+        window.api.app.restart();
     } catch (error) {
         isUpdateConfigError.value = true;
         updateConfigError.value = (error as any).toString() + (error as Error).stack;
@@ -362,6 +353,7 @@ const updateConfiguration = async function() {
 const resetConfiguration = async function() {
     await window.api.config.resetConfiguration();
     await loadExistingConfiguration();
+    window.api.app.restart();
 };
 
 const updateDbStorageLocation = async function() {

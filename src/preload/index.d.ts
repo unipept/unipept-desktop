@@ -11,6 +11,9 @@ interface ExposedAPI {
   },
   dialog: {
     showFolderPickerDialog: () => Promise<string[] | undefined>
+  },
+  app: {
+    restart: () => void
   }
 }
 

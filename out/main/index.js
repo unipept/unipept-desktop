@@ -148,6 +148,12 @@ class DialogManager {
     return void 0;
   }
 }
+class AppManager {
+  restartApplication() {
+    electron.app.relaunch();
+    electron.app.exit();
+  }
+}
 class IPCHandler {
   initializeIPC() {
     electron.ipcMain.handle("fs:read-file", (event, path2) => {
@@ -172,6 +178,8 @@ class IPCHandler {
     });
     const dialogManager = new DialogManager();
     electron.ipcMain.handle("dialog:show-folder-picker-dialog", (event) => dialogManager.showFolderPickerDialog());
+    const appManager = new AppManager();
+    electron.ipcMain.on("app:restart", (event) => appManager.restartApplication());
   }
 }
 function createWindow() {

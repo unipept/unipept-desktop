@@ -11,8 +11,6 @@ let initialConfig: Configuration;
  * invalid. This should be fixed before allowing the application to continue.
  */
 export const intializeConfigurationStore = async () => {
-    await new Promise<void>((resolve) => setTimeout(() => resolve(), 2000));
-
     initialConfig = await window.api.config.readConfiguration();
 };
 

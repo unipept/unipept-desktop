@@ -11,6 +11,9 @@ const api = {
   },
   dialog: {
     showFolderPickerDialog: () => electron.ipcRenderer.invoke("dialog:show-folder-picker-dialog")
+  },
+  app: {
+    restart: () => electron.ipcRenderer.send("app:restart")
   }
 };
 if (process.contextIsolated) {

@@ -3,6 +3,7 @@ import FileSystemManager from "./file-system/FileSystemManager";
 import ConfigurationManager from "./configuration/ConfigurationManager";
 import BrowserUtils from "./browser/BrowserUtils";
 import DialogManager from "./dialog/DialogManager";
+import AppManager from "./app/AppManager";
 
 export default class IPCHandler {
     public initializeIPC() {
@@ -41,5 +42,9 @@ export default class IPCHandler {
         // Dialog actions
         const dialogManager = new DialogManager();
         ipcMain.handle("dialog:show-folder-picker-dialog", (event) => dialogManager.showFolderPickerDialog());
+
+        // App actions
+        const appManager = new AppManager();
+        ipcMain.on("app:restart", (event) => appManager.restartApplication());
     }
 }
