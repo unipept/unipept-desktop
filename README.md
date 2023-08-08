@@ -1,24 +1,34 @@
-# electron-test
+# unipept-vite
 
-## Project setup
-```
-npm install
-```
+An Electron application with Vue and TypeScript
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## Recommended IDE Setup
 
-### Compiles and minifies for production
-```
-npm run build
-```
+- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-### Lints and fixes files
-```
-npm run lint
+## Project Setup
+
+### Install
+
+```bash
+$ yarn
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Development
+
+```bash
+$ yarn dev
+```
+
+### Build
+
+```bash
+# For windows
+$ yarn build:win
+
+# For macOS
+$ yarn build:mac
+
+# For Linux
+$ yarn build:linux
+```
