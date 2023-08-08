@@ -1,22 +1,6 @@
 <template>
     <v-form ref="settingsForm">
         <div class="settings-container mt-4">
-            <!-- Load configuration error -->
-            <error-alert
-                v-if="isLoadConfigError"
-                :error-message="loadConfigErrorMessage" 
-            >
-                Could not load existing configuration.
-                Please restart the application, reset the configuration or contact us if the problem persists.
-                <template #actions>
-                    <div class="mt-2 float-right">
-                        <v-btn @click="resetConfiguration">
-                            Reset configuration
-                        </v-btn>
-                    </div>
-                </template>
-            </error-alert>
-
             <!-- Update configuration error -->
             <error-alert
                 v-if="isUpdateConfigError"
@@ -300,7 +284,7 @@
 
 <script setup lang="ts">
 import FormValidation from "@renderer/logic/form/validation/FormValidation";
-import { intializeConfigurationStore } from "@renderer/stores/ConfigurationStore";
+import { useConfigurationStore } from "@renderer/stores/ConfigurationStore";
 import { Ref, ref, computed } from "vue";
 import { VForm } from "vuetify/components";
 import ErrorAlert from "@renderer/components/alerts/ErrorAlert.vue";
@@ -339,7 +323,7 @@ const isFormValidating = computed(() => {
 });
 
 const isFormDisabled = computed(() => {
-    return !(isFormValid.value) || isLoadConfigError.value;
+    return !(isFormValid.value);
 });
 
 const maxParallelRequests: Ref<string | null> = ref(null);
@@ -347,23 +331,14 @@ const customDbStorageLocation: Ref<string | null> = ref(null);
 const dockerConnectionSettings: Ref<string | null> = ref(null);
 const customEndpoints: Ref<string[] | null> = ref(null);
 
-const isLoadConfigError = ref(false);
-const loadConfigErrorMessage = ref("");
+const configStore = useConfigurationStore();
 
-const loadExistingConfiguration = async function() {
-    try {
-        isLoadConfigError.value = false;
-        const configurationStore = await intializeConfigurationStore();
-
-        maxParallelRequests.value = configurationStore.maxParallelRequests.toString();
-        customDbStorageLocation.value = configurationStore.dbStorageLocation;
-        dockerConnectionSettings.value = configurationStore.dockerConfiguration;
-        customEndpoints.value = configurationStore.customEndpoints;
-    } catch (error) {
-        loadConfigErrorMessage.value = (error as any).toString();
-        isLoadConfigError.value = true;
-    }
-}
+const loadExistingConfiguration = function() {
+    maxParallelRequests.value = configStore.maxParallelRequests.toString();
+    customDbStorageLocation.value = configStore.dbStorageLocation;
+    dockerConnectionSettings.value = configStore.dockerConfiguration;
+    customEndpoints.value = configStore.customEndpoints;
+};
 
 const isUpdateConfigError = ref(false);
 const updateConfigError = ref("");
@@ -371,9 +346,7 @@ const isSuccessfulUpdateSnackbarActive = ref(false);
 
 const updateConfiguration = async function() {
     try {
-        isUpdateConfigError.value = false;
-        const configurationStore = await intializeConfigurationStore();
-        await configurationStore.updateConfiguration({
+        await configStore.updateConfiguration({
             maxParallelRequests: Number.parseInt(maxParallelRequests.value!),
             customDbStorageLocation: customDbStorageLocation.value!,
             dockerConfigurationSettings: dockerConnectionSettings.value!,
@@ -384,19 +357,19 @@ const updateConfiguration = async function() {
         isUpdateConfigError.value = true;
         updateConfigError.value = (error as any).toString() + (error as Error).stack;
     }
-}
+};
 
 const resetConfiguration = async function() {
     await window.api.config.resetConfiguration();
     await loadExistingConfiguration();
-}
+};
 
 const updateDbStorageLocation = async function() {
     const newDbLocation = await window.api.dialog.showFolderPickerDialog();
     if (newDbLocation !== undefined) {
         customDbStorageLocation.value = newDbLocation[0];
     }
-}
+};
 
 const newEndpointValue: Ref<string> = ref("");
 
@@ -408,13 +381,13 @@ const addEndpoint = function() {
     if (newEndpointValue.value !== "") {
         customEndpoints.value?.push(newEndpointValue.value);
     }
-}
+};
 
 const removeEndpoint = function(idx: number) {
     customEndpoints.value?.splice(idx, 1);
-}
+};
 
-await loadExistingConfiguration();
+loadExistingConfiguration();
 
 </script>
 

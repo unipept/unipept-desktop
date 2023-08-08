@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router';
+import SettingsPage from '@renderer/components/pages/SettingsPage.vue';
 
 const routes = [
     {
@@ -7,14 +8,14 @@ const routes = [
     },
     {
         path: "/settings",
-        component: () => import("../components/pages/SettingsPage.vue"),
+        component: SettingsPage
     }
 ];
 
 const router = createRouter({
     history: createWebHistory(),
     routes,
-})
+});
 
 export default router;
 
