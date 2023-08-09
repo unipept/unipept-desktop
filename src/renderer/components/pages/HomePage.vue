@@ -39,7 +39,7 @@
                     </div>
                 </div>
                 <!-- Release notes (display changes compared previous version of the application) -->
-                <!-- <release-notes-card class="mt-12 mx-12"></release-notes-card> -->
+                <release-notes-card class="mt-12 mx-12" />
             </v-col>
         </v-row>
     </v-container>
@@ -51,6 +51,7 @@ import { ref } from 'vue';
 import GithubCommunicator from "@renderer/logic/communication/github/GithubCommunicator";
 import ComparatorUtils from "@renderer/logic/utils/ComparatorUtils";
 import UpdateNotesDialog from "@renderer/components/releases/UpdateNotesDialog.vue";
+import ReleaseNotesCard from "@renderer/components/releases/ReleaseNotesCard.vue";
 
 const appVersion = ref(await window.api.app.versions.app);
 const chromeVersion = ref(await window.api.app.versions.chrome);
