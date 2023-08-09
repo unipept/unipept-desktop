@@ -21,7 +21,8 @@ module.exports = async (context) => {
       appBundleId: appId,
       appPath: `${appOutDir}/${appName}.app`,
       appleId: process.env.APPLEID,
-      appleIdPassword: process.env.APPLEIDPASS
+      appleIdPassword: process.env.APPLEIDPASS,
+      tool: 'notarytool'
     });
   } catch (error) {
     console.error(error);
