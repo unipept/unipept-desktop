@@ -14,7 +14,7 @@ afterSign: build/notarize.js
 win:
   executableName: unipept-desktop
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: Unipept-Desktop-${arch}.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -24,17 +24,15 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: Unipept-Desktop-${arch}.${ext}
 linux:
   target:
     - AppImage
-    - snap
-    - deb
   maintainer: unipept.ugent.be
   category: Research software
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: Unipept-Desktop-${arch}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+# See: https://www.electron.build/configuration/publish
+# publish:
+#   provider: github
