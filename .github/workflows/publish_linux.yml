@@ -20,6 +20,6 @@ jobs:
       - name: Install dependencies
         run: yarn install
       - name: Build application for ${{ matrix.os }}
-        run: yarn run electron:publish
+        run: yarn run build:linux
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
