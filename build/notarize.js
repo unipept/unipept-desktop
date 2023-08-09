@@ -5,13 +5,8 @@ module.exports = async (context) => {
 
   console.log('aftersign hook triggered, start to notarize app.');
 
-  if (!process.env.CI) {
-    console.log(`skipping notarizing, not in CI.`);
-    return;
-  }
-
-  if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
-    console.warn('skipping notarizing, APPLE_ID and APPLE_ID_PASS env variables must be set.');
+  if (!('APPLEID' in process.env && 'APPLEIDPASS' in process.env)) {
+    console.warn('skipping notarizing, APPLEID and APPLEIDPASS env variables must be set.');
     return;
   }
 
