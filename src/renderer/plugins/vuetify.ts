@@ -44,6 +44,9 @@ const vuetify = createVuetify({
         VTooltip: {
             openDelay: 500,
             location: "bottom"
+        },
+        VDialog: {
+            maxWidth: 1000
         }
     }
 });

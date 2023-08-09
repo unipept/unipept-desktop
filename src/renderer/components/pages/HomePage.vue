@@ -26,7 +26,7 @@
                         <span
                             v-if="updateAvailable"
                             class="logo-subline"
-                            @click="updateNotesActive = true"
+                            @click="openUpdateNotesDialog()"
                         >
                             <v-icon
                                 style="position: relative; bottom: 2px;"
@@ -43,12 +43,14 @@
             </v-col>
         </v-row>
     </v-container>
+    <update-notes-dialog v-model="isUpdateNotesDialogActive" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import GithubCommunicator from "@renderer/logic/communication/github/GithubCommunicator";
 import ComparatorUtils from "@renderer/logic/utils/ComparatorUtils";
+import UpdateNotesDialog from "@renderer/components/releases/UpdateNotesDialog.vue";
 
 const appVersion = ref(await window.api.app.versions.app);
 const chromeVersion = ref(await window.api.app.versions.chrome);
@@ -57,6 +59,11 @@ const electronVersion = ref(await window.api.app.versions.electron);
 const githubCommunicator = new GithubCommunicator();
 const remoteVersion = ref(await githubCommunicator.getMostRecentVersion());
 const updateAvailable = ref(ComparatorUtils.isVersionLargerThan(remoteVersion.value, appVersion.value));
+
+const isUpdateNotesDialogActive = ref(false);
+const openUpdateNotesDialog = function() {
+    isUpdateNotesDialogActive.value = true;
+}
 
 </script>
 
