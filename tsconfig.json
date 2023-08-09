@@ -1,4 +1,24 @@
 {
-  "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
+    "files": [],
+    "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
+    // This is not strictly necessary, but fixes the import issues with Intellij
+    "include": [
+        "src/renderer/env.d.ts",
+        "src/renderer/**/*",
+        "src/renderer/**/*.vue",
+        "src/common/**/*",
+        "src/preload/*.d.ts"
+    ],
+    "compilerOptions": {
+        "composite": true,
+        "baseUrl": ".",
+        "paths": {
+            "@renderer/*": [
+                "./src/renderer/*"
+            ],
+            "@common/*": [
+                "./src/common/*"
+            ]
+        }
+    }
 }

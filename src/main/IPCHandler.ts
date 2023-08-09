@@ -10,7 +10,7 @@ export default class IPCHandler {
         // Manipulating the file system.
         // const fsManager = new FileSystemManager();
         // ipcMain.handle("fs:read-file", (_, path) => {
-            
+
         // });
 
         // ipcMain.handle("fs:write-file", (event, path, contents) => {
@@ -20,17 +20,17 @@ export default class IPCHandler {
         // Manipulating the application's current configuration.
         const configurationManager = new ConfigurationManager();
         ipcMain.handle(
-            "config:read-configuration", 
+            "config:read-configuration",
             () => configurationManager.readConfiguration()
         );
 
         ipcMain.handle(
-            "config:write-configuration", 
+            "config:write-configuration",
             (_, configuration) => configurationManager.writeConfiguration(configuration)
         );
 
         ipcMain.handle(
-            "config:reset-configuration", 
+            "config:reset-configuration",
             () => configurationManager.resetConfiguration()
         );
 
@@ -46,5 +46,9 @@ export default class IPCHandler {
         // App actions
         const appManager = new AppManager();
         ipcMain.on("app:restart", () => appManager.restartApplication());
+
+        ipcMain.handle("app:get-app-version", () => appManager.getAppVersion());
+        ipcMain.handle("app:get-electron-version", () => appManager.getElectronVersion());
+        ipcMain.handle("app:get-chrome-version", () => appManager.getChromeVersion());
     }
 }

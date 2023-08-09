@@ -13,7 +13,12 @@ const api = {
     showFolderPickerDialog: () => electron.ipcRenderer.invoke("dialog:show-folder-picker-dialog")
   },
   app: {
-    restart: () => electron.ipcRenderer.send("app:restart")
+    restart: () => electron.ipcRenderer.send("app:restart"),
+    versions: {
+      app: electron.ipcRenderer.invoke("app:get-app-version"),
+      chrome: electron.ipcRenderer.invoke("app:get-chrome-version"),
+      electron: electron.ipcRenderer.invoke("app:get-electron-version")
+    }
   }
 };
 if (process.contextIsolated) {

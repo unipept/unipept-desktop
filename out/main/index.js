@@ -153,13 +153,22 @@ class AppManager {
     electron.app.relaunch();
     electron.app.exit();
   }
+  getElectronVersion() {
+    return process.versions.electron;
+  }
+  getChromeVersion() {
+    return process.versions.chrome;
+  }
+  getAppVersion() {
+    return electron.app.getVersion();
+  }
 }
 class IPCHandler {
   initializeIPC() {
     const configurationManager = new ConfigurationManager();
     electron.ipcMain.handle(
       "config:read-configuration",
-      (_) => configurationManager.readConfiguration()
+      () => configurationManager.readConfiguration()
     );
     electron.ipcMain.handle(
       "config:write-configuration",
@@ -167,15 +176,18 @@ class IPCHandler {
     );
     electron.ipcMain.handle(
       "config:reset-configuration",
-      (_) => configurationManager.resetConfiguration()
+      () => configurationManager.resetConfiguration()
     );
     electron.ipcMain.on("browser:open-in-browser", (_, url) => {
       BrowserUtils.openInBrowser(url);
     });
     const dialogManager = new DialogManager();
-    electron.ipcMain.handle("dialog:show-folder-picker-dialog", (_) => dialogManager.showFolderPickerDialog());
+    electron.ipcMain.handle("dialog:show-folder-picker-dialog", () => dialogManager.showFolderPickerDialog());
     const appManager = new AppManager();
-    electron.ipcMain.on("app:restart", (_) => appManager.restartApplication());
+    electron.ipcMain.on("app:restart", () => appManager.restartApplication());
+    electron.ipcMain.handle("app:get-app-version", () => appManager.getAppVersion());
+    electron.ipcMain.handle("app:get-electron-version", () => appManager.getElectronVersion());
+    electron.ipcMain.handle("app:get-chrome-version", () => appManager.getChromeVersion());
   }
 }
 function createWindow() {
