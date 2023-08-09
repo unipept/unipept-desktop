@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, ipcMain } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import Configuration from '@common/configuration/Configuration';
 
 // Custom APIs for renderer
@@ -25,11 +25,11 @@ const api = {
 // just add to the DOM global.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('api', api);
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
 } else {
   // @ts-ignore (define in dts)
-  window.api = api
+  window.api = api;
 }

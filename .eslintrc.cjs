@@ -25,8 +25,7 @@ module.exports = {
     '@typescript-eslint/no-var-requires': 'off',
     'vue/require-default-prop': 'off',
     'vue/multi-word-component-names': 'off',
-    'vue/html-indent': ['warn', 4],
-    'semi': ['error', 'always']
+    'vue/html-indent': ['warn', 4]
   },
   overrides: [
     {

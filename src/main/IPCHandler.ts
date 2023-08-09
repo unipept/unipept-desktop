@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import FileSystemManager from "./file-system/FileSystemManager";
+// import FileSystemManager from "./file-system/FileSystemManager";
 import ConfigurationManager from "./configuration/ConfigurationManager";
 import BrowserUtils from "./browser/BrowserUtils";
 import DialogManager from "./dialog/DialogManager";
@@ -8,43 +8,43 @@ import AppManager from "./app/AppManager";
 export default class IPCHandler {
     public initializeIPC() {
         // Manipulating the file system.
-        const fsManager = new FileSystemManager();
-        ipcMain.handle("fs:read-file", (event, path) => {
+        // const fsManager = new FileSystemManager();
+        // ipcMain.handle("fs:read-file", (_, path) => {
             
-        });
+        // });
 
-        ipcMain.handle("fs:write-file", (event, path, contents) => {
+        // ipcMain.handle("fs:write-file", (event, path, contents) => {
 
-        });
+        // });
 
         // Manipulating the application's current configuration.
         const configurationManager = new ConfigurationManager();
         ipcMain.handle(
             "config:read-configuration", 
-            (event) => configurationManager.readConfiguration()
+            () => configurationManager.readConfiguration()
         );
 
         ipcMain.handle(
             "config:write-configuration", 
-            (event, configuration) => configurationManager.writeConfiguration(configuration)
+            (_, configuration) => configurationManager.writeConfiguration(configuration)
         );
 
         ipcMain.handle(
             "config:reset-configuration", 
-            (event) => configurationManager.resetConfiguration()
+            () => configurationManager.resetConfiguration()
         );
 
         // Browser actions
-        ipcMain.on("browser:open-in-browser", (event, url) => {
+        ipcMain.on("browser:open-in-browser", (_, url) => {
             BrowserUtils.openInBrowser(url);
         });
 
         // Dialog actions
         const dialogManager = new DialogManager();
-        ipcMain.handle("dialog:show-folder-picker-dialog", (event) => dialogManager.showFolderPickerDialog());
+        ipcMain.handle("dialog:show-folder-picker-dialog", () => dialogManager.showFolderPickerDialog());
 
         // App actions
         const appManager = new AppManager();
-        ipcMain.on("app:restart", (event) => appManager.restartApplication());
+        ipcMain.on("app:restart", () => appManager.restartApplication());
     }
 }

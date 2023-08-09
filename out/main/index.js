@@ -156,30 +156,26 @@ class AppManager {
 }
 class IPCHandler {
   initializeIPC() {
-    electron.ipcMain.handle("fs:read-file", (event, path2) => {
-    });
-    electron.ipcMain.handle("fs:write-file", (event, path2, contents) => {
-    });
     const configurationManager = new ConfigurationManager();
     electron.ipcMain.handle(
       "config:read-configuration",
-      (event) => configurationManager.readConfiguration()
+      (_) => configurationManager.readConfiguration()
     );
     electron.ipcMain.handle(
       "config:write-configuration",
-      (event, configuration) => configurationManager.writeConfiguration(configuration)
+      (_, configuration) => configurationManager.writeConfiguration(configuration)
     );
     electron.ipcMain.handle(
       "config:reset-configuration",
-      (event) => configurationManager.resetConfiguration()
+      (_) => configurationManager.resetConfiguration()
     );
-    electron.ipcMain.on("browser:open-in-browser", (event, url) => {
+    electron.ipcMain.on("browser:open-in-browser", (_, url) => {
       BrowserUtils.openInBrowser(url);
     });
     const dialogManager = new DialogManager();
-    electron.ipcMain.handle("dialog:show-folder-picker-dialog", (event) => dialogManager.showFolderPickerDialog());
+    electron.ipcMain.handle("dialog:show-folder-picker-dialog", (_) => dialogManager.showFolderPickerDialog());
     const appManager = new AppManager();
-    electron.ipcMain.on("app:restart", (event) => appManager.restartApplication());
+    electron.ipcMain.on("app:restart", (_) => appManager.restartApplication());
   }
 }
 function createWindow() {

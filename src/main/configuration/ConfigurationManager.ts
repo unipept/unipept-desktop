@@ -19,7 +19,7 @@ export default class ConfigurationManager {
         (config: Configuration) => {
             return Number.isInteger(config.maxParallelRequests) &&
                 config.maxParallelRequests <= 10 &&
-                config.maxParallelRequests >= 1
+                config.maxParallelRequests >= 1;
         },
         (config: Configuration) => {
             // Check if the given Docker-config value is a valid JSON object.
@@ -32,7 +32,7 @@ export default class ConfigurationManager {
         },
         (config: Configuration) => config.customDbStorageLocation !== "",
         // (config: Configuration) => config.apiEndpoints.every(e => FormValidation.url(e))
-    ]
+    ];
 
     public async readConfiguration(): Promise<Configuration> {
         const fsManager = new FileSystemManager();
@@ -91,7 +91,7 @@ export default class ConfigurationManager {
             apiEndpoints: [
                 "https://api.unipept.ugent.be"
             ]
-        }
+        };
     }
 
     private async isConfigurationValid(config: Configuration): Promise<void> {

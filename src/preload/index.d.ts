@@ -1,4 +1,4 @@
-import Configuration from '@common/configuration/Configuration'
+import Configuration from '@common/configuration/Configuration';
 
 interface ExposedAPI {
   config: {

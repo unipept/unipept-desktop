@@ -1,7 +1,9 @@
 <template>
     <v-alert color="error">
         <slot />
-        <div class="font-weight-bold">Error details: </div>
+        <div class="font-weight-bold">
+            Error details:
+        </div>
         <div class="font-monospace error-details pa-2">
             {{ errorMessage }}
         </div>

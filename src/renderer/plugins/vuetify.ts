@@ -19,7 +19,7 @@ const unipeptLightTheme = {
         success: '#4CAF50',
         warning: '#FB8C00',
     },
-}
+};
 
 const vuetify = createVuetify({
     components,
