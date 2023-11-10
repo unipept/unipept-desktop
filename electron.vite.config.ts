@@ -7,7 +7,8 @@ export default defineConfig({
         plugins: [externalizeDepsPlugin()],
         resolve: {
             alias: {
-                "@common": resolve("src/common")
+                "@common": resolve("src/common"),
+                "@main": resolve("src/main")
             }
         },
     },
@@ -16,7 +17,8 @@ export default defineConfig({
         resolve: {
             alias: {
                 "@common": resolve("src/common"),
-                "@preload": resolve("src/preload")
+                "@preload": resolve("src/preload"),
+                "@main": resolve("src/main")
             }
         },
     },

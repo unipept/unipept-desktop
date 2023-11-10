@@ -6,6 +6,8 @@
         "src/renderer/env.d.ts",
         "src/renderer/**/*",
         "src/renderer/**/*.vue",
+        "src/main/**/*",
+        "src/main/**/*.sql",
         "src/common/**/*",
         "src/preload/*.d.ts"
     ],
@@ -13,6 +15,9 @@
         "composite": true,
         "baseUrl": ".",
         "paths": {
+            "@main/*": [
+                "./src/main/*"
+            ],
             "@renderer/*": [
                 "./src/renderer/*"
             ],

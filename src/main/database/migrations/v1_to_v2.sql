@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS pept2data;
