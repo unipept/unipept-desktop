@@ -28,3 +28,4 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.mac_certs_password }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+          APPLETEAMID: ${{ secrets.APPLETEAMID }}
