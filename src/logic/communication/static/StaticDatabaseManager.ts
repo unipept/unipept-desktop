@@ -20,7 +20,7 @@ const { app } = require("@electron/remote");
  * @author Pieter Verschaffelt
  */
 export default class StaticDatabaseManager {
-    public static readonly STATIC_DB_VERSION_POINTER = "https://raw.githubusercontent.com/unipept/make-database/master/workflows/static_database/version.txt";
+    public static readonly STATIC_DB_VERSION_POINTER = "https://api.github.com/repos/unipept/unipept-database/releases/latest";
     public static readonly STATIC_DB_URL = "https://github.com/unipept/make-database/releases/latest/download/";
 
     private static db: sqlite3.Database;
@@ -141,20 +141,10 @@ export default class StaticDatabaseManager {
      * @returns The Date corresponding to the most recent version of the database that's present.
      */
     public async getMostRecentVersion(): Promise<Date> {
-        const data = await new Promise<string>((resolve, reject) => {
-            https.get(StaticDatabaseManager.STATIC_DB_VERSION_POINTER, (resp: any) => {
-                let contents = "";
-                resp.on("data", (chunk: any) => {
-                    contents += chunk;
-                });
-
-                resp.on("end", () => {
-                    resolve(contents);
-                });
-            });
-        })
-
-        const dateParts = data.split("-");
+        const releaseData = await fetch(StaticDatabaseManager.STATIC_DB_VERSION_POINTER);
+        const parsedRelease = await releaseData.json();
+        const latestReleaseTag = parsedRelease["tag_name"];
+        const dateParts = latestReleaseTag.replace("database-", "").split("-");
         return new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
     }
 
