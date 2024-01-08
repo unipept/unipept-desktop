@@ -52,10 +52,10 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Show currently selected analysis source and possibility to change it, if requested -->
+                                <!-- Show currently selected analysis source and possibility to change it -->
                                 <div>
-
-                                    <v-edit-dialog large save-text="Change" @save="updateAnalysisSource">
+                                    <v-progress-circular v-if="sourcesLoading"></v-progress-circular>
+                                    <v-edit-dialog v-else large save-text="Change" @save="updateAnalysisSource()">
                                         <div>
                                             <v-icon small class="mr-1">mdi-web</v-icon>
                                             <span class="mr-1">{{ analysisSourceDescription }}</span>
@@ -82,7 +82,7 @@
                         <div class="d-flex justify-center align-center mt-4">
                             <tooltip message="Reanalyse this assay">
                                 <v-btn
-                                    :disabled="!analysisReady || (cacheIsValid && !isDirty)"
+                                    :disabled="sourcesLoading || !analysisReady || (cacheIsValid && !isDirty)"
                                     color="primary"
                                     @click="update()"
                                     class="mr-2"
@@ -96,6 +96,7 @@
                     <v-col sm="12" lg="6">
                         <peptide-summary-table :assay="assay" />
                         <div class="d-flex justify-center">
+
                             <export-results-button :assay="assay" button-text="Export results" />
                         </div>
                     </v-col>
@@ -123,7 +124,6 @@ import {
     SearchConfiguration,
     PeptideTrust,
     Pept2DataCommunicator,
-    ExportResultsButton,
     NetworkConfiguration,
     Tooltip, Study, Assay, OnlineAnalysisSource, AnalysisSource
 } from "unipept-web-components";
@@ -135,9 +135,10 @@ import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemD
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
 import CachedCustomDbAnalysisSource from "@/logic/communication/analysis/CachedCustomDbAnalysisSource";
 import { RenderableAnalysisSource } from "@/components/assay/AnalysisSourceSelect.vue";
-import { CustomDatabaseInfo } from "@/state/DockerStore";
 import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
+import CustomDatabase from "@/logic/custom_database/CustomDatabase";
+import ExportResultsButton from "@/components/analysis/ExportResultsButton.vue";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
@@ -146,25 +147,28 @@ export default class AnalysisSummary extends Vue {
     @Prop({ required: true })
     private assay: ProteomicsAssay;
 
-    private equateIl: boolean = true;
-    private filterDuplicates: boolean = true;
-    private missedCleavage: boolean = false;
+    private equateIl = true;
+    private filterDuplicates = true;
+    private missedCleavage = false;
 
-    private originalEquateIl: boolean = true;
-    private originalFilterDuplicates: boolean = true;
-    private originalMissedCleavage: boolean = false;
+    private originalEquateIl = true;
+    private originalFilterDuplicates = true;
+    private originalMissedCleavage = false;
 
     private analysisSource: AnalysisSource = null;
     private originalAnalysisSource: AnalysisSource = null;
+    private sourcesLoading: boolean = true;
+
+    private originalAnalysisSourceName = "";
 
     private currentAnalysisSource: RenderableAnalysisSource = null;
     private renderableSources: RenderableAnalysisSource[] = [];
 
-    private cacheIsValid: boolean = true;
+    private cacheIsValid = true;
     // We are currently still checking if the provided cache is valid or not...
-    private cacheValidityLoading: boolean = true;
+    private cacheValidityLoading = true;
 
-    private searchConfigIsValid: boolean = true;
+    private searchConfigIsValid = true;
 
     get originalPeptideTrust(): PeptideTrust {
         return this.$store.getters.assayData(this.assay)?.originalData?.trust;
@@ -190,7 +194,8 @@ export default class AnalysisSummary extends Vue {
     get isDirty(): boolean {
         return this.originalEquateIl !== this.equateIl ||
             this.originalFilterDuplicates !== this.filterDuplicates ||
-            this.originalMissedCleavage !== this.missedCleavage
+            this.originalMissedCleavage !== this.missedCleavage ||
+            this.originalAnalysisSourceName !== this.currentAnalysisSource.title
     }
 
     get isOnlineAnalysisSource(): boolean {
@@ -207,26 +212,32 @@ export default class AnalysisSummary extends Vue {
         }
     }
 
-    private created() {
-        // Reset the current state of the component when it is reopened.
-        this.renderableSources.push({
-            type: "online",
-            title: "Online Unipept service",
-            subtitle: "https://unipept.ugent.be"
-        });
+    private async created() {
+        this.sourcesLoading = true;
+        const configMng = new ConfigurationManager();
+        const config = await configMng.readConfiguration();
 
-        for (const dbInfo of (this.$store.getters.databases as CustomDatabaseInfo[])) {
-            if (dbInfo.database.complete) {
+        for (const endpoint of config.endpoints) {
+            this.renderableSources.push({
+                type: "online",
+                title: `Online service (${endpoint})`,
+                subtitle: endpoint
+            });
+        }
+
+        for (const dbInfo of (this.$store.getters["customDatabases/databases"] as CustomDatabase[])) {
+            if (dbInfo.ready) {
                 this.renderableSources.push({
                     type: "local",
-                    title: dbInfo.database.name,
-                    subtitle: `${dbInfo.database.entries} UniProt-entries`
+                    title: dbInfo.name,
+                    subtitle: `${dbInfo.entries} UniProtKB-entries`
                 });
             }
         }
 
         this.onAssayChanged();
         this.checkCacheValidity();
+        this.sourcesLoading = false;
     }
 
     @Watch("assay")
@@ -244,31 +255,42 @@ export default class AnalysisSummary extends Vue {
             this.analysisSource = this.assay.getAnalysisSource();
             this.originalAnalysisSource = this.analysisSource;
 
-            if (this.analysisSource instanceof OnlineAnalysisSource || this.analysisSource instanceof CachedOnlineAnalysisSource) {
+            if (
+                this.analysisSource instanceof OnlineAnalysisSource ||
+                this.analysisSource instanceof CachedOnlineAnalysisSource
+            ) {
                 this.currentAnalysisSource = {
                     type: "online",
-                    title: "Online Unipept service",
+                    title: `Online service (${this.analysisSource.endpoint})`,
                     subtitle: this.analysisSource.endpoint
                 }
             } else {
                 const customDb = (this.analysisSource as CachedCustomDbAnalysisSource).customDatabase;
 
-                return {
+                this.currentAnalysisSource = {
                     type: "local",
                     title: customDb.name,
-                    subtitle: `${customDb.entries} UniProt-entries`
+                    subtitle: `${customDb.entries} UniProtKB-entries`
                 }
             }
+
+            this.originalAnalysisSourceName = this.currentAnalysisSource.title;
         }
     }
 
     private async checkCacheValidity(): Promise<void> {
         this.cacheValidityLoading = true;
-        const metadataMng = new StorageMetadataManager(this.$store.getters.dbManager);
-        const metadata = await metadataMng.readMetadata(this.assay.getId());
+        const metadataMng = new StorageMetadataManager(
+            this.$store.getters.dbManager,
+            this.$store.getters.projectLocation,
+            this.$store
+        );
+        const metadata = await metadataMng.readMetadata(this.assay);
 
         if (metadata) {
-            this.cacheIsValid = await this.assay.getAnalysisSource().verifyEquality(metadata.fingerprint);
+            this.cacheIsValid = await this.assay
+                .getAnalysisSource()
+                .verifyEquality(await metadata.analysisSource.computeFingerprint());
         } else {
             this.cacheIsValid = false;
         }
@@ -282,7 +304,8 @@ export default class AnalysisSummary extends Vue {
                 this.currentAnalysisSource.subtitle,
                 this.assay,
                 this.$store.getters.dbManager,
-                this.$store.getters.projectLocation
+                this.$store.getters.projectLocation,
+                this.$store
             );
         } else {
             const configMng = new ConfigurationManager();
@@ -291,11 +314,10 @@ export default class AnalysisSummary extends Vue {
             this.analysisSource = new CachedCustomDbAnalysisSource(
                 this.assay,
                 this.$store.getters.dbManager,
-                this.$store.getters.databases.find(
-                    (d: CustomDatabaseInfo) => d.database.name === this.currentAnalysisSource.title
-                ),
+                this.$store.getters["customDatabases/database"](this.currentAnalysisSource.title),
                 config.customDbStorageLocation,
-                this.$store.getters.projectLocation
+                this.$store.getters.projectLocation,
+                this.$store
             );
         }
     }
@@ -317,7 +339,9 @@ export default class AnalysisSummary extends Vue {
         const assayWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}/${study.getName()}`,
             this.$store.getters.dbManager,
-            study
+            study,
+            this.$store.getters.projectLocation,
+            this.$store
         );
         this.assay.accept(assayWriter);
 

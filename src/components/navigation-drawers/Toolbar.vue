@@ -9,79 +9,117 @@
                 style="position: relative; top: 64px; height: calc(100% - 64px); display: flex; flex-direction: column;"
             >
                 <v-list>
-                    <v-list-item
-                        :class="{'v-list-item--active': $route.path === '/'}"
-                        link
-                        @click="navigate('/', false)">
-                        <v-list-item-icon>
-                            <v-icon>mdi-home</v-icon>
-                        </v-list-item-icon>
-                        <v-list-item-content>
-                            <v-list-item-title>Home</v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item
+                                :class="{'v-list-item--active': $route.path === '/'}"
+                                link
+                                @click="navigate('/', false)"
+                                v-on="on">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-home</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-content>
+                                    <v-list-item-title>Home</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <span>Home</span>
+                    </v-tooltip>
 
-                    <v-list-item
-                        :disabled="$store.getters.projectLocation === ''"
-                        :class="{'v-list-item--active': $route.path === '/analysis/single'}"
-                        link
-                        @click="navigate('/analysis/single', true)">
-                        <v-list-item-icon>
-                            <v-icon>mdi-test-tube</v-icon>
-                        </v-list-item-icon>
-                        <v-list-item-content>
-                            <v-list-item-title>Single assay analysis</v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item
+                                :disabled="$store.getters.projectLocation === ''"
+                                :class="{'v-list-item--active': $route.path === '/analysis/single'}"
+                                link
+                                @click="navigate('/analysis/single', true)"
+                                v-on="on">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-test-tube</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-content>
+                                    <v-list-item-title>Single assay analysis</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <span>Single assay analysis</span>
+                    </v-tooltip>
 
-                    <v-list-item
-                        :disabled="$store.getters.projectLocation === ''"
-                        :class="{'v-list-item--active': $route.path === '/analysis/multi'}"
-                        link
-                        @click="navigate('/analysis/multi', true)">
-                        <v-list-item-icon>
-                            <v-icon>$vuetify.icons.testMultiple</v-icon>
-                        </v-list-item-icon>
-                        <v-list-item-content>
-                            <v-list-item-title>Comparative analysis</v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item
+                                :disabled="$store.getters.projectLocation === ''"
+                                :class="{'v-list-item--active': $route.path === '/analysis/multi'}"
+                                link
+                                @click="navigate('/analysis/multi', true)"
+                                v-on="on">
+                                <v-list-item-icon>
+                                    <v-icon>$vuetify.icons.testMultiple</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-content>
+                                    <v-list-item-title>Comparative analysis</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <span>Comparative analysis</span>
+                    </v-tooltip>
                 </v-list>
                 <div style="flex-grow: 1;"></div>
                 <v-list>
-                    <v-list-item
-                        :class="{'v-list-item--active': $route.path.includes('/peptide/single')}"
-                        link
-                        @click="navigate('/peptide/single', false)">
-                        <v-list-item-icon>
-                            <v-icon>mdi-bacteria</v-icon>
-                        </v-list-item-icon>
-                        <v-list-item-content>
-                            <v-list-item-title>Single peptide analysis</v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-<!--                    <v-list-item-->
-<!--                        :class="{'v-list-item&#45;&#45;active': $route.path.includes('/databases')}"-->
-<!--                        link-->
-<!--                        @click="navigate('/databases', false)">-->
-<!--                        <v-list-item-icon>-->
-<!--                            <v-icon>mdi-database-cog</v-icon>-->
-<!--                        </v-list-item-icon>-->
-<!--                        <v-list-item-content>-->
-<!--                            <v-list-item-title>Custom databases</v-list-item-title>-->
-<!--                        </v-list-item-content>-->
-<!--                    </v-list-item>-->
-                    <v-list-item
-                        :class="{'v-list-item--active': $route.path === '/settings'}"
-                        link
-                        @click="navigate('/settings', false)">
-                        <v-list-item-icon>
-                            <v-icon>mdi-cog-outline</v-icon>
-                        </v-list-item-icon>
-                        <v-list-item-content>
-                            <v-list-item-title>Settings</v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item
+                                :class="{'v-list-item--active': $route.path.includes('/peptide/single')}"
+                                link
+                                @click="navigate('/peptide/single', false)"
+                                v-on="on">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-bacteria</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-content>
+                                    <v-list-item-title>Single peptide analysis</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <span>Single peptide analysis</span>
+                    </v-tooltip>
+
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item
+                                :class="{'v-list-item--active': $route.path.includes('/databases')}"
+                                link
+                                @click="navigate('/databases', false)"
+                                v-on="on">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-database-cog</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-content>
+                                    <v-list-item-title>Custom databases</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <span>Custom databases</span>
+                    </v-tooltip>
+
+                    <v-tooltip bottom open-delay="500">
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-list-item
+                                :class="{'v-list-item--active': $route.path.includes('/settings')}"
+                                link
+                                @click="navigate('/settings', false)"
+                                v-on="on">
+                                <v-list-item-icon>
+                                    <v-icon>mdi-cog</v-icon>
+                                </v-list-item-icon>
+                                <v-list-item-content>
+                                    <v-list-item-title>Settings</v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <span>Settings</span>
+                    </v-tooltip>
                 </v-list>
             </div>
         </v-navigation-drawer>
@@ -107,7 +145,7 @@ import { Tooltip } from "unipept-web-components";
     }
 })
 export default class Toolbar extends Vue {
-    private originalToolbarWidth: number = 210;
+    private originalToolbarWidth = 210;
     private toolbarWidth: number = this.originalToolbarWidth;
 
     private navigate(routeToGo: string, activateSidebar: boolean) {

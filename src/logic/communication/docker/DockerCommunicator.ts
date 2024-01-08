@@ -1,168 +1,42 @@
 import Dockerode  from "dockerode";
-import { NcbiId, ProgressListener } from "unipept-web-components";
 import ProgressInspectorStream from "@/logic/communication/docker/ProgressInspectorStream";
 import { promises as fs } from "fs";
+import path from "path";
 import mkdirp from "mkdirp";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import StringNotifierInspectorStream from "@/logic/communication/docker/StringNotifierInspectorStream";
-import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
-import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
-
+import Utils from "@/logic/Utils";
+import FileSystemUtils from "@/logic/filesystem/FileSystemUtils";
+import PortFinder from "portfinder";
+import { powerSaveBlocker } from "@electron/remote";
 
 export default class DockerCommunicator {
     private static readonly BUILD_DB_CONTAINER_NAME = "unipept_desktop_build_database";
+    private static readonly RUN_DB_CONTAINER_NAME = "unipept_desktop_run_database";
     private static readonly WEB_CONTAINER_NAME = "unipept_web";
 
-    public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({ socketPath: "/var/run/docker.sock" });
-    public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
-        protocol: "tcp",
-        host: "127.0.0.1",
-        port: 2376
+    private static readonly INDEX_VOLUME_NAME = "unipept_index";
+    private static readonly TEMP_VOLUME_NAME = "unipept_temp";
+
+    public static readonly UNIX_DEFAULT_SETTINGS = JSON.stringify({
+        socketPath: "/var/run/docker.sock"
     });
+    public static readonly WINDOWS_DEFAULT_SETTINGS = JSON.stringify({
+        socketPath: "//./pipe/docker_engine"
+    })
     public static readonly WEB_COMPONENT_PUBLIC_URL = "http://localhost";
     public static readonly WEB_COMPONENT_PUBLIC_PORT = "3000";
 
+    public static readonly UNIPEPT_DB_IMAGE_NAME = "ghcr.io/unipept/unipept-database:1.1";
+    public static readonly UNIPEPT_WEB_IMAGE_NAME = "ghcr.io/unipept/unipept-web:1.1";
+
     public static connection: Dockerode;
+
+    // The database that's currently being constructed by Docker.
+    private dbBeingConstructed: CustomDatabase;
 
     public static initializeConnection(config: Dockerode.DockerOptions) {
         DockerCommunicator.connection = new Dockerode(config);
-    }
-
-    /**
-     * Checks if Docker is installed and ready to use on this system. This method only returns true if Docker is
-     * completely ready to be utilized by this application.
-     */
-    public getDockerInfo(): Promise<any> {
-        return DockerCommunicator.connection.info();
-    }
-
-    /**
-     * Starts a new Docker container and begins by building the database with the given settings. This function resolves
-     * after the new database has been built. Once the database has been built, the container is automatically
-     * deleted (since the MySQL-generated database files are persisted on the file system).
-     *
-     * @param customDb A custom database instance that describes all the different properties that should hold true
-     * for the database we are about to create.
-     * @param databaseFolder Folder in which the database under construction should be stored. This folder should be
-     * empty.
-     * @param indexFolder Folder in which the constructed database index structure should be kept.
-     * @param progressListener A callback function that can be used to monitor the progress of building the database.
-     */
-    public async buildDatabase(
-        customDb: CustomDatabase,
-        databaseFolder: string,
-        indexFolder: string,
-        progressListener: (step: string, progress: number, progress_step: number) => void
-    ): Promise<void> {
-        if (!DockerCommunicator.connection) {
-            throw new Error("Connection to Docker daemon has not been initialized.");
-        }
-
-        if ((await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined) {
-            // A database build is already in progress!
-            throw new Error("A previous database build is still in progress.");
-        }
-
-        // Clear the database output folder since this one will be filled up again by rebuilding the database.
-        await fs.rmdir(databaseFolder, { recursive: true });
-        await mkdirp(databaseFolder);
-
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-custom-db:1.1.1",
-                [],
-                new ProgressInspectorStream(progressListener, () => resolve(), (n: number) => customDb.entries = n),
-                {
-                    Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                    Env: [
-                        "MYSQL_ROOT_PASSWORD=unipept",
-                        "MYSQL_DATABASE=unipept",
-                        "MYSQL_USER=unipept",
-                        "MYSQL_PASSWORD=unipept",
-                        `DB_TYPES=${customDb.sourceTypes.join(",")}`,
-                        `DB_SOURCES=${customDb.sources.join(",")}`,
-                        `FILTER_TAXA=${customDb.taxa.join(",")}`
-                    ],
-                    PortBindings: {
-                        "3306/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: "3306"
-                        }]
-                    },
-                    Binds: [
-                        // Mount the folder in which the MySQL-specific database files will be kept
-                        `${databaseFolder}:/var/lib/mysql`,
-                        // Mount the folder in which the reusable database index structure will be kept
-                        `${indexFolder}:/data`
-                    ]
-                }
-            );
-        });
-
-        customDb.complete = true;
-
-        // Now, stop this container
-        const buildContainer = await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
-        return new Promise<void>(
-            resolve => DockerCommunicator.connection.getContainer(buildContainer!.Id).stop(resolve)
-        );
-    }
-
-    public async startDatabase(databaseLocation: string): Promise<void> {
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-custom-db:1.1.1",
-                [],
-                new ProgressInspectorStream((step: string, progress: number) => {}, () => resolve(), () => {}),
-                {
-                    Name: DockerCommunicator.BUILD_DB_CONTAINER_NAME,
-                    PortBindings: {
-                        "3306/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: "3306"
-                        }]
-                    },
-                    Binds: [
-                        // Mount the folder in which the MySQL-specific database files will be kept
-                        `${databaseLocation}:/var/lib/mysql`
-                    ]
-                }
-            );
-        });
-    }
-
-    /**
-     * Stop all of the running Docker database containers associated with the Unipept Desktop application.
-     */
-    public stopDatabase(): Promise<void> {
-        return this.stopContainer(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
-    }
-
-    /**
-     * Start a Docker container that connects to a database on port 3306 of the host computer and exposes a Unipept
-     * API service on port 3000 that can be connected to from this application.
-     */
-    public async startWebComponent(): Promise<void> {
-        await new Promise<void>((resolve) => {
-            DockerCommunicator.connection.run(
-                "pverscha/unipept-web:1.0.0",
-                [],
-                new StringNotifierInspectorStream("Listening on", resolve),
-                {
-                    Name: DockerCommunicator.WEB_CONTAINER_NAME,
-                    PortBindings: {
-                        "3000/tcp": [{
-                            HostIP: "0.0.0.0",
-                            HostPort: DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT
-                        }]
-                    }
-                }
-            )
-        });
-    }
-
-    public stopWebComponent(): Promise<void> {
-        return this.stopContainer(DockerCommunicator.WEB_CONTAINER_NAME);
     }
 
     /**
@@ -178,7 +52,9 @@ export default class DockerCommunicator {
         );
 
         await Promise.all(
-            containers.map(
+            // All containers that have been constructed by this application need to be stopped. (All containers
+            // created by this application will contain `unipept` in their name).
+            containers.filter(c => c.Names.some(n => n.includes("unipept"))).map(
                 c => new Promise<void>(
                     resolve => DockerCommunicator.connection.getContainer(c.Id).stop(resolve)
                 )
@@ -186,10 +62,352 @@ export default class DockerCommunicator {
         );
     }
 
-    private async listUnipeptContainers(): Promise<Dockerode.ContainerInfo[]> {
-        return (await DockerCommunicator.connection.listContainers()).filter((c: Dockerode.ContainerInfo) => {
-            return c.Names.filter(n => n.includes("unipept_desktop"));
+    /**
+     * @param dbRootFolder Where are the databases themselves stored?
+     */
+    public constructor(
+        private readonly dbRootFolder: string
+    ) {}
+
+    /**
+     * Checks if Docker is installed and ready to use on this system. This method only returns true if Docker is
+     * completely ready to be utilized by this application.
+     */
+    public getDockerInfo(): Promise<any> {
+        return DockerCommunicator.connection.info();
+    }
+
+    /**
+     * Start the construction process of a new database.
+     *
+     * @param customDb All configuration properties required for the new database that should be constructed.
+     * @param indexLocation Where is the database index stored?
+     * @param tempLocation Which directory can be used for temporary files? (Must be large enough).
+     * @param progressListener A callback function that can be used to monitor the progress of building the database.
+     * @param logReporter A callback that's called whenever a new line of log content is produced by the underlying
+     container.
+     */
+    public async buildDatabase(
+        customDb: CustomDatabase,
+        indexLocation: string,
+        tempLocation: string,
+        progressListener: (step: string, progress: number, progress_step: number) => void,
+        logReporter: (logLine: string) => void
+    ): Promise<void> {
+        if (!DockerCommunicator.connection) {
+            throw new Error("Connection to Docker daemon has not been initialized.");
+        }
+
+        // Only one database can be constructed at the same time.
+        if (this.dbBeingConstructed) {
+            throw new Error("A database is already being constructed.");
+        }
+
+        this.dbBeingConstructed = customDb;
+
+        // Check that no other database construction containers are running and stop them if this is the case.
+        const runningContainers = await this.listConstructionContainers();
+        if (runningContainers.length > 0) {
+            await Promise.all(runningContainers.map(
+                (container) => this.stopContainer(container.Names[0])
+            ));
+        }
+
+        // Now, start effectively by constructing the new database
+        progressListener("Fetching required Docker images", -1, 0);
+        // Check and pull the database image if it is not present on this system.
+        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+
+        const dataVolumeName = await this.createDataVolume(customDb, this.dbRootFolder);
+        const indexVolumeName = await this.createIndexVolume(indexLocation);
+        const tempVolumeName = await this.createTempVolume(tempLocation);
+
+        const containerName =
+            `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+
+        const memoryForSort = await this.computeSortMemoryLimit();
+
+        await new Promise<void>(async(resolve, reject) => {
+            const appSuspensionId = powerSaveBlocker.start("prevent-app-suspension");
+            try {
+                await DockerCommunicator.connection.run(
+                    DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
+                    [],
+                    new ProgressInspectorStream(
+                        progressListener,
+                        () => resolve(),
+                        (n: number) => customDb.entries = n,
+                        logReporter
+                    ),
+                    {
+                        name: containerName,
+                        Env: [
+                            "MARIADB_ROOT_PASSWORD=unipept",
+                            "MARIADB_DATABASE=unipept",
+                            "MARIADB_USER=unipept",
+                            "MARIADB_PASSWORD=unipept",
+                            `DB_TYPES=${customDb.sourceTypes.join(",")}`,
+                            `DB_SOURCES=${customDb.sources.join(",")}`,
+                            `FILTER_TAXA=${customDb.taxa.join(",")}`,
+                            `SORT_MEMORY=${memoryForSort}`
+                        ],
+                        HostConfig: {
+                            Binds: [
+                                // Mount the folder in which the MySQL-specific database files will be kept
+                                `${dataVolumeName}:/var/lib/mysql`,
+                                // Mount the folder in which the reusable database index structure will be kept
+                                `${indexVolumeName}:/index`,
+                                `${tempVolumeName}:/tmp`
+                            ]
+                        }
+                    }
+                );
+
+                // If resolve has not yet been called, we call it here.
+                resolve();
+            } catch (err) {
+                this.dbBeingConstructed = undefined;
+                reject(err);
+            } finally {
+                powerSaveBlocker.stop(appSuspensionId);
+            }
         });
+
+        customDb.ready = true;
+
+        await this.stopContainer(containerName);
+
+        this.dbBeingConstructed = undefined;
+    }
+
+    /**
+     * Stop the database construction process for the given database object.
+     *
+     * @param customDb
+     */
+    public async stopDatabaseBuild(customDb: CustomDatabase): Promise<void> {
+        const constructionContainerName =
+            `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+        await this.stopContainer(constructionContainerName);
+
+        if (this.dbBeingConstructed && this.dbBeingConstructed.name === customDb.name) {
+            this.dbBeingConstructed = undefined;
+        }
+    }
+
+    /**
+     * Start a Unipept service that can be used to be queried for analysis results. This function returns the port
+     * number on which the service is exposed.
+     *
+     * @param customDb
+     */
+    public async startDatabase(customDb: CustomDatabase): Promise<number> {
+        const dataVolumeName = this.generateDataVolumeName(customDb.name);
+
+        // Pull all images that are required to start the web service.
+        await this.pullImage(DockerCommunicator.UNIPEPT_DB_IMAGE_NAME);
+        await this.pullImage(DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME);
+
+        // Stop the execution of previous services for this db
+        await this.stopDatabase(customDb);
+
+        const dbContainerName =
+            `${DockerCommunicator.RUN_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+
+        const mysqlPort: number = await PortFinder.getPortPromise({
+            port: 3300,
+            stopPort: 3400
+        });
+        // TODO: user PortFinder also for the web service port.
+        const webPort = 3000;
+
+        await new Promise<void>(async(resolve, reject) => {
+            try {
+                const stringInspector = new StringNotifierInspectorStream(
+                    /InnoDB: Buffer pool\(s\) load completed/,
+                    resolve
+                );
+
+                await DockerCommunicator.connection.run(
+                    DockerCommunicator.UNIPEPT_DB_IMAGE_NAME,
+                    [],
+                    stringInspector,
+                    {
+                        name: dbContainerName,
+                        Env: [
+                            "MARIADB_ROOT_PASSWORD=unipept"
+                        ],
+                        HostConfig: {
+                            Binds: [
+                                // Mount the folder in which the MySQL-specific database files will be kept
+                                `${dataVolumeName}:/var/lib/mysql`
+                            ],
+                            PortBindings: {
+                                "3306/tcp": [{
+                                    HostIP: "0.0.0.0",
+                                    HostPort: mysqlPort.toString()
+                                }]
+                            }
+                        }
+                    });
+            } catch (err) {
+                console.error(err);
+                reject(err);
+            }
+        });
+
+        const webContainerName =
+            `${DockerCommunicator.WEB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+
+        await new Promise<void>(async(resolve, reject) => {
+            const inspectorStream = new StringNotifierInspectorStream(/Listening on/, resolve);
+            try {
+                await DockerCommunicator.connection.run(
+                    DockerCommunicator.UNIPEPT_WEB_IMAGE_NAME,
+                    [],
+                    inspectorStream,
+                    {
+                        name: webContainerName,
+                        Env: [
+                            `DB_PORT=${mysqlPort.toString()}`
+                        ],
+                        HostConfig: {
+                            PortBindings: {
+                                "3000/tcp": [{
+                                    HostIP: "0.0.0.0",
+                                    HostPort: DockerCommunicator.WEB_COMPONENT_PUBLIC_PORT
+                                }]
+                            },
+                            ExtraHosts: ["host.docker.internal:host-gateway"]
+                        }
+                    }
+                );
+            } catch (error) {
+                console.error(error);
+                reject(error);
+            }
+        });
+
+        return webPort;
+    }
+
+    /**
+     * Stop the running database process for a specific custom database.
+     *
+     * @param customDb The database for which all running containers should be stopped.
+     */
+    public async stopDatabase(customDb: CustomDatabase): Promise<void> {
+        const webContainerName = `${DockerCommunicator.WEB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+        const webContainers = (await this.listWebContainers())
+            .filter((c) => c.Names[0].includes(webContainerName));
+
+        for (const container of webContainers) {
+            await this.stopContainer(container.Names[0]);
+        }
+
+        const dbContainerName =
+            `${DockerCommunicator.RUN_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+        const dbContainers = (await this.listDatabaseContainers())
+            .filter((c) => c.Names[0].includes(dbContainerName));
+
+        for (const container of dbContainers) {
+            await this.stopContainer(container.Names[0]);
+        }
+    }
+
+    /**
+     * Stop all services associated with the given database and remove all of its data from disk.
+     *
+     * @param customDb The database for which all Docker-related data should be removed from disk.
+     */
+    public async removeDatabase(customDb: CustomDatabase): Promise<void> {
+        // Check if the database that's currently in construction is this db.
+        const constructionName =
+            `${DockerCommunicator.BUILD_DB_CONTAINER_NAME}_${this.sanitizeDatabaseName(customDb.name)}`;
+        const constructDbs = (await this.listConstructionContainers())
+            .filter((c) => c.Names[0].includes(constructionName));
+
+        for (const db of constructDbs) {
+            await this.stopContainer(db.Names[0]);
+        }
+
+        if (this.dbBeingConstructed && this.dbBeingConstructed.name === customDb.name) {
+            this.dbBeingConstructed = undefined;
+        }
+
+        // Also stop database and web service if these are running.
+        await this.stopDatabase(customDb);
+
+        // Now remove all data from the local disk associated with this database
+        const dataVolumeName = this.generateDataVolumeName(customDb.name);
+        this.deleteVolume(dataVolumeName);
+    }
+
+    /**
+     * Checks if the database container is currently running and active. This means that the communicator is going to
+     * check if a container with the BUILD_DB identifier is currently active.
+     *
+     * @return true if the database is active, false otherwise.
+     */
+    public async isDatabaseActive(): Promise<boolean> {
+        return (await this.getContainerByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME)) !== undefined;
+    }
+
+    public async getDatabaseSize(dbName: string): Promise<number> {
+        if (!DockerCommunicator.connection) {
+            return -1;
+        }
+
+        if (!(await this.volumeExists(this.generateDataVolumeName(dbName)))) {
+            return -1;
+        }
+
+        const dataVolumeName = this.generateDataVolumeName(dbName);
+        const volume = await this.getVolume(dataVolumeName);
+        const info = await volume.inspect();
+
+        if (Utils.isWindows()) {
+            // TODO: UsageData is not reported by the engine at this time, should be fixed in the future.
+            if (info.UsageData) {
+                return info.UsageData.Size;
+            } else {
+                return -1;
+            }
+        } else {
+            return await FileSystemUtils.getSize(info.Options["device"]);
+        }
+    }
+
+    /**
+     * List all active Docker containers that are used for constructing a Unipept database.
+     */
+    private listConstructionContainers(): Promise<Dockerode.ContainerInfo[]> {
+        return this.filterContainersByName(DockerCommunicator.BUILD_DB_CONTAINER_NAME);
+    }
+
+    /**
+     * List all active Docker containers that are used for running a Unipept database.
+     */
+    private listDatabaseContainers(): Promise<Dockerode.ContainerInfo[]> {
+        return this.filterContainersByName(DockerCommunicator.RUN_DB_CONTAINER_NAME);
+    }
+
+    /**
+     * List all active Docker containers that are used for running a Unipept web server.
+     */
+    private listWebContainers(): Promise<Dockerode.ContainerInfo[]> {
+        return this.filterContainersByName(DockerCommunicator.WEB_CONTAINER_NAME);
+    }
+
+    /**
+     * Return a list of all active Docker containers for which the name includes the given string.
+     * @param name Name by which the active Docker containers need to be filtered.
+     */
+    private async filterContainersByName(name: string): Promise<Dockerode.ContainerInfo[]> {
+        return (await DockerCommunicator.connection.listContainers({ all: true }))
+            .filter((c: Dockerode.ContainerInfo) => {
+                return c.Names.some(n => n.includes(name));
+            });
     }
 
     /**
@@ -198,7 +416,7 @@ export default class DockerCommunicator {
      * @param name The container name for which all details should be retrieved.
      */
     private async getContainerByName(name: string): Promise<Dockerode.ContainerInfo | undefined> {
-        const allWithName = (await DockerCommunicator.connection.listContainers()).filter(
+        const allWithName = (await DockerCommunicator.connection.listContainers({ all: true })).filter(
             (c: Dockerode.ContainerInfo) => {
                 return c.Names.filter(n => n.includes(name));
             }
@@ -214,9 +432,254 @@ export default class DockerCommunicator {
         const containerInfo = await this.getContainerByName(name);
 
         if (containerInfo) {
-            return new Promise<void>((resolve) => {
-                DockerCommunicator.connection.getContainer(containerInfo.Id).stop(resolve);
+            const container = DockerCommunicator.connection.getContainer(containerInfo.Id);
+
+            if (containerInfo.State !== "exited") {
+                await container.stop();
+            }
+
+            await container.remove();
+        }
+    }
+
+    /**
+     * Pull an image with the given name from Docker Hub.
+     *
+     * @param imageName Exact matching name of the image that should be pulled from the Docker Hub (should also include
+     * the correct version numbering).
+     */
+    private async pullImage(imageName: string): Promise<void> {
+        await new Promise<void>(
+            async(resolve, reject) => {
+                try {
+                    await DockerCommunicator.connection.pull(
+                        imageName,
+                        function(err: any, stream: any) {
+                            if (err) {
+                                reject(err);
+                            }
+
+                            DockerCommunicator.connection.modem.followProgress(
+                                stream,
+                                // onFinished
+                                (err: any, output: any) => {
+                                    if (err) {
+                                        reject(err);
+                                    }
+                                    resolve();
+                                },
+                                // onProgress
+                                (progressEvent: any) => {}
+                            );
+                        }
+                    );
+                } catch (err) {
+                    reject(err);
+                }
+            }
+        );
+
+        // Once pulling the images is done, we remove old versions of these images that are no longer required.
+        let imageWithoutVersion = imageName;
+        if (imageName.includes(":")) {
+            imageWithoutVersion = imageName.split(":")[0];
+        }
+        const imagesWithName = (await DockerCommunicator.connection.listImages())
+            .filter(i => (i.RepoDigests && i.RepoDigests.some(d => d.includes(imageWithoutVersion))));
+
+
+        const versionIdentifier = "org.opencontainers.image.version";
+
+        const newestImage = imagesWithName.sort(
+            (a, b) => {
+                return Utils.isVersionLargerThan(
+                    a.Labels[versionIdentifier],
+                    b.Labels[versionIdentifier]
+                ) ? -1 : 1;
+            }
+        )[0];
+
+        for (const image of imagesWithName) {
+            if (image.Labels[versionIdentifier] !== newestImage.Labels[versionIdentifier]) {
+                try {
+                    await DockerCommunicator.connection.getImage(image.Id).remove();
+                } catch (e) {
+                    console.warn(`Could not remove image ${image.Id}. Will try again later.`);
+                }
+            }
+        }
+    }
+
+    private getVolume(volumeName: string): Dockerode.Volume {
+        return DockerCommunicator.connection.getVolume(volumeName);
+    }
+
+    private async deleteVolume(volumeName: string): Promise<any> {
+        const volume = await DockerCommunicator.connection.getVolume(volumeName);
+        if (volume) {
+            return volume.remove();
+        }
+    }
+
+    private async createDataVolume(db: CustomDatabase, dbLocation: string): Promise<string> {
+        const volumeName = this.generateDataVolumeName(db.name);
+
+        if (!Utils.isWindows()) {
+            dbLocation = this.generateDataVolumePath(db);
+
+            // Clear what's currently stored in the data volume path
+            try {
+                await fs.rm(dbLocation, { recursive: true });
+            } catch (e) {
+                // Path does not exist...
+            }
+
+            await mkdirp(dbLocation);
+        }
+
+        // If the volume already exists, we need to delete it and create a new one (since the analysis will be
+        // completely restarted).
+        if (await this.volumeExists(volumeName)) {
+            await this.deleteVolume(volumeName);
+        }
+
+        await this.createVolume(volumeName, dbLocation);
+
+        return volumeName;
+    }
+
+    /**
+     * Create a new Docker named volume that's used to store the database index files (which can be used to speed up
+     * later iterations of the database construction process).
+     *
+     * Note that an index volume will also be created when on Windows, but that the given location will not be respected
+     * in that case!
+     *
+     * @return Name of this volume.
+     */
+    private async createIndexVolume(indexLocation: string): Promise<string> {
+        indexLocation = this.generateIndexVolumePath(indexLocation);
+        await mkdirp(indexLocation);
+        return this.createVolume(DockerCommunicator.INDEX_VOLUME_NAME, indexLocation);
+    }
+
+    /**
+     * Create a new Docker named volume that's used to store temporary files.
+     *
+     * Note that a temporary volume will also be created when on Windows, but that the given location will not be
+     * respected in that case.
+     *
+     * @return Name of this volume.
+     */
+    private async createTempVolume(tempLocation: string): Promise<string> {
+        tempLocation = this.generateTempVolumePath(tempLocation);
+        await mkdirp(tempLocation);
+        return this.createVolume(DockerCommunicator.TEMP_VOLUME_NAME, tempLocation);
+    }
+
+    /**
+     * Create a new named volume at a specific location on the filesystem. If a volume with the given name already
+     * exists, no new volume will be created (EXCEPT in one situation: if the filesystem path is different for
+     * the existing volume and the new volume and the current OS is different from Windows, the old one will be deleted
+     * and a new one will be created).
+     *
+     * @param volumeName Name of the volume that should be created.
+     * @param volumeLocation Path on the filesystem where this new named volume should be created.
+     * @return The final volume name that was assigned by the system to this volume (will be the same as the first
+     * argument in almost all situations).
+     */
+    private async createVolume(volumeName: string, volumeLocation: string): Promise<string> {
+        if (await this.volumeExists(volumeName)) {
+            // Since the path on Windows cannot change (due to a bug in WSL2), we are done for Windows in this case.
+            if (Utils.isWindows()) {
+                return volumeName;
+            }
+
+            // Check if the path where this volume is currently is stored is the same as the requested path
+            const existingVolume = await DockerCommunicator.connection.getVolume(volumeName);
+            const info = await existingVolume.inspect();
+
+            if (path.resolve(info.Options["device"]) !== path.resolve(volumeLocation)) {
+                // Remove the volume and create a new one later (the path where index files are stored has changed).
+                await this.deleteVolume(volumeName);
+            } else {
+                // Reuse the current volume
+                return volumeName;
+            }
+        }
+
+        if (Utils.isWindows()) {
+            // Do not take into account the database location, due to a bug in WSL2 on Windows.
+            await DockerCommunicator.connection.createVolume({
+                Name: volumeName
+            });
+        } else {
+            await DockerCommunicator.connection.createVolume({
+                Name: volumeName,
+                DriverOpts: {
+                    "type": "none",
+                    "device": volumeLocation,
+                    "o": "bind"
+                }
             });
         }
+
+        return volumeName;
+    }
+
+    /**
+     * Checks if a volume with the given name exists in the current Docker context.
+     *
+     * @param volumeName
+     * @return true if a volume with the given name does exist.
+     */
+    private async volumeExists(volumeName: string): Promise<boolean> {
+        const volumes = await DockerCommunicator.connection.listVolumes();
+        return volumes.Volumes.some(v => v.Name === volumeName);
+    }
+
+    /**
+     * Generate a data volume name for the given database name. All special characters will be removed from the given
+     * database name (these are not allowed to be used in a volume name).
+     *
+     * @param dbName Name of the database for which the new volume name should be generated.
+     */
+    private generateDataVolumeName(dbName: string): string {
+        return `${this.sanitizeDatabaseName(dbName)}_unipept_data`;
+    }
+
+    private sanitizeDatabaseName(dbName: string): string {
+        return dbName
+            .toLowerCase()
+            .replace(/[)( ]+/g, "_")
+            .replace(/[^a-z0-9_]+/g, "");
+    }
+
+    private generateDataVolumePath(database: CustomDatabase): string {
+        return path.join(this.dbRootFolder, "databases", database.name, "data");
+    }
+
+    private generateIndexVolumePath(indexLocation: string): string {
+        return indexLocation;
+    }
+
+    private generateTempVolumePath(tempLocation: string): string {
+        return tempLocation;
+    }
+
+    /**
+     * This function computes the memory limit string that can be used to configure the sort command in the database
+     * construction Docker container. This string follows the convention required by the Linux sort command.
+     *
+     */
+    private async computeSortMemoryLimit(): Promise<string> {
+        const info = await this.getDockerInfo();
+        // Reserved memory for the Docker deamon in Gigabytes (should be at least 4).
+        const reservedMemory = info.MemTotal / (Math.pow(2,30));
+        const roundedToNearest2 = Math.round(reservedMemory / 2) * 2;
+        // We subtract 2G for the remainder of the script and then divide by 2 to get the memory limit that each
+        // sort process is allowed to use.
+        const memoryLeftForSort = (roundedToNearest2 - 2) / 2;
+        return `${memoryLeftForSort}G`;
     }
 }

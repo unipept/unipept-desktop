@@ -11,53 +11,67 @@
             </v-row>
             <v-row v-else>
                 <v-col>
-                    <recent-projects v-on:open-project="onOpenProject"></recent-projects>
+                    <div class="mx-12">
+                        <h2>Project management</h2>
+
+                        <v-row class="mt-1 mb-6">
+                            <v-col md="12" lg="6">
+                                <v-card>
+                                    <v-card-title>New here? Try our demo project!</v-card-title>
+                                    <v-card-text>
+                                        <div>
+                                            If this is the first time you're using our application, we advise you to open the
+                                            demo project and discover what this application can do for you.
+                                        </div>
+                                        <div class="text-center mt-2">
+                                            <v-btn @click="openDemoProject" color="primary">
+                                                Open demo project
+                                            </v-btn>
+                                        </div>
+                                    </v-card-text>
+                                </v-card>
+                            </v-col>
+
+                            <v-col md="12" lg="6">
+                                <v-card class="d-flex flex-column" style="height: 100%;">
+                                    <v-card-title>Add project</v-card-title>
+                                    <v-card-text class="d-flex flex-column" style="height: 100%;">
+                                        <div class="flex-grow-1">Select an empty folder and create a new project.</div>
+                                        <div class="text-center mt-2">
+                                            <v-btn @click="createProject">
+                                                <v-icon class="mr-2">mdi-folder-plus-outline</v-icon>
+                                                Create project
+                                            </v-btn>
+                                        </div>
+                                    </v-card-text>
+                                </v-card>
+                            </v-col>
+
+                        </v-row>
+                    </div>
+                    <recent-projects v-on:open-project="openProject" v-on:create-project="createProject"/>
                 </v-col>
                 <v-divider vertical></v-divider>
                 <v-col>
-                    <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="d-flex justify-center align-center mt-12">
                         <img src="@/assets/logo.png" style="max-width: 200px;"/>
-                        <span class="logo-headline">
-                            Unipept Desktop
-                        </span>
-                        <span class="logo-subline">
-                            Version {{ version }}
-                            <a @click="releaseNotesActive = true">(What's new?)</a>
-                        </span>
-                        <span v-if="updateAvailable" class="logo-subline" @click="updateNotesActive = true">
-                            <v-icon style="position: relative; bottom: 2px;" color="success">mdi-arrow-up-bold</v-icon>
-                            <a>An update is available!</a>
-                        </span>
-                        <div class="project-actions">
-                            <tooltip message="Select an empty folder and create a new project." position="bottom">
-                                <div @click="createProject()">
-                                    <v-icon large>mdi-folder-plus-outline</v-icon>
-                                    <span style="font-size: 24px;">Create new project</span>
-                                </div>
-                            </tooltip>
-<!--                            <tooltip message="Import a project from an external model." position="bottom">-->
-<!--                                <div>-->
-<!--                                    <v-icon large>mdi-folder-download-outline</v-icon>-->
-<!--                                    <span style="font-size: 24px;">Import project</span>-->
-<!--                                </div>-->
-<!--                            </tooltip>-->
+                        <div class="d-flex flex-column align-center justify-center ml-4">
+                            <span class="logo-headline">
+                                Unipept Desktop
+                            </span>
+                            <span class="logo-subline">
+                                Version {{ version }}
+                            </span>
+                            <span v-if="updateAvailable" class="logo-subline" @click="updateNotesActive = true">
+                                <v-icon style="position: relative; bottom: 2px;" color="success">
+                                    mdi-arrow-up-bold
+                                </v-icon>
+                                <a>An update is available!</a>
+                            </span>
                         </div>
                     </div>
-
-                    <div class="d-flex justify-center mt-12">
-                        <v-card>
-                            <v-card-title>
-                                New here? Try our demo project!
-                            </v-card-title>
-                            <v-card-text style="max-width: 400px;">
-                                If this is the first time you're using our application, we advise you to open the
-                                demo project and discover what this application can do for you.
-                                <div class="text-center mt-2">
-                                    <v-btn color="primary" @click="openDemoProject">Open demo project</v-btn>
-                                </div>
-                            </v-card-text>
-                        </v-card>
-                    </div>
+                    <!-- Release notes (display changes compared previous version of the application) -->
+                    <release-notes-card class="mt-12 mx-12"></release-notes-card>
                 </v-col>
             </v-row>
             <v-snackbar v-model="errorSnackbarVisible" bottom :timeout="-1" color="error">
@@ -78,7 +92,6 @@
                     </v-card-text>
                 </v-card>
             </v-dialog>
-            <release-notes-dialog v-model="releaseNotesActive"></release-notes-dialog>
             <update-notes-dialog v-model="updateNotesActive"></update-notes-dialog>
         </v-container>
     </div>
@@ -95,48 +108,42 @@ import { Tooltip } from "unipept-web-components";
 import StaticDatabaseManager from "@/logic/communication/static/StaticDatabaseManager";
 import DemoProjectManager from "@/logic/filesystem/project/DemoProjectManager";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
-import ReleaseNotesDialog from "@/components/dialogs/ReleaseNotesDialog.vue";
+import ReleaseNotesCard from "@/components/cards/ReleaseNotesCard.vue";
 import UpdateNotesDialog from "@/components/dialogs/UpdateNotesDialog.vue";
 import GitHubCommunicator from "@/logic/communication/github/GitHubCommunicator";
 import Utils from "@/logic/Utils";
-import { OpenDialogOptions } from "electron";
-import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 
-const electron = require("electron");
-const { dialog } = electron.remote;
-const app = electron.remote.app;
+const { app, dialog } = require("@electron/remote");
 
 @Component({
     components: {
         UpdateNotesDialog,
-        ReleaseNotesDialog,
+        ReleaseNotesCard,
         RecentProjects,
         Tooltip
     }
 })
 export default class HomePage extends Vue {
-    private errorMessage: string = "";
-    private errorSnackbarVisible: boolean = false;
-    private version: string = "";
-    private loadingApplication: boolean = false;
-    private loadingProject: boolean = false;
-    // Is the release notes dialog visible? (shows changes introduced in the current version of the app)
-    private releaseNotesActive: boolean = false;
+    private errorMessage = "";
+    private errorSnackbarVisible = false;
+    private version = "";
+    private loadingApplication = false;
+    private loadingProject = false;
     // Is the update notes dialog visible? (shows the changes between this version and the most recent one)
-    private updateNotesActive: boolean = false;
+    private updateNotesActive = false;
     // Is there an update for the application available?
-    private updateAvailable: boolean = false;
+    private updateAvailable = false;
 
     // Whether we're currently downloading the static information database (user interaction should be blocked during
     // this event).
-    private downloadingDatabase: boolean = false;
-    private downloadDatabaseProgress: number = 0;
+    private downloadingDatabase = false;
+    private downloadDatabaseProgress = 0;
 
-    private static downloadCheckPerformed: boolean = false;
+    private static downloadCheckPerformed = false;
 
     async mounted() {
         this.loadingApplication = true;
-        let shouldUpdate: boolean = false;
+        let shouldUpdate = false;
 
         this.version = app.getVersion();
 
@@ -205,7 +212,7 @@ export default class HomePage extends Vue {
     }
 
     private async createProject() {
-        const chosenPath: string[] | undefined = await dialog.showOpenDialogSync({
+        const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
             properties: ["openDirectory", "createDirectory"]
         });
 
@@ -219,7 +226,21 @@ export default class HomePage extends Vue {
         }
     }
 
-    private async initializeProject(path: string, addToRecents: boolean = true) {
+    private async openProject(path?: string) {
+        if (path) {
+            this.loadProject(path, true);
+        } else {
+            const chosenPath: string[] | undefined = dialog.showOpenDialogSync({
+                properties: ["openDirectory"]
+            });
+
+            if (chosenPath) {
+                this.loadProject(chosenPath[0], true);
+            }
+        }
+    }
+
+    private async initializeProject(path: string, addToRecents = true) {
         try {
             const projectManager: ProjectManager = new ProjectManager();
             await projectManager.initializeProject(path, addToRecents);
@@ -233,12 +254,12 @@ export default class HomePage extends Vue {
         }
     }
 
-    private async onOpenProject(path: string, addToRecents: boolean = true) {
+    private async loadProject(path: string, addToRecents = true) {
         this.loadingProject = true;
         try {
             if (!this.$store.getters.projectLocation || this.$store.getters.projectLocation !== path) {
                 const projectManager: ProjectManager = new ProjectManager();
-                await projectManager.loadExistingProject(path, addToRecents);
+                await projectManager.loadExistingProject(path, addToRecents, this.$store);
             }
             await this.$router.push("/analysis/single");
         } catch (err) {
@@ -264,7 +285,7 @@ export default class HomePage extends Vue {
         this.loadingProject = true;
         const demoManager = new DemoProjectManager();
         const demoPath = await demoManager.initializeDemoProject();
-        await this.onOpenProject(demoPath, false);
+        await this.loadProject(demoPath, false);
         this.loadingProject = false;
     }
 

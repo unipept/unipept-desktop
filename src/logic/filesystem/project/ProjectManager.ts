@@ -12,9 +12,9 @@ import StudyFileSystemDataWriter from "@/logic/filesystem/study/StudyFileSystemD
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import Utils from "@/logic/Utils";
 import ProjectVersionMismatchException from "@/logic/exception/ProjectVersionMismatchException";
+import { Store } from "vuex";
 
-const electron = require("electron");
-const app = electron.remote.app;
+const { app } = require("@electron/remote");
 
 export default class ProjectManager  {
     public static readonly DB_FILE_NAME: string = "metadata.sqlite";
@@ -26,11 +26,16 @@ export default class ProjectManager  {
     /**
      * @param projectLocation The main directory of the project on disk.
      * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
+     * @param store A valid Vuex store that can be used by this class to construct new items.
      * @throws {IOException} Thrown whenever something goes wrong while loading the main project file.
      * @throws {InvalidProjectException} When the given directory does not contain all required project files.
      * @throws {ProjectVersionMismatchException}
      */
-    public async loadExistingProject(projectLocation: string, addToRecents: boolean = true): Promise<void> {
+    public async loadExistingProject(
+        projectLocation: string,
+        addToRecents = true,
+        store: Store<any>
+    ): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
@@ -40,6 +45,7 @@ export default class ProjectManager  {
         }
 
         const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+        await dbManager.initializeDatabase();
         const dbAppVersion = dbManager.getApplicationVersion();
 
         if (Utils.isVersionLargerThan(dbAppVersion, app.getVersion())) {
@@ -56,7 +62,7 @@ export default class ProjectManager  {
         const studies = [];
 
         for (const directory of subDirectories) {
-            studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager, projectLocation));
+            studies.push(await this.loadStudy(`${projectLocation}${directory}`, dbManager, projectLocation, store));
         }
 
         if (addToRecents) {
@@ -71,28 +77,36 @@ export default class ProjectManager  {
      * @param projectLocation Path to root directory of project.
      * @param addToRecents Should this project be added to the list of recent projects? Set to false for no.
      */
-    public async initializeProject(projectLocation: string, addToRecents: boolean = true): Promise<void> {
+    public async initializeProject(projectLocation: string, addToRecents = true): Promise<void> {
         if (!projectLocation.endsWith("/")) {
             projectLocation += "/";
         }
 
-        const dbManager = this.setUpDatabase(projectLocation);
+        const dbManager = await this.setUpDatabase(projectLocation);
 
         if (addToRecents) {
             await this.addToRecentProjects(projectLocation);
         }
 
         await store.dispatch("initializeProject", [projectLocation, dbManager, []]);
+        const study = new Study(uuidv4());
+        study.setName("Study name");
+        await store.dispatch("addStudy", study);
+        const studyWriter = new StudyFileSystemDataWriter(path.join(projectLocation, "Study name"), dbManager);
+        await study.accept(studyWriter);
     }
 
-    public setUpDatabase(projectLocation: string): DatabaseManager {
-        return new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+    public async setUpDatabase(projectLocation: string): Promise<DatabaseManager> {
+        const dbManager = new DatabaseManager(projectLocation + ProjectManager.DB_FILE_NAME);
+        await dbManager.initializeDatabase();
+        return dbManager;
     }
 
     private async loadStudy(
         directory: string,
         dbManager: DatabaseManager,
-        projectLocation: string
+        projectLocation: string,
+        store: Store<any>
     ): Promise<Study> {
         if (!directory.endsWith("/")) {
             directory += "/";
@@ -118,7 +132,7 @@ export default class ProjectManager  {
         await study.accept(studyWriter);
 
         // Read all assays from this study
-        const studyReader = new StudyFileSystemDataReader(directory, dbManager, projectLocation);
+        const studyReader = new StudyFileSystemDataReader(directory, dbManager, projectLocation, store);
         await study.accept(studyReader);
 
         return study;

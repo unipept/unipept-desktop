@@ -18,17 +18,20 @@ import { promises as fs } from "fs";
 import path from "path";
 import mkdirp from "mkdirp";
 import crypto from "crypto";
-import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
 import SearchConfigManager from "@/logic/filesystem/configuration/SearchConfigManager";
 import StorageMetadataManager from "@/logic/filesystem/metadata/StorageMetadataManager";
 import StorageMetadata from "@/logic/filesystem/metadata/StorageMetadata";
 import PeptideTrustManager from "@/logic/filesystem/trust/PeptideTrustManager";
 import BufferUtils from "@/logic/filesystem/BufferUtils";
+import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
+import { Store } from "vuex";
+import { StorageMetadataTableRow } from "@/logic/filesystem/database/Schema";
 
 export default class CachedResultsManager {
     constructor(
         private readonly dbManager: DatabaseManager,
-        private readonly projectLocation: string
+        private readonly projectLocation: string,
+        private readonly store: Store<any>
     ) {}
 
     /**
@@ -41,18 +44,16 @@ export default class CachedResultsManager {
      * cache.
      */
     public async verifyCacheIntegrity(assay: ProteomicsAssay): Promise<boolean> {
-        const row = await this.dbManager.performQuery<any>((db: Database) => {
-            return db.prepare("SELECT * FROM storage_metadata WHERE assay_id = ?").get(assay.getId());
-        });
+        const storageMng = new StorageMetadataManager(this.dbManager, this.projectLocation, this.store);
+        const storageMetadata = await storageMng.readMetadata(assay);
 
         // First, check if metadata for this assay is present in the database.
-        if (!row) {
+        if (!storageMetadata) {
             return false;
         }
 
         // Second, check if the current search configuration is identical to the one used for the offline analysis.
-        const searchConfigManager = new SearchConfigManager(this.dbManager);
-        const serializedSearchConfig = await searchConfigManager.readSearchConfig(row.configuration_id);
+        const serializedSearchConfig = storageMetadata.searchConfiguration;
 
         const assayConfig = assay.getSearchConfiguration();
         if (
@@ -63,9 +64,14 @@ export default class CachedResultsManager {
             return false;
         }
 
-        // Third, check if the fingerprint of the stored AnalysisSource is the same as the current AnalysisSource.
-        const fingerprint = row.fingerprint;
-        if (!(await assay.getAnalysisSource().verifyEquality(fingerprint))) {
+        // Third, check if the stored AnalysisSource is the same as the current AnalysisSource.
+
+        const assaySource = assay.getAnalysisSource();
+        const storageSource = storageMetadata.analysisSource;
+
+        const storageFingerprint = await storageSource.computeFingerprint();
+
+        if (!(await assaySource.verifyEquality(storageFingerprint))) {
             return false;
         }
 
@@ -80,7 +86,7 @@ export default class CachedResultsManager {
         // Finally, check if the integrity hash of the local data files corresponds to the hash that was stored
         // alongside in the database.
         const computedHash = await this.computeDataHash(assay);
-        return computedHash === row.data_hash;
+        return computedHash === storageMetadata.dataHash;
     }
 
     /**
@@ -161,12 +167,11 @@ export default class CachedResultsManager {
         const trustMng = new PeptideTrustManager(this.dbManager);
         await trustMng.writeTrust(assay.getId(), trust);
 
-        const storageMetaManager = new StorageMetadataManager(this.dbManager);
+        const storageMetaManager = new StorageMetadataManager(this.dbManager, this.projectLocation, this.store);
         await storageMetaManager.writeMetadata(new StorageMetadata(
             assay.getId(),
             searchConfiguration,
-            AnalysisSourceSerializer.serializeAnalysisSource(assay.getAnalysisSource()),
-            await assay.getAnalysisSource().computeFingerprint(),
+            assay.getAnalysisSource(),
             await this.computeDataHash(assay),
             assay.getDate()
         ));
@@ -196,7 +201,7 @@ export default class CachedResultsManager {
      * @param pept2Data
      * @private
      */
-    private async writeShareableMap(assay: ProteomicsAssay, pept2Data: ShareableMap<String, PeptideData>) {
+    private async writeShareableMap(assay: ProteomicsAssay, pept2Data: ShareableMap<string, PeptideData>) {
         // Write both buffers to a binary file.
         const buffers: ArrayBuffer[] = pept2Data.getBuffers();
 

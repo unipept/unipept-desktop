@@ -7,6 +7,7 @@ import { Database } from "better-sqlite3";
 import DatabaseManager from "@/logic/filesystem/database/DatabaseManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import CachedOnlineAnalysisSource from "@/logic/communication/analysis/CachedOnlineAnalysisSource";
+import { Store } from "vuex";
 
 
 /**
@@ -20,7 +21,8 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
     constructor(
         studyPath: string,
         dbManager: DatabaseManager,
-        private readonly projectLocation: string
+        private readonly projectLocation: string,
+        private readonly store: Store<any>
     ) {
         super(studyPath, dbManager);
     }
@@ -48,20 +50,22 @@ export default class StudyFileSystemDataReader extends FileSystemStudyVisitor {
                     assay = new ProteomicsAssay(row.id);
                     assay.setName(assayName);
 
-                    const assayVisitor = new AssayFileSystemDataReader(this.studyPath, this.dbManager, this.projectLocation);
+                    const assayVisitor = new AssayFileSystemDataReader(this.studyPath, this.dbManager, this.projectLocation, this.store);
                     await assay.accept(assayVisitor);
                 } else {
                     // If assay not present in metadata, create a new UUID and write it to metadata.
                     assay = new ProteomicsAssay();
                     assay.setName(assayName);
 
-                    const assayReader = new AssayFileSystemDataReader(this.studyPath, this.dbManager, this.projectLocation);
+                    const assayReader = new AssayFileSystemDataReader(this.studyPath, this.dbManager, this.projectLocation, this.store);
                     await assay.accept(assayReader);
 
                     const assayWriter: AssayVisitor = new AssayFileSystemDataWriter(
                         this.studyPath,
                         this.dbManager,
-                        study
+                        study,
+                        this.projectLocation,
+                        this.store
                     );
                     await assay.accept(assayWriter);
                 }

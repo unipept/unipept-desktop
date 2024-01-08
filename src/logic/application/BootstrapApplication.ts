@@ -1,9 +1,9 @@
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import Configuration from "@/logic/configuration/Configuration";
-import { NetworkConfiguration, QueueManager } from "unipept-web-components";
+import { NetworkConfiguration, Pept2DataCommunicator, QueueManager } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import { Store } from "vuex";
-import CustomDatabaseManager from "@/logic/filesystem/docker/CustomDatabaseManager";
+import ApplicationMigrator from "@/logic/application/ApplicationMigrator";
 
 /**
  * This class provides functions that need to be run when the application is started. All steps that are necessary for
@@ -20,12 +20,16 @@ export default class BootstrapApplication {
      * Start and load the different components required for the application to function properly.
      */
     public async loadApplicationComponents(): Promise<void> {
+        // Hack to lower the amount of peptides sent at the same time to the server
+        Pept2DataCommunicator.MISSED_CLEAVAGE_BATCH = 5;
+
+        await this.runApplicationMigrations();
         const config = await this.initializeConfiguration();
         this.initializeApi(config);
         this.initializeWorkers(config);
         this.initializeDocker(config);
-        this.initializeCustomDatabases(config);
-        this.initializeProcessing(config);
+        await this.initializeCustomDatabases(config);
+        await this.initializeProcessing(config);
     }
 
     private async initializeConfiguration(): Promise<Configuration> {
@@ -34,7 +38,7 @@ export default class BootstrapApplication {
     }
 
     private initializeApi(config: Configuration): void {
-        NetworkConfiguration.BASE_URL = "https://rick.ugent.be";
+        NetworkConfiguration.BASE_URL = "https://api.unipept.ugent.be";
 
         // NetworkConfiguration.BASE_URL = config.apiSource;
         //
@@ -54,17 +58,16 @@ export default class BootstrapApplication {
         DockerCommunicator.initializeConnection(JSON.parse(config.dockerConfigurationSettings));
     }
 
-    private async initializeCustomDatabases(config: Configuration): Promise<void> {
-        const customDatabaseManager = new CustomDatabaseManager();
-
-        const completeDbs = await customDatabaseManager.listAllBuildDatabases(config.customDbStorageLocation);
-        this.store.dispatch("initializeReadyDatabases", completeDbs)
-
-        const incompleteDbs = await customDatabaseManager.listAllIncompleteDatabases(config.customDbStorageLocation);
-        this.store.dispatch("initializeQueue", [incompleteDbs, config]);
+    private initializeCustomDatabases(config: Configuration): Promise<void> {
+        return this.store.dispatch("customDatabases/initializeDatabaseQueue", config);
     }
 
-    private initializeProcessing(config: Configuration): void {
-        this.store.dispatch("initializeAssayQueue");
+    private initializeProcessing(config: Configuration): Promise<void> {
+        return this.store.dispatch("initializeAssayQueue");
+    }
+
+    private runApplicationMigrations(): Promise<void> {
+        const applicationMigrator = new ApplicationMigrator();
+        return applicationMigrator.runMigrations();
     }
 }

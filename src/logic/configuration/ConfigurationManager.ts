@@ -2,33 +2,24 @@ import Configuration from "./Configuration";
 // We must use Node's FileSystem API to read files, as HTML5 file reader cannot be used to read files
 // from a specified path.
 import fs from "fs";
-// import { promises as fs } from 'fs';
+import path from "path";
 import { App } from "electron";
 import Utils from "@/logic/Utils";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
+import mkdirp from "mkdirp";
 
 
 export default class ConfigurationManager {
     // The name of the file that's used to store the settings in.
     private static readonly CONFIG_FILE_NAME = "unipept.config";
-    // This is the default configuration object that's used as a fallback for inconsistent/inavailable configuration
-    // values.
-    private static readonly DEFAULT_CONFIG: Configuration = {
-        apiSource: "https://api.unipept.ugent.be",
-        useNativeTitlebar: false,
-        maxLongRunningTasks: 8,
-        maxParallelRequests: 3,
-        dockerConfigurationSettings:
-            Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
-        customDbStorageLocation: "/Volumes/T7/unipept-db"
-    };
+    // The default Unipept API endpoint server that should be used by the application to perform requests to.
+    public static readonly DEFAULT_ENDPOINT = "https://api.unipept.ugent.be";
     // Reference to the last configuration that was returned by this manager. Can be used to update the current
     // configuration and write the changes to disk (without having to read it again).
     private static currentConfiguration: Configuration = null;
 
     // Contains a function for every field of a Configuration object that checks whether it's valid or not.
     private configurationRequirements: ((x: Configuration) => boolean)[] = [
-        (config: Configuration) => this.isUrl(config.apiSource),
         (config: Configuration) => Number.isInteger(config.maxLongRunningTasks) && config.maxLongRunningTasks >= 1,
         (config: Configuration) => {
             return Number.isInteger(config.maxParallelRequests) &&
@@ -44,7 +35,8 @@ export default class ConfigurationManager {
                 return false;
             }
         },
-        (config: Configuration) => config.customDbStorageLocation !== ""
+        (config: Configuration) => config.customDbStorageLocation !== "",
+        (config: Configuration) => config.endpoints.every(e => this.isUrl(e))
     ]
 
     private app: App;
@@ -66,16 +58,42 @@ export default class ConfigurationManager {
         }
 
         try {
-            let rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
-            let data = JSON.parse(rawConfig);
+            const rawConfig = fs.readFileSync(this.getConfigurationFilePath(), { encoding: "utf-8" });
+            const data = JSON.parse(rawConfig);
+
+            if (!data["endpoints"] || !Array.isArray(data["endpoints"])) {
+                data["endpoints"] = [];
+            }
+
+            if (!data["endpoints"].includes(ConfigurationManager.DEFAULT_ENDPOINT)) {
+                data["endpoints"].push(ConfigurationManager.DEFAULT_ENDPOINT);
+            }
+
             if (!this.isValidConfiguration(data)) {
-                ConfigurationManager.currentConfiguration = ConfigurationManager.DEFAULT_CONFIG;
-                return ConfigurationManager.DEFAULT_CONFIG;
+                ConfigurationManager.currentConfiguration = await this.getDefaultConfiguration();
+                return ConfigurationManager.currentConfiguration;
             }
             ConfigurationManager.currentConfiguration = data;
             return data;
         } catch (err) {
-            return ConfigurationManager.DEFAULT_CONFIG;
+            return this.getDefaultConfiguration();
+        }
+    }
+
+    public async getDefaultConfiguration(): Promise<Configuration> {
+        const homeDir = this.app.getPath("documents");
+
+        const customDbDir = path.join(homeDir, "unipept", "data");
+        await mkdirp(customDbDir);
+
+        return {
+            maxLongRunningTasks: 8,
+            maxParallelRequests: 3,
+            dockerConfigurationSettings:
+                Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
+            customDbStorageLocation: customDbDir,
+            configurationAppVersion: this.app.getVersion(),
+            endpoints: ["https://api.unipept.ugent.be/"]
         }
     }
 
@@ -93,7 +111,7 @@ export default class ConfigurationManager {
         }
 
         try {
-            fs.writeFileSync(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "UTF-8" });
+            fs.writeFileSync(this.getConfigurationFilePath(), JSON.stringify(config), { encoding: "utf-8" });
             ConfigurationManager.currentConfiguration = config;
         } catch (err) {
             throw "IOException";
@@ -108,7 +126,7 @@ export default class ConfigurationManager {
      * @return True if the given Configuration is valid.
      */
     private isValidConfiguration(config: Configuration): boolean {
-        for (let test of this.configurationRequirements) {
+        for (const test of this.configurationRequirements) {
             if (!test(config)) {
                 return false;
             }
@@ -135,7 +153,7 @@ export default class ConfigurationManager {
 
     private getConfigurationFilePath(): string {
         if (!this.app) {
-            const { app } = require("electron").remote;
+            const { app } = require("@electron/remote");
             this.app = app;
         }
 

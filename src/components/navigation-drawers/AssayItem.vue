@@ -78,28 +78,27 @@
                 </v-icon>
             </div>
 
-            <!-- Name of the assay -->
-            <div class="flex-grow-1">
-                <!-- Simply display the name if editing is disabled -->
-                <span
-                    v-if="!isEditingAssayName"
-                    v-on:dblclick="enableAssayEdit()"
-                    class="assay-name">
-                    {{ assay.getName() }}
-                </span>
+            <!-- Simply display the name if editing is disabled -->
+            <span
+                v-if="!isEditingAssayName"
+                v-on:dblclick="enableAssayEdit()"
+                class="assay-name">
+                {{ assay.getName() }}
+            </span>
 
-                <!-- Input field when editing the name is enabled. -->
-                <input
-                    v-else
-                    v-model="assayName"
-                    v-on:blur="disableAssayEdit()"
-                    v-on:keyup.enter="disableAssayEdit()"
-                    :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
-                    type="text" />
-            </div>
+            <!-- Input field when editing the name is enabled. -->
+            <input
+                v-else
+                v-model="assayName"
+                v-on:blur="disableAssayEdit()"
+                v-on:keyup.enter="disableAssayEdit()"
+                :class="{ 'error-item': !isValidAssayName, 'assay-name': true }"
+                type="text" />
+
+            <v-spacer></v-spacer>
 
             <!-- Icon on the right side of the item -->
-            <div>
+            <div class="ml-2">
                 <!-- When the assay has been fully processed, we show the info button to open up the peptide summary -->
                 <v-tooltip v-if="analysisReady" bottom open-delay="500">
                     <template v-slot:activator="{ on }">
@@ -115,19 +114,19 @@
                 </v-tooltip>
 
                 <!-- Otherwise, we show a button that allows the user to stop the analysis of this assay -->
-                <v-tooltip v-else bottom open-delay="500">
-                    <template v-slot:activator="{ on }">
-                        <v-icon
-                            @click="cancelAnalysis()"
-                            v-on:click.stop color="#424242"
-                            size="20"
-                            class="mr-4"
-                            v-on="on">
-                            mdi-stop-circle-outline
-                        </v-icon>
-                    </template>
-                    <span>Cancel analysis for this assay.</span>
-                </v-tooltip>
+<!--                <v-tooltip v-else bottom open-delay="500">-->
+<!--                    <template v-slot:activator="{ on }">-->
+<!--                        <v-icon-->
+<!--                            @click="cancelAnalysis()"-->
+<!--                            v-on:click.stop color="#424242"-->
+<!--                            size="20"-->
+<!--                            class="mr-4"-->
+<!--                            v-on="on">-->
+<!--                            mdi-stop-circle-outline-->
+<!--                        </v-icon>-->
+<!--                    </template>-->
+<!--                    <span>Cancel analysis for this assay.</span>-->
+<!--                </v-tooltip>-->
             </div>
         </div>
 
@@ -163,24 +162,19 @@ import {
     PeptideTrust,
     Study,
     ProteomicsAssay,
-    SearchConfiguration,
-    CountTable,
-    Peptide,
-    Assay,
     AssayAnalysisStatus,
-    PeptideData
+    SearchConfiguration,
+    Assay
 } from "unipept-web-components";
+import { v4 as uuidv4 } from "uuid";
 
 import ExperimentSummaryDialog from "./../analysis/ExperimentSummaryDialog.vue";
 import AssayFileSystemDestroyer from "@/logic/filesystem/assay/AssayFileSystemDestroyer";
-import { promises as fs } from "fs";
-import { v4 as uuidv4 } from "uuid";
-import { ShareableMap } from "shared-memory-datastructures";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
-import AnalysisSourceSerializer from "@/logic/filesystem/analysis/AnalysisSourceSerializer";
+import { promises as fs } from "fs";
+import AnalysisSourceManager from "@/logic/filesystem/analysis/AnalysisSourceManager";
 
-const { remote } = require("electron");
-const { Menu, MenuItem } = remote;
+const { Menu, MenuItem } = require("@electron/remote");
 
 @Component({
     components: {
@@ -204,18 +198,17 @@ export default class AssayItem extends Vue {
     @Prop({ required: false, default: false })
     private value: boolean;
 
-    private peptideTrust: PeptideTrust = null;
-    private experimentSummaryActive: boolean = false;
-    private removeConfirmationActive: boolean = false;
-    private isEditingAssayName: boolean = false;
-    private isValidAssayName: boolean = true;
+    private experimentSummaryActive = false;
+    private removeConfirmationActive = false;
+    private isEditingAssayName = false;
+    private isValidAssayName = true;
 
     // Is this assay currently selected for a comparative analysis?
-    private selected: boolean = false;
+    private selected = false;
 
-    private assayName: string = "";
+    private assayName = "";
 
-    private nameError: string = "";
+    private nameError = "";
 
     mounted() {
         this.onAssayChanged();
@@ -247,6 +240,10 @@ export default class AssayItem extends Vue {
         return false;
         // const assayData: AssayData = this.$store.getters.assayData(this.assay);
         // return assayData?.analysisMetaData.status === "cancelled";
+    }
+
+    get peptideTrust(): PeptideTrust {
+        return this.$store.getters.assayData(this.assay)?.originalData?.trust || null;
     }
 
     private cancelAnalysis() {
@@ -370,20 +367,26 @@ export default class AssayItem extends Vue {
         );
         newAssay.setSearchConfiguration(searchConfiguration);
 
-        const copyOfSource = await AnalysisSourceSerializer.deserializeAnalysisSource(
-            AnalysisSourceSerializer.serializeAnalysisSource(this.assay.getAnalysisSource()),
-            newAssay,
+        const analysisSourceMng = new AnalysisSourceManager(
             this.$store.getters.dbManager,
-            this.$store.getters.projectLocation
+            this.$store.getters.projectLocation,
+            this.$store
         );
-        newAssay.setAnalysisSource(copyOfSource);
+        newAssay.setAnalysisSource(
+            await analysisSourceMng.copyAnalysisSource(
+                this.assay.getAnalysisSource(),
+                newAssay
+            )
+        );
 
         newAssay.setPeptides(this.assay.getPeptides());
 
         const dataWriter = new AssayFileSystemDataWriter(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
             this.$store.getters.dbManager,
-            this.study
+            this.study,
+            this.$store.getters.projectLocation,
+            this.$store
         );
         await newAssay.accept(dataWriter);
 
@@ -401,7 +404,8 @@ export default class AssayItem extends Vue {
         this.removeConfirmationActive = false;
         const assayDestroyer = new AssayFileSystemDestroyer(
             `${this.$store.getters.projectLocation}${this.study.getName()}`,
-            this.$store.getters.dbManager
+            this.$store.getters.dbManager,
+            this.$store
         );
         await this.assay.accept(assayDestroyer);
         // Also remove the assay from the store
@@ -423,4 +427,6 @@ export default class AssayItem extends Vue {
         position: relative;
         bottom: 1px;
     }
+
+
 </style>

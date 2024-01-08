@@ -36,7 +36,7 @@ export default class ExperimentSummaryDialog extends Vue {
     @Prop({ required: true })
     private active: boolean;
 
-    private dialogVisible: boolean = false;
+    private dialogVisible = false;
 
     public mounted() {
         this.dialogVisible = this.active;

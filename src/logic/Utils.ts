@@ -1,3 +1,5 @@
+import { compareVersions } from "compare-versions";
+
 export default class Utils {
     static isWindows(): boolean {
         return process.platform === "win32";
@@ -19,17 +21,20 @@ export default class Utils {
      * @return True if firstVersion is larger than secondVersion
      */
     static isVersionLargerThan(firstVersion: string, secondVersion: string): boolean {
-        const firstSplitted = firstVersion.split(".");
-        const secondSplitted = secondVersion.split(".");
+        return compareVersions(firstVersion, secondVersion) === 1;
+    }
 
-        for (let part = 0; part < firstSplitted.length; part++) {
-            if (firstSplitted[part] > secondSplitted[part]) {
-                return true;
-            } else if (firstSplitted[part] < secondSplitted[part]) {
+    static compareAssays<T>(a: T[], b: T[]): boolean {
+        if (a.length !== b.length) {
+            return false;
+        }
+
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) {
                 return false;
             }
         }
 
-        return false;
+        return true;
     }
 }

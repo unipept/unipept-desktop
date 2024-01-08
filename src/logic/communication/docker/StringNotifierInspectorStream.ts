@@ -13,7 +13,7 @@ export default class StringNotifierInspectorStream extends stream.Writable {
      * @param listener This function will be invoked everytime the given text has been observed.
      */
     constructor(
-        private readonly textToObserve: string,
+        private readonly textToObserve: RegExp,
         private readonly listener: () => void
     ) {
         super();
