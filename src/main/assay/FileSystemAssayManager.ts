@@ -6,24 +6,28 @@ import createWorker from "./PeptideReaderWorker?nodeWorker";
 import { Worker } from "worker_threads";
 import { AssayTableRow } from "@main/database/schemas/Schema";
 import { Database as DbType } from "better-sqlite3";
+import Project from "@common/project/Project";
+import path from "path";
+import Study from "@common/study/Study";
 
 export default class FileSystemAssayManager implements AssayManager {
     private static inProgress: Promise<string[]> | undefined
     private static worker: Worker;
 
     public constructor(
-        private readonly directoryPath: string,
-        private readonly dbManager: DatabaseManager
+        private readonly dbManager: DatabaseManager,
+        private readonly project: Project,
+        private readonly study: Study
     ) {}
 
     public async loadAssay(
         assayName: string,
         assayId: string
     ): Promise<Assay> {
-        const path = `${this.directoryPath}${assayName}.pep`;
+        const assayPath = `${path.join(this.project.location, this.study.getName(), assayName)}.pep`;
 
         // First, try to read in all the peptides for this assay.
-        const peptidesString: string = await fs.readFile(path, {
+        const peptidesString: string = await fs.readFile(assayPath, {
             encoding: "utf-8"
         });
 

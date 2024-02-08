@@ -1,17 +1,23 @@
 import Study from "@common/study/Study";
-import DatabaseManager from "@main/database/DatabaseManager";
 
 export default interface StudyManager {
     /**
-     * Load a study from the given directory. The study's name is assumed to be the name of the directory. If the given
-     * directory is empty, a new study will be created.
-     *
-     * @param directory The directory that contains all assays and required metadata for this study.
-     * @param dbManager A database manager connected to the project that this study belongs to and that can be used for
-     * retrieving / updating this study's metadata.
+     * Load all studies that are associated to this study manager. Typically something to identify these studies (such
+     * as a project) is passed along the constructor of this class.
      */
-    loadStudy(
-        directory: string,
-        dbManager: DatabaseManager
-    ): Promise<Study>;
+    loadStudies(): Promise<Study[]>;
+
+    /**
+     * Write the given study object (that is associated with the given project) to disk.
+     *
+     * @param study
+     */
+    writeStudy(study: Study): Promise<void>;
+
+    /**
+     * Remove the given study object from the underlying storage system.
+     *
+     * @param study
+     */
+    removeStudy(study: Study): Promise<void>;
 }

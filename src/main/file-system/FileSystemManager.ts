@@ -9,6 +9,10 @@ export default class FileSystemManager {
         return fs.writeFile(path, contents, { encoding: "utf-8" });
     }
 
+    public removeFile(path: string): Promise<void> {
+        return fs.rm(path, { recursive: true });
+    }
+
     public async mkdir(path: string): Promise<void> {
         await fs.mkdir(path, { recursive: true });
     }
