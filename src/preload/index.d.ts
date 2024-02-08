@@ -1,4 +1,5 @@
-import Configuration from '@common/configuration/Configuration';
+import Configuration from "@common/configuration/Configuration";
+import RecentProject from "@common/project/RecentProject";
 
 interface ExposedAPI {
     config: {
@@ -18,6 +19,12 @@ interface ExposedAPI {
             app: Promise<string>,
             chrome: Promise<string>,
             electron: Promise<string>
+        }
+    },
+    project: {
+        recentProjects: {
+            getRecentProjects: () => Promise<RecentProject[]>,
+            addRecentProject: (projectPath: string) => Promise<void>
         }
     }
 }

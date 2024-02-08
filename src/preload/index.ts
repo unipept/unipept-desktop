@@ -21,6 +21,12 @@ const api = {
             chrome: ipcRenderer.invoke("app:get-chrome-version"),
             electron: ipcRenderer.invoke("app:get-electron-version")
         }
+    },
+    project: {
+        recentProjects: {
+            getRecentProjects: () => ipcRenderer.invoke("recent-projects:read-recent-projects"),
+            addRecentProject: (projectPath: string) => ipcRenderer.invoke("recent-projects:add-recent-project", projectPath)
+        }
     }
 };
 

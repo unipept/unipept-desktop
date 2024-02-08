@@ -9,6 +9,7 @@
         "src/main/**/*",
         "src/main/**/*.sql",
         "src/common/**/*",
+        "src/preload/**/*",
         "src/preload/*.d.ts"
     ],
     "compilerOptions": {

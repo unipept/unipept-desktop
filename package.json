@@ -41,7 +41,7 @@
     "unipept-web-components": "^2.1.5",
     "uuid": "^9.0.1",
     "vue-router": "4",
-    "vuetify": "^3.4.0"
+    "vuetify": "^3.5.3"
   },
   "devDependencies": {
     "@electron-toolkit/tsconfig": "^1.0.1",

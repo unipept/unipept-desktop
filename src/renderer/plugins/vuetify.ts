@@ -41,10 +41,10 @@ const vuetify = createVuetify({
         },
     },
     defaults: {
-        VTooltip: {
-            openDelay: 500,
-            location: "bottom"
-        },
+        // VTooltip: {
+        //     openDelay: 500,
+        //     location: "bottom"
+        // },
         VDialog: {
             maxWidth: 1000
         }

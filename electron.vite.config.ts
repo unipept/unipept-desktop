@@ -8,7 +8,8 @@ export default defineConfig({
         resolve: {
             alias: {
                 "@common": resolve("src/common"),
-                "@main": resolve("src/main")
+                "@main": resolve("src/main"),
+                "@renderer": resolve("src/renderer"),
             }
         },
     },
@@ -18,7 +19,8 @@ export default defineConfig({
             alias: {
                 "@common": resolve("src/common"),
                 "@preload": resolve("src/preload"),
-                "@main": resolve("src/main")
+                "@main": resolve("src/main"),
+                "@renderer": resolve("src/renderer"),
             }
         },
     },

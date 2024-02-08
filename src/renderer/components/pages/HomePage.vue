@@ -4,7 +4,45 @@
             <v-col>
                 <div class="mx-12">
                     <h2>Project management</h2>
+
+                    <v-row class="mt-1 mb-6">
+                        <v-col md="12" lg="6">
+                            <v-card>
+                                <v-card-title>New here? Try our demo project!</v-card-title>
+                                <v-card-text>
+                                    <div>
+                                        If this is the first time you're using our application, we advise you to open the
+                                        demo project and discover what this application can do for you.
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <v-btn color="primary">
+                                            Open demo project
+                                        </v-btn>
+                                    </div>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+
+                        <v-col md="12" lg="6">
+                            <v-card class="d-flex flex-column" style="height: 100%;">
+                                <v-card-title>Add project</v-card-title>
+                                <v-card-text class="d-flex flex-column" style="height: 100%;">
+                                    <div class="flex-grow-1">Select an empty folder and create a new project.</div>
+                                    <div class="text-center mt-2">
+                                        <v-btn>
+                                            <v-icon class="mr-2">mdi-folder-plus-outline</v-icon>
+                                            Create project
+                                        </v-btn>
+                                    </div>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+
+                    </v-row>
                 </div>
+
+                <recent-project-overview />
+
             </v-col>
             <v-divider vertical />
             <v-col>
@@ -52,6 +90,7 @@ import GithubCommunicator from "@renderer/logic/communication/github/GithubCommu
 import ComparatorUtils from "@renderer/logic/utils/ComparatorUtils";
 import UpdateNotesDialog from "@renderer/components/releases/UpdateNotesDialog.vue";
 import ReleaseNotesCard from "@renderer/components/releases/ReleaseNotesCard.vue";
+import RecentProjectOverview from "@renderer/components/project/RecentProjectOverview.vue";
 
 const appVersion = ref(await window.api.app.versions.app);
 const chromeVersion = ref(await window.api.app.versions.chrome);

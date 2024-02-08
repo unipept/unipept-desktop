@@ -2,9 +2,13 @@ import { promises as fs } from "fs";
 import path from "path";
 
 import RecentProject from "@common/project/RecentProject";
+import RecentProjectManager from "@common/project/RecentProjectManager";
+import { app } from "electron";
+import FileSystemManager from "@main/file-system/FileSystemManager";
 
-export default class RecentProjectsManager {
+export default class FileSystemRecentProjectManager implements RecentProjectManager {
     public static readonly AMOUNT_OF_RECENT_PROJECTS = 15;
+    private static readonly RECENT_PROJECTS_FILE = "unipept_recent_projects.config";
 
     /**
      * @return A list of all projects that were recently opened by the user, sorted descending by date. An empty list
@@ -12,29 +16,35 @@ export default class RecentProjectsManager {
      * @throws {Error} If the recent projects file was corrupt, not readable or otherwise damaged.
      */
     public async getRecentProjects(): Promise<RecentProject[]> {
-        const storage = window.localStorage;
-        const readProjects = storage.getItem("recent-projects");
+        const fsManager = new FileSystemManager();
 
-        if (readProjects === null) {
+        try {
+            const readProjects = await fsManager.readFile(await this.getRecentProjectsPath());
+
+            if (readProjects === null) {
+                return [];
+            }
+
+            const parsedProjects: RecentProject[] = JSON.parse(readProjects).map(
+                (obj: any) => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened)))
+            );
+
+            const filteredProjects: RecentProject[] = [];
+            for (const recentProject of parsedProjects) {
+                try {
+                    await fs.stat(recentProject.path);
+                    filteredProjects.push(recentProject);
+                } catch (err) {
+                    // Do nothing, this project does not exist anymore.
+                }
+            }
+
+            // We should also sort the filtered projects from newest to oldest.
+            return filteredProjects.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime());
+        } catch (err) {
             return [];
         }
 
-        const parsedProjects: RecentProject[] = JSON.parse(readProjects).map(
-            (obj: any) => new RecentProject(obj.name, obj.path, new Date(parseInt(obj.lastOpened)))
-        );
-
-        const filteredProjects: RecentProject[] = [];
-        for (const recentProject of parsedProjects) {
-            try {
-                await fs.stat(recentProject.path);
-                filteredProjects.push(recentProject);
-            } catch (err) {
-                // Do nothing, this project does not exist anymore.
-            }
-        }
-
-        // We should also sort the filtered projects from newest to oldest.
-        return filteredProjects.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime());
     }
 
     /**
@@ -61,7 +71,7 @@ export default class RecentProjectsManager {
             recentProjects.push(new RecentProject(path.basename(projectPath), projectPath, new Date()));
         }
 
-        this.writeRecentProjects(recentProjects);
+        await this.writeRecentProjects(recentProjects);
     }
 
     /**
@@ -70,12 +80,11 @@ export default class RecentProjectsManager {
      *
      * @param projects List of projects to store.
      */
-    private writeRecentProjects(projects: RecentProject[]): void {
-        const storage = window.localStorage;
-
-        storage.setItem("recent-projects", JSON.stringify(projects
+    private writeRecentProjects(projects: RecentProject[]): Promise<void> {
+        const fsManager = new FileSystemManager();
+        return fsManager.writeFile(this.getRecentProjectsPath(), JSON.stringify(projects
             .sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
-            .slice(0, RecentProjectsManager.AMOUNT_OF_RECENT_PROJECTS)
+            .slice(0, FileSystemRecentProjectManager.AMOUNT_OF_RECENT_PROJECTS)
             .map(p => {
                 return {
                     name: p.name,
@@ -84,5 +93,11 @@ export default class RecentProjectsManager {
                 };
             })
         ));
+    }
+
+    private getRecentProjectsPath(): string {
+        // Get a reference to the user data folder in which configuration data will be stored.
+        const configurationFolder = app.getPath("userData");
+        return configurationFolder + "/" + FileSystemRecentProjectManager.RECENT_PROJECTS_FILE;
     }
 }

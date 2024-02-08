@@ -4,6 +4,7 @@ import ConfigurationManager from "./configuration/ConfigurationManager";
 import BrowserUtils from "./browser/BrowserUtils";
 import DialogManager from "./dialog/DialogManager";
 import AppManager from "./app/AppManager";
+import FileSystemRecentProjectManager from "@main/project/FileSystemRecentProjectManager";
 
 export default class IPCHandler {
     public initializeIPC() {
@@ -50,5 +51,17 @@ export default class IPCHandler {
         ipcMain.handle("app:get-app-version", () => appManager.getAppVersion());
         ipcMain.handle("app:get-electron-version", () => appManager.getElectronVersion());
         ipcMain.handle("app:get-chrome-version", () => appManager.getChromeVersion());
+
+        // Project actions
+        const recentProjectManager = new FileSystemRecentProjectManager();
+        ipcMain.handle(
+            "recent-projects:read-recent-projects",
+            () => recentProjectManager.getRecentProjects()
+        );
+        ipcMain.handle(
+            "recent-projects:add-recent-project",
+            (_, projectPath) => recentProjectManager.addRecentProject(projectPath)
+        );
+
     }
 }
