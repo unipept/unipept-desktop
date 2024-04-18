@@ -11,7 +11,7 @@ export default class StudyFileSystemDataWriter extends FileSystemStudyVisitor {
     public async visitStudy(study: Study): Promise<void> {
         try {
             // Make study directory if it does not exist yet...
-            await mkdirp(`${this.studyPath}`);
+            await mkdirp(this.studyPath);
 
             await this.dbManager.performQuery<void>((db: Database) => {
                 db.prepare("REPLACE INTO studies (id, name) VALUES (?, ?)").run(study.getId(), study.getName())

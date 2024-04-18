@@ -112,6 +112,55 @@
                                 </v-container>
                             </v-card-text>
                         </v-card>
+                        <h2 class="mx-auto settings-category-title">Global analysis settings</h2>
+                        <v-card>
+                            <v-card-text>
+                                <v-container fluid>
+                                    <v-row>
+                                        <v-col cols="11">
+                                            <div class="settings-title">Exclude (cRAP) sequences?</div>
+                                            <span class="settings-text">
+                                                Use this option if you would like to exclude specific peptides that are
+                                                known to be associated with cRAP-proteins. You can specify exactly which
+                                                protein sequences should be considered using the text area below.
+                                            </span>
+                                        </v-col>
+                                        <v-col cols="1">
+                                            <v-checkbox
+                                                class="float-end"
+                                                v-model="excludeSequences"
+                                            />
+                                        </v-col>
+                                    </v-row>
+                                    <v-row>
+                                        <v-col cols="6">
+                                            <v-textarea
+                                                filled
+                                                v-model="crapSequences"
+                                                :disabled="!excludeSequences"
+                                                clearable
+                                                :rows="8"
+                                            />
+                                        </v-col>
+                                        <v-divider vertical />
+                                        <v-col cols="6">
+                                            <div class="d-flex flex-column align-center">
+                                                <div class="font-weight-bold">
+                                                    Or, import sequences from a FASTA file...
+                                                </div>
+                                                <v-btn
+                                                    class="mt-2"
+                                                    @click="importCrapFasta"
+                                                    :disabled="!excludeSequences"
+                                                >
+                                                    Import from file
+                                                </v-btn>
+                                            </div>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+                        </v-card>
                         <h2 class="mx-auto settings-category-title">Storage</h2>
                         <v-card>
                             <v-card-text>
@@ -264,6 +313,8 @@ import Rules from "./../validation/Rules";
 import { NetworkConfiguration, NetworkUtils } from "unipept-web-components";
 import DockerCommunicator from "@/logic/communication/docker/DockerCommunicator";
 import Utils from "@/logic/Utils";
+import { promises as fs } from "fs";
+import FastaParser from "./../../logic/filesystem/fasta/FastaParser";
 
 @Component
 export default class SettingsPage extends Vue {
@@ -340,6 +391,25 @@ export default class SettingsPage extends Vue {
 
     get dockerConnectionSettings(): string {
         return this.configuration.dockerConfigurationSettings;
+    }
+
+    set excludeSequences(val: boolean) {
+        this.configuration.crapFilteringEnabled = val;
+    }
+
+    get excludeSequences(): boolean {
+        return this.configuration.crapFilteringEnabled;
+    }
+
+    set crapSequences(val: string) {
+        if (val == null) {
+            val = "";
+        }
+        this.configuration.crapSequences = val.split("\r?\n");
+    }
+
+    get crapSequences(): string {
+        return this.configuration.crapSequences.join("\n");
     }
 
     set customDbStorageLocation(value: string) {
@@ -436,6 +506,28 @@ export default class SettingsPage extends Vue {
 
         if (chosenPath && chosenPath.filePaths.length > 0) {
             this.customDbStorageLocation = chosenPath.filePaths[0];
+        }
+    }
+
+    public async importCrapFasta(): Promise<void> {
+        const { dialog } = require("@electron/remote");
+
+        const chosenPath: Electron.OpenDialogReturnValue | undefined = await dialog.showOpenDialog({
+            properties: ["openFile"],
+            filters: [
+                { name: "FASTA files", extensions: ["fasta"] }
+            ]
+        });
+
+        if (chosenPath && chosenPath.filePaths.length > 0) {
+            const fastaPath = chosenPath.filePaths[0];
+            const fastaContent = await fs.readFile(fastaPath, "utf8");
+
+            // Now, parse the fasta content and extract the protein sequences
+            const fastaParser = new FastaParser();
+            const sequences = fastaParser.extractProteinSequences(fastaContent);
+
+            this.crapSequences = sequences.join("\n");
         }
     }
 

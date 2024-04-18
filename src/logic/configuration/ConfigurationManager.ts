@@ -36,8 +36,9 @@ export default class ConfigurationManager {
             }
         },
         (config: Configuration) => config.customDbStorageLocation !== "",
-        (config: Configuration) => config.endpoints.every(e => this.isUrl(e))
-    ]
+        (config: Configuration) => config.endpoints.every(e => this.isUrl(e)),
+        (config: Configuration) => Array.isArray(config.crapSequences),
+    ];
 
     private app: App;
 
@@ -69,6 +70,14 @@ export default class ConfigurationManager {
                 data["endpoints"].push(ConfigurationManager.DEFAULT_ENDPOINT);
             }
 
+            if (!data["crapSequences"] || !Array.isArray(data["crapSequences"])) {
+                data["crapSequences"] = [];
+            }
+
+            if (!data["crapFilteringEnabled"]) {
+                data["crapFilteringEnabled"] = false;
+            }
+
             if (!this.isValidConfiguration(data)) {
                 ConfigurationManager.currentConfiguration = await this.getDefaultConfiguration();
                 return ConfigurationManager.currentConfiguration;
@@ -93,7 +102,9 @@ export default class ConfigurationManager {
                 Utils.isWindows() ? DockerCommunicator.WINDOWS_DEFAULT_SETTINGS : DockerCommunicator.UNIX_DEFAULT_SETTINGS,
             customDbStorageLocation: customDbDir,
             configurationAppVersion: this.app.getVersion(),
-            endpoints: ["https://api.unipept.ugent.be/"]
+            endpoints: ["https://api.unipept.ugent.be/"],
+            crapFilteringEnabled: false,
+            crapSequences: []
         }
     }
 

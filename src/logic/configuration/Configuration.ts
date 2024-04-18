@@ -7,4 +7,6 @@ export default interface Configuration {
     configurationAppVersion: string;
     // List of custom Unipept endpoints that were provided to this app.
     endpoints: string[];
+    crapFilteringEnabled: boolean;
+    crapSequences: string[];
 }
