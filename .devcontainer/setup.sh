@@ -1,9 +1,8 @@
 #! /bin/bash
 
-touch .Xauthority
+Xvfb :1 -screen 0 1920x1080x24 &
+export DISPLAY=:1
 
-umask 0077
-mkdir -p "$HOME/.vnc"
-chmod go-rwx "$HOME/.vnc"
-vncpasswd -f <<<"unipept" >"$HOME/.vnc/passwd"
-vncserver -geometry 1920x1080
+startxfce4 &
+
+x11vnc -display :1
