@@ -158,7 +158,7 @@ export default class CachedResultsManager {
         const searchConfiguration = new SearchConfiguration(
             existingConfig.equateIl,
             existingConfig.filterDuplicates,
-            existingConfig.enableMissingCleavageHandling
+            true
         );
 
         const searchConfigManager = new SearchConfigManager(this.dbManager);

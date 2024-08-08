@@ -188,7 +188,6 @@ import {
 import Snake from "@/components/games/Snake.vue";
 import Toolbar from "@/components/navigation-drawers/Toolbar.vue";
 import ProjectExplorer from "@/components/navigation-drawers/ProjectExplorer.vue";
-import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
 import CreateAssayDialog from "@/components/assay/CreateAssayDialog.vue";
 import ProgressReportSummary from "@/components/analysis/ProgressReportSummary.vue";
 import { Watch } from "vue-property-decorator";
@@ -198,7 +197,6 @@ const { app } = require("@electron/remote");
 @Component({
     components: {
         ProgressReportSummary,
-        SearchConfigurationDialog,
         Snake,
         Toolbar,
         ProjectExplorer,

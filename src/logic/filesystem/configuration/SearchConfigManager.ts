@@ -17,7 +17,7 @@ export default class SearchConfigManager {
             return new SearchConfiguration(
                 searchRow.equate_il === 1,
                 searchRow.filter_duplicates === 1,
-                searchRow.missing_cleavage_handling === 1,
+                true,
                 searchRow.id.toString()
             );
         } else {
@@ -43,7 +43,7 @@ export default class SearchConfigManager {
             ).run(
                 config.equateIl ? 1 : 0,
                 config.filterDuplicates ? 1 : 0,
-                config.enableMissingCleavageHandling ? 1 : 0,
+                1,
             );
 
             config.id = info.lastInsertRowid.toString();

@@ -76,7 +76,7 @@
                             :horizontal="true"
                             :equate-il.sync="equateIl"
                             :filter-duplicates.sync="filterDuplicates"
-                            :missing-cleavage.sync="missedCleavage">
+                            :missing-cleavage="true">
                         </search-settings-form>
 
                         <div class="d-flex justify-center align-center mt-4">
@@ -120,7 +120,6 @@ import {
     ProteomicsAssay,
     CountTable,
     Peptide,
-    SearchSettingsForm,
     SearchConfiguration,
     PeptideTrust,
     Pept2DataCommunicator,
@@ -139,6 +138,7 @@ import AnalysisSourceSelect from "@/components/assay/AnalysisSourceSelect.vue";
 import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import ExportResultsButton from "@/components/analysis/ExportResultsButton.vue";
+import SearchSettingsForm from "@/components/analysis/SearchSettingsForm.vue";
 
 @Component({
     components: { PeptideSummaryTable, SearchSettingsForm, ExportResultsButton, Tooltip, AnalysisSourceSelect }
@@ -323,7 +323,7 @@ export default class AnalysisSummary extends Vue {
     }
 
     private update() {
-        const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, this.missedCleavage);
+        const config = new SearchConfiguration(this.equateIl, this.filterDuplicates, true);
         this.assay.setSearchConfiguration(config);
 
         this.assay.setAnalysisSource(this.analysisSource);

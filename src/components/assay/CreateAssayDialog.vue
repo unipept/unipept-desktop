@@ -110,8 +110,10 @@
                         </v-simple-checkbox>
                     </template>
                     <template v-slot:item.missedCleavage="{ item }">
-                        <v-simple-checkbox v-model="item.searchConfiguration.enableMissingCleavageHandling" color="primary">
-                        </v-simple-checkbox>
+                        <custom-tooltip>
+                            <v-simple-checkbox disabled :value="true" color="primary">
+                            </v-simple-checkbox>
+                        </custom-tooltip>
                     </template>
                     <template v-slot:item.actions="{ item }">
                         <v-tooltip bottom open-delay="500">
@@ -231,6 +233,7 @@ import ConfigurationManager from "@/logic/configuration/ConfigurationManager";
 import AssayFileSystemDataWriter from "@/logic/filesystem/assay/AssayFileSystemDataWriter";
 import CustomDatabase from "@/logic/custom_database/CustomDatabase";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
+import CustomTooltip from "@/components/analysis/CustomTooltip.vue";
 
 
 const { dialog } = require("@electron/remote");
@@ -250,7 +253,7 @@ type ProteomicsAssayPlaceholder = {
 }
 
 @Component({
-    components: { ConfirmDeletionDialog, AnalysisSourceSelect }
+    components: { ConfirmDeletionDialog, AnalysisSourceSelect, CustomTooltip }
 })
 export default class CreateAssayDialog extends Vue {
     @Prop({ required: true })
@@ -345,14 +348,12 @@ export default class CreateAssayDialog extends Vue {
     }
 
     get areAllMissedCleavage(): boolean {
-        return this.assayPlaceholders.every(
-            (item: ProteomicsAssayPlaceholder) => item.searchConfiguration.enableMissingCleavageHandling
-        );
+        return true;
     }
 
     set areAllMissedCleavage(value: boolean) {
         for (const item of this.assayPlaceholders) {
-            item.searchConfiguration.enableMissingCleavageHandling = value;
+            item.searchConfiguration.enableMissingCleavageHandling = true;
         }
     }
 
@@ -550,7 +551,7 @@ export default class CreateAssayDialog extends Vue {
             name: this.generateUniqueAssayName("New assay"),
             nameError: "",
             peptides: "",
-            searchConfiguration: new SearchConfiguration(),
+            searchConfiguration: new SearchConfiguration(true, true, true),
             analysisSource: this.renderableSources[0],
             analysisSourceError: "",
             inProgress: false
@@ -577,7 +578,7 @@ export default class CreateAssayDialog extends Vue {
                     name: assayName,
                     nameError: "",
                     peptides: "",
-                    searchConfiguration: new SearchConfiguration(),
+                    searchConfiguration: new SearchConfiguration(true, true, true),
                     analysisSource: this.renderableSources[0],
                     analysisSourceError: "",
                     inProgress: true
