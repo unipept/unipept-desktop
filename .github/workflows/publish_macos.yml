@@ -15,8 +15,8 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: 16
-      - name: Install setuptools for Python
-        run: pip install --upgrade setuptools
+      - name: Install Python 3.10
+        run: brew install python@3.10 && brew unlink python && brew link --force --overwrite python@3.10
       - name: Install Yarn
         run: npm install --global yarn
       - name: Install dependencies
