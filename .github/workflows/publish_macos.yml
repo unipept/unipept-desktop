@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: 16
       - name: Install setuptools for Python
-        run: pip install setuptools
+        run: pip install --upgrade setuptools
       - name: Install Yarn
         run: npm install --global yarn
       - name: Install dependencies
