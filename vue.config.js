@@ -48,7 +48,7 @@ module.exports = {
                 },
                 "linux": {
                     "target": "AppImage",
-                },
+                }
             },
         },
     },

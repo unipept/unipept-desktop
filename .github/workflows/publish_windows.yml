@@ -23,5 +23,3 @@ jobs:
         run: yarn run electron:publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          CSC_LINK: ${{ secrets.windows_certs }}
-          CSC_KEY_PASSWORD: ${{ secrets.windows_certs_password }}
