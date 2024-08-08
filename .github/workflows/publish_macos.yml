@@ -8,15 +8,13 @@ on:
 
 jobs:
   release_macos:
-    runs-on: macos-latest
+    runs-on: macos-12
 
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v2
         with:
           node-version: 16
-      - name: Install Python 3.10
-        run: brew install python@3.10 && brew unlink python && brew link --force --overwrite python@3.10
       - name: Install Yarn
         run: npm install --global yarn
       - name: Install dependencies
