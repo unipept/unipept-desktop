@@ -363,7 +363,7 @@ export default class AssayItem extends Vue {
         const searchConfiguration = new SearchConfiguration(
             originalSearchConfig.equateIl,
             originalSearchConfig.filterDuplicates,
-            originalSearchConfig.enableMissingCleavageHandling
+            true
         );
         newAssay.setSearchConfiguration(searchConfiguration);
 

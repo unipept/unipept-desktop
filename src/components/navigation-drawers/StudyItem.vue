@@ -91,11 +91,6 @@
                 </div>
             </div>
         </div>
-        <search-configuration-dialog
-            v-model="showSearchConfigDialog"
-            :assays="searchConfigAssays"
-            :callback="searchConfigCallback">
-        </search-configuration-dialog>
         <confirm-deletion-dialog
             v-model="removeConfirmationActive"
             :action="() => removeStudy()"
@@ -123,7 +118,6 @@ import {
 import AssayItem from "./AssayItem.vue";
 import ConfirmDeletionDialog from "@/components/dialogs/ConfirmDeletionDialog.vue";
 import StudyFileSystemRemover from "@/logic/filesystem/study/StudyFileSystemRemover";
-import SearchConfigurationDialog from "@/components/dialogs/SearchConfigurationDialog.vue";
 import BinaryFilesErrorDialog from "@/components/dialogs/BinaryFilesErrorDialog.vue";
 import StudyManager from "@/logic/filesystem/study/StudyManager";
 
@@ -134,7 +128,6 @@ const fs = require("fs").promises;
 @Component({
     components: {
         BinaryFilesErrorDialog,
-        SearchConfigurationDialog,
         ConfirmDeletionDialog,
         CreateDatasetCard,
         Tooltip,
@@ -171,7 +164,6 @@ export default class StudyItem extends Vue {
     private binaryFilesList: string[] = [];
 
     private removeConfirmationActive = false;
-    private showSearchConfigDialog = false;
     private searchConfigCallback: (cancelled: boolean) => Promise<void> = async(cancelled: boolean) => {
         return;
     };

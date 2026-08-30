@@ -89,7 +89,7 @@ export default class AssayFileSystemDataReader extends FileSystemAssayVisitor {
                 mpAssay.setDate(metadata.analysisDate);
             }
         } else {
-            mpAssay.setSearchConfiguration(new SearchConfiguration());
+            mpAssay.setSearchConfiguration(new SearchConfiguration(true, true, true));
             mpAssay.setAnalysisSource(
                 new CachedOnlineAnalysisSource(
                     NetworkConfiguration.BASE_URL,
