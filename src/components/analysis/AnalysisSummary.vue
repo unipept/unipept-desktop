@@ -95,8 +95,7 @@
 
                     <v-col sm="12" lg="6">
                         <peptide-summary-table :assay="assay" />
-                        <div class="d-flex justify-center">
-
+                        <div class="d-flex justify-center mt-4">
                             <export-results-button :assay="assay" button-text="Export results" />
                         </div>
                     </v-col>
